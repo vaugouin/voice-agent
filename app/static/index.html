@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Voice Movie Database</title>
+    <link rel="stylesheet" href="./static/styles.css?v=20260514-country-flags" />
+  </head>
+  <body>
+    <main>
+      <section class="panel">
+        <div>
+          <h1>Voice Movie Database</h1>
+        </div>
+
+        <div class="controls">
+          <div class="sessionButtonSlot">
+            <button id="startButton" type="button" aria-label="Start microphone" title="Start microphone">🎤</button>
+            <button id="stopButton" type="button" aria-label="Stop microphone" title="Stop microphone" hidden>❌</button>
+          </div>
+          <button id="historyBackButton" class="iconButton" type="button" aria-label="Back" title="Back" disabled>
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M19 12H5" />
+              <path d="M12 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <button id="historyForwardButton" class="iconButton" type="button" aria-label="Forward" title="Forward" disabled>
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M5 12h14" />
+              <path d="M12 5l7 7-7 7" />
+            </svg>
+          </button>
+          <label class="srOnly" for="questionInput">Question</label>
+          <textarea id="questionInput" class="questionInput" rows="1" placeholder="Type a question"></textarea>
+          <button id="newConversationButton" class="iconButton" type="button" aria-label="New conversation" title="New conversation" hidden>
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M12 3H7a4 4 0 0 0-4 4v10a4 4 0 0 0 4 4h10a4 4 0 0 0 4-4v-5" />
+              <path d="M15.5 4.5a2.1 2.1 0 0 1 3 3L11 15l-4 1 1-4 7.5-7.5z" />
+            </svg>
+          </button>
+        </div>
+
+        <div class="status">
+          <span id="statusDot" class="dot"></span>
+          <span id="statusText">Idle</span>
+        </div>
+
+        <audio id="remoteAudio" autoplay></audio>
+
+        <section id="resultsPanel" class="resultsPanel" aria-live="polite" hidden>
+          <div id="resultsContent"></div>
+          <div id="resultsLoader" class="muted" hidden></div>
+          <button id="loadMoreButton" class="loadMoreButton" type="button" hidden>Load more</button>
+          <div id="resultsEnd" class="muted" hidden></div>
+        </section>
+
+        <div id="log" hidden></div>
+      </section>
+    </main>
+    <div id="subtitleOverlay" class="subtitleOverlay" aria-live="polite" hidden></div>
+
+    <script src="./static/app.js?v=20260514-country-flags" type="module"></script>
+  </body>
+</html>
