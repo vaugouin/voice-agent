@@ -13,8 +13,11 @@ The app serves a minimal web UI on port `3000`. The browser creates an `RTCPeerC
 - `oai-events` data channel for Realtime event handling.
 - Function tools named `query_text2sql` plus dedicated entity detail tools.
 - Text2sql result cards with infinite-scroll pagination and click-through entity detail pages.
+- Compact result-display mode that hides the app title and agent status while search results or entity pages are visible, leaving a one-row control header above the results panel.
+- Edge-to-edge iOS landscape layout for short viewports, including `viewport-fit=cover`, so the result UI uses the full available screen height without an outer app margin.
 - Text question input beside Start/Stop for mixed voice/text turns. `Enter` submits and `Shift+Enter` inserts a new line.
 - Back and Forward buttons beside the text input for navigating previously displayed result and detail pages.
+- PNG app icon configured for browser tabs, web app metadata, and iPhone Add to Home Screen.
 - Voice selector for Realtime voices.
 - Rolling retained context in `localStorage` so reconnects can continue with prior user requests and tool results during the current page lifetime.
 - Web Worker keepalive on the `oai-events` data channel to keep ICE/NAT alive during silent periods, including in unfocused windows.
@@ -34,6 +37,8 @@ app/
     index.html            Minimal UI
     app.js                WebRTC client, Realtime event loop, tool handling
     styles.css            UI and result-card styling
+UI.md                     Stateful UI behavior reference
+AGENTS.md                 Agent-facing repository instructions
 deploy/
   nginx-voice-agent-location.conf
 logs/
@@ -84,6 +89,8 @@ http://127.0.0.1:3000/
 ```
 
 For microphone testing, Chrome or Edge on localhost is usually the most reliable local browser path.
+
+Apple Watch browsers do not expose the same browser microphone/WebRTC capture path required by the voice Start button. On watchOS, use typed questions in the text box, or use voice from iPhone Safari.
 
 ## Realtime Session Flow
 
@@ -139,7 +146,7 @@ The server creates a session with:
 - voice: selected by the UI, default `ash`
 - input transcription: `gpt-4o-transcribe`
 - turn detection: server VAD
-- tools: `query_text2sql` plus dedicated detail tools for movies, series, persons, companies, networks, collections, topics, lists, movements, groups, deaths, awards, nominations, and locations
+- tools: `query_text2sql` plus dedicated detail tools for movies, series, seasons, episodes, persons, companies, networks, collections, topics, lists, movements, technicals, groups, deaths, awards, nominations, and locations
 
 Supported voice values in this app:
 
@@ -230,6 +237,8 @@ The local adapter forwards to the text2sql API detail endpoints documented in `C
 |---|---|---|
 | `get_movie_detail` | `GET /movies/{id}` | `ID_MOVIE` |
 | `get_series_detail` | `GET /series/{id}` | `ID_SERIE` |
+| `get_season_detail` | `GET /seasons/{id_serie}/{season_number}` | `ID_SERIE`, `SEASON_NUMBER` |
+| `get_episode_detail` | `GET /episodes/{id_serie}/{season_number}/{episode_number}` | `ID_SERIE`, `SEASON_NUMBER`, `EPISODE_NUMBER` |
 | `get_person_detail` | `GET /persons/{id}` | `ID_PERSON` |
 | `get_company_detail` | `GET /companies/{id}` | `ID_COMPANY` |
 | `get_network_detail` | `GET /networks/{id}` | `ID_NETWORK` |
@@ -237,13 +246,14 @@ The local adapter forwards to the text2sql API detail endpoints documented in `C
 | `get_topic_detail` | `GET /topics/{id}` | `ID_TOPIC` |
 | `get_list_detail` | `GET /lists/{id}` | `ID_T2S_LIST` |
 | `get_movement_detail` | `GET /movements/{id}` | `ID_MOVEMENT` |
+| `get_technical_detail` | `GET /technicals/{id}` | `ID_TECHNICAL` |
 | `get_group_detail` | `GET /groups/{id}` | `ID_GROUP` |
 | `get_death_detail` | `GET /deaths/{id}` | `ID_DEATH` |
 | `get_award_detail` | `GET /awards/{id}` | `ID_AWARD` |
 | `get_nomination_detail` | `GET /nominations/{id}` | `ID_NOMINATION` |
 | `get_location_detail` | `GET /locations/{wikidata_id}` | `ID_WIKIDATA`, for example `Q90` |
 
-For example, if the user asks for a movie plot, the model should first identify the movie with `query_text2sql` if needed, then call `get_movie_detail` with the returned `ID_MOVIE`, and answer from the returned `PLOT` field.
+For example, if the user asks for a movie plot, the model should first identify the movie with `query_text2sql` if needed, then call `get_movie_detail` with the returned `ID_MOVIE`, and answer from the returned `PLOT` field. Series pages expose season summaries that open `get_season_detail` with `ID_SERIE` and `SEASON_NUMBER`; season pages render the returned `episodes` summaries, and selecting one opens `get_episode_detail` with its three-part key. If the user asks about a technical format such as `Technicolor`, the model should identify it with `query_text2sql` if needed, then call `get_technical_detail` with the returned `ID_TECHNICAL`. Movie detail responses can also include a `technicals` collection with technical entries such as sound systems and film formats. Technical detail responses can include associated `movies` and same-type `siblings`. Movie and series detail responses can include `posters` and `backdrops` image collections.
 
 The local adapter returns compact fields used by the browser and the model:
 
@@ -265,11 +275,18 @@ The local adapter returns compact fields used by the browser and the model:
 
 When a text2sql result arrives, the app renders result cards in the UI in addition to the spoken answer.
 
+When the results panel contains a search result page or an entity detail page, the app switches to a compact display mode: the `Voice Movie Database` title and the status row are hidden, leaving only the Start/Stop, Back, Forward, text input, and New Conversation controls above the result content. Clearing the conversation restores the full header.
+
+On short landscape viewports, including iOS Safari on iPhone 15 Pro Max, the app shell removes the outer page padding and square-corners the main panel so result/detail pages fill the available browser viewport from the top edge.
+
+Search result answer panels include an icon-only query-details toggle on the right side of the answer panel. The toggle uses a down-oriented triangle when closed, switches to an up triangle when open, and opens or closes the SQL/justification details in a compact dock directly below the answer panel.
+
 Click-through behavior:
 
 - Cards for records with a supported entity ID open the matching in-app detail page instead of navigating away.
-- Supported click-through records include movies, series, people, companies, networks, collections, topics, lists, movements, groups, deaths, awards, nominations, and Wikidata-backed locations.
+- Supported click-through records include movies, series, seasons, episodes, people, companies, networks, collections, topics, lists, movements, technicals, groups, deaths, awards, nominations, and Wikidata-backed locations.
 - The detail view uses the same local `GET /tool/detail/{entity}/{id}` adapter as Realtime detail tool calls, then renders the returned record content in the results panel.
+- Entity detail tool outputs keep compact `wikipedia_content` available to the model for grounding background, history, biography, plot-context, and explanatory answers, but the UI does not render Wikipedia content sections on detail pages.
 - Entity detail pages use the same click-through behavior for their embedded relation cards. For example, a movie page's cast, topics, collections, awards, companies, and similar page elements can be clicked to replace the current page with that related entity detail page.
 - Embedded relation sections on movie, series, person, and other entity detail pages render as single-row horizontal rails. When the upstream API returns more cards than fit on screen, the rail can be moved with the left/right controls or native horizontal scrolling, and every returned card remains clickable.
 - The Back and Forward controls maintain a client-side page history across text2sql result pages, loaded result pages, direct detail tool pages, and clicked entity detail pages.
@@ -278,8 +295,8 @@ Image behavior:
 
 - TMDb `POSTER_PATH`, `PROFILE_PATH`, and `LOGO_PATH` values render through `https://image.tmdb.org/t/p/...`.
 - `WIKIPEDIA_IMAGE_PATH` values render as Wikipedia/Wikimedia images when provided by the upstream API.
-- Wikipedia images are used on primary entity detail pages for topics, collections, lists, movements, groups, deaths, awards, nominations, and locations when no TMDb poster/profile/logo is present.
-- Embedded relation rails also use `WIKIPEDIA_IMAGE_PATH`, including topics, lists, collections, movements, awards, and nominations on movie/series detail pages, plus groups, deaths, awards, and nominations on person detail pages.
+- Wikipedia images are used on primary entity detail pages for topics, collections, lists, movements, technicals, groups, deaths, awards, nominations, and locations when no TMDb poster/profile/logo is present.
+- Embedded relation rails also use `WIKIPEDIA_IMAGE_PATH`, including topics, lists, collections, movements, technicals, awards, and nominations on movie/series detail pages, plus technical siblings on technical detail pages and groups, deaths, awards, and nominations on person detail pages.
 - Search result cards, embedded relation cards, and primary detail-page poster/portrait images set both `alt` and `title` attributes from the displayed entity title, so hovering over a picture shows its text label.
 - Static frontend assets are referenced with a version query in `index.html`; bump that version when changing `app.js` or `styles.css` so browsers fetch the current UI code after deployment or reload.
 
@@ -294,6 +311,10 @@ Detail page header behavior:
 
 - Movie, series, person, and other entity detail pages show their key metrics directly under the title/tagline before cast, relation rails, or other content sections.
 - Movie and series detail pages label the people section as `Cast`, render every cast member returned by the API in one horizontal rail, and render the full returned crew in a separate `Crew` rail with the same sliding behavior.
+- Series detail pages render the `/series/{id}` `seasons` collection as a clickable `Seasons` rail above the `Cast` rail; selecting a season opens `/seasons/{id_serie}/{season_number}`.
+- Season detail pages show air date, episode count, rating, parent-series navigation, a clickable `Episodes` rail above `Cast`, cast, and crew returned by `/seasons/{id_serie}/{season_number}`. Each episode card opens its `/episodes/{id_serie}/{season_number}/{episode_number}` page.
+- Episode detail pages show air date, runtime, rating, parent-series and parent-season navigation, cast, crew, and still images returned by `/episodes/{id_serie}/{season_number}/{episode_number}`.
+- Movie detail pages render the `/movies/{id}` `technicals` collection as a `Technicals` rail directly below the `Crew` rail when technical entries are returned by the API. Each technical card is clickable and opens `/technicals/{id}` through the local detail adapter.
 - Movie and series director metrics are clickable when the API returns a matching person record, and open that person's detail page in the same results panel.
 - Movie and series `Crew` rails collapse repeated records for the same person into one clickable card and concatenate their crew departments, for example `Writing, Production, Directing`.
 - Series detail pages show `First aired`, `Seasons`, `Episodes`, and `IMDb` in this top metric area.
@@ -301,8 +322,9 @@ Detail page header behavior:
 - Person detail pages show `Born`, `Died`, `Known for`, and `Country` in the same top metric area. When `Country` is a 2-letter country code, the UI displays the corresponding Unicode flag emoji next to the code, for example `🇺🇸 US`.
 - Person detail pages use the `/persons/{id}` `portraits` array to show a swipe-only portrait viewer in the main picture area, with `PROFILE_PATH` as a fallback.
 - Movie and series detail pages use the `/movies/{id}` and `/series/{id}` `posters` arrays to show a swipe-only poster viewer in the main picture area, with `POSTER_PATH` as a fallback.
+- Movie and series detail pages use the `/movies/{id}` and `/series/{id}` `backdrops` arrays to show a wide swipeable backdrop viewer below the poster, with `BACKDROP_PATH` as a fallback. Clicking a backdrop toggles fullscreen zoom. Sliding horizontally moves to the previous or next backdrop. A top-right play button starts a slideshow across all available backdrops and changes to a stop button while the slideshow is running; the control remains visible in normal and fullscreen modes.
 - Clicking the main portrait, poster, logo, or Wikipedia image on any entity detail page expands the current image to a full-screen viewer. Clicking the full-screen image or pressing `Escape` returns it to the normal detail-page position.
-- Collection, topic, list, movement, group, death, award, nomination, company, network, and location detail pages show available type/count/rating metrics in the top metric area.
+- Collection, topic, list, movement, technical, group, death, award, nomination, company, network, and location detail pages show available type/count/rating metrics in the top metric area. Technical detail pages use `DESCRIPTION` / `DESCRIPTION_FR` as their display title, show `TECHNICAL_TYPE` as the type metric, and render associated movies plus same-type sibling technicals as clickable rails.
 
 ## Retained Context
 
@@ -326,11 +348,17 @@ Current implementation note: `loadRetainedContext()` exists, and context is save
 
 ## Text Input
 
-The UI includes a multiline question box beside the microphone controls. The microphone start control is shown as `🎤`, and the audio stop control is shown as `❌`.
+The UI includes a multiline question box beside the microphone controls. The microphone start control uses a layered `👄` and `❌` visual, the audio stop control is shown as `👄`, and the adjacent green microphone toggle shows `👂🏻` when input is open or `👂🏻` with `❌` when input is closed.
 
-As soon as the user types any non-whitespace text, the `🎤` start control is hidden. If the text is removed and the box is empty again, the `🎤` control becomes visible again when no audio session is running.
+For the complete stateful reference of Start/Stop, text entry, answer/results panel, status panel, subtitles, history, New conversation, hidden audio/log elements, and dynamic detail viewer controls, see `UI.md`.
+
+As soon as the user types any non-whitespace text, the start control is hidden. If the text is removed and the box is empty again, the start control becomes visible again when no audio session is running.
 
 Pressing `Enter` in the question box sends the text to the server-side `/text-chat` endpoint instead of the Realtime audio session. If a Realtime session is active, it is stopped before the text request is sent, so the typed turn uses a normal OpenAI text model rather than `OPENAI_REALTIME_MODEL`. Press `Shift+Enter` to add a new line without submitting.
+
+## App Icon
+
+The app uses `app/static/icons/voice-agent-1254x1254.png` as its browser favicon, Apple touch icon, and web manifest icon. The manifest is served from `/static/site.webmanifest`, with `start_url` and `scope` pointing back to the app root so iPhone home-screen shortcuts launch `/` instead of `/static/`. Modern browsers and iOS Safari can use the PNG directly; an `.ico` file is optional legacy fallback and is not required for browser tabs or iPhone Add to Home Screen.
 
 The `/text-chat` endpoint calls the OpenAI Responses API with `OPENAI_TEXT_MODEL`, defaulting to `gpt-5.1`. The client sends compact retained conversation context with the text message so follow-up typed turns can stay coherent. To guarantee the same visible behavior as the audio agent, the endpoint always executes `query_text2sql` once for the typed message before asking the text model to answer. It returns that forced tool output to the browser for card rendering, provides it to the model as grounded context, and still exposes every detail lookup tool so the text model can request entity pages when needed.
 
@@ -519,8 +547,8 @@ Adjust the container name if your Nginx container is not named `reverseproxy`.
 The HTML references static assets with version query strings:
 
 ```html
-styles.css?v=20260512-1
-app.js?v=20260512-1
+styles.css?v=20260525-season-episodes-rail
+app.js?v=20260525-season-episodes-rail
 ```
 
 When changing frontend behavior, bump the version to force Safari and other browsers to fetch the new asset after deployment.
@@ -539,6 +567,8 @@ Check `logs/client.log` for `realtime_support`. Confirm:
 ```
 
 If `isSecureContext` is false, use HTTPS. If secure context is true but WebRTC APIs are missing, the issue is browser/runtime policy.
+
+On Apple Watch, this is expected: the watch browser can load the page and use typed text, but the Realtime voice path depends on `RTCPeerConnection` and `navigator.mediaDevices.getUserMedia`, which are not available there.
 
 ### `microphone permission denied`
 
@@ -579,7 +609,7 @@ awaitingToolResponse
 data_channel_close
 ```
 
-The client mutes the microphone while the assistant is speaking or while tool output is pending, then re-enables it when the response is complete.
+The client mutes the microphone while the assistant is speaking or while tool output is pending, then re-enables it when the response is complete. If the microphone toggle is manually closed, the track stays disabled until the user opens it again.
 
 ## Verification
 

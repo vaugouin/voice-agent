@@ -2,21 +2,40 @@
 <html lang="en">
   <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta name="theme-color" content="#121212" />
     <title>Voice Movie Database</title>
-    <link rel="stylesheet" href="./static/styles.css?v=20260514-country-flags" />
+    <link rel="icon" type="image/png" sizes="1254x1254" href="./static/icons/voice-agent-1254x1254.png" />
+    <link rel="apple-touch-icon" href="./static/icons/voice-agent-1254x1254.png" />
+    <link rel="manifest" href="./static/site.webmanifest" />
+    <link rel="stylesheet" href="./static/styles.css?v=20260525-season-episodes-rail" />
   </head>
   <body>
     <main>
       <section class="panel">
-        <div>
+        <div class="appHeader">
           <h1>Voice Movie Database</h1>
         </div>
 
         <div class="controls">
           <div class="sessionButtonSlot">
-            <button id="startButton" type="button" aria-label="Start microphone" title="Start microphone">🎤</button>
-            <button id="stopButton" type="button" aria-label="Stop microphone" title="Stop microphone" hidden>❌</button>
+            <button id="startButton" type="button" aria-label="Talk" title="Talk">
+              <span class="startMicIcon" aria-hidden="true">
+                <span class="startMicIconMouth">👄</span>
+                <span class="startMicIconCross">❌</span>
+              </span>
+            </button>
+            <button id="stopButton" type="button" aria-label="Mute" title="Mute" hidden>
+              👄
+            </button>
+          </div>
+          <div class="microphoneButtonSlot">
+            <button id="microphoneToggleButton" class="iconButton microphoneToggleButton" type="button" aria-label="Mic On" title="Mic On" aria-pressed="false" disabled>
+              <span class="microphoneStateIcon" aria-hidden="true">
+                <span class="microphoneStateEar">&#x1F442;&#x1F3FB;</span>
+                <span class="microphoneStateCross">&#x274C;</span>
+              </span>
+            </button>
           </div>
           <button id="historyBackButton" class="iconButton" type="button" aria-label="Back" title="Back" disabled>
             <svg aria-hidden="true" viewBox="0 0 24 24">
@@ -39,7 +58,6 @@
             </svg>
           </button>
         </div>
-
         <div class="status">
           <span id="statusDot" class="dot"></span>
           <span id="statusText">Idle</span>
@@ -59,6 +77,6 @@
     </main>
     <div id="subtitleOverlay" class="subtitleOverlay" aria-live="polite" hidden></div>
 
-    <script src="./static/app.js?v=20260514-country-flags" type="module"></script>
+    <script src="./static/app.js?v=20260525-season-episodes-rail" type="module"></script>
   </body>
 </html>
