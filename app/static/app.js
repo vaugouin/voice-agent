@@ -1,8 +1,12 @@
 const startButton = document.querySelector("#startButton");
 const stopButton = document.querySelector("#stopButton");
+const microphoneToggleButton = document.querySelector("#microphoneToggleButton");
+const lookToggleButton = document.querySelector("#lookToggleButton");
+const panel = document.querySelector(".panel");
 const historyBackButton = document.querySelector("#historyBackButton");
 const historyForwardButton = document.querySelector("#historyForwardButton");
 const questionInput = document.querySelector("#questionInput");
+const submitQuestionButton = document.querySelector("#submitQuestionButton");
 const newConversationButton = document.querySelector("#newConversationButton");
 const statusText = document.querySelector("#statusText");
 const statusDot = document.querySelector("#statusDot");
@@ -14,6 +18,10 @@ const resultsLoader = document.querySelector("#resultsLoader");
 const loadMoreButton = document.querySelector("#loadMoreButton");
 const resultsEnd = document.querySelector("#resultsEnd");
 const subtitleOverlay = document.querySelector("#subtitleOverlay");
+const queryDetailsDock = document.createElement("div");
+queryDetailsDock.id = "queryDetailsDock";
+queryDetailsDock.className = "queryDetailsDock";
+queryDetailsDock.hidden = true;
 
 let pc;
 let dc;
@@ -21,8 +29,33 @@ let localStream;
 let localAudioTrack;
 let sessionRunning = false;
 let textChatInFlight = false;
+let dictationActive = false;
+let dictationTranscribing = false;
+let dictationStream;
+let dictationRecorder;
+let dictationChunks = [];
+let dictationMimeType = "";
+let dictationStopReason = "";
+let dictationDiscard = false;
+let dictationRecordStartedAt = 0;
+let dictationMaxTimer = null;
+let dictationAudioContext = null;
+let dictationAnalyser = null;
+let dictationAnimationFrame = null;
+let dictationSilenceStartedAt = null;
+let dictationSpeechDetected = false;
+let dictationGeneration = 0;
+let dictationAbortController = null;
 let subtitleTimer = null;
 let subtitleQueue = [];
+let activeSpokenCardIndex = null;
+let assistantSpokenHighlightBuffer = "";
+let spokenAudioHighlightTimer = null;
+let spokenAudioHighlightCues = [];
+let spokenAudioHighlightCueKeys = new Set();
+let spokenAudioHighlightPlaying = false;
+let spokenAudioHighlightStartedAt = 0;
+let pendingRealtimeTextTurns = [];
 const handledCallIds = new Set();
 let currentSearchState = null;
 let loadingMore = false;
@@ -37,6 +70,8 @@ const maxContextItems = 10;
 const DETAIL_TOOL_ENTITIES = {
   get_movie_detail: "movie",
   get_series_detail: "serie",
+  get_season_detail: "season",
+  get_episode_detail: "episode",
   get_person_detail: "person",
   get_company_detail: "company",
   get_network_detail: "network",
@@ -44,6 +79,7 @@ const DETAIL_TOOL_ENTITIES = {
   get_topic_detail: "topic",
   get_list_detail: "list",
   get_movement_detail: "movement",
+  get_technical_detail: "technical",
   get_group_detail: "group",
   get_death_detail: "death",
   get_award_detail: "award",
@@ -63,6 +99,8 @@ let pendingResponseFallbackTimer = null;
 let microphoneEnableTimer = null;
 let reconnectTimer = null;
 let manuallyStopped = false;
+let userMicrophoneOpen = true;
+let userLookOpen = false;
 let connectionGeneration = 0;
 let reconnectAttempts = 0;
 let reconnectInProgress = false;
@@ -73,6 +111,10 @@ let disconnectWatchdogTimer = null;
 let keepAliveInterval = null;
 let keepAliveWorker = null;
 const keepAliveIntervalMs = 2000;
+const dictationSilenceThreshold = 0.02;
+const dictationSilenceMs = 1200;
+const dictationNoSpeechMs = 10000;
+const dictationMaxMs = 30000;
 
 let retainedContext = [];
 
@@ -82,6 +124,56 @@ function appUrl(path) {
 
 function setConversationActive(active) {
   newConversationButton.hidden = !active;
+}
+
+function syncResultsMode() {
+  panel.classList.toggle("resultsMode", !resultsPanel.hidden);
+}
+
+const resultsPanelObserver = new MutationObserver(syncResultsMode);
+resultsPanelObserver.observe(resultsPanel, { attributes: true, attributeFilter: ["hidden"] });
+syncResultsMode();
+
+function clearQueryDetailsDock() {
+  queryDetailsDock.hidden = true;
+  queryDetailsDock.replaceChildren();
+  document.querySelectorAll(".queryDetailsToggle").forEach((button) => {
+    button.setAttribute("aria-expanded", "false");
+    button.textContent = "▶";
+  });
+}
+
+function buildQueryDetailsToggle(detailsText) {
+  if (!detailsText) {
+    return null;
+  }
+
+  const button = document.createElement("button");
+  button.className = "queryDetailsToggle";
+  button.type = "button";
+  button.setAttribute("aria-label", "Toggle query details");
+  button.setAttribute("aria-expanded", "false");
+  button.textContent = "▶";
+  button.addEventListener("click", () => {
+    const shouldOpen = queryDetailsDock.hidden;
+    document.querySelectorAll(".queryDetailsToggle").forEach((item) => {
+      item.setAttribute("aria-expanded", "false");
+      item.textContent = "▶";
+    });
+    queryDetailsDock.replaceChildren();
+    if (shouldOpen) {
+      const pre = document.createElement("pre");
+      pre.textContent = detailsText;
+      queryDetailsDock.append(pre);
+      queryDetailsDock.hidden = false;
+      button.setAttribute("aria-expanded", "true");
+      button.textContent = "▲";
+    } else {
+      queryDetailsDock.hidden = true;
+      button.textContent = "▶";
+    }
+  });
+  return button;
 }
 
 function cloneHistoryValue(value) {
@@ -193,17 +285,103 @@ function hasQuestionText() {
   return Boolean(questionInput.value.trim());
 }
 
+function realtimeUnavailableReason() {
+  const PeerConnection = getPeerConnectionConstructor();
+  if (!window.isSecureContext) {
+    return "Voice requires HTTPS";
+  }
+  if (!PeerConnection) {
+    return "Voice not supported here";
+  }
+  if (!navigator.mediaDevices?.getUserMedia) {
+    return "Microphone not supported here";
+  }
+  return "";
+}
+
+function chooseDictationMimeType() {
+  if (typeof MediaRecorder !== "function") {
+    return "";
+  }
+  if (typeof MediaRecorder.isTypeSupported !== "function") {
+    return "";
+  }
+  const candidates = [
+    "audio/webm;codecs=opus",
+    "audio/webm",
+    "audio/mp4",
+    "audio/ogg;codecs=opus",
+    "audio/ogg",
+  ];
+  return candidates.find((type) => MediaRecorder.isTypeSupported(type)) || "";
+}
+
+function dictationUnavailableReason() {
+  if (!window.isSecureContext) {
+    return "Dictation requires HTTPS";
+  }
+  if (!navigator.mediaDevices?.getUserMedia) {
+    return "Microphone not supported here";
+  }
+  if (typeof MediaRecorder !== "function") {
+    return "Recording not supported here";
+  }
+  return "";
+}
+
 function updateSessionButtons() {
-  const hideStartForText = hasQuestionText() || textChatInFlight;
-  startButton.hidden = sessionRunning || hideStartForText;
+  const unavailableReason = realtimeUnavailableReason();
+  startButton.hidden = sessionRunning;
   stopButton.hidden = !sessionRunning;
-  startButton.disabled = sessionRunning || hideStartForText;
+  startButton.disabled = sessionRunning || Boolean(unavailableReason);
+  startButton.title = unavailableReason || "Talk";
+  startButton.setAttribute("aria-label", unavailableReason || "Talk");
   stopButton.disabled = !sessionRunning;
+  updateMicrophoneToggle();
 }
 
 function setSessionRunning(running) {
   sessionRunning = running;
   updateSessionButtons();
+}
+
+function updateMicrophoneToggle() {
+  const microphoneOpen = sessionRunning ? userMicrophoneOpen : dictationActive;
+  const unavailableReason = sessionRunning ? "" : dictationUnavailableReason();
+  let disabled = false;
+  let label = microphoneOpen ? "Mic Off" : "Mic On";
+  if (sessionRunning) {
+    disabled = !localAudioTrack;
+  } else if (dictationActive) {
+    label = "Stop dictation";
+  } else if (dictationTranscribing) {
+    label = "Transcribing";
+    disabled = true;
+  } else if (textChatInFlight) {
+    label = "Text response in progress";
+    disabled = true;
+  } else if (hasQuestionText()) {
+    label = "Clear typed question to dictate";
+    disabled = true;
+  } else if (unavailableReason) {
+    label = unavailableReason;
+    disabled = true;
+  } else {
+    label = "Dictate question";
+  }
+  microphoneToggleButton.classList.toggle("isClosed", !microphoneOpen);
+  microphoneToggleButton.disabled = disabled;
+  microphoneToggleButton.setAttribute("aria-pressed", String(microphoneOpen));
+  microphoneToggleButton.setAttribute("aria-label", label);
+  microphoneToggleButton.title = label;
+}
+
+function updateLookToggle() {
+  lookToggleButton.classList.toggle("isClosed", !userLookOpen);
+  lookToggleButton.setAttribute("aria-pressed", String(userLookOpen));
+  const label = userLookOpen ? "Look On" : "Look Off";
+  lookToggleButton.setAttribute("aria-label", label);
+  lookToggleButton.title = label;
 }
 
 function getPeerConnectionConstructor() {
@@ -227,6 +405,9 @@ function realtimeSupportSnapshot(reason) {
 
 function explainWebRtcUnavailable() {
   const snapshot = realtimeSupportSnapshot("webrtc unavailable");
+  if (/Apple Watch|Watch/i.test(navigator.userAgent) || /Watch/i.test(navigator.platform)) {
+    return "Voice is not supported on Apple Watch. Use typed questions on the watch, or use voice on iPhone Safari.";
+  }
   if (!snapshot.isSecureContext) {
     return "WebRTC is unavailable because this page is not running in a secure browser context. On iPhone, open the HTTPS deployment URL directly in Safari, for example https://www.vaugouin.com/voice-agent/.";
   }
@@ -518,6 +699,8 @@ async function logPeerStats(reason, peer) {
 function setLoadingResults(query) {
   setConversationActive(true);
   resultsPanel.hidden = false;
+  clearActiveSpokenCard();
+  assistantSpokenHighlightBuffer = "";
   resultsContent.replaceChildren();
   resultsLoader.hidden = true;
   loadMoreButton.hidden = true;
@@ -795,9 +978,46 @@ function buildCardText(title, subtitle = "") {
   return text;
 }
 
+function normalizeSpokenCardText(value) {
+  return String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/&/g, " and ")
+    .replace(/['\u2019]/g, "")
+    .replace(/[^a-z0-9]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function titleWithoutLeadingArticle(title) {
+  return normalizeSpokenCardText(title).replace(/^(?:the|a|an)\s+/, "");
+}
+
+function assignResultCardIndex(grid, card, { title = "", subtitle = "" } = {}) {
+  const index = grid.querySelectorAll(".search-poster-card").length + 1;
+  card.dataset.resultIndex = String(index);
+  const normalizedTitle = normalizeSpokenCardText(title);
+  const normalizedTitleKey = titleWithoutLeadingArticle(title);
+  const normalizedSubtitle = normalizeSpokenCardText(subtitle);
+  if (normalizedTitle) {
+    card.dataset.resultTitle = normalizedTitle;
+  }
+  if (normalizedTitleKey && normalizedTitleKey !== normalizedTitle) {
+    card.dataset.resultTitleKey = normalizedTitleKey;
+  }
+  if (normalizedSubtitle) {
+    card.dataset.resultSubtitle = normalizedSubtitle;
+  }
+}
+
 function appendCard(grid, cardSpec) {
   const card = document.createElement("div");
   card.className = "search-poster-card";
+  assignResultCardIndex(grid, card, {
+    title: cardSpec.title,
+    subtitle: cardSpec.subtitle,
+  });
   const link = document.createElement(cardSpec.detailRequest ? "button" : cardSpec.href ? "a" : "div");
   link.className = "search-poster-card-link";
   if (cardSpec.detailRequest) {
@@ -843,6 +1063,34 @@ function cardSpecFromRecord(record) {
       meta,
       rating: record.IMDB_RATING,
       overview: record.TAGLINE || record.OVERVIEW || "",
+    });
+  }
+
+  if (record.ID_EPISODE || type === "episode") {
+    const title = record.TITLE || record.CONTENT_TITLE || `Episode ${record.EPISODE_NUMBER || ""}`;
+    const episodeLabel = record.SEASON_NUMBER !== undefined && record.EPISODE_NUMBER !== undefined
+      ? `S${String(record.SEASON_NUMBER).padStart(2, "0")}E${String(record.EPISODE_NUMBER).padStart(2, "0")}`
+      : "";
+    return withRecordDetail({
+      title,
+      subtitle: episodeLabel,
+      imageUrl: tmdbImage(record.STILL_PATH, "w342"),
+      meta: [episodeLabel, formatDate(record.DAT_AIR), formatRuntime(record.RUNTIME)],
+      rating: record.VOTE_AVERAGE,
+      overview: record.OVERVIEW || "",
+    });
+  }
+
+  if (record.ID_SEASON || type === "season") {
+    const seasonNumber = Number(record.SEASON_NUMBER);
+    const title = record.TITLE || (seasonNumber === 0 ? "Specials" : `Season ${record.SEASON_NUMBER || ""}`);
+    return withRecordDetail({
+      title,
+      subtitle: firstValue(formatDate(record.DAT_AIR), record.AIR_YEAR),
+      imageUrl: tmdbImage(record.POSTER_PATH, "w342"),
+      meta: [record.EPISODE_COUNT ? `${record.EPISODE_COUNT} episodes` : "", formatDate(record.DAT_AIR)],
+      rating: record.VOTE_AVERAGE,
+      overview: record.OVERVIEW || "",
     });
   }
 
@@ -907,6 +1155,8 @@ function cardSpecFromRecord(record) {
     record.LIST_NAME ||
     record.COLLECTION_NAME ||
     record.MOVEMENT_NAME ||
+    record.DESCRIPTION ||
+    record.DESCRIPTION_FR ||
     record.GROUP_NAME ||
     record.DEATH_NAME ||
     record.AWARD_NAME ||
@@ -923,6 +1173,7 @@ function cardSpecFromRecord(record) {
         record.LIST_TYPE,
         record.COLLECTION_TYPE,
         record.MOVEMENT_TYPE,
+        record.TECHNICAL_TYPE ? prettyLabel(record.TECHNICAL_TYPE) : "",
         record.GROUP_TYPE,
         record.DEATH_TYPE,
         record.AWARD_TYPE,
@@ -939,6 +1190,7 @@ function cardSpecFromRecord(record) {
 function appendAggregateCard(grid, record) {
   const card = document.createElement("div");
   card.className = "search-poster-card";
+  assignResultCardIndex(grid, card);
   const content = document.createElement("div");
   content.className = "search-poster-card-link scalarGrid";
 
@@ -962,6 +1214,34 @@ function appendAggregateCard(grid, record) {
 
 function detailRequestFromRecord(record) {
   const type = String(record.CONTENT_TYPE || "").toLowerCase();
+  if (record.ID_EPISODE || type === "episode") {
+    if (
+      record.ID_SERIE !== null && record.ID_SERIE !== undefined &&
+      record.SEASON_NUMBER !== null && record.SEASON_NUMBER !== undefined &&
+      record.EPISODE_NUMBER !== null && record.EPISODE_NUMBER !== undefined
+    ) {
+      return {
+        toolName: "get_episode_detail",
+        id_serie: record.ID_SERIE,
+        season_number: record.SEASON_NUMBER,
+        episode_number: record.EPISODE_NUMBER,
+      };
+    }
+    return null;
+  }
+  if (record.ID_SEASON || type === "season") {
+    if (
+      record.ID_SERIE !== null && record.ID_SERIE !== undefined &&
+      record.SEASON_NUMBER !== null && record.SEASON_NUMBER !== undefined
+    ) {
+      return {
+        toolName: "get_season_detail",
+        id_serie: record.ID_SERIE,
+        season_number: record.SEASON_NUMBER,
+      };
+    }
+    return null;
+  }
   if (record.ID_MOVIE || type === "movie") {
     return record.ID_MOVIE ? { toolName: "get_movie_detail", id: record.ID_MOVIE } : null;
   }
@@ -988,6 +1268,9 @@ function detailRequestFromRecord(record) {
   }
   if (record.ID_MOVEMENT) {
     return { toolName: "get_movement_detail", id: record.ID_MOVEMENT };
+  }
+  if (record.ID_TECHNICAL) {
+    return { toolName: "get_technical_detail", id: record.ID_TECHNICAL };
   }
   if (record.ID_GROUP) {
     return { toolName: "get_group_detail", id: record.ID_GROUP };
@@ -1045,6 +1328,9 @@ function appendList(parent, title, values) {
 
 function visualTitle(item) {
   return firstValue(
+    item.SEASON_TITLE,
+    item.EPISODE_TITLE,
+    item.TITLE,
     item.MOVIE_TITLE,
     item.SERIE_TITLE,
     item.PERSON_NAME,
@@ -1058,6 +1344,8 @@ function visualTitle(item) {
     item.DEATH_NAME,
     item.AWARD_NAME,
     item.NOMINATION_NAME,
+    item.DESCRIPTION,
+    item.DESCRIPTION_FR,
     item.ITEM_LABEL,
     item.LOCATION_NAME
   );
@@ -1065,6 +1353,8 @@ function visualTitle(item) {
 
 function visualSubtitle(item) {
   return firstValue(
+    item.SEASON_SUBTITLE,
+    item.EPISODE_SUBTITLE,
     item.CAST_CHARACTER,
     item.CREW_DEPARTMENT,
     yearFromDate(item.DAT_RELEASE),
@@ -1073,11 +1363,55 @@ function visualSubtitle(item) {
     item.DEATH_TYPE,
     item.AWARD_TYPE,
     item.NOMINATION_TYPE,
+    item.TECHNICAL_TYPE ? prettyLabel(item.TECHNICAL_TYPE) : "",
     item.TOPIC_TYPE,
     item.COLLECTION_TYPE,
     item.LIST_TYPE,
     item.MOVEMENT_TYPE
   );
+}
+
+function seasonRailItems(items, idSerie) {
+  return (Array.isArray(items) ? items : [])
+    .filter((item) => item && typeof item === "object")
+    .map((item) => {
+      const seasonNumber = Number(item.SEASON_NUMBER);
+      const title = firstValue(
+        item.TITLE,
+        Number.isFinite(seasonNumber)
+          ? seasonNumber === 0
+            ? "Specials"
+            : `Season ${seasonNumber}`
+          : "",
+        "Season"
+      );
+      const airDate = firstValue(formatDate(item.DAT_AIR), item.AIR_YEAR);
+      const episodes = item.EPISODE_COUNT ? `${item.EPISODE_COUNT} episodes` : "";
+      return {
+        ...item,
+        ID_SERIE: item.ID_SERIE || idSerie,
+        SEASON_TITLE: title,
+        SEASON_SUBTITLE: uniqueNonEmpty([airDate, episodes]).join(" / "),
+      };
+    });
+}
+
+function episodeRailItems(items, idSerie, seasonNumber) {
+  return (Array.isArray(items) ? items : [])
+    .filter((item) => item && typeof item === "object")
+    .map((item) => {
+      const episodeNumber = Number(item.EPISODE_NUMBER);
+      const episodeLabel = Number.isFinite(episodeNumber) ? `Episode ${episodeNumber}` : "Episode";
+      const title = firstValue(item.TITLE, episodeLabel);
+      const airDate = firstValue(formatDate(item.DAT_AIR), item.AIR_YEAR);
+      return {
+        ...item,
+        ID_SERIE: item.ID_SERIE || idSerie,
+        SEASON_NUMBER: item.SEASON_NUMBER ?? seasonNumber,
+        EPISODE_TITLE: title,
+        EPISODE_SUBTITLE: uniqueNonEmpty([episodeLabel, airDate, formatRuntime(item.RUNTIME)]).join(" / "),
+      };
+    });
 }
 
 function uniqueNonEmpty(values) {
@@ -1177,7 +1511,7 @@ function dedupePersonCrewCredits(items) {
 
 function visualImage(item, kind = "poster") {
   const size = kind === "profile" ? "w185" : kind === "logo" ? "w342" : "w342";
-  return imageUrl(item.PROFILE_PATH || item.POSTER_PATH || item.LOGO_PATH || item.WIKIPEDIA_IMAGE_PATH, size);
+  return imageUrl(item.PROFILE_PATH || item.POSTER_PATH || item.STILL_PATH || item.IMAGE_PATH || item.LOGO_PATH || item.WIKIPEDIA_IMAGE_PATH, size);
 }
 
 function personPortraitImages(record) {
@@ -1386,6 +1720,109 @@ function buildPosterSwipeViewer(record) {
   return viewer;
 }
 
+function movieOrSerieBackdropImages(record) {
+  const backdrops = (Array.isArray(record.backdrops) ? record.backdrops : [])
+    .map((item) => imageUrl(item?.IMAGE_PATH, "w1280"))
+    .filter(Boolean);
+  const fallback = imageUrl(record.BACKDROP_PATH, "w1280");
+  return uniqueNonEmpty([...backdrops, fallback]);
+}
+
+function buildBackdropSwipeViewer(record) {
+  const images = movieOrSerieBackdropImages(record);
+  if (!images.length) {
+    return null;
+  }
+
+  const viewer = document.createElement("div");
+  viewer.className = "personPortraitViewer backdropViewer";
+  let index = 0;
+  let pointerStartX = null;
+  let swiped = false;
+  let slideshowTimer = null;
+
+  const img = document.createElement("img");
+  setImageText(img, `${titleForRecord(record)} backdrop`);
+  viewer.append(img);
+
+  const counter = document.createElement("div");
+  counter.className = "personPortraitCounter backdropCounter";
+
+  const slideshowButton = document.createElement("button");
+  slideshowButton.className = "slideshowToggle";
+  slideshowButton.type = "button";
+  slideshowButton.textContent = "\u25b6";
+  slideshowButton.setAttribute("aria-label", "Start backdrop slideshow");
+  slideshowButton.setAttribute("aria-pressed", "false");
+
+  const update = () => {
+    img.src = images[index] || "";
+    counter.textContent = `${index + 1} / ${images.length}`;
+  };
+  const show = (direction) => {
+    if (images.length < 2) {
+      return;
+    }
+    index = (index + direction + images.length) % images.length;
+    update();
+  };
+  const setSlideshowRunning = (running) => {
+    if (slideshowTimer) {
+      window.clearInterval(slideshowTimer);
+      slideshowTimer = null;
+    }
+    if (running && images.length > 1) {
+      slideshowTimer = window.setInterval(() => {
+        if (!viewer.isConnected) {
+          setSlideshowRunning(false);
+          return;
+        }
+        show(1);
+      }, 2600);
+    }
+    const isRunning = Boolean(slideshowTimer);
+    slideshowButton.textContent = isRunning ? "\u25a0" : "\u25b6";
+    slideshowButton.setAttribute("aria-label", `${isRunning ? "Stop" : "Start"} backdrop slideshow`);
+    slideshowButton.setAttribute("aria-pressed", isRunning ? "true" : "false");
+  };
+
+  img.addEventListener("click", () => {
+    if (swiped) {
+      swiped = false;
+      return;
+    }
+    toggleFullscreenImageViewer(viewer);
+  });
+  viewer.addEventListener("pointerdown", (event) => {
+    pointerStartX = event.clientX;
+    swiped = false;
+  });
+  viewer.addEventListener("pointerup", (event) => {
+    if (pointerStartX === null) {
+      return;
+    }
+    const deltaX = event.clientX - pointerStartX;
+    pointerStartX = null;
+    if (Math.abs(deltaX) >= 40) {
+      swiped = true;
+      show(deltaX < 0 ? 1 : -1);
+    }
+  });
+  viewer.addEventListener("pointercancel", () => {
+    pointerStartX = null;
+  });
+  slideshowButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    setSlideshowRunning(!slideshowTimer);
+  });
+
+  update();
+  if (images.length > 1) {
+    viewer.append(counter, slideshowButton);
+  }
+  return viewer;
+}
+
 function appendVisualRail(parent, title, items, { kind = "poster" } = {}) {
   const clean = (Array.isArray(items) ? items : [])
     .filter((item) => item && typeof item === "object" && visualTitle(item));
@@ -1494,6 +1931,7 @@ function appendMixedVisualSections(parent, record) {
   appendVisualRail(parent, "Topics", record.topics, { kind: "poster" });
   appendVisualRail(parent, "Lists", record.lists, { kind: "poster" });
   appendVisualRail(parent, "Movements", record.movements, { kind: "poster" });
+  appendVisualRail(parent, "Related technicals", record.siblings, { kind: "poster" });
   appendVisualRail(parent, "Groups", record.groups, { kind: "profile" });
   appendVisualRail(parent, "Deaths", record.deaths, { kind: "profile" });
   appendVisualRail(parent, "Companies", record.companies, { kind: "logo" });
@@ -1502,6 +1940,7 @@ function appendMixedVisualSections(parent, record) {
 
 function titleForRecord(record) {
   return firstValue(
+    record.TITLE,
     record.MOVIE_TITLE,
     record.SERIE_TITLE,
     record.PERSON_NAME,
@@ -1511,6 +1950,8 @@ function titleForRecord(record) {
     record.TOPIC_NAME,
     record.LIST_NAME,
     record.MOVEMENT_NAME,
+    record.DESCRIPTION,
+    record.DESCRIPTION_FR,
     record.GROUP_NAME,
     record.DEATH_NAME,
     record.AWARD_NAME,
@@ -1536,8 +1977,22 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
   media.className = "singleDetailPoster";
   if (record.ID_PERSON) {
     media.append(buildPersonPortraitViewer(record));
-  } else if (record.ID_MOVIE || record.ID_SERIE) {
+  } else if (record.ID_EPISODE) {
+    const still = imageUrl(record.STILL_PATH || record.WIKIPEDIA_IMAGE_PATH, "w780");
+    if (still) {
+      media.append(buildSingleImageViewer(record, still));
+    } else {
+      const fallback = document.createElement("div");
+      fallback.className = "posterFallback";
+      fallback.textContent = titleForRecord(record);
+      media.append(fallback);
+    }
+  } else if (record.ID_MOVIE || record.ID_SERIE || record.ID_SEASON) {
     media.append(buildPosterSwipeViewer(record));
+    const backdropViewer = buildBackdropSwipeViewer(record);
+    if (backdropViewer) {
+      media.append(backdropViewer);
+    }
   } else {
     const poster = imageUrl(record.POSTER_PATH || record.PROFILE_PATH || record.LOGO_PATH || record.WIKIPEDIA_IMAGE_PATH, "w500");
     if (poster) {
@@ -1561,7 +2016,53 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
   const metrics = document.createElement("div");
   metrics.className = "detailMetrics";
 
-  if (record.ID_MOVIE || String(record.CONTENT_TYPE || "").toLowerCase() === "movie") {
+  if (record.ID_EPISODE || String(record.CONTENT_TYPE || "").toLowerCase() === "episode") {
+    const crewCredits = dedupePersonCrewCredits(record.crew);
+    const episodeNumber = record.EPISODE_NUMBER !== null && record.EPISODE_NUMBER !== undefined
+      ? `Episode ${record.EPISODE_NUMBER}`
+      : "";
+    appendMetric(metrics, "Episode", episodeNumber);
+    appendMetric(metrics, "Aired", firstValue(formatDate(record.DAT_AIR), record.AIR_YEAR));
+    appendMetric(metrics, "Duration", formatRuntime(record.RUNTIME));
+    appendMetric(metrics, "Rating", formatRating(record.VOTE_AVERAGE));
+    if (metrics.children.length) {
+      body.append(metrics);
+    }
+    appendVisualRail(body, "Series", record.series ? [record.series] : [], { kind: "poster" });
+    appendVisualRail(body, "Season", record.season ? [{ ...record.season, ID_SERIE: record.ID_SERIE }] : [], { kind: "poster" });
+    if (!appendVisualRail(body, "Cast", record.cast, { kind: "profile" })) {
+      appendList(body, "Cast", namesFrom(record.cast, "PERSON_NAME", Infinity));
+    }
+    appendVisualRail(body, "Crew", crewCredits, { kind: "profile" });
+    appendVisualRail(
+      body,
+      "Stills",
+      (Array.isArray(record.stills) ? record.stills : []).map((item, index) => ({
+        ...item,
+        TITLE: `${titleForRecord(record)} still ${index + 1}`,
+      })),
+      { kind: "poster" }
+    );
+  } else if (record.ID_SEASON || String(record.CONTENT_TYPE || "").toLowerCase() === "season") {
+    const crewCredits = dedupePersonCrewCredits(record.crew);
+    appendMetric(metrics, "Aired", firstValue(formatDate(record.DAT_AIR), record.AIR_YEAR));
+    appendMetric(metrics, "Episodes", record.EPISODE_COUNT);
+    appendMetric(metrics, "Rating", formatRating(record.VOTE_AVERAGE));
+    if (metrics.children.length) {
+      body.append(metrics);
+    }
+    appendVisualRail(body, "Series", record.series ? [record.series] : [], { kind: "poster" });
+    appendVisualRail(
+      body,
+      "Episodes",
+      episodeRailItems(record.episodes, record.ID_SERIE, record.SEASON_NUMBER),
+      { kind: "poster" }
+    );
+    if (!appendVisualRail(body, "Cast", record.cast, { kind: "profile" })) {
+      appendList(body, "Cast", namesFrom(record.cast, "PERSON_NAME", Infinity));
+    }
+    appendVisualRail(body, "Crew", crewCredits, { kind: "profile" });
+  } else if (record.ID_MOVIE || String(record.CONTENT_TYPE || "").toLowerCase() === "movie") {
     const director = directorCredit(record);
     const crewCredits = dedupePersonCrewCredits(record.crew);
     appendMetric(metrics, "Released", firstValue(formatDate(record.DAT_RELEASE), record.RELEASE_YEAR));
@@ -1575,6 +2076,7 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
       appendList(body, "Cast", namesFrom(record.cast, "PERSON_NAME", Infinity));
     }
     appendVisualRail(body, "Crew", crewCredits, { kind: "profile" });
+    appendVisualRail(body, "Technicals", record.technicals, { kind: "poster" });
     appendMixedVisualSections(body, record);
   } else if (record.ID_SERIE || String(record.CONTENT_TYPE || "").toLowerCase() === "serie") {
     const director = directorCredit(record);
@@ -1587,6 +2089,7 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     if (metrics.children.length) {
       body.append(metrics);
     }
+    appendVisualRail(body, "Seasons", seasonRailItems(record.seasons, record.ID_SERIE), { kind: "poster" });
     if (!appendVisualRail(body, "Cast", record.cast, { kind: "profile" })) {
       appendList(body, "Cast", namesFrom(record.cast, "PERSON_NAME", Infinity));
     }
@@ -1621,7 +2124,7 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
       );
     }
   } else {
-    appendMetric(metrics, "Type", firstValue(record.COLLECTION_TYPE, record.TOPIC_TYPE, record.LIST_TYPE, record.MOVEMENT_TYPE, record.GROUP_TYPE, record.DEATH_TYPE, record.AWARD_TYPE, record.NOMINATION_TYPE, record.INSTANCE_OF));
+    appendMetric(metrics, "Type", firstValue(record.COLLECTION_TYPE, record.TOPIC_TYPE, record.LIST_TYPE, record.MOVEMENT_TYPE, record.TECHNICAL_TYPE ? prettyLabel(record.TECHNICAL_TYPE) : "", record.GROUP_TYPE, record.DEATH_TYPE, record.AWARD_TYPE, record.NOMINATION_TYPE, record.INSTANCE_OF));
     appendMetric(metrics, "Movies", record.MOVIE_COUNT);
     appendMetric(metrics, "Series", record.SERIE_COUNT);
     appendMetric(metrics, "Persons", record.PERSON_COUNT);
@@ -1660,7 +2163,7 @@ async function renderSingleRecordResult(parent, record) {
   }
 
   try {
-    const output = await callEntityDetail(request.toolName, { id: request.id });
+    const output = await callEntityDetail(request.toolName, request);
     renderSingleDetail(container, { ...record, ...(output.detail || {}) });
   } catch (error) {
     renderSingleDetail(container, record, { error: `Detail fetch failed: ${error.message}` });
@@ -1670,6 +2173,7 @@ async function renderSingleRecordResult(parent, record) {
 async function showRecordDetail(record, { skipHistory = false } = {}) {
   setConversationActive(true);
   resultsPanel.hidden = false;
+  clearQueryDetailsDock();
   resultsContent.replaceChildren();
   resultsLoader.hidden = true;
   loadMoreButton.hidden = true;
@@ -1687,6 +2191,7 @@ async function showRecordDetail(record, { skipHistory = false } = {}) {
 function setLoadingEntityDetail(toolName, args) {
   setConversationActive(true);
   resultsPanel.hidden = false;
+  clearQueryDetailsDock();
   resultsContent.replaceChildren();
   resultsLoader.hidden = true;
   loadMoreButton.hidden = true;
@@ -1708,6 +2213,7 @@ function setLoadingEntityDetail(toolName, args) {
 function renderEntityDetailOutput(output, args = {}, { skipHistory = false } = {}) {
   setConversationActive(true);
   resultsPanel.hidden = false;
+  clearQueryDetailsDock();
   resultsContent.replaceChildren();
   resultsLoader.hidden = true;
   loadMoreButton.hidden = true;
@@ -1764,6 +2270,8 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
   let grid = resultsContent.querySelector(".search-poster-card-grid");
 
   if (!append || !grid) {
+    clearActiveSpokenCard();
+    clearQueryDetailsDock();
     resultsContent.replaceChildren();
 
     const answerBlock = document.createElement("div");
@@ -1780,14 +2288,7 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
       errorEl.textContent = error;
       answerBlock.append(errorEl);
     }
-    resultsContent.append(answerBlock);
-
-    const details = document.createElement("details");
-    details.className = "queryDetails";
-    const summary = document.createElement("summary");
-    summary.textContent = "Click to expand query details";
-    const pre = document.createElement("pre");
-    pre.textContent = [
+    const detailsText = [
       upstream.justification || "",
       upstream.sql_query || output.sql_query || "",
       upstream.total_processing_time
@@ -1796,8 +2297,12 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
     ]
       .filter(Boolean)
       .join("\n\n");
-    details.append(summary, pre);
-    resultsContent.append(details);
+    const detailsToggle = buildQueryDetailsToggle(detailsText);
+    if (detailsToggle) {
+      answerBlock.append(detailsToggle);
+    }
+    resultsContent.append(answerBlock);
+    resultsContent.append(queryDetailsDock);
 
     const rowsPerPage = Number(output.rows_per_page || upstream.rows_per_page || rows.length || 0);
     const questionHashed = output.question_hashed || upstream.question_hashed || args.question_hashed || null;
@@ -1849,6 +2354,9 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
     empty.className = "search-poster-card-text";
     empty.textContent = "No displayable rows.";
     grid.append(empty);
+  }
+  if (assistantSpokenHighlightBuffer) {
+    enqueueSpokenAudioHighlightCues(assistantSpokenHighlightBuffer);
   }
 
   const rowsPerPage = Number(output.rows_per_page || upstream.rows_per_page || rows.length || 0);
@@ -1932,32 +2440,409 @@ function maybeLoadNextPage() {
   }
 }
 
-function splitSubtitleText(text) {
-  const clean = String(text || "").replace(/\s+/g, " ").trim();
+function resultCardCount() {
+  return resultsContent.querySelectorAll(".search-poster-card[data-result-index]").length;
+}
+
+function clearActiveSpokenCard() {
+  activeSpokenCardIndex = null;
+  resultsContent.querySelectorAll(".search-poster-card.isSpokenActive").forEach((card) => {
+    card.classList.remove("isSpokenActive");
+    card.removeAttribute("aria-current");
+  });
+  resultsContent.querySelectorAll(".search-poster-card-grid.hasSpokenActive").forEach((grid) => {
+    grid.classList.remove("hasSpokenActive");
+  });
+}
+
+function setActiveSpokenCard(index, { scroll = true } = {}) {
+  const numericIndex = Number(index);
+  if (!Number.isInteger(numericIndex) || numericIndex < 1) {
+    clearActiveSpokenCard();
+    return;
+  }
+
+  const card = resultsContent.querySelector(`.search-poster-card[data-result-index="${numericIndex}"]`);
+  if (!card) {
+    return;
+  }
+
+  if (activeSpokenCardIndex === numericIndex && card.classList.contains("isSpokenActive")) {
+    return;
+  }
+
+  clearActiveSpokenCard();
+  activeSpokenCardIndex = numericIndex;
+  card.classList.add("isSpokenActive");
+  card.setAttribute("aria-current", "true");
+  card.closest(".search-poster-card-grid")?.classList.add("hasSpokenActive");
+  if (scroll) {
+    card.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
+  }
+}
+
+function usefulSpokenTitleKey(key) {
+  if (!key || key.length < 4) {
+    return false;
+  }
+  return key.split(" ").some((part) => part.length >= 3);
+}
+
+function pushSpokenCardMatch(matches, index, position, keyLength = 0) {
+  if (!Number.isInteger(index) || index < 1 || position < 0) {
+    return;
+  }
+  const existing = matches.find((match) => (
+    match.index === index && Math.abs(match.position - position) < 8
+  ));
+  if (existing) {
+    existing.position = Math.min(existing.position, position);
+    existing.keyLength = Math.max(existing.keyLength, keyLength);
+    return;
+  }
+  matches.push({ index, position, keyLength });
+}
+
+function spokenCardMatchesFromText(text) {
+  const cardCount = resultCardCount();
+  if (!cardCount) {
+    return [];
+  }
+
+  const clean = String(text || "");
+  const matches = [];
+  const numericPatterns = [
+    /(^|[\s([{])(\d{1,3})[.)]\s+(?=\S)/g,
+    /(^|[\s([{])(\d{1,3})\s*[-:]\s+(?=\S)/g,
+    /(^|[\s([{])(?:card|result|number|#)\s*(\d{1,3})\b/gi,
+  ];
+
+  for (const pattern of numericPatterns) {
+    for (const match of clean.matchAll(pattern)) {
+      pushSpokenCardMatch(matches, Number(match[2]), (match.index || 0) + match[1].length);
+    }
+  }
+
+  const spokenNumberIndex = {
+    one: 1,
+    two: 2,
+    three: 3,
+    four: 4,
+    five: 5,
+    six: 6,
+    seven: 7,
+    eight: 8,
+    nine: 9,
+    ten: 10,
+    first: 1,
+    second: 2,
+    third: 3,
+    fourth: 4,
+    fifth: 5,
+    sixth: 6,
+    seventh: 7,
+    eighth: 8,
+    ninth: 9,
+    tenth: 10,
+  };
+  const ordinalPattern = /(^|[\s([{])(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)\b/gi;
+  for (const match of clean.matchAll(ordinalPattern)) {
+    pushSpokenCardMatch(
+      matches,
+      spokenNumberIndex[match[2].toLowerCase()],
+      (match.index || 0) + match[1].length,
+      match[2].length
+    );
+  }
+
+  const namedReferencePattern = /(^|[\s([{])(?:card|result|number|movie|film|series|show|item|option)\s+(one|two|three|four|five|six|seven|eight|nine|ten|first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)\b/gi;
+  for (const match of clean.matchAll(namedReferencePattern)) {
+    pushSpokenCardMatch(
+      matches,
+      spokenNumberIndex[match[2].toLowerCase()],
+      (match.index || 0) + match[1].length,
+      match[2].length
+    );
+  }
+
+  const normalizedText = normalizeSpokenCardText(clean);
+  const paddedText = ` ${normalizedText} `;
+  const cards = resultsContent.querySelectorAll(".search-poster-card[data-result-index]");
+  cards.forEach((card) => {
+    const index = Number(card.dataset.resultIndex);
+    if (!Number.isInteger(index) || index < 1 || index > cardCount) {
+      return;
+    }
+    const titleKeys = [
+      card.dataset.resultTitle || "",
+      card.dataset.resultTitleKey || "",
+    ].filter((value, position, values) => value && values.indexOf(value) === position);
+    titleKeys.forEach((key) => {
+      if (!usefulSpokenTitleKey(key)) {
+        return;
+      }
+      let searchFrom = 0;
+      const needle = ` ${key} `;
+      while (searchFrom < paddedText.length) {
+        const position = paddedText.indexOf(needle, searchFrom);
+        if (position < 0) {
+          break;
+        }
+        pushSpokenCardMatch(matches, index, position, key.length);
+        searchFrom = position + Math.max(needle.length - 1, 1);
+      }
+    });
+  });
+
+  return matches
+    .filter((match) => match.index >= 1 && match.index <= cardCount)
+    .sort((a, b) => (
+      a.position - b.position ||
+      b.keyLength - a.keyLength ||
+      a.index - b.index
+    ));
+}
+
+function spokenCardIndexFromText(text) {
+  const matches = spokenCardMatchesFromText(text);
+  const latest = matches[matches.length - 1];
+
+  return latest?.index || null;
+}
+
+function syncSpokenCardHighlightFromText(text, options = {}) {
+  const index = spokenCardIndexFromText(text);
+  if (index) {
+    setActiveSpokenCard(index, options);
+  }
+}
+
+function clearSpokenAudioHighlightTimer() {
+  if (spokenAudioHighlightTimer) {
+    clearTimeout(spokenAudioHighlightTimer);
+    spokenAudioHighlightTimer = null;
+  }
+}
+
+function resetSpokenAudioHighlightState({ clearHighlight = true } = {}) {
+  clearSpokenAudioHighlightTimer();
+  assistantSpokenHighlightBuffer = "";
+  spokenAudioHighlightCues = [];
+  spokenAudioHighlightCueKeys = new Set();
+  spokenAudioHighlightPlaying = false;
+  spokenAudioHighlightStartedAt = 0;
+  if (clearHighlight) {
+    clearActiveSpokenCard();
+  }
+}
+
+function scheduleNextSpokenAudioHighlightCue() {
+  if (!spokenAudioHighlightPlaying || spokenAudioHighlightTimer || !spokenAudioHighlightCues.length) {
+    return;
+  }
+
+  const cue = spokenAudioHighlightCues[0];
+  const elapsedMs = Date.now() - spokenAudioHighlightStartedAt;
+  const dueMs = spokenAudioHighlightInitialDelayMs + cue.position * spokenAudioHighlightMsPerChar;
+  const delayMs = Math.max(spokenAudioHighlightMinDelayMs, dueMs - elapsedMs);
+  spokenAudioHighlightTimer = window.setTimeout(() => {
+    spokenAudioHighlightTimer = null;
+    const nextCue = spokenAudioHighlightCues.shift();
+    if (nextCue) {
+      setActiveSpokenCard(nextCue.index);
+    }
+    scheduleNextSpokenAudioHighlightCue();
+  }, delayMs);
+}
+
+function enqueueSpokenAudioHighlightCues(text) {
+  for (const match of spokenCardMatchesFromText(text)) {
+    const key = `${match.index}:${Math.round(match.position / 8)}`;
+    if (spokenAudioHighlightCueKeys.has(key)) {
+      continue;
+    }
+    spokenAudioHighlightCueKeys.add(key);
+    spokenAudioHighlightCues.push({
+      index: match.index,
+      position: match.position,
+    });
+  }
+  spokenAudioHighlightCues.sort((a, b) => a.position - b.position || a.index - b.index);
+  scheduleNextSpokenAudioHighlightCue();
+}
+
+function startSpokenAudioHighlightPlayback() {
+  spokenAudioHighlightPlaying = true;
+  spokenAudioHighlightStartedAt = Date.now();
+  scheduleNextSpokenAudioHighlightCue();
+}
+
+function syncSpokenCardHighlightFromTranscriptDelta(delta) {
+  if (!delta) {
+    return;
+  }
+  assistantSpokenHighlightBuffer = `${assistantSpokenHighlightBuffer}${delta}`;
+  enqueueSpokenAudioHighlightCues(assistantSpokenHighlightBuffer);
+}
+
+const subtitleChunkTarget = 150;
+const subtitleLongBlockLimit = 260;
+const subtitleListItemPattern = /^(?:\d{1,3}[.)]|[-*]|\u2022)\s+\S/;
+const spokenAudioHighlightInitialDelayMs = 450;
+const spokenAudioHighlightMsPerChar = 52;
+const spokenAudioHighlightMinDelayMs = 80;
+
+function normalizeSubtitleText(text) {
+  const clean = String(text || "")
+    .replace(/\r\n?/g, "\n")
+    .replace(/\u00a0/g, " ")
+    .replace(/[ \t]+/g, " ")
+    .replace(/[ \t]*\n[ \t]*/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+
+  if (!clean) {
+    return "";
+  }
+
+  return clean
+    .replace(/([^\n])\s+((?:\d{1,3}[.)])\s+\S)/g, "$1\n$2")
+    .replace(/([.!?]"?)\s+((?:[-*]|\u2022)\s+\S)/g, "$1\n$2");
+}
+
+function isSubtitleListItem(text) {
+  return subtitleListItemPattern.test(text.trim());
+}
+
+function splitSubtitleBlocks(text) {
+  const clean = normalizeSubtitleText(text);
   if (!clean) {
     return [];
   }
+
+  const blocks = [];
+  let paragraphLines = [];
+  let activeListIndex = -1;
+  let previousWasBlank = false;
+
+  function flushParagraph() {
+    if (!paragraphLines.length) {
+      return;
+    }
+    blocks.push(paragraphLines.join(" "));
+    paragraphLines = [];
+  }
+
+  for (const rawLine of clean.split("\n")) {
+    const line = rawLine.trim();
+    if (!line) {
+      flushParagraph();
+      activeListIndex = -1;
+      previousWasBlank = true;
+      continue;
+    }
+
+    if (isSubtitleListItem(line)) {
+      flushParagraph();
+      blocks.push(line);
+      activeListIndex = blocks.length - 1;
+      previousWasBlank = false;
+      continue;
+    }
+
+    if (activeListIndex >= 0 && !previousWasBlank) {
+      blocks[activeListIndex] = `${blocks[activeListIndex]} ${line}`;
+    } else {
+      paragraphLines.push(line);
+      activeListIndex = -1;
+    }
+    previousWasBlank = false;
+  }
+
+  flushParagraph();
+  return blocks;
+}
+
+function splitLongSubtitleBlock(block) {
+  if (block.length <= subtitleLongBlockLimit) {
+    return [block];
+  }
+
+  const listMatch = block.match(/^((?:\d{1,3}[.)]|[-*]|\u2022)\s+)(.+)$/);
+  if (listMatch) {
+    const [, marker, body] = listMatch;
+    return splitLongSubtitleBlock(body).map((part, index) => (
+      index === 0 ? `${marker}${part}` : part
+    ));
+  }
+
   const chunks = [];
-  const sentences = clean.match(/[^.!?]+[.!?]+|[^.!?]+$/g) || [clean];
+  const sentences = block.match(/[^.!?]+[.!?]+(?:["')\]]+)?|[^.!?]+$/g) || [block];
   let current = "";
   for (const sentence of sentences) {
-    const next = `${current} ${sentence}`.trim();
-    if (next.length <= 150) {
+    const trimmed = sentence.trim();
+    if (!trimmed) {
+      continue;
+    }
+    const next = `${current} ${trimmed}`.trim();
+    if (next.length <= subtitleChunkTarget) {
       current = next;
       continue;
     }
     if (current) {
       chunks.push(current);
     }
-    if (sentence.length <= 150) {
-      current = sentence.trim();
+    if (trimmed.length <= subtitleLongBlockLimit) {
+      current = trimmed;
       continue;
     }
-    for (let index = 0; index < sentence.length; index += 150) {
-      chunks.push(sentence.slice(index, index + 150).trim());
+    for (let index = 0; index < trimmed.length; index += subtitleChunkTarget) {
+      chunks.push(trimmed.slice(index, index + subtitleChunkTarget).trim());
     }
     current = "";
   }
+  if (current) {
+    chunks.push(current);
+  }
+  return chunks;
+}
+
+function splitSubtitleText(text) {
+  const blocks = splitSubtitleBlocks(text);
+  const chunks = [];
+  let current = "";
+  let currentIsList = false;
+
+  for (const block of blocks) {
+    for (const part of splitLongSubtitleBlock(block)) {
+      const partIsList = isSubtitleListItem(part);
+      if (partIsList) {
+        if (current) {
+          chunks.push(current);
+          current = "";
+        }
+        chunks.push(part);
+        currentIsList = false;
+        continue;
+      }
+
+      if (current && currentIsList !== partIsList) {
+        chunks.push(current);
+        current = "";
+      }
+
+      const separator = " ";
+      const next = current ? `${current}${separator}${part}` : part;
+      if (current && next.length > subtitleChunkTarget) {
+        chunks.push(current);
+        current = part;
+      } else {
+        current = next;
+      }
+      currentIsList = partIsList;
+    }
+  }
+
   if (current) {
     chunks.push(current);
   }
@@ -1976,10 +2861,15 @@ function showNextSubtitle() {
   if (!text) {
     subtitleOverlay.hidden = true;
     subtitleOverlay.textContent = "";
+    clearActiveSpokenCard();
     return;
   }
   subtitleOverlay.textContent = text;
   subtitleOverlay.hidden = false;
+  const spokenCardIndex = spokenCardIndexFromText(text);
+  if (spokenCardIndex) {
+    setActiveSpokenCard(spokenCardIndex);
+  }
   const duration = Math.max(3500, Math.min(12000, text.length * 65));
   subtitleTimer = window.setTimeout(showNextSubtitle, duration);
 }
@@ -2009,6 +2899,7 @@ function resizeQuestionInput() {
 
 function syncQuestionInputUi() {
   resizeQuestionInput();
+  submitQuestionButton.hidden = !hasQuestionText();
   updateSessionButtons();
   window.setTimeout(updateSessionButtons, 0);
 }
@@ -2037,8 +2928,73 @@ async function callTextChat(message) {
   return body;
 }
 
-async function sendTextMessage() {
-  const text = questionInput.value.trim();
+async function callAudioTranscription(audioBlob, signal) {
+  const response = await fetch(appUrl("transcribe"), {
+    method: "POST",
+    headers: { "Content-Type": audioBlob.type || "audio/webm" },
+    body: audioBlob,
+    signal,
+  });
+
+  const rawBody = await response.text();
+  let body;
+  try {
+    body = JSON.parse(rawBody);
+  } catch {
+    body = { text: rawBody };
+  }
+
+  if (!response.ok) {
+    throw new Error(JSON.stringify(body));
+  }
+  return body;
+}
+
+function canSendTypedRealtimeTurn() {
+  return sessionRunning;
+}
+
+function sendTypedRealtimeTurn(text, { createResponse = true } = {}) {
+  const interruptedResponse = Boolean(activeResponseId);
+  const interruptedAudio = Boolean(activeAudioResponseId);
+  if (interruptedResponse) {
+    sendEvent({ type: "response.cancel" });
+    activeResponseId = null;
+  }
+  if (interruptedAudio) {
+    sendEvent({ type: "output_audio_buffer.clear" });
+    activeAudioResponseId = null;
+  }
+
+  setStatus("Thinking", "live");
+  clientLog("realtime_text_sent", {
+    length: text.length,
+    interruptedResponse,
+    interruptedAudio,
+  });
+
+  const inputSent = sendEvent({
+    type: "conversation.item.create",
+    item: {
+      type: "message",
+      role: "user",
+      content: [{ type: "input_text", text }],
+    },
+  });
+  const responseSent = !createResponse || sendEvent({ type: "response.create" });
+  if (!inputSent || !responseSent) {
+    setStatus("Realtime text error", "error");
+    clientLog("realtime_text_error", { error: "data channel is not open" }, "error");
+  }
+}
+
+function submitQuestion() {
+  sendTextMessage().catch((error) => {
+    log("text submit error", error.message);
+  });
+}
+
+async function sendTextChatMessage(text, { source = "typed" } = {}) {
   if (!text) {
     return;
   }
@@ -2055,12 +3011,13 @@ async function sendTextMessage() {
   textChatInFlight = true;
   updateSessionButtons();
   questionInput.value = "";
+  submitQuestionButton.hidden = true;
   resizeQuestionInput();
   updateSessionButtons();
   lastUserTranscript = text;
   addRetainedContext({ type: "user", text });
   setStatus("Thinking in text", "live");
-  clientLog("text_chat_sent", { length: text.length });
+  clientLog("text_chat_sent", { length: text.length, source });
 
   try {
     const output = await callTextChat(text);
@@ -2079,6 +3036,7 @@ async function sendTextMessage() {
     setStatus("Text response", "live");
     clientLog("text_chat_success", {
       model: output.model || "",
+      source,
       length: responseText.length,
       tool_count: Array.isArray(output.tool_outputs) ? output.tool_outputs.length : 0,
     });
@@ -2087,11 +3045,37 @@ async function sendTextMessage() {
     showSubtitleText(message);
     setStatus("Text error", "error");
     log("text chat error", error.message);
-    clientLog("text_chat_error", { error: error.message }, "error");
+    clientLog("text_chat_error", { source, error: error.message }, "error");
   } finally {
     textChatInFlight = false;
     updateSessionButtons();
   }
+}
+
+async function sendTextMessage() {
+  const text = questionInput.value.trim();
+  if (!text) {
+    return;
+  }
+
+  if (canSendTypedRealtimeTurn()) {
+    questionInput.value = "";
+    submitQuestionButton.hidden = true;
+    resizeQuestionInput();
+    updateSessionButtons();
+    lastUserTranscript = text;
+    if (dc?.readyState === "open") {
+      addRetainedContext({ type: "user", text });
+      sendTypedRealtimeTurn(text);
+    } else {
+      pendingRealtimeTextTurns.push(text);
+      setStatus("Connecting for voice reply", "live");
+      clientLog("realtime_text_queued", { length: text.length });
+    }
+    return;
+  }
+
+  await sendTextChatMessage(text, { source: "typed" });
 }
 
 function loadRetainedContext() {
@@ -2424,6 +3408,7 @@ function cleanupConnection() {
   connectionGeneration += 1;
   clearResponseFallback();
   clearDisconnectWatchdog();
+  resetSpokenAudioHighlightState();
   stopKeepAlive();
   if (microphoneEnableTimer) {
     clearTimeout(microphoneEnableTimer);
@@ -2502,11 +3487,307 @@ function scheduleReconnect(reason, delayMs = 1500) {
   }, delayMs);
 }
 
+function clearDictationMonitor() {
+  if (dictationMaxTimer) {
+    clearTimeout(dictationMaxTimer);
+    dictationMaxTimer = null;
+  }
+  if (dictationAnimationFrame) {
+    cancelAnimationFrame(dictationAnimationFrame);
+    dictationAnimationFrame = null;
+  }
+  dictationAnalyser = null;
+  if (dictationAudioContext) {
+    dictationAudioContext.close().catch(() => {});
+    dictationAudioContext = null;
+  }
+  dictationSilenceStartedAt = null;
+}
+
+function stopDictationTracks() {
+  dictationStream?.getTracks().forEach((track) => track.stop());
+  dictationStream = undefined;
+}
+
+function resetDictationCaptureState() {
+  dictationRecorder = undefined;
+  dictationChunks = [];
+  dictationMimeType = "";
+  dictationStopReason = "";
+  dictationDiscard = false;
+  dictationRecordStartedAt = 0;
+  dictationSpeechDetected = false;
+}
+
+function startDictationSilenceMonitor(stream, generation) {
+  const AudioContextConstructor = window.AudioContext || window.webkitAudioContext;
+  if (!AudioContextConstructor) {
+    return;
+  }
+
+  try {
+    dictationAudioContext = new AudioContextConstructor();
+    const source = dictationAudioContext.createMediaStreamSource(stream);
+    dictationAnalyser = dictationAudioContext.createAnalyser();
+    dictationAnalyser.fftSize = 2048;
+    source.connect(dictationAnalyser);
+  } catch (error) {
+    clientLog("dictation_monitor_error", { name: error.name, message: error.message }, "error");
+    return;
+  }
+
+  const samples = new Uint8Array(dictationAnalyser.fftSize);
+  const tick = () => {
+    if (generation !== dictationGeneration || !dictationActive || !dictationAnalyser) {
+      return;
+    }
+
+    dictationAnalyser.getByteTimeDomainData(samples);
+    let sumSquares = 0;
+    for (const sample of samples) {
+      const normalized = (sample - 128) / 128;
+      sumSquares += normalized * normalized;
+    }
+    const rms = Math.sqrt(sumSquares / samples.length);
+    const now = Date.now();
+
+    if (rms >= dictationSilenceThreshold) {
+      dictationSpeechDetected = true;
+      dictationSilenceStartedAt = null;
+    } else if (dictationSpeechDetected) {
+      dictationSilenceStartedAt ||= now;
+      if (now - dictationSilenceStartedAt >= dictationSilenceMs) {
+        stopIdleDictation("silence");
+        return;
+      }
+    } else if (now - dictationRecordStartedAt >= dictationNoSpeechMs) {
+      stopIdleDictation("no speech");
+      return;
+    }
+
+    dictationAnimationFrame = requestAnimationFrame(tick);
+  };
+
+  dictationAnimationFrame = requestAnimationFrame(tick);
+}
+
+function stopIdleDictation(reason = "manual", { discard = false } = {}) {
+  if (!dictationActive) {
+    return;
+  }
+
+  dictationStopReason = reason;
+  dictationDiscard = dictationDiscard || discard;
+  dictationActive = false;
+  dictationTranscribing = !dictationDiscard;
+  clearDictationMonitor();
+  setStatus(dictationDiscard ? "Idle" : "Transcribing speech", dictationDiscard ? "idle" : "live");
+  updateSessionButtons();
+
+  if (dictationRecorder && dictationRecorder.state !== "inactive") {
+    try {
+      dictationRecorder.requestData();
+    } catch (error) {
+      clientLog("dictation_request_data_error", { name: error.name, message: error.message }, "error");
+    }
+    dictationRecorder.stop();
+  } else {
+    finishIdleDictation(dictationGeneration).catch((error) => {
+      log("dictation finish error", error.message);
+    });
+  }
+}
+
+async function finishIdleDictation(generation) {
+  const chunks = dictationChunks.slice();
+  const mimeType = dictationMimeType || dictationRecorder?.mimeType || chunks[0]?.type || "audio/webm";
+  const stopReason = dictationStopReason;
+  const discard = dictationDiscard;
+
+  stopDictationTracks();
+  if (discard || generation !== dictationGeneration) {
+    dictationTranscribing = false;
+    clearDictationMonitor();
+    resetDictationCaptureState();
+    updateSessionButtons();
+    releaseWakeLock("dictation");
+    return;
+  }
+
+  if (!chunks.length) {
+    dictationTranscribing = false;
+    resetDictationCaptureState();
+    setStatus("No speech detected", "error");
+    showSubtitleText("I could not hear a question.");
+    clientLog("dictation_empty", { stopReason }, "error");
+    updateSessionButtons();
+    releaseWakeLock("dictation");
+    return;
+  }
+
+  const audioBlob = new Blob(chunks, { type: mimeType });
+  if (!audioBlob.size) {
+    dictationTranscribing = false;
+    resetDictationCaptureState();
+    setStatus("No speech detected", "error");
+    showSubtitleText("I could not hear a question.");
+    clientLog("dictation_empty_blob", { stopReason }, "error");
+    updateSessionButtons();
+    releaseWakeLock("dictation");
+    return;
+  }
+
+  dictationAbortController = new AbortController();
+  try {
+    clientLog("dictation_transcribe_sent", {
+      bytes: audioBlob.size,
+      mimeType: audioBlob.type,
+      stopReason,
+      durationMs: Date.now() - dictationRecordStartedAt,
+    });
+    const output = await callAudioTranscription(audioBlob, dictationAbortController.signal);
+    if (generation !== dictationGeneration) {
+      return;
+    }
+    const transcript = String(output.text || "").trim();
+    if (!transcript) {
+      setStatus("No speech detected", "error");
+      showSubtitleText("I could not hear a question.");
+      clientLog("dictation_transcript_empty", { model: output.model || "" }, "error");
+      return;
+    }
+
+    clientLog("dictation_transcribed", {
+      model: output.model || "",
+      length: transcript.length,
+    });
+    await sendTextChatMessage(transcript, { source: "dictation" });
+  } catch (error) {
+    if (error.name === "AbortError") {
+      return;
+    }
+    const message = `Dictation failed: ${error.message}`;
+    showSubtitleText(message);
+    setStatus("Dictation error", "error");
+    log("dictation error", error.message);
+    clientLog("dictation_error", { error: error.message }, "error");
+  } finally {
+    if (generation === dictationGeneration) {
+      dictationTranscribing = false;
+      dictationAbortController = null;
+      resetDictationCaptureState();
+      updateSessionButtons();
+      releaseWakeLock("dictation");
+    }
+  }
+}
+
+async function startIdleDictation() {
+  if (sessionRunning || dictationActive || dictationTranscribing || textChatInFlight) {
+    return;
+  }
+
+  const unavailableReason = dictationUnavailableReason();
+  if (unavailableReason) {
+    throw new Error(unavailableReason);
+  }
+
+  const generation = ++dictationGeneration;
+  dictationDiscard = false;
+  dictationChunks = [];
+  dictationMimeType = chooseDictationMimeType();
+  dictationRecordStartedAt = Date.now();
+  dictationSpeechDetected = false;
+  dictationSilenceStartedAt = null;
+
+  setConversationActive(true);
+  setStatus("Requesting microphone", "live");
+  updateSessionButtons();
+  requestWakeLock("dictation");
+
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: {
+        echoCancellation: true,
+        noiseSuppression: true,
+        autoGainControl: true,
+      },
+    });
+    if (generation !== dictationGeneration) {
+      stream.getTracks().forEach((track) => track.stop());
+      return;
+    }
+
+    const recorderOptions = dictationMimeType ? { mimeType: dictationMimeType } : {};
+    const recorder = new MediaRecorder(stream, recorderOptions);
+    dictationStream = stream;
+    dictationRecorder = recorder;
+    dictationMimeType = recorder.mimeType || dictationMimeType || "audio/webm";
+
+    recorder.addEventListener("dataavailable", (event) => {
+      if (event.data?.size) {
+        dictationChunks.push(event.data);
+      }
+    });
+    recorder.addEventListener("stop", () => {
+      finishIdleDictation(generation).catch((error) => {
+        log("dictation finish error", error.message);
+      });
+    }, { once: true });
+    recorder.addEventListener("error", (event) => {
+      clientLog("dictation_recorder_error", {
+        name: event.error?.name || "",
+        message: event.error?.message || "Recorder error",
+      }, "error");
+      stopIdleDictation("recorder error");
+    });
+
+    recorder.start(250);
+    dictationActive = true;
+    dictationTranscribing = false;
+    setStatus("Dictation listening", "live");
+    updateSessionButtons();
+    startDictationSilenceMonitor(stream, generation);
+    dictationMaxTimer = window.setTimeout(() => {
+      stopIdleDictation("max duration");
+    }, dictationMaxMs);
+    clientLog("dictation_started", { mimeType: dictationMimeType });
+  } catch (error) {
+    stream?.getTracks().forEach((track) => track.stop());
+    dictationActive = false;
+    dictationTranscribing = false;
+    resetDictationCaptureState();
+    updateSessionButtons();
+    releaseWakeLock("dictation");
+    throw error;
+  }
+}
+
+function cancelIdleDictation(reason = "dictation cancelled") {
+  dictationGeneration += 1;
+  dictationAbortController?.abort();
+  dictationAbortController = null;
+  if (dictationActive) {
+    stopIdleDictation(reason, { discard: true });
+  } else {
+    clearDictationMonitor();
+    stopDictationTracks();
+    dictationActive = false;
+    dictationTranscribing = false;
+    resetDictationCaptureState();
+    updateSessionButtons();
+    releaseWakeLock("dictation");
+  }
+}
+
 function setMicrophoneEnabled(enabled) {
   if (localAudioTrack) {
     localAudioTrack.enabled = enabled;
   }
-  log("microphone", enabled ? "enabled" : "muted during tool work");
+  updateMicrophoneToggle();
+  const microphoneState = enabled ? "enabled" : userMicrophoneOpen ? "muted during tool work" : "closed by user";
+  log("microphone", microphoneState);
   clientLog("microphone", {
     enabled,
     activeResponseId,
@@ -2525,6 +3806,7 @@ function setMicrophoneEnabled(enabled) {
       microphoneEnableTimer = null;
       if (localAudioTrack && canEnableMicrophone()) {
         localAudioTrack.enabled = true;
+        updateMicrophoneToggle();
         log("microphone", "auto re-enabled after audio watchdog");
         clientLog("microphone_watchdog_reenabled", {
           activeResponseId,
@@ -2545,7 +3827,7 @@ function setMicrophoneEnabled(enabled) {
 }
 
 function canEnableMicrophone() {
-  return toolCallsInFlight === 0 && !awaitingToolResponse;
+  return userMicrophoneOpen && toolCallsInFlight === 0 && !awaitingToolResponse;
 }
 
 function syncMicrophone(reason) {
@@ -2559,6 +3841,97 @@ function syncMicrophone(reason) {
     toolCallsInFlight,
     awaitingToolResponse,
   });
+}
+
+function toggleMicrophone() {
+  if (!sessionRunning) {
+    if (dictationActive) {
+      stopIdleDictation("manual");
+      return;
+    }
+    startIdleDictation().catch((error) => {
+      const permissionDenied =
+        error.name === "NotAllowedError" ||
+        error.name === "SecurityError" ||
+        error.message.toLowerCase().includes("permission denied");
+
+      if (permissionDenied) {
+        setStatus("Microphone permission denied", "error");
+        clientLog("dictation_microphone_permission_denied", {
+          name: error.name,
+          message: error.message,
+        }, "error");
+        log(
+          "microphone permission denied",
+          "Allow microphone access for this site, or open http://127.0.0.1:3000 in Chrome/Edge and allow the microphone prompt."
+        );
+        return;
+      }
+
+      const unsupported =
+        error.message.toLowerCase().includes("not supported") ||
+        error.message.toLowerCase().includes("requires https") ||
+        error.message.toLowerCase().includes("format not supported");
+      setStatus(unsupported ? "Dictation not supported here" : "Dictation failed", "error");
+      clientLog("dictation_start_error", { name: error.name, message: error.message }, "error");
+      log("dictation start error", error.message);
+    });
+    return;
+  }
+
+  if (!localAudioTrack) {
+    return;
+  }
+  userMicrophoneOpen = !userMicrophoneOpen;
+  syncMicrophone("manual microphone toggle");
+  log("microphone switch", userMicrophoneOpen ? "open" : "closed");
+}
+
+function toggleLook() {
+  userLookOpen = !userLookOpen;
+  updateLookToggle();
+  log("look switch", userLookOpen ? "open" : "closed");
+  clientLog("look_toggle", { enabled: userLookOpen });
+}
+
+function compactWikipediaContent(detail) {
+  const sections = Array.isArray(detail?.wikipedia_content) ? detail.wikipedia_content : [];
+  const compact = [];
+  for (const section of sections) {
+    if (!section || typeof section !== "object") {
+      continue;
+    }
+    const title = String(section.title || section.TITLE || "").trim();
+    let content = String(section.content || section.CONTENT || "").trim();
+    if (!content) {
+      continue;
+    }
+    if (content.length > 1200) {
+      content = `${content.slice(0, 1200).trimEnd()}...`;
+    }
+    compact.push({ title, content });
+    if (compact.length >= 4) {
+      break;
+    }
+  }
+  return compact;
+}
+
+function compactDetailForModel(output, fallbackEntity) {
+  const detail = output?.detail && typeof output.detail === "object" ? output.detail : null;
+  if (!detail) {
+    return output;
+  }
+  const { wikipedia_content: _wikipediaContent, ...compactDetail } = detail;
+  return {
+    error: output.error || "",
+    entity: output.entity || fallbackEntity || "",
+    id_name: output.id_name || "",
+    id: output.id || "",
+    endpoint: output.endpoint || "",
+    detail: compactDetail,
+    wikipedia_content: compactWikipediaContent(detail),
+  };
 }
 
 async function callText2Sql(args) {
@@ -2589,13 +3962,48 @@ async function callText2Sql(args) {
 
 async function callEntityDetail(toolName, args) {
   const entity = DETAIL_TOOL_ENTITIES[toolName];
-  const id = args.id || args.wikidata_id || args.ID_WIKIDATA || args.ID_MOVIE || args.ID_SERIE || args.ID_PERSON;
-  if (!entity || !id) {
+  const hasValue = (value) => value !== null && value !== undefined && String(value).trim() !== "";
+  let detailPath = "";
+  if (entity === "season") {
+    const idSerie = args.id_serie ?? args.ID_SERIE;
+    const seasonNumber = args.season_number ?? args.SEASON_NUMBER;
+    if (!hasValue(idSerie) || !hasValue(seasonNumber)) {
+      throw new Error(`Missing id for ${toolName}`);
+    }
+    detailPath = `tool/detail/season/${encodeURIComponent(String(idSerie))}/${encodeURIComponent(String(seasonNumber))}`;
+  } else if (entity === "episode") {
+    const idSerie = args.id_serie ?? args.ID_SERIE;
+    const seasonNumber = args.season_number ?? args.SEASON_NUMBER;
+    const episodeNumber = args.episode_number ?? args.EPISODE_NUMBER;
+    if (!hasValue(idSerie) || !hasValue(seasonNumber) || !hasValue(episodeNumber)) {
+      throw new Error(`Missing id for ${toolName}`);
+    }
+    detailPath = `tool/detail/episode/${encodeURIComponent(String(idSerie))}/${encodeURIComponent(String(seasonNumber))}/${encodeURIComponent(String(episodeNumber))}`;
+  }
+  const id =
+    args.id ||
+    args.wikidata_id ||
+    args.ID_WIKIDATA ||
+    args.ID_MOVIE ||
+    args.ID_SERIE ||
+    args.ID_PERSON ||
+    args.ID_COMPANY ||
+    args.ID_NETWORK ||
+    args.ID_T2S_COLLECTION ||
+    args.ID_TOPIC ||
+    args.ID_T2S_LIST ||
+    args.ID_MOVEMENT ||
+    args.ID_TECHNICAL ||
+    args.ID_GROUP ||
+    args.ID_DEATH ||
+    args.ID_AWARD ||
+    args.ID_NOMINATION;
+  if (!entity || (!detailPath && !id)) {
     throw new Error(`Missing id for ${toolName}`);
   }
 
   const response = await fetch(
-    appUrl(`tool/detail/${encodeURIComponent(entity)}/${encodeURIComponent(String(id))}`)
+    appUrl(detailPath || `tool/detail/${encodeURIComponent(entity)}/${encodeURIComponent(String(id))}`)
   );
 
   const rawBody = await response.text();
@@ -2688,6 +4096,9 @@ async function handleFunctionCall(item) {
         endpoint: output.endpoint || "",
         detail: output.detail || null,
       };
+  const modelToolOutput = item.name === "query_text2sql"
+    ? toolOutput
+    : compactDetailForModel(toolOutput, DETAIL_TOOL_ENTITIES[item.name]);
   lastToolOutput = toolOutput;
   addRetainedContext({
     type: "tool",
@@ -2707,7 +4118,7 @@ async function handleFunctionCall(item) {
     item: {
       type: "function_call_output",
       call_id: item.call_id,
-      output: JSON.stringify(toolOutput),
+      output: JSON.stringify(modelToolOutput),
     },
   });
 
@@ -2764,11 +4175,21 @@ async function handleServerEvent(event) {
     const transcript = event.transcript || "";
     if (transcript.trim()) {
       addRetainedContext({ type: "assistant", text: transcript.trim() });
+      assistantSpokenHighlightBuffer = transcript.trim();
+      enqueueSpokenAudioHighlightCues(assistantSpokenHighlightBuffer);
     }
+  }
+
+  if (
+    event.type === "response.output_audio_transcript.delta" ||
+    event.type === "response.audio_transcript.delta"
+  ) {
+    syncSpokenCardHighlightFromTranscriptDelta(event.delta || "");
   }
 
   if (event.type === "response.created") {
     activeResponseId = event.response?.id || null;
+    resetSpokenAudioHighlightState();
     awaitingToolResponse = false;
     clearResponseFallback();
     syncMicrophone("response created");
@@ -2777,6 +4198,7 @@ async function handleServerEvent(event) {
 
   if (event.type === "output_audio_buffer.started") {
     activeAudioResponseId = event.response_id || activeResponseId;
+    startSpokenAudioHighlightPlayback();
     syncMicrophone("audio playback started");
   }
 
@@ -2784,6 +4206,7 @@ async function handleServerEvent(event) {
     if (!event.response_id || event.response_id === activeAudioResponseId) {
       activeAudioResponseId = null;
     }
+    resetSpokenAudioHighlightState();
     syncMicrophone("audio playback stopped");
   }
 
@@ -2812,6 +4235,9 @@ async function handleServerEvent(event) {
 }
 
 async function start({ reconnecting = false } = {}) {
+  if (dictationActive || dictationTranscribing) {
+    cancelIdleDictation("start voice session");
+  }
   manuallyStopped = false;
   setConversationActive(true);
   if (!reconnecting) {
@@ -2836,7 +4262,7 @@ async function start({ reconnecting = false } = {}) {
   }
   if (!navigator.mediaDevices?.getUserMedia) {
     setSessionRunning(false);
-    throw new Error("Microphone capture is not available in this browser. Use HTTPS and allow microphone access.");
+    throw new Error("Microphone is not supported in this browser. Use typed questions here, or use voice on iPhone Safari.");
   }
 
   const generation = ++connectionGeneration;
@@ -2940,6 +4366,11 @@ async function start({ reconnecting = false } = {}) {
     clientLog("data_channel_open");
     startKeepAlive();
     seedRetainedContext(reconnecting ? "reconnect" : "new session");
+    const queuedTextTurns = pendingRealtimeTextTurns.splice(0);
+    for (const [index, queuedText] of queuedTextTurns.entries()) {
+      addRetainedContext({ type: "user", text: queuedText });
+      sendTypedRealtimeTurn(queuedText, { createResponse: index === queuedTextTurns.length - 1 });
+    }
     if (reconnecting && pendingReconnectResume) {
       window.setTimeout(() => {
         if (generation === connectionGeneration) {
@@ -2992,6 +4423,7 @@ async function start({ reconnecting = false } = {}) {
     readyState: localAudioTrack.readyState,
   });
   attachTrackDiagnostics(localAudioTrack, "microphone");
+  syncMicrophone("microphone track acquired");
   nextPc.addTrack(localAudioTrack, nextLocalStream);
 
   const offer = await nextPc.createOffer();
@@ -3026,6 +4458,8 @@ async function start({ reconnecting = false } = {}) {
 
 function stop() {
   manuallyStopped = true;
+  pendingRealtimeTextTurns = [];
+  cancelIdleDictation("stop");
   clearReconnectTimer();
   releaseWakeLock("stop");
   cleanupConnection();
@@ -3038,7 +4472,9 @@ function stop() {
 
 function clearConversationUi() {
   handledCallIds.clear();
+  resetSpokenAudioHighlightState();
   resultsPanel.hidden = true;
+  clearQueryDetailsDock();
   resultsContent.replaceChildren();
   resultsLoader.hidden = true;
   loadMoreButton.hidden = true;
@@ -3055,6 +4491,8 @@ function clearConversationUi() {
 
 function startNewConversation() {
   manuallyStopped = true;
+  pendingRealtimeTextTurns = [];
+  cancelIdleDictation("new conversation");
   clearReconnectTimer();
   releaseWakeLock("new conversation");
   cleanupConnection();
@@ -3075,14 +4513,15 @@ clientLog("realtime_support", realtimeSupportSnapshot("page load"));
 
 startButton.addEventListener("click", () => {
   start().catch((error) => {
+    pendingRealtimeTextTurns = [];
     setSessionRunning(false);
-    setStatus("Error", "error");
     const permissionDenied =
       error.name === "NotAllowedError" ||
       error.name === "SecurityError" ||
       error.message.toLowerCase().includes("permission denied");
 
     if (permissionDenied) {
+      setStatus("Microphone permission denied", "error");
       clientLog("microphone_permission_denied", { name: error.name, message: error.message }, "error");
       log(
         "microphone permission denied",
@@ -3091,12 +4530,19 @@ startButton.addEventListener("click", () => {
       return;
     }
 
+    const unsupported =
+      error.message.toLowerCase().includes("not supported") ||
+      error.message.toLowerCase().includes("not available") ||
+      error.message.toLowerCase().includes("unavailable");
+    setStatus(unsupported ? "Voice not supported here" : "Start failed", "error");
     clientLog("start_error", { name: error.name, message: error.message }, "error");
     log("start error", error.message);
   });
 });
 
 stopButton.addEventListener("click", stop);
+microphoneToggleButton.addEventListener("click", toggleMicrophone);
+lookToggleButton.addEventListener("click", toggleLook);
 historyBackButton.addEventListener("click", () => {
   goHistory(-1).catch((error) => {
     log("history back error", error.message);
@@ -3117,11 +4563,11 @@ questionInput.addEventListener("keydown", (event) => {
     return;
   }
   event.preventDefault();
-  sendTextMessage().catch((error) => {
-    log("text submit error", error.message);
-  });
+  submitQuestion();
 });
+submitQuestionButton.addEventListener("click", submitQuestion);
 syncQuestionInputUi();
+updateLookToggle();
 setSessionRunning(false);
 updateHistoryButtons();
 newConversationButton.addEventListener("click", startNewConversation);

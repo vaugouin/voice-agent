@@ -4,11 +4,12 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
+from urllib.parse import quote
 
 import httpx
 from dotenv import load_dotenv
 from fastapi import FastAPI, HTTPException, Request
-from fastapi.responses import HTMLResponse, PlainTextResponse
+from fastapi.responses import HTMLResponse, PlainTextResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from pydantic import BaseModel, Field
 
@@ -31,8 +32,29 @@ REALTIME_VOICES = {
 }
 DEFAULT_REALTIME_VOICE = "ash"
 DEFAULT_REALTIME_MODEL = "gpt-realtime-2"
+DEFAULT_TRANSCRIPTION_MODEL = "gpt-4o-transcribe"
+MAX_TRANSCRIPTION_AUDIO_BYTES = 25 * 1024 * 1024
+TRANSCRIPTION_MIME_EXTENSIONS = {
+    "audio/mp3": "mp3",
+    "audio/mpeg": "mp3",
+    "audio/mp4": "mp4",
+    "audio/ogg": "ogg",
+    "audio/wav": "wav",
+    "audio/webm": "webm",
+    "audio/x-wav": "wav",
+    "application/ogg": "ogg",
+    "video/webm": "webm",
+}
 
 app = FastAPI(title="Minimal Realtime WebRTC Voice Agent")
+
+
+@app.get("/static", include_in_schema=False)
+@app.get("/static/", include_in_schema=False)
+async def static_root_redirect() -> RedirectResponse:
+    return RedirectResponse(url="../", status_code=307)
+
+
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 
@@ -63,9 +85,10 @@ DETAIL_ENTITY_CONFIG = {
         "id_type": "integer",
         "description": (
             "Get all fields for a movie by TMDb ID_MOVIE, including plot, "
-            "IMDb/Wikidata IDs, ratings, technical flags, cast, crew, genre "
-            "codes, companies, production countries, spoken languages, topics, "
-            "lists, collections, movements, awards, and nominations."
+            "IMDb/Wikidata IDs, ratings, technical flags, technicals, cast, "
+            "crew, genre codes, companies, production countries, spoken "
+            "languages, topics, lists, collections, movements, awards, "
+            "nominations, posters, and backdrops."
         ),
     },
     "serie": {
@@ -79,7 +102,36 @@ DETAIL_ENTITY_CONFIG = {
             "and last air dates, season and episode counts, ratings, status, "
             "Wikidata/IMDb IDs, cast, crew, genre codes, companies, networks, "
             "production countries, spoken languages, topics, lists, collections, "
-            "movements, awards, and nominations."
+            "movements, awards, nominations, posters, and backdrops."
+        ),
+    },
+    "season": {
+        "tool_name": "get_season_detail",
+        "path": "seasons",
+        "id_name": "(ID_SERIE, SEASON_NUMBER)",
+        "path_params": [
+            {"name": "id_serie", "id_name": "ID_SERIE", "type": "integer"},
+            {"name": "season_number", "id_name": "SEASON_NUMBER", "type": "integer"},
+        ],
+        "description": (
+            "Get all fields for a TV series season by ID_SERIE and SEASON_NUMBER, "
+            "including its parent series, cast, crew, posters, backdrops, and "
+            "Wikipedia detail when available. Season 0 represents specials."
+        ),
+    },
+    "episode": {
+        "tool_name": "get_episode_detail",
+        "path": "episodes",
+        "id_name": "(ID_SERIE, SEASON_NUMBER, EPISODE_NUMBER)",
+        "path_params": [
+            {"name": "id_serie", "id_name": "ID_SERIE", "type": "integer"},
+            {"name": "season_number", "id_name": "SEASON_NUMBER", "type": "integer"},
+            {"name": "episode_number", "id_name": "EPISODE_NUMBER", "type": "integer"},
+        ],
+        "description": (
+            "Get all fields for a TV series episode by ID_SERIE, SEASON_NUMBER, "
+            "and EPISODE_NUMBER, including its parent season and series, cast, "
+            "crew, still images, and Wikipedia detail when available."
         ),
     },
     "person": {
@@ -161,6 +213,19 @@ DETAIL_ENTITY_CONFIG = {
         "description": (
             "Get all fields for a film movement or style by ID_MOVEMENT, plus "
             "associated movies and TV series ordered by display order."
+        ),
+    },
+    "technical": {
+        "tool_name": "get_technical_detail",
+        "path": "technicals",
+        "id_name": "ID_TECHNICAL",
+        "id_param": "id",
+        "id_type": "integer",
+        "description": (
+            "Get all fields for a technical format by ID_TECHNICAL, including "
+            "sound systems, color/film/sound technologies, film formats, "
+            "Wikipedia image data, associated movies, and sibling technicals "
+            "sharing the same technical type."
         ),
     },
     "group": {
@@ -258,7 +323,13 @@ def agent_voice() -> str:
 def detail_tool_definitions() -> list[dict[str, Any]]:
     tools = []
     for config in DETAIL_ENTITY_CONFIG.values():
-        id_param = config["id_param"]
+        path_params = config.get("path_params") or [
+            {
+                "name": config["id_param"],
+                "id_name": config["id_name"],
+                "type": config["id_type"],
+            }
+        ]
         tools.append(
             {
                 "type": "function",
@@ -267,17 +338,95 @@ def detail_tool_definitions() -> list[dict[str, Any]]:
                 "parameters": {
                     "type": "object",
                     "properties": {
-                        id_param: {
-                            "type": config["id_type"],
-                            "description": f"The {config['id_name']} value to retrieve.",
+                        param["name"]: {
+                            "type": param["type"],
+                            "description": f"The {param['id_name']} value to retrieve.",
                         }
+                        for param in path_params
                     },
-                    "required": [id_param],
+                    "required": [param["name"] for param in path_params],
                     "additionalProperties": False,
                 },
             }
         )
     return tools
+
+
+def detail_endpoint(entity: str, args: dict[str, Any]) -> tuple[str, Any]:
+    config = DETAIL_ENTITY_CONFIG[entity]
+    path_params = config.get("path_params") or [
+        {
+            "name": config["id_param"],
+            "id_name": config["id_name"],
+            "type": config["id_type"],
+        }
+    ]
+    values: list[str] = []
+    identifier: dict[str, Any] = {}
+    for param in path_params:
+        value = args.get(param["name"])
+        if value is None:
+            value = args.get(param["id_name"])
+        if value is None and len(path_params) == 1:
+            value = args.get("id")
+        if value is None or str(value).strip() == "":
+            raise ValueError(f"Missing {param['name']} for {config['tool_name']}")
+        if param["type"] == "integer":
+            try:
+                value = int(value)
+            except (TypeError, ValueError) as exc:
+                raise ValueError(f"Invalid {param['name']} for {config['tool_name']}") from exc
+        else:
+            value = str(value).strip()
+        identifier[param["name"]] = value
+        values.append(quote(str(value), safe=""))
+
+    relative_endpoint = f"/{config['path']}/{'/'.join(values)}"
+    output_id: Any = next(iter(identifier.values())) if len(identifier) == 1 else identifier
+    return relative_endpoint, output_id
+
+
+def compact_wikipedia_content(detail: Any, max_sections: int = 4, max_chars: int = 1200) -> list[dict[str, str]]:
+    if not isinstance(detail, dict):
+        return []
+    sections = detail.get("wikipedia_content")
+    if not isinstance(sections, list):
+        return []
+
+    compact_sections: list[dict[str, str]] = []
+    for section in sections:
+        if not isinstance(section, dict):
+            continue
+        title = str(section.get("title") or section.get("TITLE") or "").strip()
+        content = str(section.get("content") or section.get("CONTENT") or "").strip()
+        if not content:
+            continue
+        if len(content) > max_chars:
+            content = content[:max_chars].rstrip() + "..."
+        compact_sections.append({"title": title, "content": content})
+        if len(compact_sections) >= max_sections:
+            break
+    return compact_sections
+
+
+def compact_detail_for_model(output: dict[str, Any]) -> dict[str, Any]:
+    detail = output.get("detail")
+    if not isinstance(detail, dict):
+        return output
+    compact_detail = {
+        key: value for key, value in detail.items()
+        if key not in {"wikipedia_content"}
+    }
+
+    return {
+        "error": output.get("error", ""),
+        "entity": output.get("entity", ""),
+        "id_name": output.get("id_name", ""),
+        "id": output.get("id", ""),
+        "endpoint": output.get("endpoint", ""),
+        "detail": compact_detail,
+        "wikipedia_content": compact_wikipedia_content(detail),
+    }
 
 
 def realtime_session_config(voice: str = DEFAULT_REALTIME_VOICE) -> dict[str, Any]:
@@ -293,9 +442,13 @@ def realtime_session_config(voice: str = DEFAULT_REALTIME_VOICE) -> dict[str, An
             "question, call query_text2sql with the user's spoken request as "
             "plain text. When the user asks for details about a specific returned "
             "entity, call the dedicated detail tool with that entity ID, or "
-            "wikidata_id for locations. For example, for a movie plot, call "
-            "get_movie_detail with ID_MOVIE and answer from the PLOT field. Use "
-            "the returned detail fields to respond in a short spoken summary."
+            "wikidata_id for locations. Seasons use ID_SERIE plus SEASON_NUMBER; "
+            "episodes use ID_SERIE, SEASON_NUMBER, and EPISODE_NUMBER. For example, "
+            "for a movie plot, call get_movie_detail with ID_MOVIE. Use returned detail fields to "
+            "respond in a short spoken summary. When wikipedia_content is "
+            "returned for an entity, use it as grounding for questions asking "
+            "for background, history, biography, plot context, or explanatory "
+            "details."
         ),
         "audio": {
             "input": {
@@ -419,6 +572,11 @@ def multipart_form_data(fields: dict[str, str]) -> tuple[bytes, str]:
     return b"".join(chunks), boundary
 
 
+def transcription_file_extension(content_type: str) -> str:
+    media_type = content_type.split(";", 1)[0].strip().lower()
+    return TRANSCRIPTION_MIME_EXTENSIONS.get(media_type, "webm")
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index() -> str:
     return (STATIC_DIR / "index.html").read_text(encoding="utf-8")
@@ -463,6 +621,54 @@ async def create_realtime_session(request: Request) -> PlainTextResponse:
         headers["X-OpenAI-Call-ID"] = location.rsplit("/", 1)[-1]
 
     return PlainTextResponse(answer_sdp, media_type="application/sdp", headers=headers)
+
+
+@app.post("/transcribe")
+async def transcribe_audio(request: Request) -> dict[str, Any]:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="OPENAI_API_KEY is not set")
+
+    audio_bytes = await request.body()
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="Missing audio body")
+    if len(audio_bytes) > MAX_TRANSCRIPTION_AUDIO_BYTES:
+        raise HTTPException(status_code=413, detail="Audio upload is too large")
+
+    content_type = request.headers.get("content-type", "audio/webm")
+    media_type = content_type.split(";", 1)[0].strip().lower() or "audio/webm"
+    extension = transcription_file_extension(content_type)
+    model = (
+        os.getenv("OPENAI_TRANSCRIPTION_MODEL", DEFAULT_TRANSCRIPTION_MODEL).strip()
+        or DEFAULT_TRANSCRIPTION_MODEL
+    )
+
+    async with httpx.AsyncClient(timeout=60) as client:
+        try:
+            response = await client.post(
+                "https://api.openai.com/v1/audio/transcriptions",
+                headers={"Authorization": f"Bearer {api_key}"},
+                data={"model": model},
+                files={"file": (f"dictation.{extension}", audio_bytes, media_type)},
+            )
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    upstream_content_type = response.headers.get("content-type", "")
+    if "application/json" in upstream_content_type:
+        upstream_body: Any = response.json()
+    else:
+        upstream_body = response.text
+
+    if response.status_code >= 400:
+        raise HTTPException(status_code=response.status_code, detail=upstream_body)
+
+    return {
+        "configured": True,
+        "model": model,
+        "text": upstream_body.get("text", "") if isinstance(upstream_body, dict) else "",
+        "upstream_id": upstream_body.get("id", "") if isinstance(upstream_body, dict) else "",
+    }
 
 
 async def query_text2sql_data(payload: Text2SqlRequest) -> dict[str, Any]:
@@ -533,12 +739,16 @@ async def query_text2sql_data(payload: Text2SqlRequest) -> dict[str, Any]:
     }
 
 
-async def get_entity_detail_data(entity: str, entity_id: str) -> dict[str, Any]:
+async def get_entity_detail_data(entity: str, args: dict[str, Any]) -> dict[str, Any]:
     config = DETAIL_ENTITY_CONFIG.get(entity)
     if not config:
         raise HTTPException(status_code=404, detail=f"Unsupported detail entity: {entity}")
 
-    detail_url = f"{text2sql_base_url()}/{config['path']}/{entity_id}"
+    try:
+        relative_endpoint, entity_id = detail_endpoint(entity, args)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    detail_url = f"{text2sql_base_url()}{relative_endpoint}"
     async with httpx.AsyncClient(timeout=30) as client:
         try:
             response = await client.get(detail_url, headers=text2sql_headers())
@@ -565,7 +775,7 @@ async def get_entity_detail_data(entity: str, entity_id: str) -> dict[str, Any]:
         "entity": entity,
         "id_name": config["id_name"],
         "id": entity_id,
-        "endpoint": f"GET /{config['path']}/{entity_id}",
+        "endpoint": f"GET {relative_endpoint}",
         "detail": upstream_body,
     }
 
@@ -585,16 +795,12 @@ async def execute_text_tool(tool_name: str, args: dict[str, Any]) -> dict[str, A
     if not entity:
         return {"error": f"Unsupported tool: {tool_name}"}
 
-    config = DETAIL_ENTITY_CONFIG[entity]
-    entity_id = (
-        args.get(config["id_param"])
-        or args.get("id")
-        or args.get("wikidata_id")
-        or args.get(config["id_name"])
-    )
-    if entity_id is None or str(entity_id).strip() == "":
-        return {"error": f"Missing id for {tool_name}"}
-    return await get_entity_detail_data(entity, str(entity_id))
+    try:
+        return await get_entity_detail_data(entity, args)
+    except HTTPException as exc:
+        if exc.status_code == 400:
+            return {"error": str(exc.detail)}
+        raise
 
 
 @app.post("/text-chat")
@@ -637,10 +843,13 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         "message and provided the result in the input. Base your answer on "
         "that tool result, not on pretraining. If the user asks for details "
         "about a specific returned entity, call the dedicated detail tool with "
-        "that entity ID, or wikidata_id for locations. Use returned tool data "
-        "to answer in plain text. Do not produce audio. Keep the response "
-        "short enough to be readable as subtitles unless the user explicitly "
-        "asks for detail."
+        "that entity ID, or wikidata_id for locations. Seasons use ID_SERIE plus "
+        "SEASON_NUMBER; episodes use ID_SERIE, SEASON_NUMBER, and EPISODE_NUMBER. Use returned tool data "
+        "to answer in plain text. When wikipedia_content is returned for an "
+        "entity, use it as grounding for questions asking for background, "
+        "history, biography, plot context, or explanatory details. Do not "
+        "produce audio. Keep the response short enough to be readable as "
+        "subtitles unless the user explicitly asks for detail."
     )
     request_base = {
         "model": model,
@@ -721,10 +930,15 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
                     "args": arguments,
                     "output": output,
                 })
+                model_output = (
+                    compact_detail_for_model(output)
+                    if DETAIL_TOOL_BY_NAME.get(tool_name)
+                    else output
+                )
                 input_items.append({
                     "type": "function_call_output",
                     "call_id": call.get("call_id"),
-                    "output": json.dumps(output),
+                    "output": json.dumps(model_output),
                 })
 
     output_text = extract_response_text(upstream_body)
@@ -810,40 +1024,31 @@ async def query_text2sql(payload: Text2SqlRequest) -> dict[str, Any]:
 
 @app.get("/tool/detail/{entity}/{entity_id}")
 async def get_entity_detail(entity: str, entity_id: str) -> dict[str, Any]:
-    config = DETAIL_ENTITY_CONFIG.get(entity)
-    if not config:
-        raise HTTPException(status_code=404, detail=f"Unsupported detail entity: {entity}")
+    return await get_entity_detail_data(entity, {"id": entity_id})
 
-    detail_url = f"{text2sql_base_url()}/{config['path']}/{entity_id}"
-    async with httpx.AsyncClient(timeout=30) as client:
-        try:
-            response = await client.get(detail_url, headers=text2sql_headers())
-        except httpx.HTTPError as exc:
-            raise HTTPException(status_code=502, detail=str(exc)) from exc
 
-    content_type = response.headers.get("content-type", "")
-    if "application/json" in content_type:
-        upstream_body: Any = response.json()
-    else:
-        upstream_body = response.text
+@app.get("/tool/detail/season/{id_serie}/{season_number}")
+async def get_season_detail(id_serie: int, season_number: int) -> dict[str, Any]:
+    return await get_entity_detail_data(
+        "season",
+        {"id_serie": id_serie, "season_number": season_number},
+    )
 
-    if response.status_code >= 400:
-        raise HTTPException(
-            status_code=502,
-            detail={
-                "upstream_status": response.status_code,
-                "upstream_body": upstream_body,
-            },
-        )
 
-    return {
-        "configured": True,
-        "entity": entity,
-        "id_name": config["id_name"],
-        "id": entity_id,
-        "endpoint": f"GET /{config['path']}/{entity_id}",
-        "detail": upstream_body,
-    }
+@app.get("/tool/detail/episode/{id_serie}/{season_number}/{episode_number}")
+async def get_episode_detail(
+    id_serie: int,
+    season_number: int,
+    episode_number: int,
+) -> dict[str, Any]:
+    return await get_entity_detail_data(
+        "episode",
+        {
+            "id_serie": id_serie,
+            "season_number": season_number,
+            "episode_number": episode_number,
+        },
+    )
 
 
 @app.post("/client-log")

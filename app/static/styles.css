@@ -24,6 +24,7 @@
 body {
   margin: 0;
   min-height: 100vh;
+  min-height: 100dvh;
 }
 
 body.imageViewerOpen {
@@ -32,6 +33,7 @@ body.imageViewerOpen {
 
 main {
   min-height: 100vh;
+  min-height: 100dvh;
   display: grid;
   justify-items: stretch;
   align-items: start;
@@ -48,6 +50,16 @@ main {
   border-radius: 8px;
   background: var(--bg-secondary);
   box-shadow: 0 18px 40px rgb(0 0 0 / 35%);
+}
+
+.panel.resultsMode {
+  gap: 12px;
+  padding-top: 12px;
+}
+
+.panel.resultsMode .appHeader,
+.panel.resultsMode .status {
+  display: none;
 }
 
 .eyebrow {
@@ -84,6 +96,23 @@ h1 {
   width: 100%;
 }
 
+.microphoneButtonSlot,
+.lookButtonSlot {
+  display: grid;
+  width: 52px;
+  min-width: 52px;
+}
+
+.microphoneToggleButton,
+.lookToggleButton {
+  width: 52px;
+  min-width: 52px;
+  padding: 0;
+  color: #ffffff;
+  background: #0f6b5f;
+  border: 0;
+}
+
 .srOnly {
   position: absolute;
   width: 1px;
@@ -111,7 +140,7 @@ button {
 
 #stopButton {
   color: var(--text-primary);
-  background: var(--bg-tertiary);
+  background: #0f6b5f;
 }
 
 #startButton,
@@ -119,6 +148,64 @@ button {
   min-width: 52px;
   padding: 0;
   font-size: 1.2rem;
+}
+
+.startMicIcon {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  line-height: 1;
+}
+
+.startMicIconMouth {
+  grid-area: 1 / 1;
+  font-size: 1.35rem;
+  opacity: 0.72;
+  transform: translate(-4px, 4px);
+}
+
+.startMicIconCross {
+  grid-area: 1 / 1;
+  font-size: 1.3rem;
+  transform: translate(5px, -5px);
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 70%));
+}
+
+.microphoneStateIcon,
+.lookStateIcon {
+  position: relative;
+  display: inline-grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  line-height: 1;
+}
+
+.microphoneStateEar,
+.lookStateEye {
+  grid-area: 1 / 1;
+  font-size: 1.35rem;
+}
+
+.microphoneStateCross,
+.lookStateCross {
+  grid-area: 1 / 1;
+  display: none;
+  font-size: 1.1rem;
+  transform: translate(6px, -6px);
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 70%));
+}
+
+.microphoneToggleButton.isClosed .microphoneStateEar,
+.lookToggleButton.isClosed .lookStateEye {
+  opacity: 0.58;
+}
+
+.microphoneToggleButton.isClosed .microphoneStateCross,
+.lookToggleButton.isClosed .lookStateCross {
+  display: block;
 }
 
 #newConversationButton {
@@ -130,6 +217,29 @@ button {
 #historyForwardButton {
   color: var(--text-primary);
   background: #252a33;
+}
+
+.submitQuestionButton {
+  min-width: 42px;
+  width: 42px;
+  min-height: 42px;
+  height: 42px;
+  border-radius: 999px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  color: #111111;
+  background: #ffffff;
+}
+
+.submitQuestionButton svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: #111111;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 button[hidden] {
@@ -144,6 +254,14 @@ button[hidden] {
   place-items: center;
   background: #111111;
   border: 1px solid var(--border);
+}
+
+.iconButton.microphoneToggleButton,
+.iconButton.lookToggleButton {
+  width: 52px;
+  min-width: 52px;
+  background: #0f6b5f;
+  border: 0;
 }
 
 .iconButton svg {
@@ -161,9 +279,17 @@ button:disabled {
   opacity: 0.55;
 }
 
-.questionInput {
+.questionComposer {
   flex: 1 1 280px;
   min-width: min(100%, 240px);
+  display: flex;
+  align-items: end;
+  gap: 10px;
+}
+
+.questionInput {
+  flex: 1 1 auto;
+  min-width: 0;
   min-height: 42px;
   max-height: 180px;
   resize: none;
@@ -270,11 +396,17 @@ button:disabled {
   font-weight: 700;
   line-height: 1.35;
   text-align: center;
+  white-space: pre-line;
+  overflow-wrap: break-word;
   transform: translateX(-50%);
   pointer-events: none;
 }
 
 .answerBlock {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: start;
+  gap: 10px;
   border: 1px solid var(--border);
   border-radius: 8px;
   padding: 14px 16px;
@@ -282,12 +414,14 @@ button:disabled {
 }
 
 .answerText {
+  grid-column: 1;
   margin: 0;
   color: var(--text-primary);
   font-size: 1rem;
 }
 
 .errorText {
+  grid-column: 1;
   margin: 8px 0 0;
   color: var(--error);
 }
@@ -301,7 +435,42 @@ details.queryDetails summary {
   color: var(--accent-secondary);
 }
 
-.queryDetails pre {
+.queryDetailsToggle {
+  grid-column: 2;
+  grid-row: 1;
+  min-width: 34px;
+  min-height: 34px;
+  width: 34px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--accent-secondary);
+  background: #171b20;
+  font-size: 0.92rem;
+  line-height: 1;
+}
+
+.queryDetailsToggle[aria-expanded="true"] {
+  background: #20262e;
+}
+
+.queryDetailsToggle[aria-expanded="false"] {
+  transform: rotate(90deg);
+}
+
+.queryDetailsDock {
+  min-width: 0;
+}
+
+.queryDetailsDock[hidden] {
+  display: none;
+}
+
+.queryDetailsDock pre {
+  max-height: 180px;
+  margin: 0;
   overflow: auto;
   padding: 12px;
   border: 1px solid var(--border);
@@ -344,7 +513,7 @@ details.queryDetails summary {
   max-width: 100%;
   overflow: hidden;
   position: relative;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 @media (min-width: 1024px) {
@@ -356,6 +525,31 @@ details.queryDetails summary {
 .search-poster-card:hover {
   box-shadow: 0 12px 24px rgb(0 0 0 / 50%);
   transform: translateY(-4px);
+}
+
+.search-poster-card-grid.hasSpokenActive .search-poster-card:not(.isSpokenActive) {
+  opacity: 0.62;
+}
+
+.search-poster-card.isSpokenActive {
+  outline: 3px solid var(--accent-secondary);
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 2px rgb(3 218 198 / 30%),
+    0 14px 28px rgb(0 0 0 / 55%);
+  opacity: 1;
+  transform: translateY(-3px);
+}
+
+.search-poster-card.isSpokenActive::after {
+  border: 3px solid var(--accent-secondary);
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 2px rgb(3 218 198 / 28%);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
 }
 
 .search-poster-card-link {
@@ -528,9 +722,11 @@ button.search-poster-card-link {
 
 .singleDetailPoster {
   align-self: start;
-  overflow: hidden;
+  display: grid;
+  gap: 10px;
+  overflow: visible;
   border-radius: 8px;
-  background: #111111;
+  background: transparent;
   box-shadow: 0 18px 40px rgb(0 0 0 / 45%);
 }
 
@@ -544,6 +740,8 @@ button.search-poster-card-link {
 .personPortraitViewer {
   position: relative;
   overflow: hidden;
+  border-radius: 8px;
+  background: #111111;
   cursor: zoom-in;
   touch-action: pan-y;
   user-select: none;
@@ -554,6 +752,34 @@ button.search-poster-card-link {
   width: 100%;
   aspect-ratio: 2 / 3;
   object-fit: cover;
+}
+
+.backdropViewer img {
+  aspect-ratio: 16 / 9;
+}
+
+.slideshowToggle {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 2;
+  display: grid;
+  place-items: center;
+  width: 34px;
+  min-width: 34px;
+  height: 34px;
+  min-height: 34px;
+  border: 1px solid rgb(255 255 255 / 22%);
+  border-radius: 999px;
+  padding: 0;
+  color: #ffffff;
+  background: rgb(0 0 0 / 62%);
+  font-size: 0.9rem;
+  line-height: 1;
+}
+
+.slideshowToggle:hover {
+  background: rgb(3 218 198 / 22%);
 }
 
 .portraitNav {
@@ -624,6 +850,11 @@ button.search-poster-card-link {
 .personPortraitViewer.isFullscreen .personPortraitCounter {
   right: 18px;
   bottom: 18px;
+}
+
+.personPortraitViewer.isFullscreen .slideshowToggle {
+  top: 18px;
+  right: 18px;
 }
 
 .singleDetailBody {
@@ -922,6 +1153,23 @@ button.detailVisualCard:hover {
   .detailRailControl {
     width: 28px;
     height: 28px;
+  }
+}
+
+@media (orientation: landscape) and (max-height: 520px) {
+  main {
+    min-height: 100dvh;
+    padding: 0;
+  }
+
+  .panel {
+    min-height: 100dvh;
+    border: 0;
+    border-radius: 0;
+  }
+
+  .panel.resultsMode {
+    padding-top: 0;
   }
 }
 
