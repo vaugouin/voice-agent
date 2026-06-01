@@ -96,13 +96,15 @@ h1 {
   width: 100%;
 }
 
-.microphoneButtonSlot {
+.microphoneButtonSlot,
+.lookButtonSlot {
   display: grid;
   width: 52px;
   min-width: 52px;
 }
 
-.microphoneToggleButton {
+.microphoneToggleButton,
+.lookToggleButton {
   width: 52px;
   min-width: 52px;
   padding: 0;
@@ -138,7 +140,7 @@ button {
 
 #stopButton {
   color: var(--text-primary);
-  background: var(--bg-tertiary);
+  background: #0f6b5f;
 }
 
 #startButton,
@@ -171,7 +173,8 @@ button {
   filter: drop-shadow(0 1px 2px rgb(0 0 0 / 70%));
 }
 
-.microphoneStateIcon {
+.microphoneStateIcon,
+.lookStateIcon {
   position: relative;
   display: inline-grid;
   place-items: center;
@@ -180,12 +183,14 @@ button {
   line-height: 1;
 }
 
-.microphoneStateEar {
+.microphoneStateEar,
+.lookStateEye {
   grid-area: 1 / 1;
   font-size: 1.35rem;
 }
 
-.microphoneStateCross {
+.microphoneStateCross,
+.lookStateCross {
   grid-area: 1 / 1;
   display: none;
   font-size: 1.1rem;
@@ -193,11 +198,13 @@ button {
   filter: drop-shadow(0 1px 2px rgb(0 0 0 / 70%));
 }
 
-.microphoneToggleButton.isClosed .microphoneStateEar {
+.microphoneToggleButton.isClosed .microphoneStateEar,
+.lookToggleButton.isClosed .lookStateEye {
   opacity: 0.58;
 }
 
-.microphoneToggleButton.isClosed .microphoneStateCross {
+.microphoneToggleButton.isClosed .microphoneStateCross,
+.lookToggleButton.isClosed .lookStateCross {
   display: block;
 }
 
@@ -210,6 +217,29 @@ button {
 #historyForwardButton {
   color: var(--text-primary);
   background: #252a33;
+}
+
+.submitQuestionButton {
+  min-width: 42px;
+  width: 42px;
+  min-height: 42px;
+  height: 42px;
+  border-radius: 999px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  color: #111111;
+  background: #ffffff;
+}
+
+.submitQuestionButton svg {
+  width: 21px;
+  height: 21px;
+  fill: none;
+  stroke: #111111;
+  stroke-width: 2.5;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 button[hidden] {
@@ -226,7 +256,10 @@ button[hidden] {
   border: 1px solid var(--border);
 }
 
-.iconButton.microphoneToggleButton {
+.iconButton.microphoneToggleButton,
+.iconButton.lookToggleButton {
+  width: 52px;
+  min-width: 52px;
   background: #0f6b5f;
   border: 0;
 }
@@ -246,9 +279,17 @@ button:disabled {
   opacity: 0.55;
 }
 
-.questionInput {
+.questionComposer {
   flex: 1 1 280px;
   min-width: min(100%, 240px);
+  display: flex;
+  align-items: end;
+  gap: 10px;
+}
+
+.questionInput {
+  flex: 1 1 auto;
+  min-width: 0;
   min-height: 42px;
   max-height: 180px;
   resize: none;
@@ -355,6 +396,8 @@ button:disabled {
   font-weight: 700;
   line-height: 1.35;
   text-align: center;
+  white-space: pre-line;
+  overflow-wrap: break-word;
   transform: translateX(-50%);
   pointer-events: none;
 }
@@ -470,7 +513,7 @@ details.queryDetails summary {
   max-width: 100%;
   overflow: hidden;
   position: relative;
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, opacity 0.2s ease;
 }
 
 @media (min-width: 1024px) {
@@ -482,6 +525,31 @@ details.queryDetails summary {
 .search-poster-card:hover {
   box-shadow: 0 12px 24px rgb(0 0 0 / 50%);
   transform: translateY(-4px);
+}
+
+.search-poster-card-grid.hasSpokenActive .search-poster-card:not(.isSpokenActive) {
+  opacity: 0.62;
+}
+
+.search-poster-card.isSpokenActive {
+  outline: 3px solid var(--accent-secondary);
+  outline-offset: 3px;
+  box-shadow:
+    0 0 0 2px rgb(3 218 198 / 30%),
+    0 14px 28px rgb(0 0 0 / 55%);
+  opacity: 1;
+  transform: translateY(-3px);
+}
+
+.search-poster-card.isSpokenActive::after {
+  border: 3px solid var(--accent-secondary);
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 2px rgb(3 218 198 / 28%);
+  content: "";
+  inset: 0;
+  pointer-events: none;
+  position: absolute;
+  z-index: 2;
 }
 
 .search-poster-card-link {

@@ -32,6 +32,19 @@ REALTIME_VOICES = {
 }
 DEFAULT_REALTIME_VOICE = "ash"
 DEFAULT_REALTIME_MODEL = "gpt-realtime-2"
+DEFAULT_TRANSCRIPTION_MODEL = "gpt-4o-transcribe"
+MAX_TRANSCRIPTION_AUDIO_BYTES = 25 * 1024 * 1024
+TRANSCRIPTION_MIME_EXTENSIONS = {
+    "audio/mp3": "mp3",
+    "audio/mpeg": "mp3",
+    "audio/mp4": "mp4",
+    "audio/ogg": "ogg",
+    "audio/wav": "wav",
+    "audio/webm": "webm",
+    "audio/x-wav": "wav",
+    "application/ogg": "ogg",
+    "video/webm": "webm",
+}
 
 app = FastAPI(title="Minimal Realtime WebRTC Voice Agent")
 
@@ -559,6 +572,11 @@ def multipart_form_data(fields: dict[str, str]) -> tuple[bytes, str]:
     return b"".join(chunks), boundary
 
 
+def transcription_file_extension(content_type: str) -> str:
+    media_type = content_type.split(";", 1)[0].strip().lower()
+    return TRANSCRIPTION_MIME_EXTENSIONS.get(media_type, "webm")
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index() -> str:
     return (STATIC_DIR / "index.html").read_text(encoding="utf-8")
@@ -603,6 +621,54 @@ async def create_realtime_session(request: Request) -> PlainTextResponse:
         headers["X-OpenAI-Call-ID"] = location.rsplit("/", 1)[-1]
 
     return PlainTextResponse(answer_sdp, media_type="application/sdp", headers=headers)
+
+
+@app.post("/transcribe")
+async def transcribe_audio(request: Request) -> dict[str, Any]:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="OPENAI_API_KEY is not set")
+
+    audio_bytes = await request.body()
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="Missing audio body")
+    if len(audio_bytes) > MAX_TRANSCRIPTION_AUDIO_BYTES:
+        raise HTTPException(status_code=413, detail="Audio upload is too large")
+
+    content_type = request.headers.get("content-type", "audio/webm")
+    media_type = content_type.split(";", 1)[0].strip().lower() or "audio/webm"
+    extension = transcription_file_extension(content_type)
+    model = (
+        os.getenv("OPENAI_TRANSCRIPTION_MODEL", DEFAULT_TRANSCRIPTION_MODEL).strip()
+        or DEFAULT_TRANSCRIPTION_MODEL
+    )
+
+    async with httpx.AsyncClient(timeout=60) as client:
+        try:
+            response = await client.post(
+                "https://api.openai.com/v1/audio/transcriptions",
+                headers={"Authorization": f"Bearer {api_key}"},
+                data={"model": model},
+                files={"file": (f"dictation.{extension}", audio_bytes, media_type)},
+            )
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    upstream_content_type = response.headers.get("content-type", "")
+    if "application/json" in upstream_content_type:
+        upstream_body: Any = response.json()
+    else:
+        upstream_body = response.text
+
+    if response.status_code >= 400:
+        raise HTTPException(status_code=response.status_code, detail=upstream_body)
+
+    return {
+        "configured": True,
+        "model": model,
+        "text": upstream_body.get("text", "") if isinstance(upstream_body, dict) else "",
+        "upstream_id": upstream_body.get("id", "") if isinstance(upstream_body, dict) else "",
+    }
 
 
 async def query_text2sql_data(payload: Text2SqlRequest) -> dict[str, Any]:

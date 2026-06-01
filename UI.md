@@ -6,13 +6,19 @@ The app has one persistent shell, one control row, one status row, one hidden au
 
 - `sessionRunning`: true while a Realtime WebRTC audio session is considered active.
 - `textChatInFlight`: true while a typed question is being processed by `/text-chat`.
+- `dictationActive`: true while the idle microphone dictation recorder is capturing audio for `/transcribe`.
+- `dictationTranscribing`: true while captured idle dictation audio is being transcribed and submitted to `/text-chat`.
 - `questionInput.value`: determines whether the typed-question path is active.
+- `userLookOpen`: stores the Look toggle state. It is `false` on page load and flips only when the Look button is clicked.
+- `pendingRealtimeTextTurns`: typed turns submitted after Start while the Realtime data channel is still opening; they are sent when the channel opens.
 - `resultsPanel.hidden`: determines whether result/detail content is visible and whether compact results mode is active.
 - `currentSearchState`: stores pagination state for text2sql result pages.
 - `loadingMore`: true while another page of text2sql rows is loading.
 - `autoPagesLoaded`: counts automatic infinite-scroll page loads before the manual Load more button is shown.
 - `pageHistory` and `pageHistoryIndex`: drive Back and Forward button enablement.
 - `subtitleQueue` and `subtitleTimer`: drive subtitle overlay visibility and sequencing.
+- `activeSpokenCardIndex`: stores the currently highlighted result-card number while the assistant is enumerating visible cards.
+- `spokenAudioHighlightCues`, `spokenAudioHighlightTimer`, and `spokenAudioHighlightPlaying`: pace Realtime spoken-answer card highlights from audio playback start instead of applying full transcript matches immediately.
 - `activeResponseId`, `activeAudioResponseId`, `toolCallsInFlight`, and `awaitingToolResponse`: drive microphone muting and status transitions during Realtime responses and tool work.
 
 ## Static Shell
@@ -51,9 +57,11 @@ The control row is `.controls`. It contains, in order:
 
 - Start/Stop button slot.
 - Microphone open/closed toggle slot.
+- Look on/off toggle slot.
 - Back button.
 - Forward button.
 - Text entry.
+- Submit question button.
 - New conversation button.
 
 The row uses flex layout, bottom alignment, 10px gaps, and wrapping when the viewport is narrow.
@@ -93,22 +101,17 @@ Default state after page initialization:
 Visibility and disabled rules are controlled by `updateSessionButtons()`:
 
 ```text
-hideStartForText = hasQuestionText() || textChatInFlight
-startButton.hidden = sessionRunning || hideStartForText
-startButton.disabled = sessionRunning || hideStartForText
+startButton.hidden = sessionRunning
+startButton.disabled = sessionRunning || realtimeUnavailableReason()
 ```
 
 Start is visible only when all of these are true:
 
 - no audio session is running
-- the text input is empty after trimming whitespace
-- no text response is in flight
 
 Start is hidden when any of these are true:
 
 - `sessionRunning` is true
-- the text input contains non-whitespace text
-- a typed question is being processed
 
 Click behavior:
 
@@ -131,7 +134,7 @@ Start error behavior:
 
 - If start fails, the click handler sets `sessionRunning = false`, shows `Start failed`, `Voice not supported here`, or `Microphone permission denied`, and logs the detailed failure.
 - If the error appears to be microphone permission denial, it logs a specific permission message and shows `Microphone permission denied`.
-- After `sessionRunning = false`, Start may reappear if the text input is empty and `textChatInFlight` is false.
+- After `sessionRunning = false`, Start reappears unless Realtime voice is unsupported.
 
 ### Stop Button
 
@@ -142,7 +145,7 @@ Purpose: manually stops a Realtime WebRTC microphone session.
 Visual:
 
 - Uses the lips icon text from `index.html`.
-- Dark tertiary background.
+- Green background matching the Start control.
 - 52px minimum width.
 
 Default state:
@@ -183,7 +186,7 @@ Important distinction:
 
 Element: `#microphoneToggleButton`
 
-Purpose: manually opens or closes microphone input during a running Realtime WebRTC session.
+Purpose: manually opens or closes microphone input during a running Realtime WebRTC session. When no Realtime session is running and the text box is empty, the same control starts and stops idle dictation for text-mode answers.
 
 Visual:
 
@@ -194,23 +197,67 @@ Visual:
 
 State:
 
-- `userMicrophoneOpen` stores the user's manual microphone preference.
-- The toggle is disabled while no local microphone track exists.
-- When no audio session is running, the control displays the closed state.
+- `userMicrophoneOpen` stores the user's manual microphone preference during Realtime sessions.
+- The toggle is disabled during Realtime sessions while no local microphone track exists.
+- When no audio session is running, the control displays the closed state unless idle dictation is recording.
+- Idle dictation is available only when the browser supports `getUserMedia`, `MediaRecorder`, and the question input is empty.
+- While idle dictation is active, the control displays the open state; clicking it stops the recording and submits it for transcription.
+- While idle dictation audio is being transcribed or `/text-chat` is in flight, the control is disabled.
 - The app can still temporarily mute the microphone while tool output or assistant audio is pending; those automatic gates do not flip `userMicrophoneOpen`.
 
 Click behavior:
+
+Realtime session:
 
 1. Does nothing until a session is running and a local microphone track exists.
 2. Toggles `userMicrophoneOpen`.
 3. Calls `syncMicrophone("manual microphone toggle")`.
 4. Updates the local audio track's `enabled` state through `setMicrophoneEnabled()`.
 
+Idle dictation:
+
+1. Starts microphone capture with `MediaRecorder`.
+2. Sets status to `Dictation listening`.
+3. Auto-stops after detected speech followed by silence, no speech for the no-speech timeout, the max duration cap, or a second click.
+4. Sends the audio blob to `/transcribe`.
+5. Sends the returned transcript to `/text-chat` and renders text-mode results.
+
+## Look Toggle
+
+Element: `#lookToggleButton`
+
+Purpose: toggles the browser UI's Look state. This is currently visual state management only; it does not start a camera or vision request.
+
+Visual:
+
+- Sits immediately to the right of the microphone toggle in its own 52px slot.
+- Uses the same green button background and 52px icon-control style as the microphone controls.
+- Shows the eye icon when Look is on.
+- Shows the eye icon with a cross layered over it when Look is off.
+
+State:
+
+- `userLookOpen` starts as `false`.
+- The initial state is Look Off.
+- The button remains enabled in all current app states.
+- `aria-pressed` mirrors `userLookOpen`.
+- The title and accessible label are `Look Off` when off and `Look On` when on.
+
+Click behavior:
+
+1. Toggles `userLookOpen`.
+2. Calls `updateLookToggle()`.
+3. Logs `look_toggle` through client diagnostics.
+
 ## Text Entry
 
-Element: `#questionInput`
+Elements:
 
-Purpose: submits typed questions through `/text-chat` and renders tool results in the same results area used by voice.
+- `.questionComposer`
+- `#questionInput`
+- `#submitQuestionButton`
+
+Purpose: submits typed questions either through an active connected Realtime session for spoken answers, or through `/text-chat` for text-only answers, and renders tool results in the same results area used by voice.
 
 Visual:
 
@@ -219,31 +266,36 @@ Visual:
 - Minimum height: 42px.
 - Maximum height: 180px.
 - Grows vertically with content until max height, then scrolls internally.
-- Flexes to fill remaining width in the control row.
+- `.questionComposer` flexes to fill remaining width in the control row and keeps the textarea and submit button together when the row wraps.
+- The textarea flexes to fill remaining space inside `.questionComposer`.
+- The submit button appears immediately to the right of the textarea as a round white control with a black up arrow.
 
 Default state:
 
 - Empty.
 - Visible.
 - Enabled. The code does not disable the textarea during audio or text requests.
+- Submit button hidden while the textarea is empty.
 
 Input synchronization:
 
 `syncQuestionInputUi()` runs on `input`, `change`, `keyup`, `paste`, and `cut`.
 
-It does two things:
+It does three things:
 
 - Resizes the textarea using `scrollHeight`, capped by CSS `max-height`.
+- Shows `#submitQuestionButton` when the trimmed input is non-empty and hides it when the input is empty or whitespace-only, including after paste and cut operations.
 - Calls `updateSessionButtons()` immediately and again on a zero-delay timer.
 
 Start-button interaction:
 
-- Any non-whitespace text hides and disables the Start button.
-- Removing all text makes Start visible again if no audio session is running and no typed response is in flight.
+- Typing text does not hide or disable the Start button.
+- Start remains available while text is present so the user can switch into the Realtime voice path without clearing the text box.
 
 Keyboard rules:
 
 - `Enter` submits the typed question.
+- Clicking the visible up-arrow submit button submits the typed question using the same path as `Enter`.
 - `Shift+Enter` inserts a newline.
 - `Enter` is ignored during IME composition.
 - Empty or whitespace-only text does not submit.
@@ -252,17 +304,25 @@ Submit behavior in `sendTextMessage()`:
 
 1. Reads `questionInput.value.trim()`.
 2. Returns immediately if the trimmed value is empty.
-3. If a Realtime response is active on an open data channel, sends `response.cancel` and clears active response IDs.
-4. If any audio connection objects exist (`pc`, `dc`, or `localStream`), calls `stop()`.
-5. Sets `textChatInFlight = true`, which keeps Start hidden.
-6. Clears the textarea.
-7. Resizes the textarea back down.
-8. Saves the submitted text as `lastUserTranscript`.
-9. Adds the user text to retained context.
-10. Sets status to `Thinking in text` with live dot.
-11. Calls `/text-chat`.
+3. If a Realtime session is running, enters the typed Realtime path, regardless of whether microphone input is open or manually closed.
+4. If that session is still opening and its data channel is not open yet, queues the typed turn and sends it when the channel opens; queued text is not added to retained context until it is sent.
+5. Once the data channel is open, sends `response.cancel` when a Realtime response is still generating, and sends `output_audio_buffer.clear` when its spoken audio is playing.
+6. Sends the typed message as an `input_text` conversation item followed by `response.create`.
+7. Keeps the audio session connected so the new response plays through the remote audio stream.
+8. Otherwise, if a Realtime response is active on an open data channel, sends `response.cancel`; if any audio connection objects exist (`pc`, `dc`, or `localStream`), calls `stop()`.
+9. For the `/text-chat` path, sets `textChatInFlight = true`; Start remains visible unless a Realtime session is running.
+10. Clears and resizes the textarea, hides the submit button, saves the submitted text as `lastUserTranscript`, and adds it to retained context.
+11. For the Realtime typed path, sets status to `Connecting for voice reply` while queued and `Thinking` once sent; for the `/text-chat` path, sets status to `Thinking in text`.
+12. For the `/text-chat` path, calls `/text-chat`.
 
-Typed response success:
+Realtime typed response behavior:
+
+- Available from the time the audio session starts, whether microphone input is open or manually closed; turns submitted before the data channel opens are queued for Realtime delivery, and multiple queued turns are inserted before one response is requested.
+- Interrupts any current spoken answer immediately before submitting the new typed turn.
+- Uses the same Realtime conversation, tool calls, rendered tool results, spoken response playback, and retained-context handling as spoken turns.
+- Does not set `textChatInFlight` or stop the active audio transport.
+
+`/text-chat` response success:
 
 - Each returned `query_text2sql` tool output renders through `renderText2SqlResult()`.
 - Each returned entity detail tool output renders through `renderEntityDetailOutput()`.
@@ -270,14 +330,45 @@ Typed response success:
 - Returned assistant text is also shown through the subtitle overlay.
 - Status becomes `Text response` with live dot.
 - `textChatInFlight` is set back to false.
-- Start reappears only if the text input remains empty and no audio session is running.
+- Start remains visible after `/text-chat` completes unless a Realtime session is running or Realtime voice is unsupported.
 
-Typed response failure:
+`/text-chat` response failure:
 
 - Subtitle overlay shows `Text response failed: ...`.
 - Status becomes `Text error` with error dot.
 - Error is logged.
 - `textChatInFlight` is set back to false.
+
+## Idle Dictation
+
+Elements:
+
+- `#microphoneToggleButton`
+- Browser `MediaRecorder`
+- Local `POST /transcribe`
+- Local `POST /text-chat`
+
+Purpose: lets the user speak a text-mode question without starting the Realtime WebRTC voice session.
+
+Availability:
+
+- No Realtime session is running.
+- The question box is empty.
+- No `/text-chat` response is in flight.
+- The browser exposes `navigator.mediaDevices.getUserMedia`.
+- The browser exposes `MediaRecorder`.
+
+Flow:
+
+1. Clicking the closed microphone toggle starts dictation.
+2. The Start button remains visible while dictation is active or transcribing.
+3. The status becomes `Requesting microphone`, then `Dictation listening`.
+4. The recorder captures browser microphone audio in a supported format, preferring WebM/Opus.
+5. The recorder auto-stops after speech followed by silence, no detected speech for the no-speech timeout, the max duration cap, or a second microphone-toggle click.
+6. The status becomes `Transcribing speech`.
+7. The browser posts the raw audio blob to `/transcribe`.
+8. If the transcript is non-empty, the browser submits that transcript through the same `/text-chat` path as typed text, with log source `dictation`.
+9. If no transcript is returned, the status becomes `No speech detected` and the subtitle overlay reports that no question was heard.
 
 ## Status Panel
 
@@ -323,16 +414,22 @@ Known status texts and transitions:
 - `Idle`: initial page state, after Stop, after New conversation.
 - `Requesting microphone`: immediately after starting a new audio session.
 - `Creating Realtime call`: after local SDP offer creation and before `/session` completes.
+- `Connecting for voice reply`: after text is submitted during Realtime connection setup and before its data channel opens.
 - `Connected`: when the data channel opens, after `response.done`, and after self-healed reconnect.
 - `Listening`: on `input_audio_buffer.speech_started`, unless microphone input is currently gated by tool work.
-- `Thinking`: on `input_audio_buffer.committed`.
+- `Thinking`: on `input_audio_buffer.committed`, or after a typed turn is sent through an active Realtime session.
 - `Responding`: on `response.created`.
 - `Error`: on Realtime error events, except `conversation_already_has_active_response`.
 - `Reconnecting`: during scheduled reconnect attempts.
 - `Disconnected`: when reconnects are abandoned or reconnect fails.
-- `Thinking in text`: after typed question submit.
-- `Text response`: after typed response success.
-- `Text error`: after typed response failure.
+- `Thinking in text`: after `/text-chat` question submit.
+- `Text response`: after `/text-chat` response success.
+- `Text error`: after `/text-chat` response failure.
+- `Realtime text error`: if a typed Realtime turn cannot be fully sent because its data channel closes.
+- `Dictation listening`: while idle microphone dictation is recording.
+- `Transcribing speech`: after idle dictation recording stops and before the transcript is submitted to `/text-chat`.
+- `No speech detected`: when idle dictation produced no usable transcript.
+- `Dictation error`: when recording or transcription fails.
 
 Status visibility rule summary:
 
@@ -424,6 +521,80 @@ For multi-row text2sql results:
 - Supported entity IDs include `ID_MOVIE`, `ID_SERIE`, composite season keys (`ID_SERIE` plus `SEASON_NUMBER` on an `ID_SEASON` row), composite episode keys (`ID_SERIE`, `SEASON_NUMBER`, and `EPISODE_NUMBER` on an `ID_EPISODE` row), `ID_PERSON`, `ID_COMPANY`, `ID_NETWORK`, `ID_T2S_COLLECTION`, `ID_TOPIC`, `ID_T2S_LIST`, `ID_MOVEMENT`, `ID_TECHNICAL`, `ID_GROUP`, `ID_DEATH`, `ID_AWARD`, `ID_NOMINATION`, and `ID_WIKIDATA`.
 - Aggregate rows become aggregate cards.
 - If no displayable rows exist, the grid shows `No displayable rows.`
+- Every card gets an internal `data-result-index` attribute matching its 1-based position in the current grid.
+- Supported poster/detail cards also store normalized title text for spoken-card matching; the title is not displayed as a badge.
+- When assistant subtitles or Realtime output-audio transcript deltas enumerate a visible card by number, simple ordinal word, or visible card title, `setActiveSpokenCard()` adds `.isSpokenActive` to the matching card and removes that class from the previous card.
+- While a card is active, the grid gets `.hasSpokenActive`; inactive sibling cards are dimmed and the active card receives a cyan outline/glow.
+- The active card is scrolled into view with `scrollIntoView({ block: "nearest", inline: "nearest" })`.
+- Subtitle chunks without a fresh card reference keep the current highlight until another card is referenced or subtitle playback ends.
+- Realtime output-audio transcript deltas and final transcripts enqueue card-reference cues. The app starts playing those cues when `output_audio_buffer.started` arrives, estimating their timing from the reference position in the transcript so the UI does not jump to the final card before audio playback reaches it.
+- The spoken-card highlight is cleared when subtitle playback ends, audio output stops, a new Realtime response starts, results are replaced, or the conversation is cleared.
+
+### Realtime Spoken-Answer Highlight Sync
+
+Purpose: keep search-result card highlighting close to the audible Realtime answer without letting final transcript events jump the UI ahead of speech playback.
+
+Important limitation:
+
+- The Realtime events used here do not provide per-word audio timestamps to the client.
+- The sync is therefore paced from transcript text position and audio playback start, not sample-accurate audio timing.
+- This is different from subtitles: subtitle-card highlighting is exact to the displayed subtitle chunk because `showNextSubtitle()` applies the highlight when the chunk appears.
+
+Realtime input events:
+
+- `response.created` calls `resetSpokenAudioHighlightState()`, clearing previous cues, timers, transcript buffer, and the current card highlight.
+- `response.output_audio_transcript.delta` and `response.audio_transcript.delta` append text to `assistantSpokenHighlightBuffer`.
+- `response.output_audio_transcript.done` stores the full assistant transcript in retained context, replaces `assistantSpokenHighlightBuffer` with the final transcript, and enqueues cues from that final text.
+- `output_audio_buffer.started` starts cue playback by setting `spokenAudioHighlightPlaying = true` and `spokenAudioHighlightStartedAt = Date.now()`.
+- `output_audio_buffer.stopped` calls `resetSpokenAudioHighlightState()`, clearing timers, cues, buffer, and highlight.
+
+Cue detection:
+
+1. `spokenCardMatchesFromText(text)` scans the transcript buffer for visible-card references.
+2. It recognizes numeric references such as `1.`, `2:`, `card 3`, `result 4`, and `#5`.
+3. It recognizes ordinal and spoken-number references such as `first`, `second`, `movie one`, or `option two`.
+4. It recognizes visible card titles by comparing normalized transcript text with each card's hidden normalized title metadata.
+5. It also stores a title key without a leading article, so `The Matrix` can match either `the matrix` or `matrix`.
+6. Every match becomes a cue shaped like `{ index, position }`, where `index` is the card's internal 1-based `data-result-index` and `position` is the character position of the reference in the normalized transcript.
+7. Cues are deduplicated with the key `index:Math.round(position / 8)` so repeated parsing of growing transcript deltas does not enqueue the same reference repeatedly.
+8. Cues are sorted by transcript position, then card index.
+
+Cue timing:
+
+```text
+dueMs = spokenAudioHighlightInitialDelayMs + cue.position * spokenAudioHighlightMsPerChar
+delayMs = max(spokenAudioHighlightMinDelayMs, dueMs - elapsedMs)
+```
+
+Current constants:
+
+```text
+spokenAudioHighlightInitialDelayMs = 450
+spokenAudioHighlightMsPerChar = 52
+spokenAudioHighlightMinDelayMs = 80
+```
+
+Playback behavior:
+
+1. Cue playback does not start merely because a transcript delta or final transcript arrives.
+2. Cue playback starts only after `output_audio_buffer.started`.
+3. `scheduleNextSpokenAudioHighlightCue()` looks at the first queued cue and schedules a timer using the formula above.
+4. When the timer fires, the cue is removed from the queue and `setActiveSpokenCard(cue.index)` highlights that card.
+5. `setActiveSpokenCard()` clears the previous active card before adding `.isSpokenActive` and `aria-current="true"` to the next card.
+6. The next cue is scheduled after the current cue fires.
+
+Late result rendering:
+
+- If Realtime transcript text arrives before cards exist, there may be no cue matches yet.
+- After `renderText2SqlResult()` renders cards, it checks whether `assistantSpokenHighlightBuffer` already has text.
+- If so, it calls `enqueueSpokenAudioHighlightCues(assistantSpokenHighlightBuffer)` so title/number matches can be discovered once the card metadata exists.
+
+Practical accuracy:
+
+- The cue order is deterministic and follows transcript order.
+- The timing is an estimate based on average character pace from audio playback start.
+- It prevents the most obvious bad behavior: a complete final transcript selecting the last mentioned card before the voice has reached it.
+- It can still drift if the spoken response has pauses, unusually fast or slow delivery, or transcript text that differs materially from audible phrasing.
 
 For exactly one row:
 
@@ -552,6 +723,8 @@ Visual:
 - White bold centered text.
 - Pointer events disabled.
 - High z-index over normal content.
+- Preserves intentional subtitle line breaks with `white-space: pre-line`.
+- Wraps long words instead of overflowing the overlay.
 
 Default state:
 
@@ -561,17 +734,20 @@ Default state:
 Input:
 
 - `showSubtitleText(text)` normalizes and splits text into chunks.
-- Chunks prefer sentence boundaries.
-- Each chunk is capped around 150 characters. Longer sentences are sliced into 150-character pieces.
+- Inline numbered items such as `4. The Barefoot Contessa (1954)` are promoted to structural subtitle blocks before chunking.
+- Numbered list items are kept as separate chunks when practical so spoken-card highlighting can move from card to card.
+- Paragraph chunks prefer sentence boundaries.
+- Each chunk targets around 150 characters. Long structural blocks may run longer to avoid orphaned list markers; very long blocks are split into readable pieces.
 
 Display sequence:
 
 1. `subtitleQueue` is replaced with the new chunks.
 2. `showNextSubtitle()` clears any existing subtitle timer.
 3. The next chunk is shifted from the queue.
-4. If no chunk exists, the overlay is hidden and text is cleared.
+4. If no chunk exists, the overlay is hidden, text is cleared, and spoken-card highlighting is cleared.
 5. If a chunk exists, the overlay becomes visible and its text is set.
-6. A timer schedules the next chunk.
+6. If the chunk references a visible result-card number, ordinal, or title, the matching card is highlighted immediately and any previous card highlight is removed.
+7. A timer schedules the next chunk.
 
 Duration rule:
 
@@ -747,31 +923,37 @@ If a visible voice selector is added later, this document should be updated with
 
 ## State Summary
 
-| State | Start | Stop | Mic toggle | Text input | Status row | Results panel | Header | New conversation | Subtitles |
-| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Fresh page | visible/enabled | hidden | closed/disabled | visible/enabled/empty | visible, `Idle` | hidden | visible | hidden | hidden |
-| Voice unsupported browser | visible/disabled | hidden | closed/disabled | visible/enabled | visible, `Idle` or unsupported error after failed start | hidden | visible | hidden | hidden |
-| Text typed, no session | hidden | hidden | closed/disabled | visible/enabled/non-empty | visible | unchanged | depends on results | unchanged | unchanged |
-| Starting audio | hidden | visible/enabled | closed until track exists | visible/enabled | visible unless results shown, `Requesting microphone` | unchanged | depends on results | visible | unchanged |
-| Audio connected | hidden | visible/enabled | open/enabled unless manually closed | visible/enabled | visible unless results shown, `Connected` | unchanged | depends on results | visible | unchanged |
-| Listening | hidden | visible/enabled | open/enabled unless manually closed | visible/enabled | visible unless results shown, `Listening` | unchanged | depends on results | visible | unchanged |
-| Thinking/responding by audio | hidden | visible/enabled | follows manual open/closed state | visible/enabled | visible unless results shown, `Thinking` or `Responding` | may become visible if tools run | hidden if results visible | visible | unchanged |
-| Tool search loading | depends on session/text | depends on session | depends on session/manual state | visible/enabled | hidden | visible with searching answer block | hidden | visible | unchanged |
-| Search results visible | depends on session/text | depends on session | depends on session/manual state | visible/enabled | hidden | visible with answer/cards | hidden | visible | unchanged |
-| Detail page visible | depends on session/text | depends on session | depends on session/manual state | visible/enabled | hidden | visible with detail page | hidden | visible | unchanged |
-| Typed request in flight | hidden | hidden unless audio stop occurred first | closed/disabled unless audio still running | visible/enabled/cleared | visible unless results shown, `Thinking in text` | may update | depends on results | active if results render | may show after response |
-| Typed response complete | visible if input empty and no session | hidden | closed/disabled | visible/enabled | visible unless results shown, `Text response` | visible if tools returned UI | hidden if results visible | visible if results rendered | visible while chunks play |
-| Error | depends on session/text | depends on session | depends on session/manual state | visible/enabled | visible unless results shown, error text | unchanged | depends on results | unchanged | may show text error |
-| Stop clicked | visible if input empty | hidden | closed/disabled | visible/enabled | visible unless results shown, `Idle` | unchanged | depends on results | unchanged | unchanged |
-| New conversation clicked | visible | hidden | closed/disabled | visible/enabled | visible, `Idle` | hidden and cleared | visible | hidden | existing subtitle timer is not explicitly cleared |
+| State | Start | Stop | Mic toggle | Look toggle | Text input | Status row | Results panel | Header | New conversation | Subtitles |
+| --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
+| Fresh page | visible/enabled | hidden | closed/enabled if dictation is supported | off/enabled | visible/enabled/empty | visible, `Idle` | hidden | visible | hidden | hidden |
+| Voice unsupported browser | visible/disabled | hidden | closed/enabled for dictation if supported, otherwise disabled | follows user state/enabled | visible/enabled | visible, `Idle` or unsupported error after failed start | hidden | visible | hidden | hidden |
+| Text typed, no session | visible/enabled | hidden | closed/disabled | follows user state/enabled | visible/enabled/non-empty | visible | unchanged | depends on results | unchanged | unchanged |
+| Idle dictation listening | visible/enabled | hidden | open/enabled | follows user state/enabled | visible/enabled/empty | visible unless results shown, `Dictation listening` | unchanged | depends on results | visible | unchanged |
+| Idle dictation transcribing | visible/enabled until `/text-chat` starts | hidden | closed/disabled | follows user state/enabled | visible/enabled/empty | visible unless results shown, `Transcribing speech`, then `Thinking in text` | may update | depends on results | visible | may show after response |
+| Starting audio | hidden | visible/enabled | closed until track exists | follows user state/enabled | visible/enabled | visible unless results shown, `Requesting microphone` | unchanged | depends on results | visible | unchanged |
+| Audio connected | hidden | visible/enabled | open/enabled unless manually closed | follows user state/enabled | visible/enabled | visible unless results shown, `Connected` | unchanged | depends on results | visible | unchanged |
+| Listening | hidden | visible/enabled | open/enabled unless manually closed | follows user state/enabled | visible/enabled | visible unless results shown, `Listening` | unchanged | depends on results | visible | unchanged |
+| Thinking/responding by audio | hidden | visible/enabled | follows manual open/closed state | follows user state/enabled | visible/enabled | visible unless results shown, `Thinking` or `Responding` | may become visible if tools run | hidden if results visible | visible | unchanged |
+| Typed Realtime turn | hidden | visible/enabled | follows manual open/closed state | follows user state/enabled | visible/enabled/cleared | visible unless results shown, `Thinking`, `Responding`, then `Connected` | may become visible if tools run | hidden if results visible | visible | unchanged |
+| Tool search loading | depends on session/text | depends on session | depends on session/manual state | follows user state/enabled | visible/enabled | hidden | visible with searching answer block | hidden | visible | unchanged |
+| Search results visible | depends on session/text | depends on session | depends on session/manual state | follows user state/enabled | visible/enabled | hidden | visible with answer/cards | hidden | visible | unchanged |
+| Detail page visible | depends on session/text | depends on session | depends on session/manual state | follows user state/enabled | visible/enabled | hidden | visible with detail page | hidden | visible | unchanged |
+| `/text-chat` request in flight | visible/enabled unless Realtime is unsupported | hidden unless audio stop occurred first | closed/disabled unless audio still running | follows user state/enabled | visible/enabled/cleared | visible unless results shown, `Thinking in text` | may update | depends on results | active if results render | may show after response |
+| `/text-chat` response complete | visible if input empty and no session | hidden | closed/enabled if dictation is supported and no session | follows user state/enabled | visible/enabled | visible unless results shown, `Text response` | visible if tools returned UI | hidden if results visible | visible if results rendered | visible while chunks play |
+| Error | depends on session/text | depends on session | depends on session/manual state | follows user state/enabled | visible/enabled | visible unless results shown, error text | unchanged | depends on results | unchanged | may show text error |
+| Stop clicked | visible if input empty | hidden | closed/enabled if dictation is supported | follows user state/enabled | visible/enabled | visible unless results shown, `Idle` | unchanged | depends on results | unchanged | unchanged |
+| New conversation clicked | visible | hidden | closed/enabled if dictation is supported | follows user state/enabled | visible/enabled | visible, `Idle` | hidden and cleared | visible | hidden | existing subtitle timer is not explicitly cleared |
 
 ## Implementation Notes For Future Changes
 
 - `updateSessionButtons()` is the single source of truth for Start/Stop visibility and disabled state, and it refreshes the microphone toggle.
+- When `sessionRunning` is false, `#microphoneToggleButton` belongs to the idle dictation flow, not the Realtime microphone track.
+- `updateLookToggle()` is the source of truth for the Look button's icon, title, and `aria-pressed` state.
 - `setStatus()` is the single source of truth for status text and dot color.
 - `resultsPanel.hidden` is the trigger for compact results mode.
 - `renderText2SqlResult()` owns the answer block, result cards, query details toggle, and search pagination state.
 - `renderEntityDetailOutput()` owns entity-detail result states.
+- `setActiveSpokenCard()` owns spoken-card highlight exclusivity; call `clearActiveSpokenCard()` before replacing result content.
 - `showSubtitleText()` owns subtitle queue replacement and display.
 - `clearConversationUi()` clears results but does not explicitly clear subtitles.
 - `startNewConversation()` is the full UI/context reset path.

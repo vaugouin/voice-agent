@@ -58,6 +58,7 @@ Create `.env` from `.env.example`:
 OPENAI_API_KEY=sk-your-key-here
 OPENAI_TEXT_MODEL=gpt-5.1
 OPENAI_REALTIME_MODEL=gpt-realtime-2
+OPENAI_TRANSCRIPTION_MODEL=gpt-4o-transcribe
 
 TEXT2SQL_BASE_URL=http://your_host:8000
 TEXT2SQL_API_KEY_NAME=X-API-Key
@@ -275,7 +276,7 @@ The local adapter returns compact fields used by the browser and the model:
 
 When a text2sql result arrives, the app renders result cards in the UI in addition to the spoken answer.
 
-When the results panel contains a search result page or an entity detail page, the app switches to a compact display mode: the `Voice Movie Database` title and the status row are hidden, leaving only the Start/Stop, Back, Forward, text input, and New Conversation controls above the result content. Clearing the conversation restores the full header.
+When the results panel contains a search result page or an entity detail page, the app switches to a compact display mode: the `Voice Movie Database` title and the status row are hidden, leaving only the Start/Stop, Back, Forward, text input with its conditional submit button, and New Conversation controls above the result content. Clearing the conversation restores the full header.
 
 On short landscape viewports, including iOS Safari on iPhone 15 Pro Max, the app shell removes the outer page padding and square-corners the main panel so result/detail pages fill the available browser viewport from the top edge.
 
@@ -348,29 +349,41 @@ Current implementation note: `loadRetainedContext()` exists, and context is save
 
 ## Text Input
 
-The UI includes a multiline question box beside the microphone controls. The microphone start control uses a layered `👄` and `❌` visual, the audio stop control is shown as `👄`, and the adjacent green microphone toggle shows `👂🏻` when input is open or `👂🏻` with `❌` when input is closed.
+The UI includes a multiline question box beside the microphone controls. The microphone start control uses a layered `👄` and `❌` visual, the audio stop control is shown as `👄`, and the adjacent green microphone toggle shows `👂🏻` when input is open or `👂🏻` with `❌` when input is closed. The next green toggle is the Look control; it starts as `Look Off` with `👁️` plus `❌`, and switches to `Look On` with `👁️` when clicked. A round white submit button with a black up arrow appears immediately to the right of the question box whenever it contains non-whitespace text; clicking it submits the same way as pressing `Enter`.
+
+When the Start or Stop control is shown, its session button uses the green active-control background.
 
 For the complete stateful reference of Start/Stop, text entry, answer/results panel, status panel, subtitles, history, New conversation, hidden audio/log elements, and dynamic detail viewer controls, see `UI.md`.
 
-As soon as the user types any non-whitespace text, the start control is hidden. If the text is removed and the box is empty again, the start control becomes visible again when no audio session is running.
+The Start control remains visible and available while the user types text. Pressing Start switches into the Realtime voice path; pressing `Enter` or the submit arrow sends the typed text through the current text/voice routing rules.
 
-Pressing `Enter` in the question box sends the text to the server-side `/text-chat` endpoint instead of the Realtime audio session. If a Realtime session is active, it is stopped before the text request is sent, so the typed turn uses a normal OpenAI text model rather than `OPENAI_REALTIME_MODEL`. Press `Shift+Enter` to add a new line without submitting.
+When no Realtime session is running and the text box is empty, the microphone toggle becomes a dictation control. Clicking it records browser microphone audio with `MediaRecorder`, auto-stops after speech followed by silence or after a 30-second cap, posts the raw audio to `/transcribe`, and sends the returned transcript through `/text-chat` for a text answer and the usual result rendering.
+
+The Start button remains visible while idle dictation is recording, so the user can still switch into the Realtime voice path from the same control row.
+
+Pressing `Enter` after Start has begun a Realtime session sends the typed message through that Realtime path, regardless of whether the microphone toggle is open or closed. If the data channel is still opening, typed turns are queued until it is ready and then submitted before a spoken response is requested. If an earlier spoken answer is active, it is interrupted before the new turn is sent. The turn uses `OPENAI_REALTIME_MODEL`, may use the same tools as spoken turns, and plays the new answer through Realtime audio output. When no Realtime session is running, pressing `Enter` sends text to the server-side `/text-chat` endpoint. Press `Shift+Enter` to add a new line without submitting.
 
 ## App Icon
 
 The app uses `app/static/icons/voice-agent-1254x1254.png` as its browser favicon, Apple touch icon, and web manifest icon. The manifest is served from `/static/site.webmanifest`, with `start_url` and `scope` pointing back to the app root so iPhone home-screen shortcuts launch `/` instead of `/static/`. Modern browsers and iOS Safari can use the PNG directly; an `.ico` file is optional legacy fallback and is not required for browser tabs or iPhone Add to Home Screen.
 
-The `/text-chat` endpoint calls the OpenAI Responses API with `OPENAI_TEXT_MODEL`, defaulting to `gpt-5.1`. The client sends compact retained conversation context with the text message so follow-up typed turns can stay coherent. To guarantee the same visible behavior as the audio agent, the endpoint always executes `query_text2sql` once for the typed message before asking the text model to answer. It returns that forced tool output to the browser for card rendering, provides it to the model as grounded context, and still exposes every detail lookup tool so the text model can request entity pages when needed.
+The `/transcribe` endpoint forwards browser-recorded dictation audio to the OpenAI audio transcription API with `OPENAI_TRANSCRIPTION_MODEL`, defaulting to `gpt-4o-transcribe`, and returns the transcript text to the browser.
+
+The `/text-chat` endpoint calls the OpenAI Responses API with `OPENAI_TEXT_MODEL`, defaulting to `gpt-5.1`. The client sends compact retained conversation context with the text message so follow-up typed or dictated turns can stay coherent. To guarantee the same visible behavior as the audio agent, the endpoint always executes `query_text2sql` once for the submitted message before asking the text model to answer. It returns that forced tool output to the browser for card rendering, provides it to the model as grounded context, and still exposes every detail lookup tool so the text model can request entity pages when needed.
 
 When text-mode tool calls return data, the browser renders those results in the same results panel used by voice-mode tool calls. For example, a typed movie search populates text2sql result cards, and a typed detail request can still render the matching entity detail page.
 
-Text model output is displayed as subtitle-style labels fixed near the bottom of the app. Long responses are split into readable chunks that appear and disappear after a duration based on the amount of text.
+Text model output is displayed as subtitle-style labels fixed near the bottom of the app. Long responses are split into readable chunks that preserve reply structure, including numbered and bulleted list boundaries, and appear and disappear after a duration based on the amount of text.
+
+When assistant speech transcripts or subtitle chunks enumerate a search result by number, ordinal, or visible card title, the matching card receives a temporary spoken-focus highlight and the previous spoken-focus card is cleared. Result numbers are tracked internally and are not shown as badges on the cards. Subtitle highlights happen as each subtitle chunk appears. Realtime spoken-answer highlights are paced from the `output_audio_buffer.started` event so final transcript events do not jump the UI ahead of audible playback.
 
 The question box grows vertically as lines are added, up to a capped height where it scrolls internally.
 
 ## Switching Audio To Text
 
-Audio and typed text now use separate model paths. The microphone path creates a WebRTC Realtime session with `OPENAI_REALTIME_MODEL`; the typed-text path posts to `/text-chat`, which calls a standard OpenAI text model through the Responses API, runs the same application tool loop server-side, renders returned tool results, and displays the final text response as subtitle output.
+Typed text has two paths. Once a Realtime session has started, the browser queues typed input until its data channel is ready when necessary, cancels a generating response and clears playing output audio as needed, then sends the input into that same WebRTC Realtime conversation; the new answer is spoken using `OPENAI_REALTIME_MODEL`, independent of the microphone toggle state. Otherwise, typed text posts to `/text-chat`, which calls a standard OpenAI text model through the Responses API, runs the application tool loop server-side, renders returned tool results, and displays the final text response as subtitle output.
+
+Idle dictation uses the text path too: it records audio locally, transcribes it through `/transcribe`, then submits the transcript to `/text-chat`. It does not create a Realtime WebRTC session and it does not produce model audio.
 
 ## Connection Resilience
 
@@ -432,6 +445,14 @@ page_lifecycle
 page_visibility
 context_seeded
 context_retained
+dictation_started
+dictation_transcribe_sent
+dictation_transcribed
+dictation_error
+look_toggle
+realtime_text_sent
+realtime_text_error
+realtime_text_queued
 keepalive_started
 keepalive_stopped
 keepalive_send_error
@@ -547,8 +568,8 @@ Adjust the container name if your Nginx container is not named `reverseproxy`.
 The HTML references static assets with version query strings:
 
 ```html
-styles.css?v=20260525-season-episodes-rail
-app.js?v=20260525-season-episodes-rail
+styles.css?v=20260531-start-visible-with-text
+app.js?v=20260531-start-visible-with-text
 ```
 
 When changing frontend behavior, bump the version to force Safari and other browsers to fetch the new asset after deployment.
@@ -629,3 +650,4 @@ Local smoke test:
 5. Type a second question in the question box and press `Enter`.
 6. Confirm spoken answers and result cards.
 7. Type a multiline question with `Shift+Enter`, then press `Enter` to submit.
+8. With no Realtime session running and an empty text box, click the microphone toggle, ask a short question, and confirm the transcript is answered through text mode.
