@@ -13,12 +13,14 @@ The app has one persistent shell, one control row, one status row, one hidden au
 - `pendingRealtimeTextTurns`: typed turns submitted after Start while the Realtime data channel is still opening; they are sent when the channel opens.
 - `resultsPanel.hidden`: determines whether result/detail content is visible and whether compact results mode is active.
 - `currentSearchState`: stores pagination state for text2sql result pages.
+- `activeUiLanguage`: stores the detected API language for the latest user turn or rendered result page; it is `fr` for detected French input and `en` for English or unsupported languages.
 - `loadingMore`: true while another page of text2sql rows is loading.
 - `autoPagesLoaded`: counts automatic infinite-scroll page loads before the manual Load more button is shown.
 - `pageHistory` and `pageHistoryIndex`: drive Back and Forward button enablement.
 - `subtitleQueue` and `subtitleTimer`: drive subtitle overlay visibility and sequencing.
 - `activeSpokenCardIndex`: stores the currently highlighted result-card number while the assistant is enumerating visible cards.
 - `spokenAudioHighlightCues`, `spokenAudioHighlightTimer`, and `spokenAudioHighlightPlaying`: pace Realtime spoken-answer card highlights from audio playback start instead of applying full transcript matches immediately.
+- `structuredCardFocusActive`: true when the current Realtime session was created with the browser-handled `focus_result_card` tool enabled.
 - `activeResponseId`, `activeAudioResponseId`, `toolCallsInFlight`, and `awaitingToolResponse`: drive microphone muting and status transitions during Realtime responses and tool work.
 
 ## Static Shell
@@ -527,7 +529,7 @@ For multi-row text2sql results:
 - While a card is active, the grid gets `.hasSpokenActive`; inactive sibling cards are dimmed and the active card receives a cyan outline/glow.
 - The active card is scrolled into view with `scrollIntoView({ block: "nearest", inline: "nearest" })`.
 - Subtitle chunks without a fresh card reference keep the current highlight until another card is referenced or subtitle playback ends.
-- Realtime output-audio transcript deltas and final transcripts enqueue card-reference cues. The app starts playing those cues when `output_audio_buffer.started` arrives, estimating their timing from the reference position in the transcript so the UI does not jump to the final card before audio playback reaches it.
+- Realtime `focus_result_card` tool calls highlight the requested visible card immediately when structured card focus is active. Realtime output-audio transcript deltas and final transcripts still enqueue fallback card-reference cues; the app starts playing those cues when `output_audio_buffer.started` arrives, estimating their timing from the reference position in the transcript so the UI does not jump to the final card before audio playback reaches it.
 - The spoken-card highlight is cleared when subtitle playback ends, audio output stops, a new Realtime response starts, results are replaced, or the conversation is cleared.
 
 ### Realtime Spoken-Answer Highlight Sync
@@ -547,6 +549,15 @@ Realtime input events:
 - `response.output_audio_transcript.done` stores the full assistant transcript in retained context, replaces `assistantSpokenHighlightBuffer` with the final transcript, and enqueues cues from that final text.
 - `output_audio_buffer.started` starts cue playback by setting `spokenAudioHighlightPlaying = true` and `spokenAudioHighlightStartedAt = Date.now()`.
 - `output_audio_buffer.stopped` calls `resetSpokenAudioHighlightState()`, clearing timers, cues, buffer, and highlight.
+
+Structured focus path:
+
+- New Realtime sessions default to structured card focus unless the server has `ENABLE_STRUCTURED_CARD_FOCUS=false` or the page URL contains `?structuredCardFocus=0`.
+- The browser sends the URL override to `/session` as `structured_card_focus=0` or `1`.
+- `/session` returns `X-Structured-Card-Focus`; the browser stores this in `structuredCardFocusActive`.
+- When active, `query_text2sql` tool output sent back to the model includes `visible_results`, a compact list of visible result-card indexes and titles.
+- If the model calls `focus_result_card`, `handleFunctionCall()` highlights the requested visible card immediately, sends a small `function_call_output`, and creates the next Realtime response so spoken output can continue.
+- If structured focus is disabled for the session, the tool is not included in the Realtime session config. Transcript-derived cue matching below remains the fallback behavior.
 
 Cue detection:
 
@@ -604,6 +615,7 @@ For exactly one row:
 Card click behavior:
 
 - Cards with supported entity IDs open in-app detail pages.
+- Clicked detail fetches carry the active `ui_language` from the current result page; direct detail tool calls use the detected language from the latest user audio transcript or typed message.
 - Opening a detail page replaces the results content.
 - Detail page entries are pushed into page history unless restoring history.
 
@@ -652,7 +664,7 @@ If detail exists:
 - series detail pages render returned `seasons` as a clickable `Seasons` rail above the `Cast` rail, injecting the parent `ID_SERIE` needed by the composite season route
 - season detail pages render parent-series navigation and metrics, then a clickable `Episodes` rail from returned `episodes` summaries above the `Cast` rail, followed by crew; each episode card inherits the season composite route context and opens its full episode page
 - episode detail pages render parent-series and parent-season navigation, metrics, cast, crew, and returned still-image cards
-- technical detail pages use `DESCRIPTION` / `DESCRIPTION_FR` as the title, show `TECHNICAL_TYPE` as a type metric, and render associated `movies` plus same-type `siblings` as clickable rails when returned
+- technical detail pages use localized `DESCRIPTION` as the title, show `TECHNICAL_TYPE` as a type metric, and render associated `movies` plus same-type `siblings` as clickable rails when returned
 
 ### Pagination Loader, Load More, And End Marker
 
@@ -733,7 +745,8 @@ Default state:
 
 Input:
 
-- `showSubtitleText(text)` normalizes and splits text into chunks.
+- `showSubtitleText(text)` removes explicit backend/database ID mentions, then normalizes and splits text into chunks.
+- The cleanup targets phrases such as IMDb IDs, Wikidata IDs, TMDb IDs, TVDB IDs, `ID_*` fields, and entity/database ID labels. Entity cards and detail links carry those identifiers internally, so subtitles use names, titles, and visible result numbers instead.
 - Inline numbered items such as `4. The Barefoot Contessa (1954)` are promoted to structural subtitle blocks before chunking.
 - Numbered list items are kept as separate chunks when practical so spoken-card highlighting can move from card to card.
 - Paragraph chunks prefer sentence boundaries.

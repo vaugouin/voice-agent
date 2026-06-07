@@ -55,9 +55,11 @@ let spokenAudioHighlightCues = [];
 let spokenAudioHighlightCueKeys = new Set();
 let spokenAudioHighlightPlaying = false;
 let spokenAudioHighlightStartedAt = 0;
+let structuredCardFocusActive = false;
 let pendingRealtimeTextTurns = [];
 const handledCallIds = new Set();
 let currentSearchState = null;
+let activeUiLanguage = "en";
 let loadingMore = false;
 let autoPagesLoaded = 0;
 let pageHistory = [];
@@ -66,6 +68,7 @@ let restoringHistory = false;
 const maxAutoPages = 4;
 const TMDB_FRONT_BASE_URL = "https://www.vaugouin.com/tmdb";
 const CONTEXT_STORAGE_KEY = "voice-agent-context-v1";
+const STRUCTURED_CARD_FOCUS_TOOL = "focus_result_card";
 const maxContextItems = 10;
 const DETAIL_TOOL_ENTITIES = {
   get_movie_detail: "movie",
@@ -120,6 +123,186 @@ let retainedContext = [];
 
 function appUrl(path) {
   return new URL(path, new URL(".", window.location.href)).toString();
+}
+
+const FRENCH_MARKERS = new Set([
+  "acteur",
+  "acteurs",
+  "actrice",
+  "actrices",
+  "aimerais",
+  "avec",
+  "ce",
+  "ces",
+  "cet",
+  "cette",
+  "cherche",
+  "combien",
+  "comment",
+  "dans",
+  "de",
+  "des",
+  "dis",
+  "donne",
+  "donnez",
+  "du",
+  "elle",
+  "elles",
+  "est",
+  "fais",
+  "fait",
+  "film",
+  "films",
+  "francais",
+  "francaise",
+  "il",
+  "ils",
+  "je",
+  "la",
+  "le",
+  "les",
+  "liste",
+  "lister",
+  "ma",
+  "me",
+  "meilleur",
+  "meilleure",
+  "meilleures",
+  "meilleurs",
+  "mes",
+  "moi",
+  "moins",
+  "montre",
+  "montrez",
+  "nous",
+  "par",
+  "peux",
+  "plus",
+  "pour",
+  "pourquoi",
+  "pouvez",
+  "quel",
+  "quelle",
+  "quelles",
+  "quels",
+  "que",
+  "qui",
+  "quoi",
+  "realisateur",
+  "realisatrice",
+  "recherche",
+  "reponds",
+  "sans",
+  "serie",
+  "series",
+  "ses",
+  "sont",
+  "sorti",
+  "sortie",
+  "sorties",
+  "sortis",
+  "sur",
+  "te",
+  "toi",
+  "ton",
+  "tres",
+  "tu",
+  "un",
+  "une",
+  "veux",
+  "voudrais",
+  "vous",
+]);
+const FRENCH_PHRASES = [
+  "donne moi",
+  "dis moi",
+  "est ce que",
+  "en francais",
+  "peux tu",
+  "qu est ce",
+  "quels sont",
+  "quelles sont",
+  "qui est",
+  "reponds en francais",
+];
+
+function normalizeUiLanguage(value) {
+  const clean = String(value || "en").trim().toLowerCase().replace("_", "-").split("-", 1)[0];
+  return clean === "fr" ? "fr" : "en";
+}
+
+function foldLanguageText(value) {
+  return String(value || "")
+    .trim()
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\u0153/g, "oe")
+    .replace(/\u00e6/g, "ae");
+}
+
+function detectUiLanguageFromText(text) {
+  const raw = String(text || "").trim().toLowerCase();
+  if (!raw) {
+    return "en";
+  }
+
+  const folded = foldLanguageText(raw);
+  const spaced = folded.replace(/[^a-z']+/g, " ");
+  let score = folded !== raw ? 1 : 0;
+  if (/\b[ldjmntsqc]'[a-z]/.test(folded)) {
+    score += 1;
+  }
+  if (FRENCH_PHRASES.some((phrase) => spaced.includes(phrase))) {
+    score += 2;
+  }
+  const markers = new Set((folded.match(/[a-z']+/g) || []).filter((token) => FRENCH_MARKERS.has(token)));
+  score += Math.min(3, markers.size);
+  return score >= 2 ? "fr" : "en";
+}
+
+function currentUiLanguage(args = {}) {
+  if (args.ui_language || args.uiLanguage) {
+    return normalizeUiLanguage(args.ui_language || args.uiLanguage);
+  }
+  return normalizeUiLanguage(activeUiLanguage || currentSearchState?.ui_language || "en");
+}
+
+function parseUrlBooleanFlag(value) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  const clean = String(value).trim().toLowerCase();
+  if (["1", "true", "yes", "on"].includes(clean)) {
+    return true;
+  }
+  if (["0", "false", "no", "off"].includes(clean)) {
+    return false;
+  }
+  return null;
+}
+
+function structuredCardFocusPreference() {
+  const params = new URLSearchParams(window.location.search);
+  const value = params.get("structuredCardFocus") ?? params.get("structured_card_focus");
+  return parseUrlBooleanFlag(value);
+}
+
+function structuredCardFocusRequested() {
+  return structuredCardFocusPreference() !== false;
+}
+
+function structuredCardFocusEnabled() {
+  return structuredCardFocusActive && structuredCardFocusRequested();
+}
+
+function realtimeSessionUrl() {
+  const url = new URL(appUrl("session"));
+  const preference = structuredCardFocusPreference();
+  if (preference !== null) {
+    url.searchParams.set("structured_card_focus", preference ? "1" : "0");
+  }
+  return url.toString();
 }
 
 function setConversationActive(active) {
@@ -211,7 +394,7 @@ async function renderHistoryEntry(entry) {
     if (entry.type === "search") {
       await renderText2SqlResult(entry.output, entry.args, { skipHistory: true });
     } else if (entry.type === "recordDetail") {
-      await showRecordDetail(entry.record, { skipHistory: true });
+      await showRecordDetail(entry.record, { skipHistory: true, ui_language: entry.ui_language });
     } else if (entry.type === "entityDetail") {
       renderEntityDetailOutput(entry.output, entry.args, { skipHistory: true });
     }
@@ -696,8 +879,11 @@ async function logPeerStats(reason, peer) {
   }
 }
 
-function setLoadingResults(query) {
+function setLoadingResults(query, uiLanguage = "") {
   setConversationActive(true);
+  activeUiLanguage = uiLanguage
+    ? normalizeUiLanguage(uiLanguage)
+    : detectUiLanguageFromText(query || lastUserTranscript);
   resultsPanel.hidden = false;
   clearActiveSpokenCard();
   assistantSpokenHighlightBuffer = "";
@@ -1018,6 +1204,13 @@ function appendCard(grid, cardSpec) {
     title: cardSpec.title,
     subtitle: cardSpec.subtitle,
   });
+  if (cardSpec.detailRequest?.toolName) {
+    card.dataset.resultDetailTool = cardSpec.detailRequest.toolName;
+  }
+  const detailId = cardSpec.detailRequest?.id ?? cardSpec.detailRequest?.id_serie ?? "";
+  if (detailId !== "") {
+    card.dataset.resultDetailId = String(detailId);
+  }
   const link = document.createElement(cardSpec.detailRequest ? "button" : cardSpec.href ? "a" : "div");
   link.className = "search-poster-card-link";
   if (cardSpec.detailRequest) {
@@ -2170,8 +2363,9 @@ async function renderSingleRecordResult(parent, record) {
   }
 }
 
-async function showRecordDetail(record, { skipHistory = false } = {}) {
+async function showRecordDetail(record, { skipHistory = false, ui_language = "" } = {}) {
   setConversationActive(true);
+  activeUiLanguage = currentUiLanguage({ ui_language });
   resultsPanel.hidden = false;
   clearQueryDetailsDock();
   resultsContent.replaceChildren();
@@ -2184,12 +2378,13 @@ async function showRecordDetail(record, { skipHistory = false } = {}) {
 
   await renderSingleRecordResult(resultsContent, record);
   if (!skipHistory) {
-    pushPageHistory({ type: "recordDetail", record });
+    pushPageHistory({ type: "recordDetail", record, ui_language: activeUiLanguage });
   }
 }
 
 function setLoadingEntityDetail(toolName, args) {
   setConversationActive(true);
+  activeUiLanguage = currentUiLanguage(args);
   resultsPanel.hidden = false;
   clearQueryDetailsDock();
   resultsContent.replaceChildren();
@@ -2212,6 +2407,7 @@ function setLoadingEntityDetail(toolName, args) {
 
 function renderEntityDetailOutput(output, args = {}, { skipHistory = false } = {}) {
   setConversationActive(true);
+  activeUiLanguage = currentUiLanguage({ ui_language: output.ui_language || args.ui_language });
   resultsPanel.hidden = false;
   clearQueryDetailsDock();
   resultsContent.replaceChildren();
@@ -2261,6 +2457,12 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
   resultsPanel.hidden = false;
 
   const upstream = output.upstream && typeof output.upstream === "object" ? output.upstream : {};
+  const uiLanguage = normalizeUiLanguage(
+    args.ui_language ||
+    upstream.ui_language ||
+    detectUiLanguageFromText(args.query || upstream.question || lastUserTranscript)
+  );
+  activeUiLanguage = uiLanguage;
   const rows = Array.isArray(upstream.result)
     ? upstream.result
     : Array.isArray(output.rows)
@@ -2309,7 +2511,7 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
     const page = Number(output.page || upstream.page || args.page || 1);
     currentSearchState = {
       query: args.query || upstream.question || "",
-      ui_language: args.ui_language || upstream.ui_language || "en",
+      ui_language: uiLanguage,
       question_hashed: questionHashed,
       page,
       rows_per_page: rowsPerPage,
@@ -2364,7 +2566,7 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
   const page = Number(output.page || upstream.page || args.page || 1);
   currentSearchState = {
     query: args.query || upstream.question || "",
-    ui_language: args.ui_language || upstream.ui_language || "en",
+    ui_language: uiLanguage,
     question_hashed: questionHashed,
     page,
     rows_per_page: rowsPerPage,
@@ -2442,6 +2644,30 @@ function maybeLoadNextPage() {
 
 function resultCardCount() {
   return resultsContent.querySelectorAll(".search-poster-card[data-result-index]").length;
+}
+
+function currentVisibleResultCards() {
+  return Array.from(resultsContent.querySelectorAll(".search-poster-card[data-result-index]"))
+    .map((card) => {
+      const index = Number(card.dataset.resultIndex);
+      if (!card.dataset.resultTitle) {
+        return null;
+      }
+      const title = card.querySelector(".search-poster-card-title")?.textContent?.trim() || "";
+      const subtitle = card.querySelector(".search-poster-card-year")?.textContent?.trim() || "";
+      const result = { index, title };
+      if (subtitle) {
+        result.subtitle = subtitle;
+      }
+      if (card.dataset.resultDetailTool) {
+        result.detail_tool = card.dataset.resultDetailTool;
+      }
+      if (card.dataset.resultDetailId) {
+        result.id = card.dataset.resultDetailId;
+      }
+      return result;
+    })
+    .filter((item) => item && Number.isInteger(item.index) && item.index > 0 && item.title);
 }
 
 function clearActiveSpokenCard() {
@@ -2691,6 +2917,33 @@ const subtitleListItemPattern = /^(?:\d{1,3}[.)]|[-*]|\u2022)\s+\S/;
 const spokenAudioHighlightInitialDelayMs = 450;
 const spokenAudioHighlightMsPerChar = 52;
 const spokenAudioHighlightMinDelayMs = 80;
+const publicIdValuePattern = String.raw`(?:tt\d{5,}|nm\d{5,}|co\d{5,}|ev\d{5,}|ch\d{5,}|Q\d+)`;
+const labeledIdValuePattern = String.raw`(?:${publicIdValuePattern}|[A-Z]{1,8}\d{2,}|[A-Za-z0-9_-]{8,}|\d+)`;
+const idLabelPattern = String.raw`(?:ID_[A-Z0-9_]+|(?:imdb|wikidata|tmdb|tvdb|trakt|t2s)_id|(?:IMDb|Wikidata|TMDb|TVDB|Trakt|T2S)(?:\s+(?:ID|identifier|item|record))?|(?:internal|database|entity|movie|film|series|show|season|episode|person|company|network|collection|topic|list|movement|technical|group|death|award|nomination|location)\s+(?:ID|identifier)|(?:ID|identifier))`;
+
+function sanitizeAssistantFeedbackText(text) {
+  return String(text || "")
+    .replace(new RegExp(String.raw`\s*[\[(]\s*${idLabelPattern}\s*(?:is|=|:|#|-)?\s*${labeledIdValuePattern}\s*[\])]`, "gi"), "")
+    .replace(new RegExp(String.raw`\s*[\[(]\s*${publicIdValuePattern}\s*[\])]`, "g"), "")
+    .replace(
+      new RegExp(String.raw`(^|[\s,;:([{])${idLabelPattern}\s*(?:is|=|:|#|-)?\s*${labeledIdValuePattern}(?=$|[\s,;:.)\]}-])`, "gi"),
+      (_match, prefix) => (prefix && !/[,;:([{]/.test(prefix) ? prefix : "")
+    )
+    .replace(
+      new RegExp(String.raw`(^|[\s,;:([{])${publicIdValuePattern}(?=$|[\s,;:.)\]}-])`, "g"),
+      (_match, prefix) => (prefix && !/[,;:([{]/.test(prefix) ? prefix : "")
+    )
+    .replace(/\b(?:and|or)\s+([,.;:!?])/gi, "$1")
+    .replace(/\b(?:has|have|with|using|is|are)\s+([,.;:!?])/gi, "$1")
+    .replace(/[ \t]+([,.;:!?])/g, "$1")
+    .replace(/([([{])\s+|\s+([)\]}])/g, "$1$2")
+    .replace(/\s+(-)\s+([,.;:!?])/g, "$2")
+    .replace(/([,;:])\s*([,;:.!?])/g, "$2")
+    .replace(/[ \t]{2,}/g, " ")
+    .replace(/[ \t]*\n[ \t]*/g, "\n")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
 
 function normalizeSubtitleText(text) {
   const clean = String(text || "")
@@ -2875,7 +3128,7 @@ function showNextSubtitle() {
 }
 
 function showSubtitleText(text) {
-  subtitleQueue = splitSubtitleText(text);
+  subtitleQueue = splitSubtitleText(sanitizeAssistantFeedbackText(text));
   showNextSubtitle();
 }
 
@@ -3015,6 +3268,7 @@ async function sendTextChatMessage(text, { source = "typed" } = {}) {
   resizeQuestionInput();
   updateSessionButtons();
   lastUserTranscript = text;
+  activeUiLanguage = detectUiLanguageFromText(text);
   addRetainedContext({ type: "user", text });
   setStatus("Thinking in text", "live");
   clientLog("text_chat_sent", { length: text.length, source });
@@ -3028,7 +3282,7 @@ async function sendTextChatMessage(text, { source = "typed" } = {}) {
         renderEntityDetailOutput(toolResult.output, toolResult.args || {});
       }
     }
-    const responseText = output.text || "";
+    const responseText = sanitizeAssistantFeedbackText(output.text || "");
     if (responseText) {
       addRetainedContext({ type: "assistant", text: responseText });
       showSubtitleText(responseText);
@@ -3064,6 +3318,7 @@ async function sendTextMessage() {
     resizeQuestionInput();
     updateSessionButtons();
     lastUserTranscript = text;
+    activeUiLanguage = detectUiLanguageFromText(text);
     if (dc?.readyState === "open") {
       addRetainedContext({ type: "user", text });
       sendTypedRealtimeTurn(text);
@@ -3423,6 +3678,7 @@ function cleanupConnection() {
   localAudioTrack = undefined;
   activeResponseId = null;
   activeAudioResponseId = null;
+  structuredCardFocusActive = false;
   toolCallsInFlight = 0;
   awaitingToolResponse = false;
 }
@@ -3929,18 +4185,24 @@ function compactDetailForModel(output, fallbackEntity) {
     id_name: output.id_name || "",
     id: output.id || "",
     endpoint: output.endpoint || "",
+    ui_language: output.ui_language || "",
     detail: compactDetail,
     wikipedia_content: compactWikipediaContent(detail),
   };
 }
 
 async function callText2Sql(args) {
+  const uiLanguage = normalizeUiLanguage(
+    args.ui_language ||
+    detectUiLanguageFromText(args.query || lastUserTranscript)
+  );
+  activeUiLanguage = uiLanguage;
   const response = await fetch(appUrl("tool/text2sql"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify({
       query: args.query,
-      ui_language: args.ui_language || "en",
+      ui_language: uiLanguage,
       page: args.page || 1,
       question_hashed: args.question_hashed || null,
     }),
@@ -3963,6 +4225,7 @@ async function callText2Sql(args) {
 async function callEntityDetail(toolName, args) {
   const entity = DETAIL_TOOL_ENTITIES[toolName];
   const hasValue = (value) => value !== null && value !== undefined && String(value).trim() !== "";
+  const uiLanguage = currentUiLanguage(args);
   let detailPath = "";
   if (entity === "season") {
     const idSerie = args.id_serie ?? args.ID_SERIE;
@@ -4002,9 +4265,11 @@ async function callEntityDetail(toolName, args) {
     throw new Error(`Missing id for ${toolName}`);
   }
 
-  const response = await fetch(
+  const detailUrl = new URL(
     appUrl(detailPath || `tool/detail/${encodeURIComponent(entity)}/${encodeURIComponent(String(id))}`)
   );
+  detailUrl.searchParams.set("ui_language", uiLanguage);
+  const response = await fetch(detailUrl.toString());
 
   const rawBody = await response.text();
   let body;
@@ -4020,10 +4285,83 @@ async function callEntityDetail(toolName, args) {
   return body;
 }
 
+function parseFunctionCallArgs(item) {
+  try {
+    return JSON.parse(item.arguments || "{}");
+  } catch {
+    return {};
+  }
+}
+
+function sendFunctionCallOutput(callId, output) {
+  return sendEvent({
+    type: "conversation.item.create",
+    item: {
+      type: "function_call_output",
+      call_id: callId,
+      output: JSON.stringify(output),
+    },
+  });
+}
+
+function requestRealtimeResponseAfterToolOutput() {
+  if (!activeResponseId) {
+    sendEvent({ type: "response.create" });
+  } else {
+    window.setTimeout(() => {
+      if (!activeResponseId) {
+        sendEvent({ type: "response.create" });
+      }
+    }, 250);
+  }
+}
+
+function handleStructuredCardFocusCall(item, args) {
+  const requestedIndex = Number(args.index);
+  const cardCount = resultCardCount();
+  const visibleResults = currentVisibleResultCards();
+  const enabled = structuredCardFocusEnabled();
+  const focusedResult = visibleResults.find((result) => result.index === requestedIndex) || null;
+  const validIndex = Boolean(focusedResult);
+  const output = {
+    ok: Boolean(enabled && validIndex),
+    enabled,
+    index: validIndex ? requestedIndex : null,
+    title: focusedResult?.title || "",
+    result_count: cardCount,
+    visible_result_count: visibleResults.length,
+  };
+
+  if (enabled && validIndex) {
+    setActiveSpokenCard(requestedIndex);
+  } else if (!enabled) {
+    output.error = "Structured card focus is disabled for this session.";
+  } else {
+    output.error = "No visible result card exists for that index.";
+  }
+
+  awaitingToolResponse = true;
+  clientLog("structured_card_focus", {
+    call_id: item.call_id,
+    requestedIndex,
+    enabled,
+    ok: output.ok,
+    result_count: cardCount,
+    visible_result_count: visibleResults.length,
+  }, output.ok ? "info" : "error");
+  sendFunctionCallOutput(item.call_id, output);
+  requestRealtimeResponseAfterToolOutput();
+  syncMicrophone("structured card focus output sent");
+}
+
 async function handleFunctionCall(item) {
   if (
     item?.type !== "function_call" ||
-    (item.name !== "query_text2sql" && !DETAIL_TOOL_ENTITIES[item.name])
+    (
+      item.name !== "query_text2sql" &&
+      item.name !== STRUCTURED_CARD_FOCUS_TOOL &&
+      !DETAIL_TOOL_ENTITIES[item.name]
+    )
   ) {
     return;
   }
@@ -4032,12 +4370,14 @@ async function handleFunctionCall(item) {
   }
   handledCallIds.add(item.call_id);
 
-  let args;
-  try {
-    args = JSON.parse(item.arguments || "{}");
-  } catch {
-    args = {};
+  const args = parseFunctionCallArgs(item);
+  if (item.name === STRUCTURED_CARD_FOCUS_TOOL) {
+    handleStructuredCardFocusCall(item, args);
+    return;
   }
+  args.ui_language = item.name === "query_text2sql"
+    ? detectUiLanguageFromText(lastUserTranscript || args.query)
+    : normalizeUiLanguage(activeUiLanguage || currentSearchState?.ui_language || "en");
 
   log("tool call", { name: item.name, args });
   lastToolArgs = args;
@@ -4045,7 +4385,7 @@ async function handleFunctionCall(item) {
   syncMicrophone("tool call started");
   clientLog("tool_call_start", { name: item.name, args, call_id: item.call_id });
   if (item.name === "query_text2sql") {
-    setLoadingResults(args.query);
+    setLoadingResults(args.query, args.ui_language);
   } else {
     setLoadingEntityDetail(item.name, args);
   }
@@ -4085,6 +4425,7 @@ async function handleFunctionCall(item) {
         answer: output.answer || "",
         error: output.error || "",
         result_count: output.result_count ?? null,
+        visible_results: structuredCardFocusEnabled() ? currentVisibleResultCards() : [],
         rows: output.rows || [],
         sql_query: output.sql_query || "",
       }
@@ -4094,6 +4435,7 @@ async function handleFunctionCall(item) {
         id_name: output.id_name || "",
         id: output.id || args.id || args.wikidata_id || "",
         endpoint: output.endpoint || "",
+        ui_language: output.ui_language || args.ui_language || "",
         detail: output.detail || null,
       };
   const modelToolOutput = item.name === "query_text2sql"
@@ -4109,28 +4451,13 @@ async function handleFunctionCall(item) {
           entity: toolOutput.entity,
           id: toolOutput.id,
           endpoint: toolOutput.endpoint,
+          ui_language: toolOutput.ui_language,
           error: toolOutput.error,
         }),
   });
 
-  sendEvent({
-    type: "conversation.item.create",
-    item: {
-      type: "function_call_output",
-      call_id: item.call_id,
-      output: JSON.stringify(modelToolOutput),
-    },
-  });
-
-  if (!activeResponseId) {
-    sendEvent({ type: "response.create" });
-  } else {
-    window.setTimeout(() => {
-      if (!activeResponseId) {
-        sendEvent({ type: "response.create" });
-      }
-    }, 250);
-  }
+  sendFunctionCallOutput(item.call_id, modelToolOutput);
+  requestRealtimeResponseAfterToolOutput();
   syncMicrophone("tool output sent");
 }
 
@@ -4165,6 +4492,7 @@ async function handleServerEvent(event) {
     const transcript = event.transcript || inputTranscripts.get(event.item_id) || "";
     if (transcript.trim()) {
       lastUserTranscript = transcript.trim();
+      activeUiLanguage = detectUiLanguageFromText(lastUserTranscript);
       addRetainedContext({ type: "user", text: lastUserTranscript });
       clientLog("user_transcript", { item_id: event.item_id, transcript: lastUserTranscript });
     }
@@ -4250,6 +4578,7 @@ async function start({ reconnecting = false } = {}) {
   setStatus(reconnecting ? "Reconnecting" : "Requesting microphone");
   clientLog("realtime_support", {
     ...realtimeSupportSnapshot(reconnecting ? "reconnect start" : "start"),
+    structuredCardFocusRequested: structuredCardFocusRequested(),
   });
   requestWakeLock(reconnecting ? "reconnect start" : "start");
 
@@ -4430,7 +4759,8 @@ async function start({ reconnecting = false } = {}) {
   await nextPc.setLocalDescription(offer);
 
   setStatus("Creating Realtime call");
-  const sdpResponse = await fetch(appUrl("session"), {
+  structuredCardFocusActive = false;
+  const sdpResponse = await fetch(realtimeSessionUrl(), {
     method: "POST",
     headers: {
       "Content-Type": "application/sdp",
@@ -4442,6 +4772,11 @@ async function start({ reconnecting = false } = {}) {
   if (!sdpResponse.ok) {
     throw new Error(answerSdp);
   }
+  structuredCardFocusActive = sdpResponse.headers.get("X-Structured-Card-Focus") === "1";
+  clientLog("structured_card_focus_session", {
+    requested: structuredCardFocusRequested(),
+    active: structuredCardFocusActive,
+  });
 
   const callId = sdpResponse.headers.get("X-OpenAI-Call-ID");
   if (callId) {
@@ -4480,6 +4815,7 @@ function clearConversationUi() {
   loadMoreButton.hidden = true;
   resultsEnd.hidden = true;
   currentSearchState = null;
+  activeUiLanguage = "en";
   loadingMore = false;
   autoPagesLoaded = 0;
   pendingReconnectResume = null;
