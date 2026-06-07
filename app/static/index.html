@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" sizes="1254x1254" href="./static/icons/voice-agent-1254x1254.png" />
     <link rel="apple-touch-icon" href="./static/icons/voice-agent-1254x1254.png" />
     <link rel="manifest" href="./static/site.webmanifest" />
-    <link rel="stylesheet" href="./static/styles.css?v=20260525-season-episodes-rail" />
+    <link rel="stylesheet" href="./static/styles.css?v=20260607-detect-ui-language" />
   </head>
   <body>
     <main>
@@ -37,6 +37,14 @@
               </span>
             </button>
           </div>
+          <div class="lookButtonSlot">
+            <button id="lookToggleButton" class="iconButton lookToggleButton isClosed" type="button" aria-label="Look Off" title="Look Off" aria-pressed="false">
+              <span class="lookStateIcon" aria-hidden="true">
+                <span class="lookStateEye">&#x1F441;&#xFE0F;</span>
+                <span class="lookStateCross">&#x274C;</span>
+              </span>
+            </button>
+          </div>
           <button id="historyBackButton" class="iconButton" type="button" aria-label="Back" title="Back" disabled>
             <svg aria-hidden="true" viewBox="0 0 24 24">
               <path d="M19 12H5" />
@@ -50,7 +58,15 @@
             </svg>
           </button>
           <label class="srOnly" for="questionInput">Question</label>
-          <textarea id="questionInput" class="questionInput" rows="1" placeholder="Type a question"></textarea>
+          <div class="questionComposer">
+            <textarea id="questionInput" class="questionInput" rows="1" placeholder="Type a question"></textarea>
+            <button id="submitQuestionButton" class="submitQuestionButton" type="button" aria-label="Submit question" title="Submit question" hidden>
+              <svg aria-hidden="true" viewBox="0 0 24 24">
+                <path d="M12 19V5" />
+                <path d="M5 12l7-7 7 7" />
+              </svg>
+            </button>
+          </div>
           <button id="newConversationButton" class="iconButton" type="button" aria-label="New conversation" title="New conversation" hidden>
             <svg aria-hidden="true" viewBox="0 0 24 24">
               <path d="M12 3H7a4 4 0 0 0-4 4v10a4 4 0 0 0 4 4h10a4 4 0 0 0 4-4v-5" />
@@ -77,6 +93,6 @@
     </main>
     <div id="subtitleOverlay" class="subtitleOverlay" aria-live="polite" hidden></div>
 
-    <script src="./static/app.js?v=20260525-season-episodes-rail" type="module"></script>
+    <script src="./static/app.js?v=20260607-detect-ui-language" type="module"></script>
   </body>
 </html>

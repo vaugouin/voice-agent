@@ -58,6 +58,8 @@ Create `.env` from `.env.example`:
 OPENAI_API_KEY=sk-your-key-here
 OPENAI_TEXT_MODEL=gpt-5.1
 OPENAI_REALTIME_MODEL=gpt-realtime-2
+OPENAI_TRANSCRIPTION_MODEL=gpt-4o-transcribe
+ENABLE_STRUCTURED_CARD_FOCUS=true
 
 TEXT2SQL_BASE_URL=http://your_host:8000
 TEXT2SQL_API_KEY_NAME=X-API-Key
@@ -126,7 +128,7 @@ Server-side harness:
 - `app/main.py::detail_tool_definitions()` creates the dedicated entity detail tool schemas from `DETAIL_ENTITY_CONFIG`.
 - `POST /session` receives the browser SDP offer, combines it with the Realtime session config, calls `https://api.openai.com/v1/realtime/calls`, and returns the OpenAI SDP answer.
 - `POST /tool/text2sql` adapts `query_text2sql` tool calls to the upstream text2sql API.
-- `GET /tool/detail/{entity}/{id}` adapts dedicated detail tool calls to the upstream entity detail API.
+- `GET /tool/detail/{entity}/{id}?ui_language=...` adapts dedicated detail tool calls to the upstream entity detail API.
 
 Browser-side harness:
 
@@ -147,6 +149,7 @@ The server creates a session with:
 - input transcription: `gpt-4o-transcribe`
 - turn detection: server VAD
 - tools: `query_text2sql` plus dedicated detail tools for movies, series, seasons, episodes, persons, companies, networks, collections, topics, lists, movements, technicals, groups, deaths, awards, nominations, and locations
+- optional spoken-card focus tool: `focus_result_card`, enabled by default with `ENABLE_STRUCTURED_CARD_FOCUS=true`
 
 Supported voice values in this app:
 
@@ -186,6 +189,8 @@ The browser receives the function call on `oai-events`, then posts to:
 ```text
 POST /tool/text2sql
 ```
+
+If `ui_language` is missing or stale, the browser and server derive it from the latest user input: French speech transcripts and French typed text send `fr`; English and every other language send `en`. The same detected value is reused for follow-up detail calls unless a new user turn changes the conversation language.
 
 The FastAPI adapter posts to `{TEXT2SQL_BASE_URL}/search/text2sql` with:
 
@@ -228,32 +233,32 @@ TEXT2SQL_API_KEY_VALUE=...
 When the model needs detail fields for a specific entity, it can call a dedicated detail tool. The browser receives the Realtime function call and proxies it through:
 
 ```text
-GET /tool/detail/{entity}/{id}
+GET /tool/detail/{entity}/{id}?ui_language=en
 ```
 
 The local adapter forwards to the text2sql API detail endpoints documented in `C:\Users\vaugo\Code\fastapi-text2sql\README.md`:
 
 | Realtime tool | Upstream endpoint | ID |
 |---|---|---|
-| `get_movie_detail` | `GET /movies/{id}` | `ID_MOVIE` |
-| `get_series_detail` | `GET /series/{id}` | `ID_SERIE` |
-| `get_season_detail` | `GET /seasons/{id_serie}/{season_number}` | `ID_SERIE`, `SEASON_NUMBER` |
-| `get_episode_detail` | `GET /episodes/{id_serie}/{season_number}/{episode_number}` | `ID_SERIE`, `SEASON_NUMBER`, `EPISODE_NUMBER` |
-| `get_person_detail` | `GET /persons/{id}` | `ID_PERSON` |
-| `get_company_detail` | `GET /companies/{id}` | `ID_COMPANY` |
-| `get_network_detail` | `GET /networks/{id}` | `ID_NETWORK` |
-| `get_collection_detail` | `GET /collections/{id}` | `ID_T2S_COLLECTION` |
-| `get_topic_detail` | `GET /topics/{id}` | `ID_TOPIC` |
-| `get_list_detail` | `GET /lists/{id}` | `ID_T2S_LIST` |
-| `get_movement_detail` | `GET /movements/{id}` | `ID_MOVEMENT` |
-| `get_technical_detail` | `GET /technicals/{id}` | `ID_TECHNICAL` |
-| `get_group_detail` | `GET /groups/{id}` | `ID_GROUP` |
-| `get_death_detail` | `GET /deaths/{id}` | `ID_DEATH` |
-| `get_award_detail` | `GET /awards/{id}` | `ID_AWARD` |
-| `get_nomination_detail` | `GET /nominations/{id}` | `ID_NOMINATION` |
-| `get_location_detail` | `GET /locations/{wikidata_id}` | `ID_WIKIDATA`, for example `Q90` |
+| `get_movie_detail` | `GET /movies/{id}?ui_language=...` | `ID_MOVIE` |
+| `get_series_detail` | `GET /series/{id}?ui_language=...` | `ID_SERIE` |
+| `get_season_detail` | `GET /seasons/{id_serie}/{season_number}?ui_language=...` | `ID_SERIE`, `SEASON_NUMBER` |
+| `get_episode_detail` | `GET /episodes/{id_serie}/{season_number}/{episode_number}?ui_language=...` | `ID_SERIE`, `SEASON_NUMBER`, `EPISODE_NUMBER` |
+| `get_person_detail` | `GET /persons/{id}?ui_language=...` | `ID_PERSON` |
+| `get_company_detail` | `GET /companies/{id}?ui_language=...` | `ID_COMPANY` |
+| `get_network_detail` | `GET /networks/{id}?ui_language=...` | `ID_NETWORK` |
+| `get_collection_detail` | `GET /collections/{id}?ui_language=...` | `ID_T2S_COLLECTION` |
+| `get_topic_detail` | `GET /topics/{id}?ui_language=...` | `ID_TOPIC` |
+| `get_list_detail` | `GET /lists/{id}?ui_language=...` | `ID_T2S_LIST` |
+| `get_movement_detail` | `GET /movements/{id}?ui_language=...` | `ID_MOVEMENT` |
+| `get_technical_detail` | `GET /technicals/{id}?ui_language=...` | `ID_TECHNICAL` |
+| `get_group_detail` | `GET /groups/{id}?ui_language=...` | `ID_GROUP` |
+| `get_death_detail` | `GET /deaths/{id}?ui_language=...` | `ID_DEATH` |
+| `get_award_detail` | `GET /awards/{id}?ui_language=...` | `ID_AWARD` |
+| `get_nomination_detail` | `GET /nominations/{id}?ui_language=...` | `ID_NOMINATION` |
+| `get_location_detail` | `GET /locations/{wikidata_id}?ui_language=...` | `ID_WIKIDATA`, for example `Q90` |
 
-For example, if the user asks for a movie plot, the model should first identify the movie with `query_text2sql` if needed, then call `get_movie_detail` with the returned `ID_MOVIE`, and answer from the returned `PLOT` field. Series pages expose season summaries that open `get_season_detail` with `ID_SERIE` and `SEASON_NUMBER`; season pages render the returned `episodes` summaries, and selecting one opens `get_episode_detail` with its three-part key. If the user asks about a technical format such as `Technicolor`, the model should identify it with `query_text2sql` if needed, then call `get_technical_detail` with the returned `ID_TECHNICAL`. Movie detail responses can also include a `technicals` collection with technical entries such as sound systems and film formats. Technical detail responses can include associated `movies` and same-type `siblings`. Movie and series detail responses can include `posters` and `backdrops` image collections.
+The adapter normalizes `ui_language` to `en` or `fr` and forwards it to detail endpoints. For Realtime audio, typed Realtime turns, `/text-chat`, and idle dictation, the app detects French from the user's latest transcript or typed message and sends `fr`; unsupported languages and English send `en`. Localized detail responses are collapsed under canonical field names such as `MOVIE_TITLE`, `LIST_NAME`, `DESCRIPTION`, and `ITEM_LABEL`; separate `*_FR` fields are not expected from detail calls. For example, if the user asks for a movie plot, the model should first identify the movie with `query_text2sql` if needed, then call `get_movie_detail` with the returned `ID_MOVIE`, and answer from the returned `PLOT` field. Series pages expose season summaries that open `get_season_detail` with `ID_SERIE` and `SEASON_NUMBER`; season pages render the returned `episodes` summaries, and selecting one opens `get_episode_detail` with its three-part key. If the user asks about a technical format such as `Technicolor`, the model should identify it with `query_text2sql` if needed, then call `get_technical_detail` with the returned `ID_TECHNICAL`. Movie detail responses can also include a `technicals` collection with technical entries such as sound systems and film formats. Technical detail responses can include associated `movies` and same-type `siblings`. Movie and series detail responses can include `posters` and `backdrops` image collections.
 
 The local adapter returns compact fields used by the browser and the model:
 
@@ -262,6 +267,7 @@ The local adapter returns compact fields used by the browser and the model:
   "answer": "...",
   "error": "",
   "result_count": 50,
+  "visible_results": [],
   "rows": [],
   "page": 1,
   "rows_per_page": 50,
@@ -271,11 +277,17 @@ The local adapter returns compact fields used by the browser and the model:
 }
 ```
 
+## Structured Card Focus
+
+When `ENABLE_STRUCTURED_CARD_FOCUS` is true, the Realtime session includes a browser-handled `focus_result_card` tool. After a `query_text2sql` result page is rendered, the browser adds a compact `visible_results` list to the tool output sent back to the model. Each entry contains the visible 1-based card index and title. Before the voice model speaks about a specific visible card, it can call `focus_result_card` with that index, and the browser highlights the card immediately.
+
+Set `ENABLE_STRUCTURED_CARD_FOCUS=false` to remove the tool and the related instruction from new Realtime sessions. For local testing, add `?structuredCardFocus=0` to the app URL before starting a voice session; the browser forwards that override to `/session`.
+
 ## Frontend Result Display
 
 When a text2sql result arrives, the app renders result cards in the UI in addition to the spoken answer.
 
-When the results panel contains a search result page or an entity detail page, the app switches to a compact display mode: the `Voice Movie Database` title and the status row are hidden, leaving only the Start/Stop, Back, Forward, text input, and New Conversation controls above the result content. Clearing the conversation restores the full header.
+When the results panel contains a search result page or an entity detail page, the app switches to a compact display mode: the `Voice Movie Database` title and the status row are hidden, leaving only the Start/Stop, Back, Forward, text input with its conditional submit button, and New Conversation controls above the result content. Clearing the conversation restores the full header.
 
 On short landscape viewports, including iOS Safari on iPhone 15 Pro Max, the app shell removes the outer page padding and square-corners the main panel so result/detail pages fill the available browser viewport from the top edge.
 
@@ -285,7 +297,7 @@ Click-through behavior:
 
 - Cards for records with a supported entity ID open the matching in-app detail page instead of navigating away.
 - Supported click-through records include movies, series, seasons, episodes, people, companies, networks, collections, topics, lists, movements, technicals, groups, deaths, awards, nominations, and Wikidata-backed locations.
-- The detail view uses the same local `GET /tool/detail/{entity}/{id}` adapter as Realtime detail tool calls, then renders the returned record content in the results panel.
+- The detail view uses the same local `GET /tool/detail/{entity}/{id}?ui_language=...` adapter as Realtime detail tool calls, then renders the returned record content in the results panel.
 - Entity detail tool outputs keep compact `wikipedia_content` available to the model for grounding background, history, biography, plot-context, and explanatory answers, but the UI does not render Wikipedia content sections on detail pages.
 - Entity detail pages use the same click-through behavior for their embedded relation cards. For example, a movie page's cast, topics, collections, awards, companies, and similar page elements can be clicked to replace the current page with that related entity detail page.
 - Embedded relation sections on movie, series, person, and other entity detail pages render as single-row horizontal rails. When the upstream API returns more cards than fit on screen, the rail can be moved with the left/right controls or native horizontal scrolling, and every returned card remains clickable.
@@ -324,7 +336,7 @@ Detail page header behavior:
 - Movie and series detail pages use the `/movies/{id}` and `/series/{id}` `posters` arrays to show a swipe-only poster viewer in the main picture area, with `POSTER_PATH` as a fallback.
 - Movie and series detail pages use the `/movies/{id}` and `/series/{id}` `backdrops` arrays to show a wide swipeable backdrop viewer below the poster, with `BACKDROP_PATH` as a fallback. Clicking a backdrop toggles fullscreen zoom. Sliding horizontally moves to the previous or next backdrop. A top-right play button starts a slideshow across all available backdrops and changes to a stop button while the slideshow is running; the control remains visible in normal and fullscreen modes.
 - Clicking the main portrait, poster, logo, or Wikipedia image on any entity detail page expands the current image to a full-screen viewer. Clicking the full-screen image or pressing `Escape` returns it to the normal detail-page position.
-- Collection, topic, list, movement, technical, group, death, award, nomination, company, network, and location detail pages show available type/count/rating metrics in the top metric area. Technical detail pages use `DESCRIPTION` / `DESCRIPTION_FR` as their display title, show `TECHNICAL_TYPE` as the type metric, and render associated movies plus same-type sibling technicals as clickable rails.
+- Collection, topic, list, movement, technical, group, death, award, nomination, company, network, and location detail pages show available type/count/rating metrics in the top metric area. Technical detail pages use the localized `DESCRIPTION` value as their display title, show `TECHNICAL_TYPE` as the type metric, and render associated movies plus same-type sibling technicals as clickable rails.
 
 ## Retained Context
 
@@ -348,29 +360,43 @@ Current implementation note: `loadRetainedContext()` exists, and context is save
 
 ## Text Input
 
-The UI includes a multiline question box beside the microphone controls. The microphone start control uses a layered `👄` and `❌` visual, the audio stop control is shown as `👄`, and the adjacent green microphone toggle shows `👂🏻` when input is open or `👂🏻` with `❌` when input is closed.
+The UI includes a multiline question box beside the microphone controls. The microphone start control uses a layered `👄` and `❌` visual, the audio stop control is shown as `👄`, and the adjacent green microphone toggle shows `👂🏻` when input is open or `👂🏻` with `❌` when input is closed. The next green toggle is the Look control; it starts as `Look Off` with `👁️` plus `❌`, and switches to `Look On` with `👁️` when clicked. A round white submit button with a black up arrow appears immediately to the right of the question box whenever it contains non-whitespace text; clicking it submits the same way as pressing `Enter`.
+
+When the Start or Stop control is shown, its session button uses the green active-control background.
 
 For the complete stateful reference of Start/Stop, text entry, answer/results panel, status panel, subtitles, history, New conversation, hidden audio/log elements, and dynamic detail viewer controls, see `UI.md`.
 
-As soon as the user types any non-whitespace text, the start control is hidden. If the text is removed and the box is empty again, the start control becomes visible again when no audio session is running.
+The Start control remains visible and available while the user types text. Pressing Start switches into the Realtime voice path; pressing `Enter` or the submit arrow sends the typed text through the current text/voice routing rules.
 
-Pressing `Enter` in the question box sends the text to the server-side `/text-chat` endpoint instead of the Realtime audio session. If a Realtime session is active, it is stopped before the text request is sent, so the typed turn uses a normal OpenAI text model rather than `OPENAI_REALTIME_MODEL`. Press `Shift+Enter` to add a new line without submitting.
+When no Realtime session is running and the text box is empty, the microphone toggle becomes a dictation control. Clicking it records browser microphone audio with `MediaRecorder`, auto-stops after speech followed by silence or after a 30-second cap, posts the raw audio to `/transcribe`, and sends the returned transcript through `/text-chat` for a text answer and the usual result rendering.
+
+The Start button remains visible while idle dictation is recording, so the user can still switch into the Realtime voice path from the same control row.
+
+Pressing `Enter` after Start has begun a Realtime session sends the typed message through that Realtime path, regardless of whether the microphone toggle is open or closed. If the data channel is still opening, typed turns are queued until it is ready and then submitted before a spoken response is requested. If an earlier spoken answer is active, it is interrupted before the new turn is sent. The turn uses `OPENAI_REALTIME_MODEL`, may use the same tools as spoken turns, and plays the new answer through Realtime audio output. When no Realtime session is running, pressing `Enter` sends text to the server-side `/text-chat` endpoint. Press `Shift+Enter` to add a new line without submitting.
 
 ## App Icon
 
 The app uses `app/static/icons/voice-agent-1254x1254.png` as its browser favicon, Apple touch icon, and web manifest icon. The manifest is served from `/static/site.webmanifest`, with `start_url` and `scope` pointing back to the app root so iPhone home-screen shortcuts launch `/` instead of `/static/`. Modern browsers and iOS Safari can use the PNG directly; an `.ico` file is optional legacy fallback and is not required for browser tabs or iPhone Add to Home Screen.
 
-The `/text-chat` endpoint calls the OpenAI Responses API with `OPENAI_TEXT_MODEL`, defaulting to `gpt-5.1`. The client sends compact retained conversation context with the text message so follow-up typed turns can stay coherent. To guarantee the same visible behavior as the audio agent, the endpoint always executes `query_text2sql` once for the typed message before asking the text model to answer. It returns that forced tool output to the browser for card rendering, provides it to the model as grounded context, and still exposes every detail lookup tool so the text model can request entity pages when needed.
+The `/transcribe` endpoint forwards browser-recorded dictation audio to the OpenAI audio transcription API with `OPENAI_TRANSCRIPTION_MODEL`, defaulting to `gpt-4o-transcribe`, and returns the transcript text to the browser.
+
+The `/text-chat` endpoint calls the OpenAI Responses API with `OPENAI_TEXT_MODEL`, defaulting to `gpt-5.1`. The client sends compact retained conversation context with the text message so follow-up typed or dictated turns can stay coherent. To guarantee the same visible behavior as the audio agent, the endpoint always executes `query_text2sql` once for the submitted message before asking the text model to answer. It returns that forced tool output to the browser for card rendering, provides it to the model as grounded context, and still exposes every detail lookup tool so the text model can request entity pages when needed.
 
 When text-mode tool calls return data, the browser renders those results in the same results panel used by voice-mode tool calls. For example, a typed movie search populates text2sql result cards, and a typed detail request can still render the matching entity detail page.
 
-Text model output is displayed as subtitle-style labels fixed near the bottom of the app. Long responses are split into readable chunks that appear and disappear after a duration based on the amount of text.
+Text model output is displayed as subtitle-style labels fixed near the bottom of the app. Long responses are split into readable chunks that preserve reply structure, including numbered and bulleted list boundaries, and appear and disappear after a duration based on the amount of text.
+
+User-facing assistant feedback does not mention backend identifiers such as IMDb IDs, Wikidata IDs, TMDb IDs, TVDB IDs, `ID_*` fields, or other database IDs. Entities are represented by cards and detail links in the UI, so subtitles and spoken answers use names, titles, and visible result numbers instead.
+
+When assistant speech transcripts or subtitle chunks enumerate a search result by number, ordinal, or visible card title, the matching card receives a temporary spoken-focus highlight and the previous spoken-focus card is cleared. Result numbers are tracked internally and are not shown as badges on the cards. Subtitle highlights happen as each subtitle chunk appears. Realtime spoken-answer highlights can also be driven by `focus_result_card` tool calls when structured card focus is enabled; transcript-derived cues remain as the fallback and are paced from the `output_audio_buffer.started` event so final transcript events do not jump the UI ahead of audible playback.
 
 The question box grows vertically as lines are added, up to a capped height where it scrolls internally.
 
 ## Switching Audio To Text
 
-Audio and typed text now use separate model paths. The microphone path creates a WebRTC Realtime session with `OPENAI_REALTIME_MODEL`; the typed-text path posts to `/text-chat`, which calls a standard OpenAI text model through the Responses API, runs the same application tool loop server-side, renders returned tool results, and displays the final text response as subtitle output.
+Typed text has two paths. Once a Realtime session has started, the browser queues typed input until its data channel is ready when necessary, cancels a generating response and clears playing output audio as needed, then sends the input into that same WebRTC Realtime conversation; the new answer is spoken using `OPENAI_REALTIME_MODEL`, independent of the microphone toggle state. Otherwise, typed text posts to `/text-chat`, which calls a standard OpenAI text model through the Responses API, runs the application tool loop server-side, renders returned tool results, and displays the final text response as subtitle output.
+
+Idle dictation uses the text path too: it records audio locally, transcribes it through `/transcribe`, then submits the transcript to `/text-chat`. It does not create a Realtime WebRTC session and it does not produce model audio.
 
 ## Connection Resilience
 
@@ -432,6 +458,14 @@ page_lifecycle
 page_visibility
 context_seeded
 context_retained
+dictation_started
+dictation_transcribe_sent
+dictation_transcribed
+dictation_error
+look_toggle
+realtime_text_sent
+realtime_text_error
+realtime_text_queued
 keepalive_started
 keepalive_stopped
 keepalive_send_error
@@ -547,8 +581,8 @@ Adjust the container name if your Nginx container is not named `reverseproxy`.
 The HTML references static assets with version query strings:
 
 ```html
-styles.css?v=20260525-season-episodes-rail
-app.js?v=20260525-season-episodes-rail
+styles.css?v=20260607-detect-ui-language
+app.js?v=20260607-detect-ui-language
 ```
 
 When changing frontend behavior, bump the version to force Safari and other browsers to fetch the new asset after deployment.
@@ -629,3 +663,4 @@ Local smoke test:
 5. Type a second question in the question box and press `Enter`.
 6. Confirm spoken answers and result cards.
 7. Type a multiline question with `Shift+Enter`, then press `Enter` to submit.
+8. With no Realtime session running and an empty text box, click the microphone toggle, ask a short question, and confirm the transcript is answered through text mode.

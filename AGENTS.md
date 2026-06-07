@@ -2,6 +2,23 @@
 
 This file is for agent-facing operating context only. Do not use it as a second README.
 
+## Related repositories (project ecosystem)
+
+`voice-agent` is one stage of **Agent BBB**, a multi-repository movie/TV database system owned by GitHub user `vaugouin`. All sibling repos live under `%USERPROFILE%/Code/<repo>` and at `github.com/vaugouin/<repo>`; they are interdependent stages of one pipeline that converges on a shared MySQL/MariaDB database (`T_WC_*` tables) and a ChromaDB vector store. The canonical roster of sibling repositories is kept in `doc/related-repositories/related-repositories.txt` in the `tmdb-front` repo.
+
+Pipeline stages:
+- **Infrastructure** — `python` (shared crawler base image), `chromadb` (vector service), `reverseproxy` (NGINX TLS ingress), `chromadb-security-test` (firewall validation).
+- **Acquisition** — `tmdb-crawler`, `imdb-crawler`, `sparql-crawler`, `sparql-movies-persons`, `wikidata-crawler`, `wikipedia-crawler`, `selenium-tmdb`, `download-images`, `sqlite-plex-to-tmdb`, `movieparadise`.
+- **Preprocessing → `T_WC_T2S_*`** — `tmdb-movie-preprocess`, `tmdb-person-preprocess`, `keywords-processing`.
+- **Semantic index & name resolution** — `embedding-update`, `embedding-query`, `rapidfuzz_query`.
+- **Serving** — `fastapi-text2sql` (NL→SQL API + MCP server), `voice-agent`, `tmdb-front` (PHP web front-end).
+- **Evaluation** — `eval-text2sql`, `extract-movie-questions`.
+- **Maintenance & tooling** — `plex-duplicates`, `subtitle-translate`, `powershell`, `playwright-test`.
+
+**This repository's role:** Serving stage. A web-based voice and chat client that proxies natural-language queries to the `fastapi-text2sql` API (search plus per-entity detail tools), acting as a conversational front-end alongside `tmdb-front`.
+
+---
+
 ## Documentation Boundaries
 
 - `README.md` is the source of truth for project overview, features, setup, install, deploy, human-facing security notes, performance notes, troubleshooting, environment variables, and verification commands.
@@ -63,3 +80,9 @@ This file is for agent-facing operating context only. Do not use it as a second 
 - For backend-only changes, at minimum compile-check the touched Python.
 - For frontend JavaScript changes, at minimum syntax-check the touched JavaScript and do a browser smoke test when behavior changes.
 - Documentation-only changes do not require runtime tests, but still check the diff for accidental README/AGENTS/UI duplication.
+
+## Build & deployment (Docker)
+
+- This app is built and run as a Docker container via the repo's root `Dockerfile`. The image is based on `python:3.13-slim`, installs `requirements.txt`, copies the `app` package, creates `/app/logs`, and `EXPOSE`s port `3000`.
+- The container starts with `uvicorn app.main:app --host 0.0.0.0 --port 3000` (the same port used for local browser verification at `http://127.0.0.1:3000/`).
+- Pass secrets (e.g. the OpenAI API key, text2SQL API config) at runtime via env vars / an env file; do not bake them into the image.

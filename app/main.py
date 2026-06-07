@@ -1,5 +1,7 @@
 import json
 import os
+import re
+import unicodedata
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
@@ -32,6 +34,123 @@ REALTIME_VOICES = {
 }
 DEFAULT_REALTIME_VOICE = "ash"
 DEFAULT_REALTIME_MODEL = "gpt-realtime-2"
+DEFAULT_TRANSCRIPTION_MODEL = "gpt-4o-transcribe"
+STRUCTURED_CARD_FOCUS_TOOL = "focus_result_card"
+BOOLEAN_TRUE_VALUES = {"1", "true", "yes", "on"}
+BOOLEAN_FALSE_VALUES = {"0", "false", "no", "off"}
+FRENCH_MARKERS = {
+    "acteur",
+    "acteurs",
+    "actrice",
+    "actrices",
+    "aimerais",
+    "avec",
+    "ce",
+    "ces",
+    "cet",
+    "cette",
+    "cherche",
+    "combien",
+    "comment",
+    "dans",
+    "de",
+    "des",
+    "dis",
+    "donne",
+    "donnez",
+    "du",
+    "elle",
+    "elles",
+    "est",
+    "fais",
+    "fait",
+    "film",
+    "films",
+    "francais",
+    "francaise",
+    "il",
+    "ils",
+    "je",
+    "la",
+    "le",
+    "les",
+    "liste",
+    "lister",
+    "ma",
+    "me",
+    "meilleur",
+    "meilleure",
+    "meilleures",
+    "meilleurs",
+    "mes",
+    "moi",
+    "moins",
+    "montre",
+    "montrez",
+    "nous",
+    "par",
+    "peux",
+    "plus",
+    "pour",
+    "pourquoi",
+    "pouvez",
+    "quel",
+    "quelle",
+    "quelles",
+    "quels",
+    "que",
+    "qui",
+    "quoi",
+    "realisateur",
+    "realisatrice",
+    "recherche",
+    "reponds",
+    "sans",
+    "serie",
+    "series",
+    "ses",
+    "sont",
+    "sorti",
+    "sortie",
+    "sorties",
+    "sortis",
+    "sur",
+    "te",
+    "toi",
+    "ton",
+    "tres",
+    "tu",
+    "un",
+    "une",
+    "veux",
+    "voudrais",
+    "vous",
+}
+FRENCH_PHRASES = (
+    "donne moi",
+    "dis moi",
+    "est ce que",
+    "en francais",
+    "peux tu",
+    "qu est ce",
+    "quels sont",
+    "quelles sont",
+    "qui est",
+    "reponds en francais",
+)
+WORD_RE = re.compile(r"[a-z']+")
+MAX_TRANSCRIPTION_AUDIO_BYTES = 25 * 1024 * 1024
+TRANSCRIPTION_MIME_EXTENSIONS = {
+    "audio/mp3": "mp3",
+    "audio/mpeg": "mp3",
+    "audio/mp4": "mp4",
+    "audio/ogg": "ogg",
+    "audio/wav": "wav",
+    "audio/webm": "webm",
+    "audio/x-wav": "wav",
+    "application/ogg": "ogg",
+    "video/webm": "webm",
+}
 
 app = FastAPI(title="Minimal Realtime WebRTC Voice Agent")
 
@@ -47,7 +166,7 @@ app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
 class Text2SqlRequest(BaseModel):
     query: str
-    ui_language: str = "en"
+    ui_language: str | None = None
     page: int = 1
     question_hashed: str | None = None
 
@@ -292,6 +411,44 @@ def text2sql_base_url() -> str:
     return os.getenv("TEXT2SQL_BASE_URL", "http://www.vaugouin.com:8186").rstrip("/")
 
 
+def normalize_ui_language(value: Any) -> str:
+    clean = str(value or "en").strip().lower().replace("_", "-")
+    clean = clean.split("-", 1)[0]
+    return "fr" if clean == "fr" else "en"
+
+
+def strip_diacritics(value: str) -> str:
+    clean = unicodedata.normalize("NFKD", value)
+    clean = "".join(char for char in clean if not unicodedata.combining(char))
+    return clean.replace("\u0153", "oe").replace("\u00e6", "ae")
+
+
+def detect_ui_language_from_text(text: Any) -> str:
+    raw = str(text or "").strip().lower()
+    if not raw:
+        return "en"
+
+    folded = strip_diacritics(raw)
+    spaced = re.sub(r"[^a-z']+", " ", folded)
+    score = 0
+    if folded != raw:
+        score += 1
+    if re.search(r"\b[ldjmntsqc]'[a-z]", folded):
+        score += 1
+    if any(phrase in spaced for phrase in FRENCH_PHRASES):
+        score += 2
+
+    tokens = WORD_RE.findall(folded)
+    score += min(3, len({token for token in tokens if token in FRENCH_MARKERS}))
+    return "fr" if score >= 2 else "en"
+
+
+def resolve_ui_language(value: Any, text: Any = "") -> str:
+    if value is not None and str(value).strip():
+        return normalize_ui_language(value)
+    return detect_ui_language_from_text(text)
+
+
 def agent_voice() -> str:
     voice = os.getenv("AGENT_VOICE", DEFAULT_REALTIME_VOICE).strip()
     if not voice:
@@ -307,6 +464,63 @@ def agent_voice() -> str:
     return voice
 
 
+def parse_bool(value: str | None) -> bool | None:
+    if value is None:
+        return None
+    clean = value.strip().lower()
+    if clean in BOOLEAN_TRUE_VALUES:
+        return True
+    if clean in BOOLEAN_FALSE_VALUES:
+        return False
+    return None
+
+
+def env_bool(name: str, default: bool) -> bool:
+    parsed = parse_bool(os.getenv(name))
+    return default if parsed is None else parsed
+
+
+def structured_card_focus_enabled(request: Request) -> bool:
+    if not env_bool("ENABLE_STRUCTURED_CARD_FOCUS", True):
+        return False
+    override = parse_bool(
+        request.query_params.get("structured_card_focus")
+        or request.query_params.get("structuredCardFocus")
+    )
+    return True if override is None else override
+
+
+def focus_result_card_tool_definition() -> dict[str, Any]:
+    return {
+        "type": "function",
+        "name": STRUCTURED_CARD_FOCUS_TOOL,
+        "description": (
+            "Highlight one currently visible search result card by its 1-based "
+            "visible_results index before speaking about that card."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "index": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "description": "The 1-based visible result card index to highlight.",
+                },
+                "label": {
+                    "type": "string",
+                    "description": "Optional visible title of the card being highlighted.",
+                },
+                "reason": {
+                    "type": "string",
+                    "description": "Optional short reason for this focus change.",
+                },
+            },
+            "required": ["index"],
+            "additionalProperties": False,
+        },
+    }
+
+
 def detail_tool_definitions() -> list[dict[str, Any]]:
     tools = []
     for config in DETAIL_ENTITY_CONFIG.values():
@@ -317,6 +531,20 @@ def detail_tool_definitions() -> list[dict[str, Any]]:
                 "type": config["id_type"],
             }
         ]
+        properties = {
+            param["name"]: {
+                "type": param["type"],
+                "description": f"The {param['id_name']} value to retrieve.",
+            }
+            for param in path_params
+        }
+        properties["ui_language"] = {
+            "type": "string",
+            "description": (
+                "Language code for localized detail fields, such as en or fr. "
+                "Use fr for French questions; otherwise use en."
+            ),
+        }
         tools.append(
             {
                 "type": "function",
@@ -324,13 +552,7 @@ def detail_tool_definitions() -> list[dict[str, Any]]:
                 "description": config["description"],
                 "parameters": {
                     "type": "object",
-                    "properties": {
-                        param["name"]: {
-                            "type": param["type"],
-                            "description": f"The {param['id_name']} value to retrieve.",
-                        }
-                        for param in path_params
-                    },
+                    "properties": properties,
                     "required": [param["name"] for param in path_params],
                     "additionalProperties": False,
                 },
@@ -411,32 +633,83 @@ def compact_detail_for_model(output: dict[str, Any]) -> dict[str, Any]:
         "id_name": output.get("id_name", ""),
         "id": output.get("id", ""),
         "endpoint": output.get("endpoint", ""),
+        "ui_language": output.get("ui_language", ""),
         "detail": compact_detail,
         "wikipedia_content": compact_wikipedia_content(detail),
     }
 
 
-def realtime_session_config(voice: str = DEFAULT_REALTIME_VOICE) -> dict[str, Any]:
+def realtime_session_config(
+    voice: str = DEFAULT_REALTIME_VOICE,
+    *,
+    structured_card_focus: bool = True,
+) -> dict[str, Any]:
     selected_voice = voice if voice in REALTIME_VOICES else DEFAULT_REALTIME_VOICE
     realtime_model = os.getenv("OPENAI_REALTIME_MODEL", DEFAULT_REALTIME_MODEL).strip() or DEFAULT_REALTIME_MODEL
+    instructions = (
+        "You are a concise voice data assistant. When the user asks a "
+        "cinema, movie, TV, actor, director, production company, award, "
+        "location, ranking, database, reporting, analytics, or text-to-SQL "
+        "question, call query_text2sql with the user's spoken request as "
+        "plain text. When the user asks for details about a specific returned "
+        "entity, call the dedicated detail tool with that entity ID, or "
+        "wikidata_id for locations. Seasons use ID_SERIE plus SEASON_NUMBER; "
+        "episodes use ID_SERIE, SEASON_NUMBER, and EPISODE_NUMBER. For example, "
+        "for a movie plot, call get_movie_detail with ID_MOVIE. Pass "
+        "ui_language to search and detail tools, using fr for French "
+        "questions and en otherwise. Use returned detail fields to "
+        "respond in a short spoken summary. When wikipedia_content is "
+        "returned for an entity, use it as grounding for questions asking "
+        "for background, history, biography, plot context, or explanatory "
+        "details. IDs are internal tool arguments only: never mention IMDb, "
+        "Wikidata, TMDb, TVDB, ID_* fields, or any other database identifiers "
+        "in user-facing spoken answers. Use entity names, titles, and visible "
+        "result numbers instead."
+    )
+    tools = [
+        {
+            "type": "function",
+            "name": "query_text2sql",
+            "description": (
+                "Forward a natural-language user question to the local "
+                "FastAPI/FastMCP text2sql app and return its answer."
+            ),
+            "parameters": {
+                "type": "object",
+                "properties": {
+                    "query": {
+                        "type": "string",
+                        "description": "The user's spoken question as text.",
+                    },
+                    "ui_language": {
+                        "type": "string",
+                        "description": (
+                            "Language code for the answer, such as en or fr. "
+                            "Use en unless the user asks for another language."
+                        ),
+                    }
+                },
+                "required": ["query"],
+                "additionalProperties": False,
+            },
+        }
+    ] + detail_tool_definitions()
+    if structured_card_focus:
+        instructions += (
+            " Search results may include a visible_results list whose index "
+            "values match the 1-based result cards shown in the browser. "
+            "Immediately before speaking about, comparing, recommending, or "
+            "summarizing a specific visible result card, call focus_result_card "
+            "with that card's index. After the tool returns, refer to the card "
+            "out loud as result N and include its title when natural. Use only "
+            "indexes present in visible_results; do not call focus_result_card "
+            "for hidden cards, aggregate rows, or entity detail pages."
+        )
+        tools.append(focus_result_card_tool_definition())
     return {
         "type": "realtime",
         "model": realtime_model,
-        "instructions": (
-            "You are a concise voice data assistant. When the user asks a "
-            "cinema, movie, TV, actor, director, production company, award, "
-            "location, ranking, database, reporting, analytics, or text-to-SQL "
-            "question, call query_text2sql with the user's spoken request as "
-            "plain text. When the user asks for details about a specific returned "
-            "entity, call the dedicated detail tool with that entity ID, or "
-            "wikidata_id for locations. Seasons use ID_SERIE plus SEASON_NUMBER; "
-            "episodes use ID_SERIE, SEASON_NUMBER, and EPISODE_NUMBER. For example, "
-            "for a movie plot, call get_movie_detail with ID_MOVIE. Use returned detail fields to "
-            "respond in a short spoken summary. When wikipedia_content is "
-            "returned for an entity, use it as grounding for questions asking "
-            "for background, history, biography, plot context, or explanatory "
-            "details."
-        ),
+        "instructions": instructions,
         "audio": {
             "input": {
                 "transcription": {
@@ -454,35 +727,7 @@ def realtime_session_config(voice: str = DEFAULT_REALTIME_VOICE) -> dict[str, An
             },
             "output": {"voice": selected_voice},
         },
-        "tools": [
-            {
-                "type": "function",
-                "name": "query_text2sql",
-                "description": (
-                    "Forward a natural-language user question to the local "
-                    "FastAPI/FastMCP text2sql app and return its answer."
-                ),
-                "parameters": {
-                    "type": "object",
-                    "properties": {
-                        "query": {
-                            "type": "string",
-                            "description": "The user's spoken question as text.",
-                        },
-                        "ui_language": {
-                            "type": "string",
-                            "description": (
-                                "Language code for the answer, such as en or fr. "
-                                "Use en unless the user asks for another language."
-                            ),
-                        }
-                    },
-                    "required": ["query"],
-                    "additionalProperties": False,
-                },
-            }
-        ]
-        + detail_tool_definitions(),
+        "tools": tools,
         "tool_choice": "auto",
     }
 
@@ -559,6 +804,11 @@ def multipart_form_data(fields: dict[str, str]) -> tuple[bytes, str]:
     return b"".join(chunks), boundary
 
 
+def transcription_file_extension(content_type: str) -> str:
+    media_type = content_type.split(";", 1)[0].strip().lower()
+    return TRANSCRIPTION_MIME_EXTENSIONS.get(media_type, "webm")
+
+
 @app.get("/", response_class=HTMLResponse)
 async def index() -> str:
     return (STATIC_DIR / "index.html").read_text(encoding="utf-8")
@@ -575,11 +825,17 @@ async def create_realtime_session(request: Request) -> PlainTextResponse:
         raise HTTPException(status_code=400, detail="Missing SDP offer body")
 
     voice = agent_voice()
+    use_structured_card_focus = structured_card_focus_enabled(request)
 
     body, boundary = multipart_form_data(
         {
             "sdp": sdp,
-            "session": json.dumps(realtime_session_config(voice)),
+            "session": json.dumps(
+                realtime_session_config(
+                    voice,
+                    structured_card_focus=use_structured_card_focus,
+                )
+            ),
         }
     )
 
@@ -597,7 +853,7 @@ async def create_realtime_session(request: Request) -> PlainTextResponse:
     if response.status_code >= 400:
         raise HTTPException(status_code=response.status_code, detail=answer_sdp)
 
-    headers = {}
+    headers = {"X-Structured-Card-Focus": "1" if use_structured_card_focus else "0"}
     location = response.headers.get("Location")
     if location:
         headers["X-OpenAI-Call-ID"] = location.rsplit("/", 1)[-1]
@@ -605,15 +861,64 @@ async def create_realtime_session(request: Request) -> PlainTextResponse:
     return PlainTextResponse(answer_sdp, media_type="application/sdp", headers=headers)
 
 
+@app.post("/transcribe")
+async def transcribe_audio(request: Request) -> dict[str, Any]:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="OPENAI_API_KEY is not set")
+
+    audio_bytes = await request.body()
+    if not audio_bytes:
+        raise HTTPException(status_code=400, detail="Missing audio body")
+    if len(audio_bytes) > MAX_TRANSCRIPTION_AUDIO_BYTES:
+        raise HTTPException(status_code=413, detail="Audio upload is too large")
+
+    content_type = request.headers.get("content-type", "audio/webm")
+    media_type = content_type.split(";", 1)[0].strip().lower() or "audio/webm"
+    extension = transcription_file_extension(content_type)
+    model = (
+        os.getenv("OPENAI_TRANSCRIPTION_MODEL", DEFAULT_TRANSCRIPTION_MODEL).strip()
+        or DEFAULT_TRANSCRIPTION_MODEL
+    )
+
+    async with httpx.AsyncClient(timeout=60) as client:
+        try:
+            response = await client.post(
+                "https://api.openai.com/v1/audio/transcriptions",
+                headers={"Authorization": f"Bearer {api_key}"},
+                data={"model": model},
+                files={"file": (f"dictation.{extension}", audio_bytes, media_type)},
+            )
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    upstream_content_type = response.headers.get("content-type", "")
+    if "application/json" in upstream_content_type:
+        upstream_body: Any = response.json()
+    else:
+        upstream_body = response.text
+
+    if response.status_code >= 400:
+        raise HTTPException(status_code=response.status_code, detail=upstream_body)
+
+    return {
+        "configured": True,
+        "model": model,
+        "text": upstream_body.get("text", "") if isinstance(upstream_body, dict) else "",
+        "upstream_id": upstream_body.get("id", "") if isinstance(upstream_body, dict) else "",
+    }
+
+
 async def query_text2sql_data(payload: Text2SqlRequest) -> dict[str, Any]:
     text2sql_url = f"{text2sql_base_url()}/search/text2sql"
     headers = text2sql_headers()
 
     rows_per_page = int(os.getenv("TEXT2SQL_ROWS_PER_PAGE", "50"))
+    ui_language = resolve_ui_language(payload.ui_language, payload.query)
     request_json = {
         "question": payload.query if not payload.question_hashed else None,
         "question_hashed": payload.question_hashed,
-        "ui_language": payload.ui_language or "en",
+        "ui_language": ui_language,
         "page": payload.page,
         "rows_per_page": rows_per_page,
         "retrieve_from_cache": True,
@@ -646,6 +951,7 @@ async def query_text2sql_data(payload: Text2SqlRequest) -> dict[str, Any]:
     return {
         "configured": True,
         "query": payload.query,
+        "ui_language": ui_language,
         "answer": upstream_body.get("answer", "") if isinstance(upstream_body, dict) else "",
         "error": upstream_body.get("error", "") if isinstance(upstream_body, dict) else "",
         "result_count": (
@@ -683,9 +989,15 @@ async def get_entity_detail_data(entity: str, args: dict[str, Any]) -> dict[str,
     except ValueError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     detail_url = f"{text2sql_base_url()}{relative_endpoint}"
+    ui_language = normalize_ui_language(args.get("ui_language"))
+    endpoint = f"{relative_endpoint}?ui_language={quote(ui_language, safe='')}"
     async with httpx.AsyncClient(timeout=30) as client:
         try:
-            response = await client.get(detail_url, headers=text2sql_headers())
+            response = await client.get(
+                detail_url,
+                headers=text2sql_headers(),
+                params={"ui_language": ui_language},
+            )
         except httpx.HTTPError as exc:
             raise HTTPException(status_code=502, detail=str(exc)) from exc
 
@@ -709,7 +1021,8 @@ async def get_entity_detail_data(entity: str, args: dict[str, Any]) -> dict[str,
         "entity": entity,
         "id_name": config["id_name"],
         "id": entity_id,
-        "endpoint": f"GET {relative_endpoint}",
+        "ui_language": ui_language,
+        "endpoint": f"GET {endpoint}",
         "detail": upstream_body,
     }
 
@@ -719,7 +1032,7 @@ async def execute_text_tool(tool_name: str, args: dict[str, Any]) -> dict[str, A
         return await query_text2sql_data(
             Text2SqlRequest(
                 query=str(args.get("query") or ""),
-                ui_language=str(args.get("ui_language") or "en"),
+                ui_language=args.get("ui_language") or None,
                 page=int(args.get("page") or 1),
                 question_hashed=args.get("question_hashed") or None,
             )
@@ -765,9 +1078,10 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         + "\n\nUser message:\n"
         + message
     )
+    ui_language = detect_ui_language_from_text(message)
     initial_text2sql_args = {
         "query": message,
-        "ui_language": "en",
+        "ui_language": ui_language,
         "page": 1,
     }
     initial_text2sql_output = await execute_text_tool("query_text2sql", initial_text2sql_args)
@@ -778,12 +1092,18 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         "that tool result, not on pretraining. If the user asks for details "
         "about a specific returned entity, call the dedicated detail tool with "
         "that entity ID, or wikidata_id for locations. Seasons use ID_SERIE plus "
-        "SEASON_NUMBER; episodes use ID_SERIE, SEASON_NUMBER, and EPISODE_NUMBER. Use returned tool data "
+        "SEASON_NUMBER; episodes use ID_SERIE, SEASON_NUMBER, and EPISODE_NUMBER. "
+        "Pass ui_language to search and detail tools, using fr for French "
+        "questions and en otherwise. Use returned tool data "
         "to answer in plain text. When wikipedia_content is returned for an "
         "entity, use it as grounding for questions asking for background, "
         "history, biography, plot context, or explanatory details. Do not "
         "produce audio. Keep the response short enough to be readable as "
-        "subtitles unless the user explicitly asks for detail."
+        "subtitles unless the user explicitly asks for detail. IDs are "
+        "internal tool arguments only: never mention IMDb, Wikidata, TMDb, "
+        "TVDB, ID_* fields, or any other database identifiers in user-facing "
+        "subtitle text. Use entity names, titles, and visible result numbers "
+        "instead."
     )
     request_base = {
         "model": model,
@@ -858,6 +1178,8 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
                     arguments = json.loads(call.get("arguments") or "{}")
                 except json.JSONDecodeError:
                     arguments = {}
+                if isinstance(arguments, dict):
+                    arguments["ui_language"] = ui_language
                 output = await execute_text_tool(tool_name, arguments)
                 tool_outputs.append({
                     "name": tool_name,
@@ -893,10 +1215,11 @@ async def query_text2sql(payload: Text2SqlRequest) -> dict[str, Any]:
     headers = text2sql_headers()
 
     rows_per_page = int(os.getenv("TEXT2SQL_ROWS_PER_PAGE", "50"))
+    ui_language = resolve_ui_language(payload.ui_language, payload.query)
     request_json = {
         "question": payload.query if not payload.question_hashed else None,
         "question_hashed": payload.question_hashed,
-        "ui_language": payload.ui_language or "en",
+        "ui_language": ui_language,
         "page": payload.page,
         "rows_per_page": rows_per_page,
         "retrieve_from_cache": True,
@@ -929,6 +1252,7 @@ async def query_text2sql(payload: Text2SqlRequest) -> dict[str, Any]:
     return {
         "configured": True,
         "query": payload.query,
+        "ui_language": ui_language,
         "answer": upstream_body.get("answer", "") if isinstance(upstream_body, dict) else "",
         "error": upstream_body.get("error", "") if isinstance(upstream_body, dict) else "",
         "result_count": (
@@ -957,15 +1281,19 @@ async def query_text2sql(payload: Text2SqlRequest) -> dict[str, Any]:
 
 
 @app.get("/tool/detail/{entity}/{entity_id}")
-async def get_entity_detail(entity: str, entity_id: str) -> dict[str, Any]:
-    return await get_entity_detail_data(entity, {"id": entity_id})
+async def get_entity_detail(entity: str, entity_id: str, ui_language: str = "en") -> dict[str, Any]:
+    return await get_entity_detail_data(entity, {"id": entity_id, "ui_language": ui_language})
 
 
 @app.get("/tool/detail/season/{id_serie}/{season_number}")
-async def get_season_detail(id_serie: int, season_number: int) -> dict[str, Any]:
+async def get_season_detail(
+    id_serie: int,
+    season_number: int,
+    ui_language: str = "en",
+) -> dict[str, Any]:
     return await get_entity_detail_data(
         "season",
-        {"id_serie": id_serie, "season_number": season_number},
+        {"id_serie": id_serie, "season_number": season_number, "ui_language": ui_language},
     )
 
 
@@ -974,6 +1302,7 @@ async def get_episode_detail(
     id_serie: int,
     season_number: int,
     episode_number: int,
+    ui_language: str = "en",
 ) -> dict[str, Any]:
     return await get_entity_detail_data(
         "episode",
@@ -981,6 +1310,7 @@ async def get_episode_detail(
             "id_serie": id_serie,
             "season_number": season_number,
             "episode_number": episode_number,
+            "ui_language": ui_language,
         },
     )
 
