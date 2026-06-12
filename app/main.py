@@ -6,7 +6,7 @@ import uuid
 from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
-from urllib.parse import quote
+from urllib.parse import quote, urlencode
 
 import httpx
 from dotenv import load_dotenv
@@ -595,6 +595,27 @@ def detail_endpoint(entity: str, args: dict[str, Any]) -> tuple[str, Any]:
     return relative_endpoint, output_id
 
 
+def detail_query_params(args: dict[str, Any], ui_language: str) -> dict[str, Any]:
+    params: dict[str, Any] = {"ui_language": ui_language}
+    collection = str(args.get("collection") or "").strip()
+    rows_per_page = args.get("rows_per_page")
+
+    if collection:
+        params["collection"] = collection
+        try:
+            params["page"] = max(1, int(args.get("page") or 1))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("Invalid page for detail collection") from exc
+
+    if rows_per_page is not None and str(rows_per_page).strip() != "":
+        try:
+            params["rows_per_page"] = min(200, max(1, int(rows_per_page)))
+        except (TypeError, ValueError) as exc:
+            raise ValueError("Invalid rows_per_page for detail collection") from exc
+
+    return params
+
+
 def compact_wikipedia_content(detail: Any, max_sections: int = 4, max_chars: int = 1200) -> list[dict[str, str]]:
     if not isinstance(detail, dict):
         return []
@@ -990,13 +1011,17 @@ async def get_entity_detail_data(entity: str, args: dict[str, Any]) -> dict[str,
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     detail_url = f"{text2sql_base_url()}{relative_endpoint}"
     ui_language = normalize_ui_language(args.get("ui_language"))
-    endpoint = f"{relative_endpoint}?ui_language={quote(ui_language, safe='')}"
+    try:
+        params = detail_query_params(args, ui_language)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    endpoint = f"{relative_endpoint}?{urlencode(params)}"
     async with httpx.AsyncClient(timeout=30) as client:
         try:
             response = await client.get(
                 detail_url,
                 headers=text2sql_headers(),
-                params={"ui_language": ui_language},
+                params=params,
             )
         except httpx.HTTPError as exc:
             raise HTTPException(status_code=502, detail=str(exc)) from exc
@@ -1281,8 +1306,24 @@ async def query_text2sql(payload: Text2SqlRequest) -> dict[str, Any]:
 
 
 @app.get("/tool/detail/{entity}/{entity_id}")
-async def get_entity_detail(entity: str, entity_id: str, ui_language: str = "en") -> dict[str, Any]:
-    return await get_entity_detail_data(entity, {"id": entity_id, "ui_language": ui_language})
+async def get_entity_detail(
+    entity: str,
+    entity_id: str,
+    ui_language: str = "en",
+    collection: str | None = None,
+    page: int = 1,
+    rows_per_page: int | None = None,
+) -> dict[str, Any]:
+    return await get_entity_detail_data(
+        entity,
+        {
+            "id": entity_id,
+            "ui_language": ui_language,
+            "collection": collection,
+            "page": page,
+            "rows_per_page": rows_per_page,
+        },
+    )
 
 
 @app.get("/tool/detail/season/{id_serie}/{season_number}")
@@ -1290,10 +1331,20 @@ async def get_season_detail(
     id_serie: int,
     season_number: int,
     ui_language: str = "en",
+    collection: str | None = None,
+    page: int = 1,
+    rows_per_page: int | None = None,
 ) -> dict[str, Any]:
     return await get_entity_detail_data(
         "season",
-        {"id_serie": id_serie, "season_number": season_number, "ui_language": ui_language},
+        {
+            "id_serie": id_serie,
+            "season_number": season_number,
+            "ui_language": ui_language,
+            "collection": collection,
+            "page": page,
+            "rows_per_page": rows_per_page,
+        },
     )
 
 
@@ -1303,6 +1354,9 @@ async def get_episode_detail(
     season_number: int,
     episode_number: int,
     ui_language: str = "en",
+    collection: str | None = None,
+    page: int = 1,
+    rows_per_page: int | None = None,
 ) -> dict[str, Any]:
     return await get_entity_detail_data(
         "episode",
@@ -1311,6 +1365,9 @@ async def get_episode_detail(
             "season_number": season_number,
             "episode_number": episode_number,
             "ui_language": ui_language,
+            "collection": collection,
+            "page": page,
+            "rows_per_page": rows_per_page,
         },
     )
 

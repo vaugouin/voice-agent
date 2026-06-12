@@ -59,6 +59,8 @@ let structuredCardFocusActive = false;
 let pendingRealtimeTextTurns = [];
 const handledCallIds = new Set();
 let currentSearchState = null;
+let currentDetailState = null;
+let loadingDetailCollections = new Set();
 let activeUiLanguage = "en";
 let loadingMore = false;
 let autoPagesLoaded = 0;
@@ -67,6 +69,12 @@ let pageHistoryIndex = -1;
 let restoringHistory = false;
 const maxAutoPages = 4;
 const TMDB_FRONT_BASE_URL = "https://www.vaugouin.com/tmdb";
+const SYNTHETIC_IMAGES_BASE_URL = "https://www.vaugouin.com/synthetic-images";
+const DETAIL_RAIL_AUTO_LOAD_THRESHOLD_PX = 360;
+// MUST match STYLE_VERSION in the synthetic-images repo's .env on the VPS: padded-logo master
+// URLs are sha256("<class>:<id>|logo-pad|<style version>")[:32], so a style bump changes every
+// URL. A stale value here degrades gracefully to the raw TMDb logo (the probe just 404s).
+const SYNTHETIC_STYLE_VERSION = "v1";
 const CONTEXT_STORAGE_KEY = "voice-agent-context-v1";
 const STRUCTURED_CARD_FOCUS_TOOL = "focus_result_card";
 const maxContextItems = 10;
@@ -89,6 +97,9 @@ const DETAIL_TOOL_ENTITIES = {
   get_nomination_detail: "nomination",
   get_location_detail: "location",
 };
+const DETAIL_ENTITY_TO_TOOL = Object.fromEntries(
+  Object.entries(DETAIL_TOOL_ENTITIES).map(([toolName, entity]) => [entity, toolName])
+);
 let activeResponseId = null;
 let activeAudioResponseId = null;
 let toolCallsInFlight = 0;
@@ -462,6 +473,132 @@ function appendCurrentSearchHistory(output, args) {
       question_hashed: currentOutput.question_hashed || current.args?.question_hashed,
     },
   };
+}
+
+function resetDetailState() {
+  currentDetailState = null;
+  loadingDetailCollections = new Set();
+}
+
+function baseDetailArgs(args = {}) {
+  const { collection: _collection, page: _page, rows_per_page: _rowsPerPage, ...base } = args || {};
+  return base;
+}
+
+function setCurrentDetailState(output, args, container, detail) {
+  const entity = output?.entity || DETAIL_TOOL_ENTITIES[args?.toolName] || "";
+  const toolName = args?.toolName || DETAIL_ENTITY_TO_TOOL[entity] || "";
+  const uiLanguage = normalizeUiLanguage(output?.ui_language || args?.ui_language || activeUiLanguage);
+  const cleanArgs = {
+    ...baseDetailArgs(args),
+    ui_language: uiLanguage,
+  };
+
+  currentDetailState = {
+    toolName,
+    entity,
+    output: {
+      ...(output || {}),
+      ui_language: uiLanguage,
+      detail,
+    },
+    args: cleanArgs,
+    container,
+    detail,
+    ui_language: uiLanguage,
+    collectionErrors: {},
+  };
+}
+
+function updateCurrentDetailHistory() {
+  if (!currentDetailState || restoringHistory || pageHistoryIndex < 0) {
+    return;
+  }
+
+  const current = pageHistory[pageHistoryIndex];
+  if (!current || (current.type !== "entityDetail" && current.type !== "recordDetail")) {
+    return;
+  }
+
+  pageHistory[pageHistoryIndex] = {
+    type: "entityDetail",
+    output: cloneHistoryValue(currentDetailState.output),
+    args: cloneHistoryValue(currentDetailState.args),
+  };
+}
+
+function detailCollectionLoadedCount(collectionName) {
+  const rows = currentDetailState?.detail?.[collectionName];
+  return Array.isArray(rows) ? rows.length : 0;
+}
+
+function detailCollectionPagination(collectionName) {
+  const pagination = currentDetailState?.detail?.pagination;
+  const meta = pagination && typeof pagination === "object" ? pagination[collectionName] : null;
+  if (!meta || typeof meta !== "object") {
+    return null;
+  }
+
+  const total = Math.max(0, Number(meta.total || 0));
+  const page = Math.max(1, Number(meta.page || 1));
+  const rowsPerPage = Math.max(0, Number(meta.rows_per_page || 0));
+  const returned = Math.max(0, Number(meta.returned || 0));
+  const loaded = Math.min(total || detailCollectionLoadedCount(collectionName), detailCollectionLoadedCount(collectionName) || returned);
+  return { total, page, rowsPerPage, returned, loaded };
+}
+
+async function loadDetailCollectionPage(collectionName) {
+  const state = currentDetailState;
+  const meta = detailCollectionPagination(collectionName);
+  if (!state?.toolName || !collectionName || !meta || meta.total <= meta.loaded || loadingDetailCollections.has(collectionName)) {
+    return;
+  }
+
+  loadingDetailCollections.add(collectionName);
+  delete state.collectionErrors[collectionName];
+  updateDetailRailHeader(collectionName);
+
+  try {
+    const output = await callEntityDetail(state.toolName, {
+      ...state.args,
+      collection: collectionName,
+      page: meta.page + 1,
+      rows_per_page: meta.rowsPerPage || undefined,
+    });
+    if (currentDetailState !== state) {
+      return;
+    }
+
+    const pageDetail = output.detail && typeof output.detail === "object" ? output.detail : {};
+    const pageRows = Array.isArray(pageDetail[collectionName]) ? pageDetail[collectionName] : [];
+    const existingRows = Array.isArray(state.detail[collectionName]) ? state.detail[collectionName] : [];
+    state.detail[collectionName] = [...existingRows, ...pageRows];
+    const pagePagination = pageDetail.pagination && typeof pageDetail.pagination === "object"
+      ? pageDetail.pagination[collectionName]
+      : null;
+    state.detail.pagination = {
+      ...(state.detail.pagination && typeof state.detail.pagination === "object" ? state.detail.pagination : {}),
+      [collectionName]: pagePagination || {
+        total: meta.total,
+        page: meta.page + 1,
+        rows_per_page: meta.rowsPerPage,
+        returned: pageRows.length,
+      },
+    };
+    state.output.detail = state.detail;
+    appendDetailRailItems(collectionName, pageRows);
+    updateCurrentDetailHistory();
+  } catch (error) {
+    if (currentDetailState === state) {
+      state.collectionErrors[collectionName] = error.message;
+      log("detail collection load error", { collection: collectionName, error: error.message });
+    }
+  } finally {
+    if (currentDetailState === state) {
+      loadingDetailCollections.delete(collectionName);
+      updateDetailRailHeader(collectionName);
+    }
+  }
 }
 
 function hasQuestionText() {
@@ -892,6 +1029,7 @@ function setLoadingResults(query, uiLanguage = "") {
   loadMoreButton.hidden = true;
   resultsEnd.hidden = true;
   currentSearchState = null;
+  resetDetailState();
   loadingMore = false;
   autoPagesLoaded = 0;
 
@@ -1029,6 +1167,56 @@ function tmdbImage(path, size = "w342") {
   return `https://image.tmdb.org/t/p/${size}${value}`;
 }
 
+async function syntheticImageUrl(itemClass, id) {
+  // Padded 2:3 card master produced by the synthetic-images repo (decision #7) and served
+  // by tmdb-front's Apache. The URL is deterministic: the IMAGE_KEY is
+  // sha256("<class>:<id>|logo-pad|<style version>") truncated to 32 hex chars.
+  if (!id || !window.crypto || !crypto.subtle) {
+    return "";
+  }
+  try {
+    const key = `${itemClass}:${id}|logo-pad|${SYNTHETIC_STYLE_VERSION}`;
+    const digest = await crypto.subtle.digest("SHA-256", new TextEncoder().encode(key));
+    const hex = Array.from(new Uint8Array(digest))
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("")
+      .slice(0, 32);
+    return `${SYNTHETIC_IMAGES_BASE_URL}/${encodeURIComponent(itemClass)}/${hex}.webp`;
+  } catch (error) {
+    return "";
+  }
+}
+
+function applySyntheticLogo(media, img, title, synthetic) {
+  // Upgrade a company/network visual to its padded master once the probe confirms the file
+  // exists; on 404 (master not generated yet) the raw TMDb logo simply stays in place.
+  if (!media || !synthetic || !synthetic.itemClass || !synthetic.id) {
+    return;
+  }
+  syntheticImageUrl(synthetic.itemClass, synthetic.id).then((url) => {
+    if (!url) {
+      return;
+    }
+    const probe = new Image();
+    probe.onload = () => {
+      if (img) {
+        img.src = url;
+        return;
+      }
+      const upgraded = document.createElement("img");
+      upgraded.src = url;
+      setImageText(upgraded, title);
+      const fallback = media.querySelector(".posterFallback");
+      if (fallback) {
+        fallback.replaceWith(upgraded);
+      } else {
+        media.prepend(upgraded);
+      }
+    };
+    probe.src = url;
+  });
+}
+
 function wikipediaImage(path) {
   const value = String(path || "").trim();
   if (!value) {
@@ -1137,7 +1325,7 @@ function buildReveal(meta, rating, overview) {
   return reveal;
 }
 
-function buildCardMedia(title, imageUrl) {
+function buildCardMedia(title, imageUrl, synthetic = null) {
   const media = document.createElement("div");
   media.className = "search-poster-card-media";
 
@@ -1146,11 +1334,13 @@ function buildCardMedia(title, imageUrl) {
     img.src = imageUrl;
     setImageText(img, title);
     media.append(img);
+    applySyntheticLogo(media, img, title, synthetic);
   } else {
     const fallback = document.createElement("div");
     fallback.className = "posterFallback";
     fallback.textContent = title || "No image";
     media.append(fallback);
+    applySyntheticLogo(media, null, title, synthetic);
   }
 
   return media;
@@ -1226,7 +1416,7 @@ function appendCard(grid, cardSpec) {
     link.target = "_blank";
     link.rel = "noopener noreferrer";
   }
-  const media = buildCardMedia(cardSpec.title, cardSpec.imageUrl);
+  const media = buildCardMedia(cardSpec.title, cardSpec.imageUrl, cardSpec.synthetic || null);
   media.append(buildReveal(cardSpec.meta || [], cardSpec.rating, cardSpec.overview));
   link.append(media, buildCardText(cardSpec.title, cardSpec.subtitle));
   card.append(link);
@@ -1338,6 +1528,7 @@ function cardSpecFromRecord(record) {
         ? ""
         : `${TMDB_FRONT_BASE_URL}/${isNetwork ? "network" : "company"}.php?${isNetwork ? "networkid" : "companyid"}=${encodeURIComponent(id)}`,
       imageUrl: tmdbImage(record.LOGO_PATH, "w342"),
+      synthetic: { itemClass: isNetwork ? "network" : "company", id },
       meta: [record.ORIGIN_COUNTRY, record.HEADQUARTERS],
       overview: record.DESCRIPTION || "",
     });
@@ -2016,7 +2207,185 @@ function buildBackdropSwipeViewer(record) {
   return viewer;
 }
 
-function appendVisualRail(parent, title, items, { kind = "poster" } = {}) {
+function buildDetailVisualCard(item, kind = "poster") {
+  const title = visualTitle(item);
+  const request = detailRequestFromRecord(item);
+  const card = document.createElement(request ? "button" : "div");
+  card.className = "detailVisualCard";
+  if (request) {
+    card.type = "button";
+    card.setAttribute("aria-label", `Open ${title}`);
+    card.addEventListener("click", () => {
+      showRecordDetail(item).catch((error) => {
+        log("detail page click error", error.message);
+      });
+    });
+  }
+
+  const media = document.createElement("div");
+  media.className = "detailVisualMedia";
+  const src = visualImage(item, kind);
+  const synthetic = (item.ID_COMPANY || item.ID_NETWORK)
+    ? { itemClass: item.ID_NETWORK ? "network" : "company", id: item.ID_NETWORK || item.ID_COMPANY }
+    : null;
+  if (src) {
+    const img = document.createElement("img");
+    img.src = src;
+    setImageText(img, title);
+    media.append(img);
+    applySyntheticLogo(media, img, title, synthetic);
+  } else {
+    const fallback = document.createElement("div");
+    fallback.className = "posterFallback";
+    fallback.textContent = title;
+    media.append(fallback);
+    applySyntheticLogo(media, null, title, synthetic);
+  }
+
+  const text = document.createElement("div");
+  text.className = "detailVisualText";
+  appendText(text, "detailVisualTitle", title);
+  appendText(text, "detailVisualSubtitle", visualSubtitle(item));
+  card.append(media, text);
+  return card;
+}
+
+function findDetailRailSection(collectionName, state = currentDetailState) {
+  if (!state?.container?.isConnected || !collectionName) {
+    return null;
+  }
+  return Array.from(state.container.querySelectorAll(".detailVisualSection[data-detail-collection]"))
+    .find((section) => section.dataset.detailCollection === collectionName) || null;
+}
+
+function detailRailAutoLoadThreshold(rail) {
+  return Math.max(DETAIL_RAIL_AUTO_LOAD_THRESHOLD_PX, rail.clientWidth * 0.5);
+}
+
+function maybeAutoLoadDetailRailPage(rail, { allowErrorRetry = false } = {}) {
+  const collectionName = rail?.dataset?.detailCollection || "";
+  const meta = collectionName ? detailCollectionPagination(collectionName) : null;
+  const hasLoadError = Boolean(currentDetailState?.collectionErrors?.[collectionName]);
+  if (
+    !collectionName ||
+    !meta ||
+    meta.total <= meta.loaded ||
+    loadingDetailCollections.has(collectionName) ||
+    (hasLoadError && !allowErrorRetry)
+  ) {
+    return;
+  }
+
+  const remaining = rail.scrollWidth - rail.clientWidth - rail.scrollLeft;
+  if (remaining <= detailRailAutoLoadThreshold(rail)) {
+    if (hasLoadError) {
+      delete currentDetailState.collectionErrors[collectionName];
+      updateDetailRailHeader(collectionName);
+    }
+    loadDetailCollectionPage(collectionName);
+  }
+}
+
+function scheduleDetailRailAutoLoadCheck(rail, { allowErrorRetry = false } = {}) {
+  if (!rail || rail.dataset.detailRailAutoLoadScheduled === "true") {
+    if (rail && allowErrorRetry) {
+      rail.dataset.detailRailAutoLoadRetry = "true";
+    }
+    return;
+  }
+
+  rail.dataset.detailRailAutoLoadScheduled = "true";
+  rail.dataset.detailRailAutoLoadRetry = allowErrorRetry ? "true" : "false";
+  window.requestAnimationFrame(() => {
+    const shouldAllowErrorRetry = rail.dataset.detailRailAutoLoadRetry === "true";
+    delete rail.dataset.detailRailAutoLoadScheduled;
+    delete rail.dataset.detailRailAutoLoadRetry;
+    maybeAutoLoadDetailRailPage(rail, { allowErrorRetry: shouldAllowErrorRetry });
+  });
+}
+
+function updateDetailRailHeader(collectionName) {
+  const section = findDetailRailSection(collectionName);
+  if (!section) {
+    return;
+  }
+
+  const meta = detailCollectionPagination(collectionName);
+  const titleBlock = section.querySelector(".detailRailTitleBlock");
+  if (!titleBlock) {
+    return;
+  }
+
+  let count = titleBlock.querySelector(".detailRailCount");
+  if (meta && meta.total > 0) {
+    if (!count) {
+      count = document.createElement("div");
+      count.className = "detailRailCount";
+      titleBlock.append(count);
+    }
+    count.textContent = `${meta.loaded} of ${meta.total}`;
+  } else if (count) {
+    count.remove();
+  }
+
+  let errorText = titleBlock.querySelector(".detailRailError");
+  const loadError = currentDetailState?.collectionErrors?.[collectionName] || "";
+  if (loadError) {
+    if (!errorText) {
+      errorText = document.createElement("div");
+      errorText.className = "detailRailError";
+      titleBlock.append(errorText);
+    }
+    errorText.textContent = "Load failed";
+    errorText.title = loadError;
+  } else if (errorText) {
+    errorText.remove();
+  }
+}
+
+function appendDetailRailItems(collectionName, items) {
+  const section = findDetailRailSection(collectionName);
+  const rail = section?.querySelector(".detailVisualRail[data-detail-collection]");
+  if (!rail) {
+    return false;
+  }
+
+  const kind = rail.dataset.detailRailKind || "poster";
+  const displayItems = detailRailDisplayItems(collectionName, items, currentDetailState?.detail);
+  const clean = (Array.isArray(displayItems) ? displayItems : [])
+    .filter((item) => item && typeof item === "object" && visualTitle(item));
+  if (!clean.length) {
+    return true;
+  }
+
+  const scrollLeft = rail.scrollLeft;
+  const fragment = document.createDocumentFragment();
+  clean.forEach((item) => {
+    fragment.append(buildDetailVisualCard(item, kind));
+  });
+  rail.append(fragment);
+  rail.scrollLeft = scrollLeft;
+  rail.dispatchEvent(new CustomEvent("detailRailUpdated"));
+  return true;
+}
+
+function detailRailDisplayItems(collectionName, items, detail = currentDetailState?.detail) {
+  if (collectionName === "seasons") {
+    return seasonRailItems(items, detail?.ID_SERIE);
+  }
+  if (collectionName === "episodes") {
+    return episodeRailItems(items, detail?.ID_SERIE, detail?.SEASON_NUMBER);
+  }
+  if (collectionName === "crew") {
+    return dedupePersonCrewCredits(items);
+  }
+  if (collectionName === "movie_crew" || collectionName === "series_crew") {
+    return dedupeCrewCredits(items);
+  }
+  return items;
+}
+
+function appendVisualRail(parent, title, items, { kind = "poster", collectionName = "" } = {}) {
   const clean = (Array.isArray(items) ? items : [])
     .filter((item) => item && typeof item === "object" && visualTitle(item));
   if (!clean.length) {
@@ -2025,9 +2394,31 @@ function appendVisualRail(parent, title, items, { kind = "poster" } = {}) {
 
   const section = document.createElement("section");
   section.className = "detailVisualSection";
+  if (collectionName) {
+    section.dataset.detailCollection = collectionName;
+    section.dataset.detailRailTitle = title;
+  }
   const header = document.createElement("div");
   header.className = "detailRailHeader";
-  appendText(header, "detailSubheading", title);
+  const titleBlock = document.createElement("div");
+  titleBlock.className = "detailRailTitleBlock";
+  appendText(titleBlock, "detailSubheading", title);
+  const meta = collectionName ? detailCollectionPagination(collectionName) : null;
+  if (meta && meta.total > 0) {
+    const count = document.createElement("div");
+    count.className = "detailRailCount";
+    count.textContent = `${meta.loaded} of ${meta.total}`;
+    titleBlock.append(count);
+  }
+  const loadError = collectionName ? currentDetailState?.collectionErrors?.[collectionName] : "";
+  if (loadError) {
+    const errorText = document.createElement("div");
+    errorText.className = "detailRailError";
+    errorText.textContent = "Load failed";
+    errorText.title = loadError;
+    titleBlock.append(errorText);
+  }
+  header.append(titleBlock);
 
   const controls = document.createElement("div");
   controls.className = "detailRailControls";
@@ -2046,41 +2437,12 @@ function appendVisualRail(parent, title, items, { kind = "poster" } = {}) {
 
   const rail = document.createElement("div");
   rail.className = `detailVisualRail ${kind === "profile" ? "profileRail" : ""}`;
+  rail.dataset.detailRailKind = kind;
+  if (collectionName) {
+    rail.dataset.detailCollection = collectionName;
+  }
   clean.forEach((item) => {
-    const request = detailRequestFromRecord(item);
-    const card = document.createElement(request ? "button" : "div");
-    card.className = "detailVisualCard";
-    if (request) {
-      card.type = "button";
-      card.setAttribute("aria-label", `Open ${visualTitle(item)}`);
-      card.addEventListener("click", () => {
-        showRecordDetail(item).catch((error) => {
-          log("detail page click error", error.message);
-        });
-      });
-    }
-
-    const media = document.createElement("div");
-    media.className = "detailVisualMedia";
-    const src = visualImage(item, kind);
-    if (src) {
-      const img = document.createElement("img");
-      img.src = src;
-      setImageText(img, visualTitle(item));
-      media.append(img);
-    } else {
-      const fallback = document.createElement("div");
-      fallback.className = "posterFallback";
-      fallback.textContent = visualTitle(item);
-      media.append(fallback);
-    }
-
-    const text = document.createElement("div");
-    text.className = "detailVisualText";
-    appendText(text, "detailVisualTitle", visualTitle(item));
-    appendText(text, "detailVisualSubtitle", visualSubtitle(item));
-    card.append(media, text);
-    rail.append(card);
+    rail.append(buildDetailVisualCard(item, kind));
   });
 
   const scrollRail = (direction) => {
@@ -2098,15 +2460,21 @@ function appendVisualRail(parent, title, items, { kind = "poster" } = {}) {
     previous.disabled = !hasOverflow || rail.scrollLeft <= 1;
     next.disabled = !hasOverflow || rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 1;
   };
+  const updateRailState = (options = {}) => {
+    const config = options && options.allowErrorRetry ? options : {};
+    updateControls();
+    scheduleDetailRailAutoLoadCheck(rail, config);
+  };
   previous.addEventListener("click", () => scrollRail(-1));
   next.addEventListener("click", () => scrollRail(1));
-  rail.addEventListener("scroll", updateControls, { passive: true });
-  window.requestAnimationFrame(updateControls);
+  rail.addEventListener("scroll", () => updateRailState({ allowErrorRetry: true }), { passive: true });
+  rail.addEventListener("detailRailUpdated", () => updateRailState());
+  window.requestAnimationFrame(updateRailState);
   if (typeof ResizeObserver === "function") {
-    const resizeObserver = new ResizeObserver(updateControls);
+    const resizeObserver = new ResizeObserver(updateRailState);
     resizeObserver.observe(rail);
   } else {
-    window.addEventListener("resize", updateControls);
+    window.addEventListener("resize", updateRailState);
   }
 
   section.append(header, rail);
@@ -2115,20 +2483,20 @@ function appendVisualRail(parent, title, items, { kind = "poster" } = {}) {
 }
 
 function appendMixedVisualSections(parent, record) {
-  appendVisualRail(parent, "Movies", record.movies, { kind: "poster" });
-  appendVisualRail(parent, "Series", record.series, { kind: "poster" });
-  appendVisualRail(parent, "People", record.persons, { kind: "profile" });
-  appendVisualRail(parent, "Awards", record.awards, { kind: "poster" });
-  appendVisualRail(parent, "Nominations", record.nominations, { kind: "poster" });
-  appendVisualRail(parent, "Collections", record.collections, { kind: "poster" });
-  appendVisualRail(parent, "Topics", record.topics, { kind: "poster" });
-  appendVisualRail(parent, "Lists", record.lists, { kind: "poster" });
-  appendVisualRail(parent, "Movements", record.movements, { kind: "poster" });
-  appendVisualRail(parent, "Related technicals", record.siblings, { kind: "poster" });
-  appendVisualRail(parent, "Groups", record.groups, { kind: "profile" });
-  appendVisualRail(parent, "Deaths", record.deaths, { kind: "profile" });
-  appendVisualRail(parent, "Companies", record.companies, { kind: "logo" });
-  appendVisualRail(parent, "Networks", record.networks, { kind: "logo" });
+  appendVisualRail(parent, "Movies", record.movies, { kind: "poster", collectionName: "movies" });
+  appendVisualRail(parent, "Series", record.series, { kind: "poster", collectionName: "series" });
+  appendVisualRail(parent, "People", record.persons, { kind: "profile", collectionName: "persons" });
+  appendVisualRail(parent, "Awards", record.awards, { kind: "poster", collectionName: "awards" });
+  appendVisualRail(parent, "Nominations", record.nominations, { kind: "poster", collectionName: "nominations" });
+  appendVisualRail(parent, "Collections", record.collections, { kind: "poster", collectionName: "collections" });
+  appendVisualRail(parent, "Topics", record.topics, { kind: "poster", collectionName: "topics" });
+  appendVisualRail(parent, "Lists", record.lists, { kind: "poster", collectionName: "lists" });
+  appendVisualRail(parent, "Movements", record.movements, { kind: "poster", collectionName: "movements" });
+  appendVisualRail(parent, "Related technicals", record.siblings, { kind: "poster", collectionName: "siblings" });
+  appendVisualRail(parent, "Groups", record.groups, { kind: "profile", collectionName: "groups" });
+  appendVisualRail(parent, "Deaths", record.deaths, { kind: "profile", collectionName: "deaths" });
+  appendVisualRail(parent, "Companies", record.companies, { kind: "logo", collectionName: "companies" });
+  appendVisualRail(parent, "Networks", record.networks, { kind: "logo", collectionName: "networks" });
 }
 
 function titleForRecord(record) {
@@ -2188,13 +2556,19 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     }
   } else {
     const poster = imageUrl(record.POSTER_PATH || record.PROFILE_PATH || record.LOGO_PATH || record.WIKIPEDIA_IMAGE_PATH, "w500");
+    const synthetic = (record.ID_COMPANY || record.ID_NETWORK)
+      ? { itemClass: record.ID_NETWORK ? "network" : "company", id: record.ID_NETWORK || record.ID_COMPANY }
+      : null;
     if (poster) {
-      media.append(buildSingleImageViewer(record, poster));
+      const viewer = buildSingleImageViewer(record, poster);
+      applySyntheticLogo(viewer, viewer.querySelector("img"), titleForRecord(record), synthetic);
+      media.append(viewer);
     } else {
       const fallback = document.createElement("div");
       fallback.className = "posterFallback";
       fallback.textContent = titleForRecord(record);
       media.append(fallback);
+      applySyntheticLogo(media, null, titleForRecord(record), synthetic);
     }
   }
 
@@ -2223,10 +2597,10 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     }
     appendVisualRail(body, "Series", record.series ? [record.series] : [], { kind: "poster" });
     appendVisualRail(body, "Season", record.season ? [{ ...record.season, ID_SERIE: record.ID_SERIE }] : [], { kind: "poster" });
-    if (!appendVisualRail(body, "Cast", record.cast, { kind: "profile" })) {
+    if (!appendVisualRail(body, "Cast", record.cast, { kind: "profile", collectionName: "cast" })) {
       appendList(body, "Cast", namesFrom(record.cast, "PERSON_NAME", Infinity));
     }
-    appendVisualRail(body, "Crew", crewCredits, { kind: "profile" });
+    appendVisualRail(body, "Crew", crewCredits, { kind: "profile", collectionName: "crew" });
     appendVisualRail(
       body,
       "Stills",
@@ -2249,12 +2623,12 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
       body,
       "Episodes",
       episodeRailItems(record.episodes, record.ID_SERIE, record.SEASON_NUMBER),
-      { kind: "poster" }
+      { kind: "poster", collectionName: "episodes" }
     );
-    if (!appendVisualRail(body, "Cast", record.cast, { kind: "profile" })) {
+    if (!appendVisualRail(body, "Cast", record.cast, { kind: "profile", collectionName: "cast" })) {
       appendList(body, "Cast", namesFrom(record.cast, "PERSON_NAME", Infinity));
     }
-    appendVisualRail(body, "Crew", crewCredits, { kind: "profile" });
+    appendVisualRail(body, "Crew", crewCredits, { kind: "profile", collectionName: "crew" });
   } else if (record.ID_MOVIE || String(record.CONTENT_TYPE || "").toLowerCase() === "movie") {
     const director = directorCredit(record);
     const crewCredits = dedupePersonCrewCredits(record.crew);
@@ -2265,11 +2639,11 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     if (metrics.children.length) {
       body.append(metrics);
     }
-    if (!appendVisualRail(body, "Cast", record.cast, { kind: "profile" })) {
+    if (!appendVisualRail(body, "Cast", record.cast, { kind: "profile", collectionName: "cast" })) {
       appendList(body, "Cast", namesFrom(record.cast, "PERSON_NAME", Infinity));
     }
-    appendVisualRail(body, "Crew", crewCredits, { kind: "profile" });
-    appendVisualRail(body, "Technicals", record.technicals, { kind: "poster" });
+    appendVisualRail(body, "Crew", crewCredits, { kind: "profile", collectionName: "crew" });
+    appendVisualRail(body, "Technicals", record.technicals, { kind: "poster", collectionName: "technicals" });
     appendMixedVisualSections(body, record);
   } else if (record.ID_SERIE || String(record.CONTENT_TYPE || "").toLowerCase() === "serie") {
     const director = directorCredit(record);
@@ -2282,11 +2656,11 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     if (metrics.children.length) {
       body.append(metrics);
     }
-    appendVisualRail(body, "Seasons", seasonRailItems(record.seasons, record.ID_SERIE), { kind: "poster" });
-    if (!appendVisualRail(body, "Cast", record.cast, { kind: "profile" })) {
+    appendVisualRail(body, "Seasons", seasonRailItems(record.seasons, record.ID_SERIE), { kind: "poster", collectionName: "seasons" });
+    if (!appendVisualRail(body, "Cast", record.cast, { kind: "profile", collectionName: "cast" })) {
       appendList(body, "Cast", namesFrom(record.cast, "PERSON_NAME", Infinity));
     }
-    appendVisualRail(body, "Crew", crewCredits, { kind: "profile" });
+    appendVisualRail(body, "Crew", crewCredits, { kind: "profile", collectionName: "crew" });
     appendMixedVisualSections(body, record);
   } else if (record.ID_PERSON) {
     appendMetric(metrics, "Born", record.BIRTH_YEAR);
@@ -2300,14 +2674,15 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     const movieCrewCredits = dedupeCrewCredits(record.movie_crew);
     const seriesCrewCredits = dedupeCrewCredits(record.series_crew);
     const displayedMovies = knownForActing
-      ? appendVisualRail(body, "Movies", record.movie_cast, { kind: "poster" })
-      : appendVisualRail(body, "Directed or crewed", movieCrewCredits, { kind: "poster" });
+      ? appendVisualRail(body, "Movies", record.movie_cast, { kind: "poster", collectionName: "movie_cast" })
+      : appendVisualRail(body, "Directed or crewed", movieCrewCredits, { kind: "poster", collectionName: "movie_crew" });
     if (knownForActing) {
-      appendVisualRail(body, "Directed or crewed", movieCrewCredits, { kind: "poster" });
+      appendVisualRail(body, "Directed or crewed", movieCrewCredits, { kind: "poster", collectionName: "movie_crew" });
     } else {
-      appendVisualRail(body, "Movies", record.movie_cast, { kind: "poster" });
+      appendVisualRail(body, "Movies", record.movie_cast, { kind: "poster", collectionName: "movie_cast" });
     }
-    appendVisualRail(body, "Series", [...(record.series_cast || []), ...seriesCrewCredits], { kind: "poster" });
+    appendVisualRail(body, "Series", record.series_cast, { kind: "poster", collectionName: "series_cast" });
+    appendVisualRail(body, "Series crew", seriesCrewCredits, { kind: "poster", collectionName: "series_crew" });
     appendMixedVisualSections(body, record);
     if (!displayedMovies) {
       appendList(
@@ -2352,14 +2727,22 @@ async function renderSingleRecordResult(parent, record) {
 
   const request = detailRequestFromRecord(record);
   if (!request) {
-    return;
+    return null;
   }
 
   try {
     const output = await callEntityDetail(request.toolName, request);
-    renderSingleDetail(container, { ...record, ...(output.detail || {}) });
+    const detail = { ...record, ...(output.detail || {}) };
+    const stateOutput = { ...output, detail };
+    setCurrentDetailState(stateOutput, { ...request, ui_language: output.ui_language || activeUiLanguage }, container, detail);
+    renderSingleDetail(container, detail);
+    return {
+      output: stateOutput,
+      args: cloneHistoryValue(currentDetailState.args),
+    };
   } catch (error) {
     renderSingleDetail(container, record, { error: `Detail fetch failed: ${error.message}` });
+    return null;
   }
 }
 
@@ -2373,12 +2756,17 @@ async function showRecordDetail(record, { skipHistory = false, ui_language = "" 
   loadMoreButton.hidden = true;
   resultsEnd.hidden = true;
   currentSearchState = null;
+  resetDetailState();
   loadingMore = false;
   autoPagesLoaded = 0;
 
-  await renderSingleRecordResult(resultsContent, record);
+  const renderedDetail = await renderSingleRecordResult(resultsContent, record);
   if (!skipHistory) {
-    pushPageHistory({ type: "recordDetail", record, ui_language: activeUiLanguage });
+    if (renderedDetail) {
+      pushPageHistory({ type: "entityDetail", output: renderedDetail.output, args: renderedDetail.args });
+    } else {
+      pushPageHistory({ type: "recordDetail", record, ui_language: activeUiLanguage });
+    }
   }
 }
 
@@ -2392,6 +2780,7 @@ function setLoadingEntityDetail(toolName, args) {
   loadMoreButton.hidden = true;
   resultsEnd.hidden = true;
   currentSearchState = null;
+  resetDetailState();
   loadingMore = false;
   autoPagesLoaded = 0;
 
@@ -2415,6 +2804,7 @@ function renderEntityDetailOutput(output, args = {}, { skipHistory = false } = {
   loadMoreButton.hidden = true;
   resultsEnd.hidden = true;
   currentSearchState = null;
+  resetDetailState();
   loadingMore = false;
   autoPagesLoaded = 0;
 
@@ -2443,12 +2833,15 @@ function renderEntityDetailOutput(output, args = {}, { skipHistory = false } = {
     return;
   }
 
-  renderSingleDetail(container, {
+  const detailRecord = {
     ...detail,
     ID_WIKIDATA: detail.ID_WIKIDATA || args.ID_WIKIDATA,
-  });
+  };
+  const stateOutput = { ...output, detail: detailRecord };
+  setCurrentDetailState(stateOutput, args, container, detailRecord);
+  renderSingleDetail(container, detailRecord);
   if (!skipHistory) {
-    pushPageHistory({ type: "entityDetail", output, args });
+    pushPageHistory({ type: "entityDetail", output: stateOutput, args: currentDetailState.args });
   }
 }
 
@@ -2474,6 +2867,7 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
   if (!append || !grid) {
     clearActiveSpokenCard();
     clearQueryDetailsDock();
+    resetDetailState();
     resultsContent.replaceChildren();
 
     const answerBlock = document.createElement("div");
@@ -4269,6 +4663,14 @@ async function callEntityDetail(toolName, args) {
     appUrl(detailPath || `tool/detail/${encodeURIComponent(entity)}/${encodeURIComponent(String(id))}`)
   );
   detailUrl.searchParams.set("ui_language", uiLanguage);
+  const collection = String(args.collection || "").trim();
+  if (collection) {
+    detailUrl.searchParams.set("collection", collection);
+    detailUrl.searchParams.set("page", String(args.page || 1));
+  }
+  if (args.rows_per_page !== null && args.rows_per_page !== undefined && String(args.rows_per_page).trim() !== "") {
+    detailUrl.searchParams.set("rows_per_page", String(args.rows_per_page));
+  }
   const response = await fetch(detailUrl.toString());
 
   const rawBody = await response.text();
@@ -4815,6 +5217,7 @@ function clearConversationUi() {
   loadMoreButton.hidden = true;
   resultsEnd.hidden = true;
   currentSearchState = null;
+  resetDetailState();
   activeUiLanguage = "en";
   loadingMore = false;
   autoPagesLoaded = 0;

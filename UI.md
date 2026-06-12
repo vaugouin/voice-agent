@@ -522,6 +522,7 @@ For multi-row text2sql results:
 - Supported entity rows become poster/result cards.
 - Supported entity IDs include `ID_MOVIE`, `ID_SERIE`, composite season keys (`ID_SERIE` plus `SEASON_NUMBER` on an `ID_SEASON` row), composite episode keys (`ID_SERIE`, `SEASON_NUMBER`, and `EPISODE_NUMBER` on an `ID_EPISODE` row), `ID_PERSON`, `ID_COMPANY`, `ID_NETWORK`, `ID_T2S_COLLECTION`, `ID_TOPIC`, `ID_T2S_LIST`, `ID_MOVEMENT`, `ID_TECHNICAL`, `ID_GROUP`, `ID_DEATH`, `ID_AWARD`, `ID_NOMINATION`, and `ID_WIKIDATA`.
 - Aggregate rows become aggregate cards.
+- Company and network cards asynchronously upgrade their visual to the padded 2:3 logo master (`applySyntheticLogo()`): the deterministic master URL is probed off-screen and swapped in only on a successful load, so the raw TMDb logo — or the text fallback tile when the row has no `LOGO_PATH` — remains until the master exists. No layout shift occurs; only the `img` src (or fallback replacement) changes.
 - If no displayable rows exist, the grid shows `No displayable rows.`
 - Every card gets an internal `data-result-index` attribute matching its 1-based position in the current grid.
 - Supported poster/detail cards also store normalized title text for spoken-card matching; the title is not displayed as a badge.
@@ -630,7 +631,7 @@ It:
 - clears query details
 - clears previous content
 - hides loader, Load more, and end marker
-- clears pagination state
+- clears search pagination state and any previous detail pagination state
 - renders a detail placeholder with title `Loading details...`
 
 ### Entity Detail Output
@@ -659,12 +660,38 @@ If no detail object exists:
 If detail exists:
 
 - renders the entity detail page
+- stores the full detail record, detail args, `ui_language`, and upstream `pagination` map as the current detail state
 - does not render `wikipedia_content` sections; that collection is reserved for model grounding when answering entity-detail questions
 - preserves `ID_WIKIDATA` from args when needed
 - series detail pages render returned `seasons` as a clickable `Seasons` rail above the `Cast` rail, injecting the parent `ID_SERIE` needed by the composite season route
 - season detail pages render parent-series navigation and metrics, then a clickable `Episodes` rail from returned `episodes` summaries above the `Cast` rail, followed by crew; each episode card inherits the season composite route context and opens its full episode page
 - episode detail pages render parent-series and parent-season navigation, metrics, cast, crew, and returned still-image cards
 - technical detail pages use localized `DESCRIPTION` as the title, show `TECHNICAL_TYPE` as a type metric, and render associated `movies` plus same-type `siblings` as clickable rails when returned
+- company and network detail pages asynchronously swap their main logo visual to the padded 2:3 master (`applySyntheticLogo()`) when the deterministically derived URL loads; embedded `Companies`/`Networks` relation rails on any detail page apply the same upgrade per rail item, keyed on the item's `ID_COMPANY`/`ID_NETWORK`. On 404 the raw TMDb logo or text fallback stays
+
+### Entity Detail Rail Pagination
+
+Entity detail pages can paginate embedded relation rails independently from search results.
+
+State:
+
+- `currentDetailState`: stores the active detail tool, base detail args, current detail record, `ui_language`, per-collection errors, and render container.
+- `loadingDetailCollections`: tracks collection names currently loading a targeted next page.
+
+Rail behavior:
+
+- Rails are paginatable only when the current detail record has `pagination[collectionName]`.
+- The rail header shows `{loaded} of {total}` when pagination metadata is available.
+- There is no rail-level `More` button.
+- When the user scrolls or slides close to the right edge of a paginatable rail, the UI automatically calls the same local detail route with `collection`, `page + 1`, `rows_per_page`, and `ui_language`.
+- The targeted response is merged into the existing detail record's matching array.
+- The matching `pagination[collectionName]` entry is updated from the targeted response.
+- The existing rail DOM is updated in place: the count/error state changes in the rail header, and returned cards are appended to the right edge of the current rail.
+- Loading additional rail items does not rerender the current detail page or replace existing rail cards, and the rail's current horizontal position is left unchanged.
+- If a rail load fails, automatic retry is suppressed until the user scrolls that rail again near the right edge.
+- If the user navigates away while a collection page is loading, the response is ignored.
+- If the request fails, the rail shows `Load failed`; the tooltip contains the error detail.
+- Search pagination controls (`#resultsLoader`, `#loadMoreButton`, `#resultsEnd`) remain hidden on detail pages.
 
 ### Pagination Loader, Load More, And End Marker
 
@@ -713,6 +740,7 @@ It also:
 - clears query details
 - hides loader, Load more, and end marker
 - clears search pagination state
+- clears detail pagination state
 - clears pending reconnect resume state
 - clears last transcript/tool variables
 - clears partial input transcripts
