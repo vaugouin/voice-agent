@@ -978,9 +978,52 @@ button.search-poster-card-link {
   gap: 12px;
 }
 
+.detailRailTitleBlock {
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: 6px 10px;
+}
+
+.detailRailCount {
+  color: rgb(255 255 255 / 58%);
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
+.detailRailError {
+  color: #ff9f9f;
+  font-size: 0.78rem;
+  font-weight: 700;
+}
+
 .detailRailControls {
   display: flex;
   gap: 6px;
+}
+
+.detailRailLoadMore {
+  min-height: 30px;
+  border: 1px solid rgb(255 255 255 / 16%);
+  border-radius: 8px;
+  padding: 0 10px;
+  color: var(--text-primary);
+  background: rgb(0 0 0 / 34%);
+  font: inherit;
+  font-size: 0.78rem;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+.detailRailLoadMore:hover:not(:disabled) {
+  border-color: rgb(3 218 198 / 45%);
+  background: rgb(3 218 198 / 10%);
+}
+
+.detailRailLoadMore:disabled {
+  cursor: default;
+  opacity: 0.5;
 }
 
 .detailRailControl {
@@ -1153,6 +1196,11 @@ button.detailVisualCard:hover {
   .detailRailControl {
     width: 28px;
     height: 28px;
+  }
+
+  .detailRailLoadMore {
+    min-height: 28px;
+    padding: 0 9px;
   }
 }
 
