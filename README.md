@@ -60,6 +60,7 @@ OPENAI_TEXT_MODEL=gpt-5.1
 OPENAI_REALTIME_MODEL=gpt-realtime-2
 OPENAI_TRANSCRIPTION_MODEL=gpt-4o-transcribe
 ENABLE_STRUCTURED_CARD_FOCUS=true
+ENABLE_SPOKEN_SUBTITLES=false
 
 TEXT2SQL_BASE_URL=http://your_host:8000
 TEXT2SQL_API_KEY_NAME=X-API-Key
@@ -304,6 +305,14 @@ When `ENABLE_STRUCTURED_CARD_FOCUS` is true, the Realtime session includes a bro
 
 Set `ENABLE_STRUCTURED_CARD_FOCUS=false` to remove the tool and the related instruction from new Realtime sessions. For local testing, add `?structuredCardFocus=0` to the app URL before starting a voice session; the browser forwards that override to `/session`.
 
+## Spoken Subtitles
+
+`ENABLE_SPOKEN_SUBTITLES` controls whether Realtime voice-mode assistant answers also appear in the native bottom subtitle overlay. It defaults to `false`, so normal voice sessions keep speaking without captions unless this demo/recording feature is explicitly enabled.
+
+The browser forwards `spoken_subtitles=0` or `1` to `/session` when the page URL contains `?spokenSubtitles=0`, `?spokenSubtitles=1`, `?spoken_subtitles=0`, or `?spoken_subtitles=1`. The server returns the resolved value as `X-Spoken-Subtitles`, and the browser only feeds Realtime assistant transcripts to `#subtitleOverlay` when that header is `1`.
+
+When active, `response.output_audio_transcript.delta` and `response.audio_transcript.delta` progressively update the existing bottom subtitle overlay with the latest readable chunk of the assistant answer. `response.output_audio_transcript.done` refreshes the final chunk or, if no deltas arrived, falls back to the existing subtitle chunking path. Text-mode `/text-chat` subtitles continue to use the same overlay and are unaffected by this flag.
+
 ## Launch Showcase
 
 At launch, while there is no user query yet, the app fills the main content area with an auto-scrolling showcase of suggested sample questions and their result previews, so a first-time visitor immediately sees what the database can answer.
@@ -421,7 +430,7 @@ The `/text-chat` endpoint calls the OpenAI Responses API with `OPENAI_TEXT_MODEL
 
 When text-mode tool calls return data, the browser renders those results in the same results panel used by voice-mode tool calls. For example, a typed movie search populates text2sql result cards, and a typed detail request can still render the matching entity detail page.
 
-Text model output is displayed as subtitle-style labels fixed near the bottom of the app. Long responses are split into readable chunks that preserve reply structure, including numbered and bulleted list boundaries, and appear and disappear after a duration based on the amount of text.
+Text model output is displayed as subtitle-style labels fixed near the bottom of the app. Long responses are split into readable chunks that preserve reply structure, including numbered and bulleted list boundaries, and appear and disappear after a duration based on the amount of text. Realtime voice output can use the same bottom overlay when `ENABLE_SPOKEN_SUBTITLES=true` or a `?spokenSubtitles=1` URL override is active for the session.
 
 User-facing assistant feedback does not mention backend identifiers such as IMDb IDs, Wikidata IDs, TMDb IDs, TVDB IDs, `ID_*` fields, or other database IDs. Entities are represented by cards and detail links in the UI, so subtitles and spoken answers use names, titles, and visible result numbers instead.
 
@@ -618,8 +627,8 @@ Adjust the container name if your Nginx container is not named `reverseproxy`.
 The HTML references static assets with version query strings:
 
 ```html
-styles.css?v=20260625-render-flash
-app.js?v=20260625-render-flash
+styles.css?v=20260625-spoken-subtitles
+app.js?v=20260625-spoken-subtitles
 ```
 
 When changing frontend behavior, bump the version to force Safari and other browsers to fetch the new asset after deployment.

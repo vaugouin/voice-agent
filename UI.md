@@ -28,6 +28,8 @@ The app has one persistent shell, one control row, one status row, one hidden au
 - `activeSpokenCardIndex`: stores the currently highlighted result-card number while the assistant is enumerating visible cards.
 - `spokenAudioHighlightCues`, `spokenAudioHighlightTimer`, and `spokenAudioHighlightPlaying`: pace Realtime spoken-answer card highlights from audio playback start instead of applying full transcript matches immediately.
 - `structuredCardFocusActive`: true when the current Realtime session was created with the browser-handled `focus_result_card` tool enabled.
+- `spokenSubtitlesActive`: true when the current Realtime session returned `X-Spoken-Subtitles: 1`, enabling assistant voice-mode subtitles in the bottom overlay.
+- `realtimeSpokenSubtitleBuffer`, `realtimeSpokenSubtitleLastText`, and `realtimeSpokenSubtitleSawDelta`: track the assistant transcript text used to progressively update the bottom subtitle overlay during Realtime voice output.
 - `activeResponseId`, `activeAudioResponseId`, `toolCallsInFlight`, and `awaitingToolResponse`: drive microphone muting and status transitions during Realtime responses and tool work.
 
 ## Static Shell
@@ -806,7 +808,7 @@ It also:
 
 Element: `#subtitleOverlay`
 
-Purpose: shows assistant text output as temporary readable captions. It is used for typed assistant responses and typed response errors. It is not currently fed by live audio transcript deltas in `handleServerEvent()`.
+Purpose: shows assistant text output as temporary readable captions. It is used for typed assistant responses, typed response errors, and opt-in Realtime voice-mode assistant subtitles when the session has spoken subtitles enabled.
 
 Visual:
 
@@ -829,6 +831,8 @@ Default state:
 Input:
 
 - `showSubtitleText(text)` removes explicit backend/database ID mentions, then normalizes and splits text into chunks.
+- `appendRealtimeSpokenSubtitleDelta(delta)` updates the overlay progressively from Realtime assistant transcript deltas when `spokenSubtitlesActive` is true.
+- `completeRealtimeSpokenSubtitle(transcript)` refreshes the final visible voice-mode subtitle chunk, or falls back to `showSubtitleText()` if no transcript deltas were received.
 - The cleanup targets phrases such as IMDb IDs, Wikidata IDs, TMDb IDs, TVDB IDs, `ID_*` fields, and entity/database ID labels. Entity cards and detail links carry those identifiers internally, so subtitles use names, titles, and visible result numbers instead.
 - Inline numbered items such as `4. The Barefoot Contessa (1954)` are promoted to structural subtitle blocks before chunking.
 - Numbered list items are kept as separate chunks when practical so spoken-card highlighting can move from card to card.
@@ -862,6 +866,15 @@ Known producers:
 
 - typed response success: displays returned assistant text
 - typed response failure: displays `Text response failed: ...`
+- Realtime voice response transcript deltas and final transcripts, only when `ENABLE_SPOKEN_SUBTITLES=true` or the current session URL override enables spoken subtitles
+
+Voice-mode enablement:
+
+- `ENABLE_SPOKEN_SUBTITLES` defaults to false.
+- A page URL can override it for the next Realtime session with `?spokenSubtitles=1`, `?spokenSubtitles=0`, `?spoken_subtitles=1`, or `?spoken_subtitles=0`.
+- The browser forwards the override to `/session` as `spoken_subtitles=0` or `1`.
+- `/session` returns `X-Spoken-Subtitles`; the browser stores the value in `spokenSubtitlesActive`.
+- When a Realtime `response.created` event arrives, the browser clears the previous Realtime subtitle buffer and, if spoken subtitles are active, hides any previous visible assistant subtitle before the new answer begins.
 
 ## History Buttons
 
@@ -1036,8 +1049,8 @@ If a visible voice selector is added later, this document should be updated with
 | Starting audio | hidden | visible/enabled | closed until track exists | follows user state/enabled | visible/enabled | visible unless results shown, `Requesting microphone` | unchanged | depends on results | visible | unchanged |
 | Audio connected | hidden | visible/enabled | open/enabled unless manually closed | follows user state/enabled | visible/enabled | visible unless results shown, `Connected` | unchanged | depends on results | visible | unchanged |
 | Listening | hidden | visible/enabled | open/enabled unless manually closed | follows user state/enabled | visible/enabled | visible unless results shown, `Listening` | unchanged | depends on results | visible | unchanged |
-| Thinking/responding by audio | hidden | visible/enabled | follows manual open/closed state | follows user state/enabled | visible/enabled | visible unless results shown, `Thinking` or `Responding` | may become visible if tools run | hidden if results visible | visible | unchanged |
-| Typed Realtime turn | hidden | visible/enabled | follows manual open/closed state | follows user state/enabled | visible/enabled/cleared | visible unless results shown, `Thinking`, `Responding`, then `Connected` | may become visible if tools run | hidden if results visible | visible | unchanged |
+| Thinking/responding by audio | hidden | visible/enabled | follows manual open/closed state | follows user state/enabled | visible/enabled | visible unless results shown, `Thinking` or `Responding` | may become visible if tools run | hidden if results visible | visible | may show assistant transcript when spoken subtitles are active |
+| Typed Realtime turn | hidden | visible/enabled | follows manual open/closed state | follows user state/enabled | visible/enabled/cleared | visible unless results shown, `Thinking`, `Responding`, then `Connected` | may become visible if tools run | hidden if results visible | visible | may show assistant transcript when spoken subtitles are active |
 | Tool search loading | depends on session/text | depends on session | depends on session/manual state | follows user state/enabled | visible/enabled | hidden | visible with searching answer block | hidden | visible | unchanged |
 | Search results visible | depends on session/text | depends on session | depends on session/manual state | follows user state/enabled | visible/enabled | hidden | visible with answer/cards | hidden | visible | unchanged |
 | Detail page visible | depends on session/text | depends on session | depends on session/manual state | follows user state/enabled | visible/enabled | hidden | visible with detail page | hidden | visible | unchanged |
