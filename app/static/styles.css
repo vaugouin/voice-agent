@@ -372,27 +372,6 @@ button:disabled {
   min-width: 0;
 }
 
-#resultsContent.isPageRenderFlash {
-  border-radius: 8px;
-  animation: pageRenderFlash 620ms ease-out;
-}
-
-@keyframes pageRenderFlash {
-  0% {
-    box-shadow: 0 0 0 1px rgb(83 211 230 / 70%) inset, 0 0 34px rgb(83 211 230 / 28%);
-  }
-
-  100% {
-    box-shadow: 0 0 0 1px rgb(83 211 230 / 0%) inset, 0 0 0 rgb(83 211 230 / 0%);
-  }
-}
-
-@media (prefers-reduced-motion: reduce) {
-  #resultsContent.isPageRenderFlash {
-    animation: none;
-  }
-}
-
 .muted {
   color: var(--text-secondary);
 }

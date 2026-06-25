@@ -17,8 +17,6 @@ The app has one persistent shell, one control row, one status row, one hidden au
 - `launchShowcaseRaf`: holds the active `requestAnimationFrame` id for the showcase's horizontal marquee, or `null` when the showcase is not animating.
 - `launchShowcaseData`: stores the last successful `/tool/samples` response so New conversation can render the launch showcase without waiting on another fetch.
 - `launchShowcaseLoading`: true while a launch showcase sample request is in flight.
-- `lastPageRenderFlashKey`: stores the semantic identity of the last result/detail page that was allowed to flash; repeated renders of the same search/detail content do not flash.
-- `pageRenderFlashTimer`: clears the transient `#resultsContent.isPageRenderFlash` class after the render flash animation finishes.
 - `currentSearchState`: stores pagination state for text2sql result pages.
 - `activeUiLanguage`: stores the detected API language for the latest user turn or rendered result page; it is `fr` for detected French input and `en` for English or unsupported languages.
 - `loadingMore`: true while another page of text2sql rows is loading.
@@ -548,27 +546,6 @@ Query details toggle states:
 - Open: `aria-expanded="true"`, up-pointing triangle text.
 - Opening one toggle closes all other query details toggles.
 - Closing hides and clears `#queryDetailsDock`.
-
-### Page Render Flash
-
-Element: `#resultsContent.isPageRenderFlash`
-
-Purpose: gives a short visual cue when the app replaces the visible page with a different search result page or entity detail page.
-
-Trigger rules:
-
-- `flashPageRender(renderKey)` runs only after final content is rendered by `renderText2SqlResult()`, `renderEntityDetailOutput()`, or `showRecordDetail()`.
-- It compares `renderKey` with `lastPageRenderFlashKey`. If the key is unchanged, it returns without toggling the class, so rendering the same visible content again never restarts the flash.
-- Search render keys use UI language, query, answer/error text, and the ordered visible row identities.
-- Detail render keys use UI language, entity/detail arguments, title, and error state.
-- Loading placeholders from `setLoadingResults()` and `setLoadingEntityDetail()` do not flash.
-- `Load more` pagination appends do not flash.
-- `clearConversationUi()` clears the stored key because the page is no longer visible.
-
-Motion:
-
-- The default animation is a short cyan glow on `#resultsContent`.
-- If `prefers-reduced-motion: reduce` matches, JavaScript does not start the flash and CSS also disables the animation.
 
 ### Search Result Cards
 
