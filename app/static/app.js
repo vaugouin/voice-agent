@@ -81,6 +81,10 @@ let spokenAudioHighlightCueKeys = new Set();
 let spokenAudioHighlightPlaying = false;
 let spokenAudioHighlightStartedAt = 0;
 let structuredCardFocusActive = false;
+let spokenSubtitlesActive = false;
+let realtimeSpokenSubtitleBuffer = "";
+let realtimeSpokenSubtitleLastText = "";
+let realtimeSpokenSubtitleSawDelta = false;
 let pendingRealtimeTextTurns = [];
 const handledCallIds = new Set();
 let currentSearchState = null;
@@ -468,11 +472,29 @@ function structuredCardFocusEnabled() {
   return structuredCardFocusActive && structuredCardFocusRequested();
 }
 
+function spokenSubtitlesPreference() {
+  const params = new URLSearchParams(window.location.search);
+  const value = params.get("spokenSubtitles") ?? params.get("spoken_subtitles");
+  return parseUrlBooleanFlag(value);
+}
+
+function spokenSubtitlesRequested() {
+  return spokenSubtitlesPreference() !== false;
+}
+
+function spokenSubtitlesEnabled() {
+  return spokenSubtitlesActive && spokenSubtitlesRequested();
+}
+
 function realtimeSessionUrl() {
   const url = new URL(appUrl("session"));
-  const preference = structuredCardFocusPreference();
-  if (preference !== null) {
-    url.searchParams.set("structured_card_focus", preference ? "1" : "0");
+  const structuredPreference = structuredCardFocusPreference();
+  if (structuredPreference !== null) {
+    url.searchParams.set("structured_card_focus", structuredPreference ? "1" : "0");
+  }
+  const spokenSubtitlePreference = spokenSubtitlesPreference();
+  if (spokenSubtitlePreference !== null) {
+    url.searchParams.set("spoken_subtitles", spokenSubtitlePreference ? "1" : "0");
   }
   return url.toString();
 }
@@ -3704,12 +3726,96 @@ function showSubtitleText(text) {
   showNextSubtitle();
 }
 
+function realtimeSpokenSubtitleTail(text) {
+  const chunks = splitSubtitleText(sanitizeAssistantFeedbackText(text));
+  return chunks[chunks.length - 1] || "";
+}
+
+function showRealtimeSpokenSubtitleChunk(text, { holdMs = null } = {}) {
+  if (!subtitleOverlay) {
+    return;
+  }
+  const clean = sanitizeAssistantFeedbackText(text);
+  if (!clean) {
+    return;
+  }
+  if (subtitleTimer) {
+    clearTimeout(subtitleTimer);
+    subtitleTimer = null;
+  }
+  subtitleQueue = [];
+  subtitleOverlay.textContent = clean;
+  subtitleOverlay.hidden = false;
+  const duration = holdMs ?? Math.max(2200, Math.min(6500, clean.length * 45));
+  subtitleTimer = window.setTimeout(() => {
+    subtitleTimer = null;
+    if (!subtitleQueue.length) {
+      subtitleOverlay.hidden = true;
+      subtitleOverlay.textContent = "";
+    }
+  }, duration);
+}
+
+function resetRealtimeSpokenSubtitles({ clearVisible = false } = {}) {
+  realtimeSpokenSubtitleBuffer = "";
+  realtimeSpokenSubtitleLastText = "";
+  realtimeSpokenSubtitleSawDelta = false;
+  if (!clearVisible || !subtitleOverlay) {
+    return;
+  }
+  if (subtitleTimer) {
+    clearTimeout(subtitleTimer);
+    subtitleTimer = null;
+  }
+  subtitleQueue = [];
+  subtitleOverlay.hidden = true;
+  subtitleOverlay.textContent = "";
+}
+
+function appendRealtimeSpokenSubtitleDelta(delta) {
+  if (!spokenSubtitlesEnabled()) {
+    return;
+  }
+  const text = String(delta || "");
+  if (!text) {
+    return;
+  }
+  realtimeSpokenSubtitleSawDelta = true;
+  realtimeSpokenSubtitleBuffer = `${realtimeSpokenSubtitleBuffer}${text}`;
+  const nextText = realtimeSpokenSubtitleTail(realtimeSpokenSubtitleBuffer);
+  if (!nextText || nextText === realtimeSpokenSubtitleLastText) {
+    return;
+  }
+  realtimeSpokenSubtitleLastText = nextText;
+  showRealtimeSpokenSubtitleChunk(nextText);
+}
+
+function completeRealtimeSpokenSubtitle(transcript) {
+  if (!spokenSubtitlesEnabled()) {
+    return;
+  }
+  const clean = sanitizeAssistantFeedbackText(transcript);
+  if (!clean) {
+    return;
+  }
+  if (!realtimeSpokenSubtitleSawDelta) {
+    showSubtitleText(clean);
+    return;
+  }
+  const finalText = realtimeSpokenSubtitleTail(clean) || realtimeSpokenSubtitleLastText;
+  if (finalText) {
+    realtimeSpokenSubtitleLastText = finalText;
+    showRealtimeSpokenSubtitleChunk(finalText, { holdMs: 4000 });
+  }
+}
+
 function clearSubtitleOutput() {
   if (subtitleTimer) {
     clearTimeout(subtitleTimer);
     subtitleTimer = null;
   }
   subtitleQueue = [];
+  resetRealtimeSpokenSubtitles();
   if (subtitleOverlay) {
     subtitleOverlay.hidden = true;
     subtitleOverlay.textContent = "";
@@ -4363,6 +4469,8 @@ function cleanupConnection() {
   activeResponseId = null;
   activeAudioResponseId = null;
   structuredCardFocusActive = false;
+  spokenSubtitlesActive = false;
+  resetRealtimeSpokenSubtitles();
   toolCallsInFlight = 0;
   awaitingToolResponse = false;
 }
@@ -5199,6 +5307,7 @@ async function handleServerEvent(event) {
       addRetainedContext({ type: "assistant", text: transcript.trim() });
       assistantSpokenHighlightBuffer = transcript.trim();
       enqueueSpokenAudioHighlightCues(assistantSpokenHighlightBuffer);
+      completeRealtimeSpokenSubtitle(transcript);
     }
   }
 
@@ -5206,12 +5315,15 @@ async function handleServerEvent(event) {
     event.type === "response.output_audio_transcript.delta" ||
     event.type === "response.audio_transcript.delta"
   ) {
-    syncSpokenCardHighlightFromTranscriptDelta(event.delta || "");
+    const delta = event.delta || "";
+    syncSpokenCardHighlightFromTranscriptDelta(delta);
+    appendRealtimeSpokenSubtitleDelta(delta);
   }
 
   if (event.type === "response.created") {
     activeResponseId = event.response?.id || null;
     resetSpokenAudioHighlightState();
+    resetRealtimeSpokenSubtitles({ clearVisible: spokenSubtitlesEnabled() });
     awaitingToolResponse = false;
     clearResponseFallback();
     syncMicrophone("response created");
@@ -5274,6 +5386,7 @@ async function start({ reconnecting = false } = {}) {
   clientLog("realtime_support", {
     ...realtimeSupportSnapshot(reconnecting ? "reconnect start" : "start"),
     structuredCardFocusRequested: structuredCardFocusRequested(),
+    spokenSubtitlesRequested: spokenSubtitlesRequested(),
   });
   requestWakeLock(reconnecting ? "reconnect start" : "start");
 
@@ -5455,6 +5568,7 @@ async function start({ reconnecting = false } = {}) {
 
   setStatus("Creating Realtime call");
   structuredCardFocusActive = false;
+  spokenSubtitlesActive = false;
   const sdpResponse = await fetch(realtimeSessionUrl(), {
     method: "POST",
     headers: {
@@ -5468,9 +5582,14 @@ async function start({ reconnecting = false } = {}) {
     throw new Error(answerSdp);
   }
   structuredCardFocusActive = sdpResponse.headers.get("X-Structured-Card-Focus") === "1";
+  spokenSubtitlesActive = sdpResponse.headers.get("X-Spoken-Subtitles") === "1";
   clientLog("structured_card_focus_session", {
     requested: structuredCardFocusRequested(),
     active: structuredCardFocusActive,
+  });
+  clientLog("spoken_subtitles_session", {
+    requested: spokenSubtitlesRequested(),
+    active: spokenSubtitlesActive,
   });
 
   const callId = sdpResponse.headers.get("X-OpenAI-Call-ID");
