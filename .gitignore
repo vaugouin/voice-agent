@@ -11,3 +11,5 @@ uvicorn.out.log
 .mypy_cache/
 .ruff_cache/
 
+.claude/
+.agents/
