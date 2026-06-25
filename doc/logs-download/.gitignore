@@ -1,0 +1,6 @@
+# Local secrets for sync_vps_docker.py — never commit.
+.env
+.env.local
+
+# Keep the safe template tracked.
+!.env.example
