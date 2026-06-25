@@ -23,6 +23,29 @@ queryDetailsDock.id = "queryDetailsDock";
 queryDetailsDock.className = "queryDetailsDock";
 queryDetailsDock.hidden = true;
 
+// Launch showcase: an auto-scrolling wall of sample questions and their result
+// previews, shown only at launch while there is no user query. Lives in its own
+// container (outside #resultsPanel) so it does not trigger compact results mode and
+// keeps the header/controls visible.
+const launchShowcase = document.createElement("section");
+launchShowcase.id = "launchShowcase";
+launchShowcase.className = "launchShowcase";
+launchShowcase.hidden = true;
+{
+  const statusRow = document.querySelector(".status");
+  if (statusRow && statusRow.parentNode) {
+    statusRow.parentNode.insertBefore(launchShowcase, statusRow.nextSibling);
+  } else {
+    panel.append(launchShowcase);
+  }
+}
+let launchShowcaseRaf = null;
+let launchShowcaseDismissed = false;
+let launchShowcaseData = null;
+let launchShowcaseLoading = false;
+let lastPageRenderFlashKey = "";
+let pageRenderFlashTimer = null;
+
 let pc;
 let dc;
 let localStream;
@@ -46,6 +69,8 @@ let dictationSilenceStartedAt = null;
 let dictationSpeechDetected = false;
 let dictationGeneration = 0;
 let dictationAbortController = null;
+let textChatAbortController = null;
+let textChatGeneration = 0;
 let subtitleTimer = null;
 let subtitleQueue = [];
 let activeSpokenCardIndex = null;
@@ -277,6 +302,142 @@ function currentUiLanguage(args = {}) {
     return normalizeUiLanguage(args.ui_language || args.uiLanguage);
   }
   return normalizeUiLanguage(activeUiLanguage || currentSearchState?.ui_language || "en");
+}
+
+function normalizeRenderKeyPart(value) {
+  return String(value ?? "").trim().replace(/\s+/g, " ");
+}
+
+function recordRenderKey(record = {}) {
+  const request = detailRequestFromRecord(record);
+  if (request) {
+    return [
+      request.toolName,
+      request.id,
+      request.id_serie,
+      request.season_number,
+      request.episode_number,
+    ]
+      .filter((value) => value !== null && value !== undefined && String(value) !== "")
+      .map(normalizeRenderKeyPart)
+      .join(":");
+  }
+
+  const idKeys = [
+    "ID_MOVIE",
+    "ID_SERIE",
+    "ID_SEASON",
+    "ID_EPISODE",
+    "ID_PERSON",
+    "ID_COMPANY",
+    "ID_NETWORK",
+    "ID_T2S_COLLECTION",
+    "ID_TOPIC",
+    "ID_T2S_LIST",
+    "ID_MOVEMENT",
+    "ID_TECHNICAL",
+    "ID_GROUP",
+    "ID_DEATH",
+    "ID_AWARD",
+    "ID_NOMINATION",
+    "ID_WIKIDATA",
+  ];
+  for (const key of idKeys) {
+    if (record[key] !== null && record[key] !== undefined && String(record[key]).trim() !== "") {
+      return `${key}:${normalizeRenderKeyPart(record[key])}`;
+    }
+  }
+
+  return [
+    "record",
+    titleForRecord(record),
+    record.RELEASE_YEAR,
+    record.FIRST_AIR_YEAR,
+    record.BIRTH_YEAR,
+    record.CONTENT_TYPE,
+  ]
+    .map(normalizeRenderKeyPart)
+    .filter(Boolean)
+    .join(":");
+}
+
+function searchRenderKey(output = {}, args = {}, upstream = {}, rows = [], uiLanguage = activeUiLanguage) {
+  const rowKeys = rows
+    .map((item) => recordRenderKey(item?.data || item || {}))
+    .filter(Boolean)
+    .join("|");
+  return [
+    "search",
+    normalizeUiLanguage(uiLanguage),
+    normalizeRenderKeyPart(args.query || upstream.question || ""),
+    normalizeRenderKeyPart(output.answer || upstream.answer || ""),
+    normalizeRenderKeyPart(output.error || upstream.error || ""),
+    rowKeys,
+  ].join("::");
+}
+
+function detailRenderKey(output = {}, args = {}, record = {}) {
+  const entity = output.entity || DETAIL_TOOL_ENTITIES[args?.toolName] || "";
+  const request = detailRequestFromRecord(record);
+  const requestKey = request
+    ? recordRenderKey(record)
+    : [
+        args?.toolName,
+        args?.id,
+        args?.id_serie,
+        args?.season_number,
+        args?.episode_number,
+      ]
+        .filter((value) => value !== null && value !== undefined && String(value) !== "")
+        .map(normalizeRenderKeyPart)
+        .join(":");
+  return [
+    "detail",
+    normalizeUiLanguage(output.ui_language || args?.ui_language || activeUiLanguage),
+    normalizeRenderKeyPart(entity),
+    requestKey || recordRenderKey(record),
+    normalizeRenderKeyPart(output.error || ""),
+    normalizeRenderKeyPart(titleForRecord(record)),
+  ].join("::");
+}
+
+function pageRenderFlashAllowed() {
+  return !(
+    window.matchMedia &&
+    window.matchMedia("(prefers-reduced-motion: reduce)").matches
+  );
+}
+
+function flashPageRender(renderKey) {
+  const key = normalizeRenderKeyPart(renderKey);
+  if (!key || key === lastPageRenderFlashKey) {
+    return;
+  }
+  lastPageRenderFlashKey = key;
+  if (!pageRenderFlashAllowed()) {
+    return;
+  }
+
+  if (pageRenderFlashTimer) {
+    clearTimeout(pageRenderFlashTimer);
+    pageRenderFlashTimer = null;
+  }
+  resultsContent.classList.remove("isPageRenderFlash");
+  void resultsContent.offsetWidth;
+  resultsContent.classList.add("isPageRenderFlash");
+  pageRenderFlashTimer = window.setTimeout(() => {
+    resultsContent.classList.remove("isPageRenderFlash");
+    pageRenderFlashTimer = null;
+  }, 700);
+}
+
+function clearPageRenderFlashState() {
+  lastPageRenderFlashKey = "";
+  if (pageRenderFlashTimer) {
+    clearTimeout(pageRenderFlashTimer);
+    pageRenderFlashTimer = null;
+  }
+  resultsContent.classList.remove("isPageRenderFlash");
 }
 
 function parseUrlBooleanFlag(value) {
@@ -2747,6 +2908,7 @@ async function renderSingleRecordResult(parent, record) {
 }
 
 async function showRecordDetail(record, { skipHistory = false, ui_language = "" } = {}) {
+  dismissLaunchShowcase();
   setConversationActive(true);
   activeUiLanguage = currentUiLanguage({ ui_language });
   resultsPanel.hidden = false;
@@ -2761,6 +2923,9 @@ async function showRecordDetail(record, { skipHistory = false, ui_language = "" 
   autoPagesLoaded = 0;
 
   const renderedDetail = await renderSingleRecordResult(resultsContent, record);
+  const renderedOutput = renderedDetail?.output || {};
+  const renderedArgs = renderedDetail?.args || detailRequestFromRecord(record) || {};
+  flashPageRender(detailRenderKey(renderedOutput, renderedArgs, renderedOutput.detail || record));
   if (!skipHistory) {
     if (renderedDetail) {
       pushPageHistory({ type: "entityDetail", output: renderedDetail.output, args: renderedDetail.args });
@@ -2795,6 +2960,7 @@ function setLoadingEntityDetail(toolName, args) {
 }
 
 function renderEntityDetailOutput(output, args = {}, { skipHistory = false } = {}) {
+  dismissLaunchShowcase();
   setConversationActive(true);
   activeUiLanguage = currentUiLanguage({ ui_language: output.ui_language || args.ui_language });
   resultsPanel.hidden = false;
@@ -2813,9 +2979,11 @@ function renderEntityDetailOutput(output, args = {}, { skipHistory = false } = {
   resultsContent.append(container);
 
   if (output.error) {
-    renderSingleDetail(container, {
+    const errorRecord = {
       CONTENT_TITLE: "Unable to load details",
-    }, { error: output.error });
+    };
+    renderSingleDetail(container, errorRecord, { error: output.error });
+    flashPageRender(detailRenderKey(output, args, errorRecord));
     if (!skipHistory) {
       pushPageHistory({ type: "entityDetail", output, args });
     }
@@ -2824,9 +2992,11 @@ function renderEntityDetailOutput(output, args = {}, { skipHistory = false } = {
 
   const detail = output.detail && typeof output.detail === "object" ? output.detail : null;
   if (!detail) {
-    renderSingleDetail(container, {
+    const emptyRecord = {
       CONTENT_TITLE: output.entity ? prettyLabel(output.entity) : "Details",
-    }, { error: "No detail record returned." });
+    };
+    renderSingleDetail(container, emptyRecord, { error: "No detail record returned." });
+    flashPageRender(detailRenderKey(output, args, emptyRecord));
     if (!skipHistory) {
       pushPageHistory({ type: "entityDetail", output, args });
     }
@@ -2840,12 +3010,14 @@ function renderEntityDetailOutput(output, args = {}, { skipHistory = false } = {
   const stateOutput = { ...output, detail: detailRecord };
   setCurrentDetailState(stateOutput, args, container, detailRecord);
   renderSingleDetail(container, detailRecord);
+  flashPageRender(detailRenderKey(stateOutput, currentDetailState.args, detailRecord));
   if (!skipHistory) {
     pushPageHistory({ type: "entityDetail", output: stateOutput, args: currentDetailState.args });
   }
 }
 
 async function renderText2SqlResult(output, args, { append = false, skipHistory = false } = {}) {
+  dismissLaunchShowcase();
   setConversationActive(true);
   resultsPanel.hidden = false;
 
@@ -2915,8 +3087,11 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
     if (rows.length === 1) {
       const record = rows[0]?.data || rows[0];
       if (record && typeof record === "object") {
-        await renderSingleRecordResult(resultsContent, record);
+        const renderedDetail = await renderSingleRecordResult(resultsContent, record);
+        const renderedOutput = renderedDetail?.output || {};
+        const renderedArgs = renderedDetail?.args || detailRequestFromRecord(record) || {};
         refreshPaginationControls();
+        flashPageRender(detailRenderKey(renderedOutput, renderedArgs, renderedOutput.detail || record));
         if (!skipHistory) {
           pushPageHistory({ type: "search", output, args });
         }
@@ -2967,6 +3142,9 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
     has_more: Boolean(questionHashed && (output.has_more ?? upstream.has_more ?? (rowsPerPage && rows.length === rowsPerPage))),
   };
   refreshPaginationControls();
+  if (!append) {
+    flashPageRender(searchRenderKey(output, args, upstream, rows, uiLanguage));
+  }
   if (!append && !skipHistory) {
     pushPageHistory({ type: "search", output, args });
   } else if (append && !skipHistory) {
@@ -3526,6 +3704,40 @@ function showSubtitleText(text) {
   showNextSubtitle();
 }
 
+function clearSubtitleOutput() {
+  if (subtitleTimer) {
+    clearTimeout(subtitleTimer);
+    subtitleTimer = null;
+  }
+  subtitleQueue = [];
+  if (subtitleOverlay) {
+    subtitleOverlay.hidden = true;
+    subtitleOverlay.textContent = "";
+  }
+  clearActiveSpokenCard();
+}
+
+function isCurrentTextChatRequest(generation, abortController) {
+  return (
+    generation === textChatGeneration &&
+    textChatAbortController === abortController &&
+    !abortController.signal.aborted
+  );
+}
+
+function cancelTextChatOutput(reason = "cancelled") {
+  if (!textChatAbortController && !textChatInFlight) {
+    return false;
+  }
+  textChatGeneration += 1;
+  textChatAbortController?.abort();
+  textChatAbortController = null;
+  textChatInFlight = false;
+  updateSessionButtons();
+  clientLog("text_chat_cancelled", { reason });
+  return true;
+}
+
 function sendEvent(event) {
   if (!dc || dc.readyState !== "open") {
     log("data channel is not open");
@@ -3551,10 +3763,11 @@ function syncQuestionInputUi() {
   window.setTimeout(updateSessionButtons, 0);
 }
 
-async function callTextChat(message) {
+async function callTextChat(message, signal) {
   const response = await fetch(appUrl("text-chat"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
+    signal,
     body: JSON.stringify({
       message,
       context: retainedContext.slice(-maxContextItems),
@@ -3646,6 +3859,11 @@ async function sendTextChatMessage(text, { source = "typed" } = {}) {
     return;
   }
 
+  cancelTextChatOutput("new text message");
+  const requestGeneration = ++textChatGeneration;
+  const requestAbortController = new AbortController();
+  textChatAbortController = requestAbortController;
+
   if (dc && dc.readyState === "open" && activeResponseId) {
     sendEvent({ type: "response.cancel" });
     activeResponseId = null;
@@ -3668,12 +3886,18 @@ async function sendTextChatMessage(text, { source = "typed" } = {}) {
   clientLog("text_chat_sent", { length: text.length, source });
 
   try {
-    const output = await callTextChat(text);
+    const output = await callTextChat(text, requestAbortController.signal);
+    if (!isCurrentTextChatRequest(requestGeneration, requestAbortController)) {
+      return;
+    }
     for (const toolResult of Array.isArray(output.tool_outputs) ? output.tool_outputs : []) {
       if (toolResult.name === "query_text2sql") {
         await renderText2SqlResult(toolResult.output, toolResult.args || {});
       } else if (DETAIL_TOOL_ENTITIES[toolResult.name]) {
         renderEntityDetailOutput(toolResult.output, toolResult.args || {});
+      }
+      if (!isCurrentTextChatRequest(requestGeneration, requestAbortController)) {
+        return;
       }
     }
     const responseText = sanitizeAssistantFeedbackText(output.text || "");
@@ -3689,14 +3913,24 @@ async function sendTextChatMessage(text, { source = "typed" } = {}) {
       tool_count: Array.isArray(output.tool_outputs) ? output.tool_outputs.length : 0,
     });
   } catch (error) {
+    if (requestAbortController.signal.aborted || error.name === "AbortError") {
+      clientLog("text_chat_cancelled", { source, reason: "aborted" });
+      return;
+    }
+    if (!isCurrentTextChatRequest(requestGeneration, requestAbortController)) {
+      return;
+    }
     const message = `Text response failed: ${error.message}`;
     showSubtitleText(message);
     setStatus("Text error", "error");
     log("text chat error", error.message);
     clientLog("text_chat_error", { source, error: error.message }, "error");
   } finally {
-    textChatInFlight = false;
-    updateSessionButtons();
+    if (isCurrentTextChatRequest(requestGeneration, requestAbortController)) {
+      textChatAbortController = null;
+      textChatInFlight = false;
+      updateSessionButtons();
+    }
   }
 }
 
@@ -4053,6 +4287,61 @@ function resumeDroppedAnswer() {
   sendEvent({ type: "response.create" });
 }
 
+function clearRemoteAudioOutput() {
+  if (!remoteAudio) {
+    return;
+  }
+  const remoteStream = remoteAudio.srcObject;
+  if (remoteStream && typeof remoteStream.getTracks === "function") {
+    remoteStream.getTracks().forEach((track) => track.stop());
+  }
+  try {
+    remoteAudio.pause();
+  } catch (_error) {
+    /* ignore */
+  }
+  remoteAudio.srcObject = null;
+  remoteAudio.removeAttribute("src");
+  try {
+    remoteAudio.load();
+  } catch (_error) {
+    /* ignore */
+  }
+}
+
+function cancelRealtimeOutput(reason = "cancelled") {
+  const hadActiveResponse = Boolean(activeResponseId);
+  const hadActiveAudio = Boolean(activeAudioResponseId);
+  const hadRemoteAudio = Boolean(remoteAudio?.srcObject && !remoteAudio.paused);
+  if (dc?.readyState === "open") {
+    if (hadActiveResponse) {
+      sendEvent({ type: "response.cancel" });
+    }
+    if (hadActiveAudio || hadRemoteAudio) {
+      sendEvent({ type: "output_audio_buffer.clear" });
+    }
+  }
+  activeResponseId = null;
+  activeAudioResponseId = null;
+  resetSpokenAudioHighlightState();
+  clearResponseFallback();
+  if (hadActiveResponse || hadActiveAudio || hadRemoteAudio) {
+    clientLog("realtime_output_cancelled", {
+      reason,
+      hadActiveResponse,
+      hadActiveAudio,
+      hadRemoteAudio,
+    });
+  }
+}
+
+function cancelAssistantOutput(reason = "cancelled") {
+  clearSubtitleOutput();
+  cancelTextChatOutput(reason);
+  cancelRealtimeOutput(reason);
+  clearRemoteAudioOutput();
+}
+
 function cleanupConnection() {
   connectionGeneration += 1;
   clearResponseFallback();
@@ -4066,6 +4355,7 @@ function cleanupConnection() {
   dc?.close();
   pc?.close();
   localStream?.getTracks().forEach((track) => track.stop());
+  clearRemoteAudioOutput();
   dc = undefined;
   pc = undefined;
   localStream = undefined;
@@ -4804,6 +5094,7 @@ async function handleFunctionCall(item) {
       page: output.page,
       entity: output.entity,
       id: output.id,
+      diagnostic: output.diagnostic ?? null,
     });
     if (item.name === "query_text2sql") {
       await renderText2SqlResult(output, args);
@@ -4830,6 +5121,7 @@ async function handleFunctionCall(item) {
         visible_results: structuredCardFocusEnabled() ? currentVisibleResultCards() : [],
         rows: output.rows || [],
         sql_query: output.sql_query || "",
+        diagnostic: output.diagnostic || null,
       }
     : {
         error: output.error || "",
@@ -4965,6 +5257,7 @@ async function handleServerEvent(event) {
 }
 
 async function start({ reconnecting = false } = {}) {
+  dismissLaunchShowcase();
   if (dictationActive || dictationTranscribing) {
     cancelIdleDictation("start voice session");
   }
@@ -5207,12 +5500,297 @@ function stop() {
   log("stopped");
 }
 
+// ---------------------------------------------------------------------------
+// Launch showcase (sample questions + simulated result previews)
+// ---------------------------------------------------------------------------
+
+function launchShowcaseUiLanguage() {
+  // The launch showcase has no user query to detect a language from, so it
+  // defaults to English.
+  return "en";
+}
+
+function shuffleArray(items) {
+  const copy = items.slice();
+  for (let i = copy.length - 1; i > 0; i -= 1) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+// Walk the /samples category tree into a flat list of {question, category, sim},
+// tagging each sample with its top-level category for diversity selection.
+function flattenSampleTree(categories, topLabel = "") {
+  const flat = [];
+  for (const category of Array.isArray(categories) ? categories : []) {
+    const label = topLabel || category.DESCRIPTION || "";
+    for (const sample of Array.isArray(category.samples) ? category.samples : []) {
+      flat.push({
+        question: String(sample.QUESTION || "").trim(),
+        category: label,
+        sim: sample.simulated_result || null,
+      });
+    }
+    if (Array.isArray(category.categories) && category.categories.length) {
+      flat.push(...flattenSampleTree(category.categories, label));
+    }
+  }
+  return flat;
+}
+
+// Keep samples that have a renderable preview, then round-robin across categories
+// so the showcase mixes topics instead of clustering one category.
+function selectShowcaseSamples(flat, max = 18) {
+  const renderable = flat.filter(
+    (sample) =>
+      sample.question &&
+      sample.sim &&
+      Array.isArray(sample.sim.result) &&
+      sample.sim.result.length > 0 &&
+      (sample.sim.result_kind === "entity_rows" || sample.sim.result_kind === "scalar")
+  );
+  const byCategory = new Map();
+  for (const sample of shuffleArray(renderable)) {
+    if (!byCategory.has(sample.category)) {
+      byCategory.set(sample.category, []);
+    }
+    byCategory.get(sample.category).push(sample);
+  }
+  const queues = shuffleArray([...byCategory.values()]);
+  const picked = [];
+  let progressed = true;
+  while (picked.length < max && progressed) {
+    progressed = false;
+    for (const queue of queues) {
+      if (queue.length) {
+        picked.push(queue.shift());
+        progressed = true;
+        if (picked.length >= max) {
+          break;
+        }
+      }
+    }
+  }
+  return picked;
+}
+
+function runShowcaseQuestion(question) {
+  const text = String(question || "").trim();
+  if (!text) {
+    return;
+  }
+  dismissLaunchShowcase();
+  questionInput.value = text;
+  syncQuestionInputUi();
+  submitQuestion();
+}
+
+// One marquee group: a question chip followed inline by its result cards (or a
+// single scalar value). Groups are laid out horizontally in a lane and flow
+// right-to-left. Returns null when no card/value could be rendered.
+function buildShowcaseGroup(sample) {
+  const group = document.createElement("div");
+  group.className = "showcaseGroup";
+
+  const question = document.createElement("button");
+  question.type = "button";
+  question.className = "showcaseQuestion";
+  // Normalize CR/CRLF to LF so multi-line questions break cleanly under
+  // white-space: pre-line; the chip wraps long/multi-line questions and stays
+  // single-line for short ones.
+  const questionLabel = sample.question.replace(/\r\n?/g, "\n");
+  question.textContent = questionLabel;
+  question.title = questionLabel;
+  question.addEventListener("click", () => runShowcaseQuestion(sample.question));
+  group.append(question);
+
+  let rendered = 0;
+  if (sample.sim.result_kind === "scalar") {
+    const data = sample.sim.result[0]?.data || {};
+    const value = Object.values(data)[0];
+    const answer = document.createElement("div");
+    answer.className = "showcaseScalar";
+    answer.textContent = String(value ?? "");
+    group.append(answer);
+    rendered = 1;
+  } else {
+    for (const row of sample.sim.result.slice(0, 8)) {
+      const record = row?.data || row;
+      if (!record || typeof record !== "object") {
+        continue;
+      }
+      const cardSpec = cardSpecFromRecord(record);
+      if (cardSpec) {
+        appendCard(group, cardSpec);
+      } else {
+        appendAggregateCard(group, record);
+      }
+      rendered += 1;
+    }
+  }
+  return rendered ? group : null;
+}
+
+function cancelShowcaseAutoScroll() {
+  if (launchShowcaseRaf !== null) {
+    cancelAnimationFrame(launchShowcaseRaf);
+    launchShowcaseRaf = null;
+  }
+}
+
+// Horizontal marquee: every lane's track holds two identical copies of its
+// groups and is translated leftward, so cards enter from the right, cross the
+// screen, and exit on the left, wrapping seamlessly after one copy's width.
+// Paused on hover and when the tab is hidden. scrollWidth is read each frame
+// because poster images change the width as they load in.
+function startShowcaseMarquee(viewport, lanes) {
+  cancelShowcaseAutoScroll();
+  // Respect reduced-motion: leave the lanes static and manually scrollable (CSS
+  // switches each lane to overflow-x: auto).
+  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    return;
+  }
+  let last = performance.now();
+  let paused = false;
+  viewport.addEventListener("mouseenter", () => {
+    paused = true;
+  });
+  viewport.addEventListener("mouseleave", () => {
+    paused = false;
+  });
+  const step = (now) => {
+    const delta = (now - last) / 1000;
+    last = now;
+    if (!paused && !document.hidden) {
+      for (const lane of lanes) {
+        lane.offset += lane.speed * delta;
+        const loopWidth = lane.track.scrollWidth / 2;
+        if (loopWidth > 0 && lane.offset >= loopWidth) {
+          lane.offset -= loopWidth;
+        }
+        lane.track.style.transform = `translateX(${-lane.offset}px)`;
+      }
+    }
+    launchShowcaseRaf = requestAnimationFrame(step);
+  };
+  launchShowcaseRaf = requestAnimationFrame(step);
+}
+
+function renderLaunchShowcase(categories, uiLanguage) {
+  const picked = selectShowcaseSamples(flattenSampleTree(categories), 30);
+  if (!picked.length) {
+    return;
+  }
+  activeUiLanguage = normalizeUiLanguage(uiLanguage || activeUiLanguage);
+
+  const heading = document.createElement("p");
+  heading.className = "showcaseHeading";
+  heading.textContent = activeUiLanguage === "fr" ? "Essayez de demander…" : "Try asking…";
+
+  const viewport = document.createElement("div");
+  viewport.className = "showcaseViewport";
+
+  // Spread the groups over a few horizontal lanes to fill the screen height
+  // (each lane is roughly one poster-card tall).
+  const laneCount = Math.max(2, Math.min(4, Math.floor((window.innerHeight - 200) / 240)));
+  const laneSamples = Array.from({ length: laneCount }, () => []);
+  picked.forEach((sample, index) => {
+    laneSamples[index % laneCount].push(sample);
+  });
+
+  const lanes = [];
+  laneSamples.forEach((samples, laneIndex) => {
+    if (!samples.length) {
+      return;
+    }
+    const lane = document.createElement("div");
+    lane.className = "showcaseLane";
+    const track = document.createElement("div");
+    track.className = "showcaseLaneTrack";
+    let rendered = 0;
+    // Two identical passes so the leftward scroll wraps seamlessly.
+    for (let pass = 0; pass < 2; pass += 1) {
+      for (const sample of samples) {
+        const group = buildShowcaseGroup(sample);
+        if (group) {
+          track.append(group);
+          rendered += 1;
+        }
+      }
+    }
+    if (!rendered) {
+      return;
+    }
+    lane.append(track);
+    viewport.append(lane);
+    // Vary speed per lane for a natural wall; all clearly faster than before.
+    lanes.push({ track, offset: 0, speed: 72 + (laneIndex % 3) * 12 });
+  });
+
+  if (!lanes.length) {
+    return;
+  }
+
+  launchShowcase.replaceChildren(heading, viewport);
+  launchShowcase.hidden = false;
+  startShowcaseMarquee(viewport, lanes);
+}
+
+async function maybeShowLaunchShowcase() {
+  if (launchShowcaseDismissed) {
+    return;
+  }
+  if (!resultsPanel.hidden || sessionRunning || textChatInFlight) {
+    return;
+  }
+  if (launchShowcaseData) {
+    renderLaunchShowcase(launchShowcaseData.categories, launchShowcaseData.uiLanguage);
+    return;
+  }
+  if (launchShowcaseLoading) {
+    return;
+  }
+  launchShowcaseLoading = true;
+  try {
+    const showcaseUrl = new URL(appUrl("tool/samples"));
+    showcaseUrl.searchParams.set("ui_language", launchShowcaseUiLanguage());
+    const response = await fetch(showcaseUrl.toString());
+    if (!response.ok) {
+      return;
+    }
+    const data = await response.json();
+    launchShowcaseData = {
+      categories: Array.isArray(data.categories) ? data.categories : [],
+      uiLanguage: data.ui_language,
+    };
+    if (launchShowcaseDismissed || !resultsPanel.hidden || sessionRunning || textChatInFlight) {
+      return;
+    }
+    renderLaunchShowcase(launchShowcaseData.categories, launchShowcaseData.uiLanguage);
+  } catch (error) {
+    log("launch showcase load error", error.message);
+  } finally {
+    launchShowcaseLoading = false;
+  }
+}
+
+function dismissLaunchShowcase() {
+  cancelShowcaseAutoScroll();
+  launchShowcaseDismissed = true;
+  if (launchShowcase && !launchShowcase.hidden) {
+    launchShowcase.hidden = true;
+    launchShowcase.replaceChildren();
+  }
+}
+
 function clearConversationUi() {
   handledCallIds.clear();
   resetSpokenAudioHighlightState();
   resultsPanel.hidden = true;
   clearQueryDetailsDock();
   resultsContent.replaceChildren();
+  clearPageRenderFlashState();
   resultsLoader.hidden = true;
   loadMoreButton.hidden = true;
   resultsEnd.hidden = true;
@@ -5232,6 +5810,7 @@ function startNewConversation() {
   manuallyStopped = true;
   pendingRealtimeTextTurns = [];
   cancelIdleDictation("new conversation");
+  cancelAssistantOutput("new conversation");
   clearReconnectTimer();
   releaseWakeLock("new conversation");
   cleanupConnection();
@@ -5243,6 +5822,9 @@ function startNewConversation() {
   setStatus("Idle");
   log("new conversation");
   clientLog("conversation_reset");
+  // Back to the launch state with no user query: bring the showcase back.
+  launchShowcaseDismissed = false;
+  maybeShowLaunchShowcase();
 }
 
 setupPageDiagnostics();
@@ -5293,6 +5875,11 @@ historyForwardButton.addEventListener("click", () => {
   });
 });
 questionInput.addEventListener("input", syncQuestionInputUi);
+questionInput.addEventListener("input", () => {
+  if (questionInput.value.trim()) {
+    dismissLaunchShowcase();
+  }
+});
 questionInput.addEventListener("change", syncQuestionInputUi);
 questionInput.addEventListener("keyup", syncQuestionInputUi);
 questionInput.addEventListener("paste", syncQuestionInputUi);
@@ -5324,3 +5911,6 @@ window.addEventListener("error", (event) => {
 window.addEventListener("unhandledrejection", (event) => {
   clientLog("unhandled_rejection", { reason: String(event.reason) }, "error");
 });
+
+// Populate the launch showcase once the page is idle with no user query.
+maybeShowLaunchShowcase();

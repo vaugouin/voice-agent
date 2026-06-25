@@ -6,12 +6,19 @@ The app has one persistent shell, one control row, one status row, one hidden au
 
 - `sessionRunning`: true while a Realtime WebRTC audio session is considered active.
 - `textChatInFlight`: true while a typed question is being processed by `/text-chat`.
+- `textChatAbortController`: aborts the current `/text-chat` request when a newer text turn or New conversation cancels it.
 - `dictationActive`: true while the idle microphone dictation recorder is capturing audio for `/transcribe`.
 - `dictationTranscribing`: true while captured idle dictation audio is being transcribed and submitted to `/text-chat`.
 - `questionInput.value`: determines whether the typed-question path is active.
 - `userLookOpen`: stores the Look toggle state. It is `false` on page load and flips only when the Look button is clicked.
 - `pendingRealtimeTextTurns`: typed turns submitted after Start while the Realtime data channel is still opening; they are sent when the channel opens.
 - `resultsPanel.hidden`: determines whether result/detail content is visible and whether compact results mode is active.
+- `launchShowcaseDismissed`: true once the launch showcase has been dismissed by the first user interaction; blocks it from reappearing until a new conversation resets it.
+- `launchShowcaseRaf`: holds the active `requestAnimationFrame` id for the showcase's horizontal marquee, or `null` when the showcase is not animating.
+- `launchShowcaseData`: stores the last successful `/tool/samples` response so New conversation can render the launch showcase without waiting on another fetch.
+- `launchShowcaseLoading`: true while a launch showcase sample request is in flight.
+- `lastPageRenderFlashKey`: stores the semantic identity of the last result/detail page that was allowed to flash; repeated renders of the same search/detail content do not flash.
+- `pageRenderFlashTimer`: clears the transient `#resultsContent.isPageRenderFlash` class after the render flash animation finishes.
 - `currentSearchState`: stores pagination state for text2sql result pages.
 - `activeUiLanguage`: stores the detected API language for the latest user turn or rendered result page; it is `fr` for detected French input and `en` for English or unsupported languages.
 - `loadingMore`: true while another page of text2sql rows is loading.
@@ -440,6 +447,33 @@ status visible = resultsPanel.hidden
 status hidden = !resultsPanel.hidden
 ```
 
+## Launch Showcase
+
+Element: `#launchShowcase`, a `<section>` created by `app.js` and inserted into `.panel` immediately after the status row (outside `#resultsPanel`, so it does not trigger compact results mode and the header/status stay visible).
+
+Purpose: at launch, while there is no user query, fills the main content area with an auto-scrolling wall of suggested sample questions and their result previews.
+
+Default state: `hidden`. Populated by `maybeShowLaunchShowcase()`, which runs once on page load and again at the end of `startNewConversation()`.
+
+Population and visibility:
+
+- `maybeShowLaunchShowcase()` no-ops when `launchShowcaseDismissed` is true, when `resultsPanel.hidden === false`, or when `sessionRunning` or `textChatInFlight` is true.
+- If `launchShowcaseData` is already cached, it renders and unhides `#launchShowcase` immediately. Otherwise it fetches `GET /tool/samples?ui_language=...` (defaults to English, `en`, since there is no user query to detect a language from). On success it caches the categories, renders, and unhides `#launchShowcase`. On any failure it silently leaves the showcase hidden.
+- Content: a `.showcaseViewport` containing a few stacked `.showcaseLane` rows, each holding a `.showcaseLaneTrack` of `.showcaseGroup` blocks. Each group is a `.showcaseQuestion` chip (a button) followed inline by standard `.search-poster-card` cards (or a `.showcaseScalar` value for scalar previews). Each lane's groups are rendered twice so the marquee wraps seamlessly. Only samples whose `simulated_result` has renderable rows are shown, round-robined across top-level categories and then distributed across lanes.
+- The `.showcaseQuestion` chip uses `white-space: pre-line` with an 8-line clamp: short questions stay on one line, long questions wrap to multiple lines, and multi-line questions keep their newline breaks (carriage returns are normalized to `\n` in `buildShowcaseGroup`). The full text is always available via the chip's `title` tooltip.
+
+Motion:
+
+- `startShowcaseMarquee()` drives a continuous leftward `translateX` on each lane's track via `requestAnimationFrame` (id stored in `launchShowcaseRaf`), wrapping after one copy's width, so cards enter from the right, cross the screen, and exit on the left. Lanes run at slightly different speeds.
+- The marquee pauses on pointer hover over the viewport and while `document.hidden` is true.
+- Under `prefers-reduced-motion: reduce`, `startShowcaseMarquee()` returns without animating and each lane becomes `overflow-x: auto` (static, manually scrollable).
+
+Interaction and dismissal:
+
+- Clicking a `.showcaseQuestion` calls `runShowcaseQuestion()`, which dismisses the showcase, sets `questionInput.value`, and calls `submitQuestion()` — running it as a normal typed query. Clicking a poster card opens that entity's detail page like any result card.
+- `dismissLaunchShowcase()` cancels the animation frame, sets `launchShowcaseDismissed = true`, and hides/empties the section. It is called on the first non-empty `questionInput` input event, on `start()` (voice session), and at the top of `renderText2SqlResult()`, `renderEntityDetailOutput()`, and `showRecordDetail()`.
+- Once dismissed, the showcase stays hidden for the rest of the session. `startNewConversation()` resets `launchShowcaseDismissed` to false and calls `maybeShowLaunchShowcase()` again, so the full reset returns to the launch state with the showcase. If samples were already loaded earlier in the page lifetime, this uses the cached sample data and renders immediately.
+
 ## Answer And Results Panel
 
 Element: `#resultsPanel`
@@ -512,6 +546,27 @@ Query details toggle states:
 - Open: `aria-expanded="true"`, up-pointing triangle text.
 - Opening one toggle closes all other query details toggles.
 - Closing hides and clears `#queryDetailsDock`.
+
+### Page Render Flash
+
+Element: `#resultsContent.isPageRenderFlash`
+
+Purpose: gives a short visual cue when the app replaces the visible page with a different search result page or entity detail page.
+
+Trigger rules:
+
+- `flashPageRender(renderKey)` runs only after final content is rendered by `renderText2SqlResult()`, `renderEntityDetailOutput()`, or `showRecordDetail()`.
+- It compares `renderKey` with `lastPageRenderFlashKey`. If the key is unchanged, it returns without toggling the class, so rendering the same visible content again never restarts the flash.
+- Search render keys use UI language, query, answer/error text, and the ordered visible row identities.
+- Detail render keys use UI language, entity/detail arguments, title, and error state.
+- Loading placeholders from `setLoadingResults()` and `setLoadingEntityDetail()` do not flash.
+- `Load more` pagination appends do not flash.
+- `clearConversationUi()` clears the stored key because the page is no longer visible.
+
+Motion:
+
+- The default animation is a short cyan glow on `#resultsContent`.
+- If `prefers-reduced-motion: reduce` matches, JavaScript does not start the flash and CSS also disables the animation.
 
 ### Search Result Cards
 
@@ -801,6 +856,7 @@ Visibility rules:
 - Visible only while a chunk is actively being displayed.
 - Hidden after the queue is exhausted.
 - A new call to `showSubtitleText()` replaces any existing queue.
+- New conversation clears the current queue, cancels the timer, hides the overlay, and clears any spoken-card highlight.
 
 Known producers:
 
@@ -851,7 +907,7 @@ New conversation behavior:
 
 Element: `#newConversationButton`
 
-Purpose: resets the visible conversation, retained context, page history, and active audio connection.
+Purpose: resets the visible conversation, retained context, page history, active audio connection, and any assistant output currently playing or queued.
 
 Default state:
 
@@ -874,15 +930,21 @@ The app marks the conversation active when:
 Click behavior:
 
 1. Sets `manuallyStopped = true`.
-2. Clears reconnect timers.
-3. Releases wake lock.
-4. Cleans up the audio connection.
-5. Clears the results UI.
-6. Clears retained context.
-7. Hides itself.
-8. Clears page history.
-9. Sets `sessionRunning = false`.
-10. Sets status to `Idle`.
+2. Clears queued Realtime typed turns.
+3. Cancels idle dictation.
+4. Clears subtitle output, including the queue and active timer.
+5. Aborts any in-flight `/text-chat` request so stale text output cannot render after reset.
+6. Sends Realtime `response.cancel` and `output_audio_buffer.clear` when a response or output audio is active.
+7. Clears the remote audio element and active spoken-card highlight.
+8. Clears reconnect timers.
+9. Releases wake lock.
+10. Cleans up the audio connection.
+11. Clears the results UI.
+12. Clears retained context.
+13. Hides itself.
+14. Clears page history.
+15. Sets `sessionRunning = false`.
+16. Sets status to `Idle`.
 
 ## Hidden Audio Element
 
@@ -983,7 +1045,7 @@ If a visible voice selector is added later, this document should be updated with
 | `/text-chat` response complete | visible if input empty and no session | hidden | closed/enabled if dictation is supported and no session | follows user state/enabled | visible/enabled | visible unless results shown, `Text response` | visible if tools returned UI | hidden if results visible | visible if results rendered | visible while chunks play |
 | Error | depends on session/text | depends on session | depends on session/manual state | follows user state/enabled | visible/enabled | visible unless results shown, error text | unchanged | depends on results | unchanged | may show text error |
 | Stop clicked | visible if input empty | hidden | closed/enabled if dictation is supported | follows user state/enabled | visible/enabled | visible unless results shown, `Idle` | unchanged | depends on results | unchanged | unchanged |
-| New conversation clicked | visible | hidden | closed/enabled if dictation is supported | follows user state/enabled | visible/enabled | visible, `Idle` | hidden and cleared | visible | hidden | existing subtitle timer is not explicitly cleared |
+| New conversation clicked | visible | hidden | closed/enabled if dictation is supported | follows user state/enabled | visible/enabled | visible, `Idle` | hidden and cleared | visible | hidden | hidden and timer cleared |
 
 ## Implementation Notes For Future Changes
 
@@ -997,5 +1059,5 @@ If a visible voice selector is added later, this document should be updated with
 - `setActiveSpokenCard()` owns spoken-card highlight exclusivity; call `clearActiveSpokenCard()` before replacing result content.
 - `showSubtitleText()` owns subtitle queue replacement and display.
 - `clearConversationUi()` clears results but does not explicitly clear subtitles.
-- `startNewConversation()` is the full UI/context reset path.
+- `startNewConversation()` is the full UI/context reset path; it calls `cancelAssistantOutput()` before clearing the UI so active audio, in-flight text responses, and subtitle playback stop immediately.
 - The text input remains enabled in all current states; changing that would require new explicit disabled-state rules.
