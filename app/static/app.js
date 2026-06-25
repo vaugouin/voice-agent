@@ -43,8 +43,6 @@ let launchShowcaseRaf = null;
 let launchShowcaseDismissed = false;
 let launchShowcaseData = null;
 let launchShowcaseLoading = false;
-let lastPageRenderFlashKey = "";
-let pageRenderFlashTimer = null;
 
 let pc;
 let dc;
@@ -306,142 +304,6 @@ function currentUiLanguage(args = {}) {
     return normalizeUiLanguage(args.ui_language || args.uiLanguage);
   }
   return normalizeUiLanguage(activeUiLanguage || currentSearchState?.ui_language || "en");
-}
-
-function normalizeRenderKeyPart(value) {
-  return String(value ?? "").trim().replace(/\s+/g, " ");
-}
-
-function recordRenderKey(record = {}) {
-  const request = detailRequestFromRecord(record);
-  if (request) {
-    return [
-      request.toolName,
-      request.id,
-      request.id_serie,
-      request.season_number,
-      request.episode_number,
-    ]
-      .filter((value) => value !== null && value !== undefined && String(value) !== "")
-      .map(normalizeRenderKeyPart)
-      .join(":");
-  }
-
-  const idKeys = [
-    "ID_MOVIE",
-    "ID_SERIE",
-    "ID_SEASON",
-    "ID_EPISODE",
-    "ID_PERSON",
-    "ID_COMPANY",
-    "ID_NETWORK",
-    "ID_T2S_COLLECTION",
-    "ID_TOPIC",
-    "ID_T2S_LIST",
-    "ID_MOVEMENT",
-    "ID_TECHNICAL",
-    "ID_GROUP",
-    "ID_DEATH",
-    "ID_AWARD",
-    "ID_NOMINATION",
-    "ID_WIKIDATA",
-  ];
-  for (const key of idKeys) {
-    if (record[key] !== null && record[key] !== undefined && String(record[key]).trim() !== "") {
-      return `${key}:${normalizeRenderKeyPart(record[key])}`;
-    }
-  }
-
-  return [
-    "record",
-    titleForRecord(record),
-    record.RELEASE_YEAR,
-    record.FIRST_AIR_YEAR,
-    record.BIRTH_YEAR,
-    record.CONTENT_TYPE,
-  ]
-    .map(normalizeRenderKeyPart)
-    .filter(Boolean)
-    .join(":");
-}
-
-function searchRenderKey(output = {}, args = {}, upstream = {}, rows = [], uiLanguage = activeUiLanguage) {
-  const rowKeys = rows
-    .map((item) => recordRenderKey(item?.data || item || {}))
-    .filter(Boolean)
-    .join("|");
-  return [
-    "search",
-    normalizeUiLanguage(uiLanguage),
-    normalizeRenderKeyPart(args.query || upstream.question || ""),
-    normalizeRenderKeyPart(output.answer || upstream.answer || ""),
-    normalizeRenderKeyPart(output.error || upstream.error || ""),
-    rowKeys,
-  ].join("::");
-}
-
-function detailRenderKey(output = {}, args = {}, record = {}) {
-  const entity = output.entity || DETAIL_TOOL_ENTITIES[args?.toolName] || "";
-  const request = detailRequestFromRecord(record);
-  const requestKey = request
-    ? recordRenderKey(record)
-    : [
-        args?.toolName,
-        args?.id,
-        args?.id_serie,
-        args?.season_number,
-        args?.episode_number,
-      ]
-        .filter((value) => value !== null && value !== undefined && String(value) !== "")
-        .map(normalizeRenderKeyPart)
-        .join(":");
-  return [
-    "detail",
-    normalizeUiLanguage(output.ui_language || args?.ui_language || activeUiLanguage),
-    normalizeRenderKeyPart(entity),
-    requestKey || recordRenderKey(record),
-    normalizeRenderKeyPart(output.error || ""),
-    normalizeRenderKeyPart(titleForRecord(record)),
-  ].join("::");
-}
-
-function pageRenderFlashAllowed() {
-  return !(
-    window.matchMedia &&
-    window.matchMedia("(prefers-reduced-motion: reduce)").matches
-  );
-}
-
-function flashPageRender(renderKey) {
-  const key = normalizeRenderKeyPart(renderKey);
-  if (!key || key === lastPageRenderFlashKey) {
-    return;
-  }
-  lastPageRenderFlashKey = key;
-  if (!pageRenderFlashAllowed()) {
-    return;
-  }
-
-  if (pageRenderFlashTimer) {
-    clearTimeout(pageRenderFlashTimer);
-    pageRenderFlashTimer = null;
-  }
-  resultsContent.classList.remove("isPageRenderFlash");
-  void resultsContent.offsetWidth;
-  resultsContent.classList.add("isPageRenderFlash");
-  pageRenderFlashTimer = window.setTimeout(() => {
-    resultsContent.classList.remove("isPageRenderFlash");
-    pageRenderFlashTimer = null;
-  }, 700);
-}
-
-function clearPageRenderFlashState() {
-  lastPageRenderFlashKey = "";
-  if (pageRenderFlashTimer) {
-    clearTimeout(pageRenderFlashTimer);
-    pageRenderFlashTimer = null;
-  }
-  resultsContent.classList.remove("isPageRenderFlash");
 }
 
 function parseUrlBooleanFlag(value) {
@@ -2947,7 +2809,6 @@ async function showRecordDetail(record, { skipHistory = false, ui_language = "" 
   const renderedDetail = await renderSingleRecordResult(resultsContent, record);
   const renderedOutput = renderedDetail?.output || {};
   const renderedArgs = renderedDetail?.args || detailRequestFromRecord(record) || {};
-  flashPageRender(detailRenderKey(renderedOutput, renderedArgs, renderedOutput.detail || record));
   if (!skipHistory) {
     if (renderedDetail) {
       pushPageHistory({ type: "entityDetail", output: renderedDetail.output, args: renderedDetail.args });
@@ -3005,7 +2866,6 @@ function renderEntityDetailOutput(output, args = {}, { skipHistory = false } = {
       CONTENT_TITLE: "Unable to load details",
     };
     renderSingleDetail(container, errorRecord, { error: output.error });
-    flashPageRender(detailRenderKey(output, args, errorRecord));
     if (!skipHistory) {
       pushPageHistory({ type: "entityDetail", output, args });
     }
@@ -3018,7 +2878,6 @@ function renderEntityDetailOutput(output, args = {}, { skipHistory = false } = {
       CONTENT_TITLE: output.entity ? prettyLabel(output.entity) : "Details",
     };
     renderSingleDetail(container, emptyRecord, { error: "No detail record returned." });
-    flashPageRender(detailRenderKey(output, args, emptyRecord));
     if (!skipHistory) {
       pushPageHistory({ type: "entityDetail", output, args });
     }
@@ -3032,7 +2891,6 @@ function renderEntityDetailOutput(output, args = {}, { skipHistory = false } = {
   const stateOutput = { ...output, detail: detailRecord };
   setCurrentDetailState(stateOutput, args, container, detailRecord);
   renderSingleDetail(container, detailRecord);
-  flashPageRender(detailRenderKey(stateOutput, currentDetailState.args, detailRecord));
   if (!skipHistory) {
     pushPageHistory({ type: "entityDetail", output: stateOutput, args: currentDetailState.args });
   }
@@ -3113,7 +2971,6 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
         const renderedOutput = renderedDetail?.output || {};
         const renderedArgs = renderedDetail?.args || detailRequestFromRecord(record) || {};
         refreshPaginationControls();
-        flashPageRender(detailRenderKey(renderedOutput, renderedArgs, renderedOutput.detail || record));
         if (!skipHistory) {
           pushPageHistory({ type: "search", output, args });
         }
@@ -3164,9 +3021,6 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
     has_more: Boolean(questionHashed && (output.has_more ?? upstream.has_more ?? (rowsPerPage && rows.length === rowsPerPage))),
   };
   refreshPaginationControls();
-  if (!append) {
-    flashPageRender(searchRenderKey(output, args, upstream, rows, uiLanguage));
-  }
   if (!append && !skipHistory) {
     pushPageHistory({ type: "search", output, args });
   } else if (append && !skipHistory) {
@@ -5909,7 +5763,6 @@ function clearConversationUi() {
   resultsPanel.hidden = true;
   clearQueryDetailsDock();
   resultsContent.replaceChildren();
-  clearPageRenderFlashState();
   resultsLoader.hidden = true;
   loadMoreButton.hidden = true;
   resultsEnd.hidden = true;

@@ -335,8 +335,6 @@ On short landscape viewports, including iOS Safari on iPhone 15 Pro Max, the app
 
 Search result answer panels include an icon-only query-details toggle on the right side of the answer panel. The toggle uses a down-oriented triangle when closed, switches to an up triangle when open, and opens or closes the SQL/justification details in a compact dock directly below the answer panel.
 
-When a new search result page or entity detail page is rendered, the result content gets a short cyan render flash. The browser tracks a semantic render key for the visible page and does not flash when the same search/detail content is rendered again. Loading placeholders and `Load more` pagination appends do not flash. `prefers-reduced-motion: reduce` disables the animation.
-
 Click-through behavior:
 
 - Cards for records with a supported entity ID open the matching in-app detail page instead of navigating away.
@@ -627,8 +625,8 @@ Adjust the container name if your Nginx container is not named `reverseproxy`.
 The HTML references static assets with version query strings:
 
 ```html
-styles.css?v=20260625-spoken-subtitles
-app.js?v=20260625-spoken-subtitles
+styles.css?v=20260625-spoken-subtitles-no-render-flash
+app.js?v=20260625-spoken-subtitles-no-render-flash
 ```
 
 When changing frontend behavior, bump the version to force Safari and other browsers to fetch the new asset after deployment.
