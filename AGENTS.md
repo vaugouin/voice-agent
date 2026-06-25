@@ -14,6 +14,7 @@ Pipeline stages:
 - **Serving** — `fastapi-text2sql` (NL→SQL API + MCP server), `voice-agent`, `tmdb-front` (PHP web front-end).
 - **Evaluation** — `eval-text2sql`, `extract-movie-questions`.
 - **Maintenance & tooling** — `plex-duplicates`, `subtitle-translate`, `powershell`, `playwright-test`.
+- **Monitoring & observability** — `data-monitoring`.
 
 **This repository's role:** Serving stage. A web-based voice and chat client that proxies natural-language queries to the `fastapi-text2sql` API (search plus per-entity detail tools), acting as a conversational front-end alongside `tmdb-front`.
 

@@ -23,7 +23,7 @@ The app serves a minimal web UI on port `3000`. The browser creates an `RTCPeerC
 - Web Worker keepalive on the `oai-events` data channel to keep ICE/NAT alive during silent periods, including in unfocused windows.
 - Disconnect watchdog with self-heal check that avoids tearing down sessions that recover on their own.
 - Multi-attempt reconnect (up to 5) that resumes from retained context.
-- New conversation button that clears the screen and retained context.
+- New conversation button that clears the screen and retained context, and stops any current spoken or text answer.
 - Interruptible assistant speech with the microphone kept open while audio is playing.
 - Client diagnostics written to `logs/client.log`.
 - Docker deployment support behind Nginx at `/voice-agent/`.
@@ -275,15 +275,46 @@ The local adapter returns compact fields used by the browser and the model:
   "rows_per_page": 50,
   "question_hashed": "...",
   "has_more": true,
-  "sql_query": "..."
+  "sql_query": "...",
+  "diagnostic": {
+    "reason": "entity_unresolved",
+    "retryable": false,
+    "unresolved_entities": ["Rohmer"]
+  }
 }
 ```
+
+The `diagnostic` object is a compact, actionable reason why a query produced nothing, recovered from upstream signals that the trimmed tool output otherwise drops (on an empty result the model would only see `answer="" error="" result_count=0` and could not tell an unresolved entity from a genuinely empty database). `reason` is one of:
+
+| `reason` | Meaning | Suggested recovery |
+|---|---|---|
+| `ok` | The query returned rows. | None. |
+| `transient` | Retryable upstream error (e.g. provider quota `429`). `retryable` is true and `retry_after_seconds`/`error_code` may be present. | Retry the same query after `retry_after_seconds`. |
+| `no_sql` | The model failed to generate SQL. | Decompose into sub-questions and re-query each. |
+| `sql_error` | SQL was generated but the request still carried an error. | Reformulate the question. |
+| `entity_unresolved` | One or more spoken entities did not resolve; their names are in `unresolved_entities`. | Re-query with a spelling/name variant, or ask the user to clarify. |
+| `ambiguous` | The question was too vague for the API to build a query. | Ask the user to narrow it, or decompose. |
+| `empty_result` | SQL ran but matched no rows. | Relax a filter (year, genre) and re-query. |
+
+The Realtime and `/text-chat` prompts act on `diagnostic` (shared `RECOVERY_INSTRUCTIONS` in `app/main.py`): on an empty or failed result the agent reads `diagnostic.reason` and makes a bounded, grounded recovery attempt — re-query with an alternate name on `entity_unresolved`, relax a filter on `empty_result`, decompose on `ambiguous`/`no_sql` — at most two attempts, then it states plainly that nothing was found. Recovery always re-queries the database; it never answers from pretraining, and it never fabricates a result. The browser forwards `diagnostic` to the Realtime model in the `query_text2sql` tool output, and `/text-chat` includes it in the server-side tool result. It is also recorded in the `tool_call_success` client log event (`diagnostic` field), so offline log harvests can auto-classify real failures by `reason`: the browser logs it on the Realtime/voice path, and `/text-chat` logs it server-side for typed queries (`"source": "text-chat"`). `client.log` is filtered server-side (`HARNESS_LOG_EVENTS` in `app/main.py`) to keep only harness-relevant events — tool calls, queries, and their diagnostics; UI/transport telemetry (focus, visibility, WebRTC/ICE, keepalive, mic, wake-lock, …) is dropped at write time.
 
 ## Structured Card Focus
 
 When `ENABLE_STRUCTURED_CARD_FOCUS` is true, the Realtime session includes a browser-handled `focus_result_card` tool. After a `query_text2sql` result page is rendered, the browser adds a compact `visible_results` list to the tool output sent back to the model. Each entry contains the visible 1-based card index and title. Before the voice model speaks about a specific visible card, it can call `focus_result_card` with that index, and the browser highlights the card immediately.
 
 Set `ENABLE_STRUCTURED_CARD_FOCUS=false` to remove the tool and the related instruction from new Realtime sessions. For local testing, add `?structuredCardFocus=0` to the app URL before starting a voice session; the browser forwards that override to `/session`.
+
+## Launch Showcase
+
+At launch, while there is no user query yet, the app fills the main content area with an auto-scrolling showcase of suggested sample questions and their result previews, so a first-time visitor immediately sees what the database can answer.
+
+- The browser fetches the questions from the local `GET /tool/samples?ui_language=...` proxy, which forwards to the upstream text2sql `GET /samples` endpoint (the API key is injected server-side). The launch showcase has no user query to detect a language from, so it requests English (`ui_language=en`) by default. After a successful load, the browser keeps the samples in memory so **New conversation** can repopulate the launch view immediately.
+- The `/samples` response is a category tree where each sample carries a `simulated_result` preview (entity rows hydrated with title/poster, or a single scalar value). The app flattens the tree, keeps only samples with a renderable preview, and round-robins across top-level categories so the showcase mixes topics rather than clustering one category.
+- Layout is a horizontal marquee: the groups (each a question chip followed inline by its result poster cards) are spread across a few stacked lanes, and every lane scrolls right-to-left so cards enter from the right edge, cross the screen, and exit on the left, looping seamlessly. Lanes run at slightly different speeds for a natural wall effect, and the marquee pauses on hover and while the tab is hidden. The result cards reuse the standard search-result card renderer.
+- Question chips stay on one line when short, but wrap to multiple lines for long questions and preserve embedded newlines for multi-line questions (clamped so an unusually long question cannot blow out the lane height).
+- Clicking a sample question runs it as a real query through the normal text input flow; clicking a poster opens that entity's detail page.
+- The showcase is dismissed on the first real interaction — typing a question, starting a voice session, or any rendered result/detail — and does not reappear for the rest of the session. **New conversation** returns to the launch state and brings the showcase back.
+- `prefers-reduced-motion` is honored: the animations stop and the showcase becomes a static, manually scrollable list. If the samples request fails, the app silently skips the showcase and the rest of the UI is unaffected.
 
 ## Frontend Result Display
 
@@ -294,6 +325,8 @@ When the results panel contains a search result page or an entity detail page, t
 On short landscape viewports, including iOS Safari on iPhone 15 Pro Max, the app shell removes the outer page padding and square-corners the main panel so result/detail pages fill the available browser viewport from the top edge.
 
 Search result answer panels include an icon-only query-details toggle on the right side of the answer panel. The toggle uses a down-oriented triangle when closed, switches to an up triangle when open, and opens or closes the SQL/justification details in a compact dock directly below the answer panel.
+
+When a new search result page or entity detail page is rendered, the result content gets a short cyan render flash. The browser tracks a semantic render key for the visible page and does not flash when the same search/detail content is rendered again. Loading placeholders and `Load more` pagination appends do not flash. `prefers-reduced-motion: reduce` disables the animation.
 
 Click-through behavior:
 
@@ -585,8 +618,8 @@ Adjust the container name if your Nginx container is not named `reverseproxy`.
 The HTML references static assets with version query strings:
 
 ```html
-styles.css?v=20260607-detail-rail-scroll
-app.js?v=20260611-detail-rail-autoload
+styles.css?v=20260625-render-flash
+app.js?v=20260625-render-flash
 ```
 
 When changing frontend behavior, bump the version to force Safari and other browsers to fetch the new asset after deployment.

@@ -1,3 +1,4 @@
+import asyncio
 import json
 import os
 import re
@@ -660,6 +661,35 @@ def compact_detail_for_model(output: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+# Bounded, grounded recovery guidance shared by the Realtime and /text-chat
+# prompts. Every query_text2sql result carries a `diagnostic` (reason +
+# unresolved_entities); this invites the agent to re-query on recoverable failures
+# instead of passively reporting an empty result — while staying grounded (re-query,
+# never answer from pretraining) and bounded (so voice latency stays acceptable).
+RECOVERY_INSTRUCTIONS = (
+    "Recovering from empty or failed results: every query_text2sql result includes a "
+    "diagnostic object with a reason. When the result is empty or does not answer the "
+    "question, you MUST attempt the fix yourself by calling query_text2sql again BEFORE "
+    "reporting an empty result or asking the user a clarifying question. Recovery is "
+    "always grounded — re-query the database; never answer from your own knowledge and "
+    "never fabricate a result. "
+    "If reason is empty_result, the query was probably over-constrained or matched the "
+    "wrong entity: re-query with the offending condition relaxed (for example drop a "
+    "filter the user did not explicitly ask for) OR with a corrected, broader reading of "
+    "an entity (for example a more general award, title, or category). "
+    "If reason is entity_unresolved, an entity listed in diagnostic.unresolved_entities "
+    "was not recognized: re-query using an alternate spelling or a more common name. "
+    "If reason is ambiguous or no_sql, split the request into smaller sub-questions and "
+    "call query_text2sql for each. "
+    "Make at most two recovery attempts in total. Whenever a recovery query changes what "
+    "the user asked — relaxing or reinterpreting a condition — state plainly in your "
+    "answer what you changed and why (for example: 'No movies matched X with Y, so I "
+    "broadened to Z; here is what I found'). Ask the user to clarify only if recovery "
+    "also comes back empty. If it is still empty, say plainly that you found nothing and "
+    "why; never invent an answer."
+)
+
+
 def realtime_session_config(
     voice: str = DEFAULT_REALTIME_VOICE,
     *,
@@ -687,6 +717,7 @@ def realtime_session_config(
         "in user-facing spoken answers. Use entity names, titles, and visible "
         "result numbers instead."
     )
+    instructions += " " + RECOVERY_INSTRUCTIONS
     tools = [
         {
             "type": "function",
@@ -930,6 +961,107 @@ async def transcribe_audio(request: Request) -> dict[str, Any]:
     }
 
 
+def _text2sql_unresolved_entities(sql_query: str, entity_extraction: Any) -> list[str]:
+    """Surface names of entities the upstream extracted but could not resolve.
+
+    The upstream leaves an unresolved entity's placeholder (e.g. ``{{Person_name1}}``)
+    in the returned ``sql_query`` instead of substituting a real id/name; this mirrors
+    the upstream's own detection (entity.resolve_entities) and maps each surviving
+    placeholder back to the surface name the user spoke.
+    """
+    keys = re.findall(r"\{\{([^}]+)\}\}", sql_query or "")
+    if not keys:
+        return []
+    names: list[str] = []
+    for key in keys:
+        value = entity_extraction.get(key) if isinstance(entity_extraction, dict) else None
+        if isinstance(value, dict):
+            value = value.get("name") or value.get("value")
+        surface = str(value).strip() if value not in (None, "") else ""
+        names.append(surface or key)
+    return names
+
+
+def _text2sql_diagnostic(upstream_body: Any) -> dict[str, Any]:
+    """Compact, actionable reason why a text2sql query returned nothing.
+
+    The upstream API computes why a query failed and the trimmed tool output drops
+    it, so on an empty result the model only sees ``answer="" error="" result_count=0``
+    and cannot tell an unresolved entity from a genuinely empty database. This recovers
+    the signal so the model can pick a recovery strategy instead of guessing.
+
+    ``reason`` is one of: ``ok`` | ``transient`` | ``no_sql`` | ``sql_error`` |
+    ``entity_unresolved`` | ``ambiguous`` | ``empty_result`` | ``unknown``.
+    """
+    if not isinstance(upstream_body, dict):
+        return {"reason": "unknown", "retryable": False, "unresolved_entities": []}
+
+    error_text = str(upstream_body.get("error") or "")
+    retryable = bool(upstream_body.get("is_retryable"))
+    sql_query = str(upstream_body.get("sql_query") or "")
+    unresolved = _text2sql_unresolved_entities(sql_query, upstream_body.get("entity_extraction"))
+    result_count = len(upstream_body.get("result") or [])
+
+    if error_text:
+        reason = "transient" if retryable else ("sql_error" if sql_query else "no_sql")
+    elif unresolved:
+        reason = "entity_unresolved"
+    elif upstream_body.get("ambiguous_question_for_text2sql"):
+        reason = "ambiguous"
+    elif result_count == 0:
+        reason = "empty_result"
+    else:
+        reason = "ok"
+
+    diagnostic: dict[str, Any] = {
+        "reason": reason,
+        "retryable": retryable,
+        "unresolved_entities": unresolved,
+    }
+    error_code = upstream_body.get("error_code")
+    if error_code:
+        diagnostic["error_code"] = str(error_code)
+    retry_after = upstream_body.get("retry_after_seconds")
+    if retry_after is not None:
+        diagnostic["retry_after_seconds"] = retry_after
+    return diagnostic
+
+
+async def _post_text2sql_with_retry(
+    url: str,
+    request_json: dict[str, Any],
+    headers: dict[str, str],
+    *,
+    retries: int = 3,
+    backoff: float = 1.5,
+    timeout: float = 30.0,
+) -> httpx.Response:
+    """POST to the text2sql API, retrying transient 5xx and transport errors.
+
+    The text2sql API can return a transient 5xx (DB blip, restart, …); without retry
+    that surfaces to voice and typed users as a hard 502. Retries 5xx responses and
+    httpx transport errors with linear backoff; 4xx and a final 5xx fall through to
+    the caller's normal status handling. Raises HTTPException(502) only when transport
+    keeps failing after every attempt.
+    """
+    last_exc: Exception | None = None
+    for attempt in range(1, retries + 1):
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            try:
+                response = await client.post(url, json=request_json, headers=headers)
+            except httpx.HTTPError as exc:
+                last_exc = exc
+                if attempt >= retries:
+                    raise HTTPException(status_code=502, detail=str(exc)) from exc
+                await asyncio.sleep(backoff * attempt)
+                continue
+        if response.status_code >= 500 and attempt < retries:
+            await asyncio.sleep(backoff * attempt)
+            continue
+        return response
+    raise HTTPException(status_code=502, detail=str(last_exc) if last_exc else "text2sql retry exhausted")
+
+
 async def query_text2sql_data(payload: Text2SqlRequest) -> dict[str, Any]:
     text2sql_url = f"{text2sql_base_url()}/search/text2sql"
     headers = text2sql_headers()
@@ -948,11 +1080,7 @@ async def query_text2sql_data(payload: Text2SqlRequest) -> dict[str, Any]:
     }
     request_json = {key: value for key, value in request_json.items() if value is not None}
 
-    async with httpx.AsyncClient(timeout=30) as client:
-        try:
-            response = await client.post(text2sql_url, json=request_json, headers=headers)
-        except httpx.HTTPError as exc:
-            raise HTTPException(status_code=502, detail=str(exc)) from exc
+    response = await _post_text2sql_with_retry(text2sql_url, request_json, headers)
 
     content_type = response.headers.get("content-type", "")
     if "application/json" in content_type:
@@ -996,6 +1124,7 @@ async def query_text2sql_data(payload: Text2SqlRequest) -> dict[str, Any]:
         "sql_query": (
             upstream_body.get("sql_query", "") if isinstance(upstream_body, dict) else ""
         ),
+        "diagnostic": _text2sql_diagnostic(upstream_body),
         "upstream": upstream_body,
     }
 
@@ -1130,6 +1259,7 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         "subtitle text. Use entity names, titles, and visible result numbers "
         "instead."
     )
+    instructions += " " + RECOVERY_INSTRUCTIONS
     request_base = {
         "model": model,
         "instructions": instructions,
@@ -1224,6 +1354,25 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
 
     output_text = extract_response_text(upstream_body)
 
+    # Server-side parity with the voice path: the browser logs query_text2sql
+    # diagnostics via clientLog on the Realtime path, but typed /text-chat runs the
+    # tool server-side, so log here too — same `tool_call_success` shape so offline
+    # log harvests cover both paths. `source` distinguishes them.
+    for o in tool_outputs:
+        if o.get("name") != "query_text2sql":
+            continue
+        out = o.get("output") or {}
+        if not isinstance(out, dict):
+            continue
+        write_client_log("tool_call_success", {
+            "name": "query_text2sql",
+            "source": "text-chat",
+            "result_count": out.get("result_count"),
+            "has_more": out.get("has_more"),
+            "diagnostic": out.get("diagnostic"),
+            "forced": bool(o.get("forced")),
+        })
+
     return {
         "configured": True,
         "model": model,
@@ -1253,11 +1402,7 @@ async def query_text2sql(payload: Text2SqlRequest) -> dict[str, Any]:
     }
     request_json = {key: value for key, value in request_json.items() if value is not None}
 
-    async with httpx.AsyncClient(timeout=30) as client:
-        try:
-            response = await client.post(text2sql_url, json=request_json, headers=headers)
-        except httpx.HTTPError as exc:
-            raise HTTPException(status_code=502, detail=str(exc)) from exc
+    response = await _post_text2sql_with_retry(text2sql_url, request_json, headers)
 
     content_type = response.headers.get("content-type", "")
     if "application/json" in content_type:
@@ -1301,6 +1446,7 @@ async def query_text2sql(payload: Text2SqlRequest) -> dict[str, Any]:
         "sql_query": (
             upstream_body.get("sql_query", "") if isinstance(upstream_body, dict) else ""
         ),
+        "diagnostic": _text2sql_diagnostic(upstream_body),
         "upstream": upstream_body,
     }
 
@@ -1372,14 +1518,97 @@ async def get_episode_detail(
     )
 
 
-@app.post("/client-log")
-async def client_log(payload: ClientLogRequest) -> dict[str, bool]:
+@app.get("/tool/samples")
+async def get_samples(ui_language: str = "en") -> dict[str, Any]:
+    """Proxy the upstream text2sql /samples endpoint.
+
+    Returns the curated tree of suggested sample questions (each with its parsed
+    `assertion` and a `simulated_result` preview) so the browser can render a launch
+    showcase without database access. The API key is injected server-side, like the
+    other /tool/* proxies.
+    """
+    samples_url = f"{text2sql_base_url()}/samples"
+    resolved_language = normalize_ui_language(ui_language)
+    async with httpx.AsyncClient(timeout=30) as client:
+        try:
+            response = await client.get(
+                samples_url,
+                headers=text2sql_headers(),
+                params={"ui_language": resolved_language},
+            )
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    content_type = response.headers.get("content-type", "")
+    if "application/json" in content_type:
+        upstream_body: Any = response.json()
+    else:
+        upstream_body = response.text
+
+    if response.status_code >= 400:
+        raise HTTPException(
+            status_code=502,
+            detail={
+                "upstream_status": response.status_code,
+                "upstream_body": upstream_body,
+            },
+        )
+
+    return {
+        "configured": True,
+        "ui_language": (
+            upstream_body.get("ui_language", resolved_language)
+            if isinstance(upstream_body, dict)
+            else resolved_language
+        ),
+        "categories": (
+            upstream_body.get("categories", []) if isinstance(upstream_body, dict) else []
+        ),
+    }
+
+
+# Only events relevant to harness engineering are persisted to client.log: tool
+# calls (+ their diagnostic), spoken/typed queries, and their outcomes. All UI and
+# transport telemetry (focus, visibility, WebRTC/ICE, keepalive, mic, wake-lock,
+# audio elements, reconnect, …) is dropped so the log stays harvestable. The browser
+# still posts those events to /client-log; they are filtered here at write time.
+HARNESS_LOG_EVENTS = frozenset({
+    "tool_call_start",
+    "tool_call_success",
+    "tool_call_error",
+    "user_transcript",
+    "text_chat_sent",
+    "text_chat_success",
+    "text_chat_error",
+    "text_chat_cancelled",
+    "realtime_text_sent",
+})
+
+
+def write_client_log(event: str, data: dict[str, Any], level: str = "info") -> None:
+    """Append one JSONL entry to client.log, same shape as the browser /client-log
+    route. Used server-side so the typed /text-chat path also records the
+    query_text2sql diagnostic — the browser only logs it on the voice/Realtime path,
+    so without this, typed-query failures are invisible to offline log harvests.
+    Only harness-relevant events (HARNESS_LOG_EVENTS) are persisted; UI/transport
+    telemetry is dropped. Logging must never break a request, hence the broad guard.
+    """
+    if event not in HARNESS_LOG_EVENTS:
+        return
     entry = {
         "ts": datetime.now(timezone.utc).isoformat(),
-        "level": payload.level,
-        "event": payload.event,
-        "data": payload.data or {},
+        "level": level,
+        "event": event,
+        "data": data or {},
     }
-    with CLIENT_LOG_PATH.open("a", encoding="utf-8") as log_file:
-        log_file.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    try:
+        with CLIENT_LOG_PATH.open("a", encoding="utf-8") as log_file:
+            log_file.write(json.dumps(entry, ensure_ascii=False) + "\n")
+    except Exception:
+        pass
+
+
+@app.post("/client-log")
+async def client_log(payload: ClientLogRequest) -> dict[str, bool]:
+    write_client_log(payload.event, payload.data or {}, payload.level)
     return {"ok": True}

@@ -372,6 +372,27 @@ button:disabled {
   min-width: 0;
 }
 
+#resultsContent.isPageRenderFlash {
+  border-radius: 8px;
+  animation: pageRenderFlash 620ms ease-out;
+}
+
+@keyframes pageRenderFlash {
+  0% {
+    box-shadow: 0 0 0 1px rgb(83 211 230 / 70%) inset, 0 0 34px rgb(83 211 230 / 28%);
+  }
+
+  100% {
+    box-shadow: 0 0 0 1px rgb(83 211 230 / 0%) inset, 0 0 0 rgb(83 211 230 / 0%);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  #resultsContent.isPageRenderFlash {
+    animation: none;
+  }
+}
+
 .muted {
   color: var(--text-secondary);
 }
@@ -1228,5 +1249,139 @@ button.detailVisualCard:hover {
 
   .singleDetailPoster {
     width: min(220px, 100%);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Launch showcase: horizontal marquee of sample questions + result previews
+   shown only at launch while there is no user query. Each lane scrolls its
+   cards right-to-left across the screen.
+   --------------------------------------------------------------------------- */
+.launchShowcase {
+  min-width: 0;
+}
+
+.launchShowcase[hidden] {
+  display: none;
+}
+
+.showcaseHeading {
+  margin: 0 0 8px;
+  color: var(--accent-secondary);
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+}
+
+.showcaseViewport {
+  position: relative;
+  height: clamp(320px, calc(100dvh - 260px), 1100px);
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  overflow: hidden;
+  border-radius: 8px;
+  /* Fade the left and right edges so cards enter/exit softly. */
+  -webkit-mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 48px,
+    #000 calc(100% - 48px),
+    transparent 100%
+  );
+  mask-image: linear-gradient(
+    to right,
+    transparent 0,
+    #000 48px,
+    #000 calc(100% - 48px),
+    transparent 100%
+  );
+}
+
+.showcaseLane {
+  min-width: 0;
+  overflow: hidden;
+}
+
+.showcaseLaneTrack {
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 18px;
+  width: max-content;
+  will-change: transform;
+}
+
+.showcaseGroup {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 12px;
+}
+
+.showcaseGroup .search-poster-card {
+  flex: 0 0 auto;
+  width: 118px;
+}
+
+.showcaseQuestion {
+  flex: 0 0 auto;
+  max-width: 340px;
+  margin: 0;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 16px;
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  font-size: 0.98rem;
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: left;
+  /* Honor embedded newlines and let very long questions wrap to multiple lines;
+     short single-line questions still render on one line. The line clamp keeps a
+     pathologically long question from blowing out the lane height. */
+  white-space: pre-line;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 8;
+  line-clamp: 8;
+  overflow: hidden;
+  cursor: pointer;
+  transition: border-color 0.2s ease, color 0.2s ease, background 0.2s ease;
+}
+
+.showcaseQuestion:hover,
+.showcaseQuestion:focus-visible {
+  border-color: var(--accent-secondary);
+  color: var(--accent-secondary);
+  background: #20262e;
+}
+
+.showcaseScalar {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  padding: 14px 18px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 1.4rem;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+@media (min-width: 1024px) {
+  .showcaseGroup .search-poster-card {
+    width: 132px;
+  }
+}
+
+/* Respect reduced-motion: keep the showcase but stop the marquee; let each lane
+   be scrolled by hand instead. */
+@media (prefers-reduced-motion: reduce) {
+  .showcaseLane {
+    overflow-x: auto;
   }
 }
