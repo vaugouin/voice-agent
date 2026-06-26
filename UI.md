@@ -2,7 +2,7 @@
 
 This document describes the current browser UI behavior implemented by `app/static/index.html`, `app/static/app.js`, and `app/static/styles.css`.
 
-The app has one persistent shell, one control row, one status row, one hidden audio element, one results area, one subtitle overlay, and several dynamic controls created by JavaScript. Most visibility is driven by these state variables:
+The app has one persistent shell, one control row, one status row, one hidden audio element, one results area, one assistant subtitle overlay, one opt-in user transcript subtitle lane, and several dynamic controls created by JavaScript. Most visibility is driven by these state variables:
 
 - `sessionRunning`: true while a Realtime WebRTC audio session is considered active.
 - `textChatInFlight`: true while a typed question is being processed by `/text-chat`.
@@ -22,11 +22,13 @@ The app has one persistent shell, one control row, one status row, one hidden au
 - `loadingMore`: true while another page of text2sql rows is loading.
 - `autoPagesLoaded`: counts automatic infinite-scroll page loads before the manual Load more button is shown.
 - `pageHistory` and `pageHistoryIndex`: drive Back and Forward button enablement.
-- `subtitleQueue` and `subtitleTimer`: drive subtitle overlay visibility and sequencing.
+- `subtitleQueue` and `subtitleTimer`: drive assistant subtitle overlay visibility and sequencing.
+- `userSubtitleTimer`: drives the opt-in user transcript subtitle lane duration.
 - `activeSpokenCardIndex`: stores the currently highlighted result-card number while the assistant is enumerating visible cards.
 - `spokenAudioHighlightCues`, `spokenAudioHighlightTimer`, and `spokenAudioHighlightPlaying`: pace Realtime spoken-answer card highlights from audio playback start instead of applying full transcript matches immediately.
 - `structuredCardFocusActive`: true when the current Realtime session was created with the browser-handled `focus_result_card` tool enabled.
 - `spokenSubtitlesActive`: true when the current Realtime session returned `X-Spoken-Subtitles: 1`, enabling assistant voice-mode subtitles in the bottom overlay.
+- `userTranscriptSubtitlesActive`: true when the current Realtime session returned `X-User-Transcript-Subtitles: 1`, enabling user voice-mode transcripts in the top lane.
 - `realtimeSpokenSubtitleBuffer`, `realtimeSpokenSubtitleLastText`, and `realtimeSpokenSubtitleSawDelta`: track the assistant transcript text used to progressively update the bottom subtitle overlay during Realtime voice output.
 - `activeResponseId`, `activeAudioResponseId`, `toolCallsInFlight`, and `awaitingToolResponse`: drive microphone muting and status transitions during Realtime responses and tool work.
 
@@ -781,7 +783,7 @@ It also:
 
 `startNewConversation()` calls `clearConversationUi()` and then also clears retained context and page history.
 
-## Subtitles Panel
+## Assistant Subtitles Panel
 
 Element: `#subtitleOverlay`
 
@@ -853,6 +855,47 @@ Voice-mode enablement:
 - `/session` returns `X-Spoken-Subtitles`; the browser stores the value in `spokenSubtitlesActive`.
 - When a Realtime `response.created` event arrives, the browser clears the previous Realtime subtitle buffer and, if spoken subtitles are active, hides any previous visible assistant subtitle before the new answer begins.
 
+## User Transcript Subtitle Lane
+
+Element: `#userSubtitleOverlay`
+
+Purpose: shows the completed Realtime voice input transcript as a temporary top user subtitle lane. It is distinct from the assistant-only `#subtitleOverlay`.
+
+Visual:
+
+- In-panel lane below the status row and above the results/audio area.
+- Centered with maximum width `min(860px, 100%)`.
+- Amber accent border and dark translucent background.
+- Bold centered text.
+- Pointer events disabled.
+- Preserves intentional line breaks with `white-space: pre-line`.
+- Wraps long words instead of overflowing.
+
+Default state:
+
+- Hidden.
+- Empty text.
+
+Input:
+
+- `conversation.item.input_audio_transcription.completed` stores non-empty text in `lastUserTranscript`.
+- The same event calls `showUserSubtitleText(lastUserTranscript)` when `userTranscriptSubtitlesActive` is true.
+- The lane normalizes whitespace but otherwise shows what the transcription returned.
+
+Duration rule:
+
+```text
+duration = max(3500ms, min(9000ms, text.length * 55ms))
+```
+
+Voice-mode enablement:
+
+- `ENABLE_USER_TRANSCRIPT_SUBTITLES` defaults to false.
+- A page URL can override it for the next Realtime session with `?userTranscriptSubtitles=1`, `?userTranscriptSubtitles=0`, `?user_transcript_subtitles=1`, or `?user_transcript_subtitles=0`.
+- The browser forwards the override to `/session` as `user_transcript_subtitles=0` or `1`.
+- `/session` returns `X-User-Transcript-Subtitles`; the browser stores the value in `userTranscriptSubtitlesActive`.
+- New conversation and subtitle cleanup hide the lane and clear its active timer.
+
 ## History Buttons
 
 Elements:
@@ -922,7 +965,7 @@ Click behavior:
 1. Sets `manuallyStopped = true`.
 2. Clears queued Realtime typed turns.
 3. Cancels idle dictation.
-4. Clears subtitle output, including the queue and active timer.
+4. Clears subtitle output, including the assistant queue, assistant timer, user transcript lane, and user transcript timer.
 5. Aborts any in-flight `/text-chat` request so stale text output cannot render after reset.
 6. Sends Realtime `response.cancel` and `output_audio_buffer.clear` when a response or output audio is active.
 7. Clears the remote audio element and active spoken-card highlight.
@@ -1026,8 +1069,8 @@ If a visible voice selector is added later, this document should be updated with
 | Starting audio | hidden | visible/enabled | closed until track exists | follows user state/enabled | visible/enabled | visible unless results shown, `Requesting microphone` | unchanged | depends on results | visible | unchanged |
 | Audio connected | hidden | visible/enabled | open/enabled unless manually closed | follows user state/enabled | visible/enabled | visible unless results shown, `Connected` | unchanged | depends on results | visible | unchanged |
 | Listening | hidden | visible/enabled | open/enabled unless manually closed | follows user state/enabled | visible/enabled | visible unless results shown, `Listening` | unchanged | depends on results | visible | unchanged |
-| Thinking/responding by audio | hidden | visible/enabled | follows manual open/closed state | follows user state/enabled | visible/enabled | visible unless results shown, `Thinking` or `Responding` | may become visible if tools run | hidden if results visible | visible | may show assistant transcript when spoken subtitles are active |
-| Typed Realtime turn | hidden | visible/enabled | follows manual open/closed state | follows user state/enabled | visible/enabled/cleared | visible unless results shown, `Thinking`, `Responding`, then `Connected` | may become visible if tools run | hidden if results visible | visible | may show assistant transcript when spoken subtitles are active |
+| Thinking/responding by audio | hidden | visible/enabled | follows manual open/closed state | follows user state/enabled | visible/enabled | visible unless results shown, `Thinking` or `Responding` | may become visible if tools run | hidden if results visible | visible | may show top user transcript and bottom assistant transcript when their subtitle flags are active |
+| Typed Realtime turn | hidden | visible/enabled | follows manual open/closed state | follows user state/enabled | visible/enabled/cleared | visible unless results shown, `Thinking`, `Responding`, then `Connected` | may become visible if tools run | hidden if results visible | visible | may show bottom assistant transcript when spoken subtitles are active |
 | Tool search loading | depends on session/text | depends on session | depends on session/manual state | follows user state/enabled | visible/enabled | hidden | visible with searching answer block | hidden | visible | unchanged |
 | Search results visible | depends on session/text | depends on session | depends on session/manual state | follows user state/enabled | visible/enabled | hidden | visible with answer/cards | hidden | visible | unchanged |
 | Detail page visible | depends on session/text | depends on session | depends on session/manual state | follows user state/enabled | visible/enabled | hidden | visible with detail page | hidden | visible | unchanged |
@@ -1047,7 +1090,8 @@ If a visible voice selector is added later, this document should be updated with
 - `renderText2SqlResult()` owns the answer block, result cards, query details toggle, and search pagination state.
 - `renderEntityDetailOutput()` owns entity-detail result states.
 - `setActiveSpokenCard()` owns spoken-card highlight exclusivity; call `clearActiveSpokenCard()` before replacing result content.
-- `showSubtitleText()` owns subtitle queue replacement and display.
+- `showSubtitleText()` owns assistant subtitle queue replacement and display.
+- `showUserSubtitleText()` owns the top user transcript lane display.
 - `clearConversationUi()` clears results but does not explicitly clear subtitles.
 - `startNewConversation()` is the full UI/context reset path; it calls `cancelAssistantOutput()` before clearing the UI so active audio, in-flight text responses, and subtitle playback stop immediately.
 - The text input remains enabled in all current states; changing that would require new explicit disabled-state rules.

@@ -500,6 +500,15 @@ def spoken_subtitles_enabled(request: Request) -> bool:
     return enabled if override is None else override
 
 
+def user_transcript_subtitles_enabled(request: Request) -> bool:
+    enabled = env_bool("ENABLE_USER_TRANSCRIPT_SUBTITLES", False)
+    override = parse_bool(
+        request.query_params.get("user_transcript_subtitles")
+        or request.query_params.get("userTranscriptSubtitles")
+    )
+    return enabled if override is None else override
+
+
 def focus_result_card_tool_definition() -> dict[str, Any]:
     return {
         "type": "function",
@@ -888,6 +897,7 @@ async def create_realtime_session(request: Request) -> PlainTextResponse:
     voice = agent_voice()
     use_structured_card_focus = structured_card_focus_enabled(request)
     use_spoken_subtitles = spoken_subtitles_enabled(request)
+    use_user_transcript_subtitles = user_transcript_subtitles_enabled(request)
 
     body, boundary = multipart_form_data(
         {
@@ -918,6 +928,7 @@ async def create_realtime_session(request: Request) -> PlainTextResponse:
     headers = {
         "X-Structured-Card-Focus": "1" if use_structured_card_focus else "0",
         "X-Spoken-Subtitles": "1" if use_spoken_subtitles else "0",
+        "X-User-Transcript-Subtitles": "1" if use_user_transcript_subtitles else "0",
     }
     location = response.headers.get("Location")
     if location:

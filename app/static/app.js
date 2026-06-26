@@ -18,6 +18,7 @@ const resultsLoader = document.querySelector("#resultsLoader");
 const loadMoreButton = document.querySelector("#loadMoreButton");
 const resultsEnd = document.querySelector("#resultsEnd");
 const subtitleOverlay = document.querySelector("#subtitleOverlay");
+const userSubtitleOverlay = document.querySelector("#userSubtitleOverlay");
 const queryDetailsDock = document.createElement("div");
 queryDetailsDock.id = "queryDetailsDock";
 queryDetailsDock.className = "queryDetailsDock";
@@ -70,6 +71,7 @@ let dictationAbortController = null;
 let textChatAbortController = null;
 let textChatGeneration = 0;
 let subtitleTimer = null;
+let userSubtitleTimer = null;
 let subtitleQueue = [];
 let activeSpokenCardIndex = null;
 let assistantSpokenHighlightBuffer = "";
@@ -80,6 +82,7 @@ let spokenAudioHighlightPlaying = false;
 let spokenAudioHighlightStartedAt = 0;
 let structuredCardFocusActive = false;
 let spokenSubtitlesActive = false;
+let userTranscriptSubtitlesActive = false;
 let realtimeSpokenSubtitleBuffer = "";
 let realtimeSpokenSubtitleLastText = "";
 let realtimeSpokenSubtitleSawDelta = false;
@@ -348,6 +351,20 @@ function spokenSubtitlesEnabled() {
   return spokenSubtitlesActive && spokenSubtitlesRequested();
 }
 
+function userTranscriptSubtitlesPreference() {
+  const params = new URLSearchParams(window.location.search);
+  const value = params.get("userTranscriptSubtitles") ?? params.get("user_transcript_subtitles");
+  return parseUrlBooleanFlag(value);
+}
+
+function userTranscriptSubtitlesRequested() {
+  return userTranscriptSubtitlesPreference() !== false;
+}
+
+function userTranscriptSubtitlesEnabled() {
+  return userTranscriptSubtitlesActive && userTranscriptSubtitlesRequested();
+}
+
 function realtimeSessionUrl() {
   const url = new URL(appUrl("session"));
   const structuredPreference = structuredCardFocusPreference();
@@ -357,6 +374,10 @@ function realtimeSessionUrl() {
   const spokenSubtitlePreference = spokenSubtitlesPreference();
   if (spokenSubtitlePreference !== null) {
     url.searchParams.set("spoken_subtitles", spokenSubtitlePreference ? "1" : "0");
+  }
+  const userTranscriptSubtitlePreference = userTranscriptSubtitlesPreference();
+  if (userTranscriptSubtitlePreference !== null) {
+    url.searchParams.set("user_transcript_subtitles", userTranscriptSubtitlePreference ? "1" : "0");
   }
   return url.toString();
 }
@@ -3580,6 +3601,28 @@ function showSubtitleText(text) {
   showNextSubtitle();
 }
 
+function showUserSubtitleText(text) {
+  if (!userTranscriptSubtitlesEnabled() || !userSubtitleOverlay) {
+    return;
+  }
+  const clean = normalizeSubtitleText(text);
+  if (!clean) {
+    return;
+  }
+  if (userSubtitleTimer) {
+    clearTimeout(userSubtitleTimer);
+    userSubtitleTimer = null;
+  }
+  userSubtitleOverlay.textContent = clean;
+  userSubtitleOverlay.hidden = false;
+  const duration = Math.max(3500, Math.min(9000, clean.length * 55));
+  userSubtitleTimer = window.setTimeout(() => {
+    userSubtitleTimer = null;
+    userSubtitleOverlay.hidden = true;
+    userSubtitleOverlay.textContent = "";
+  }, duration);
+}
+
 function realtimeSpokenSubtitleTail(text) {
   const chunks = splitSubtitleText(sanitizeAssistantFeedbackText(text));
   return chunks[chunks.length - 1] || "";
@@ -3663,6 +3706,17 @@ function completeRealtimeSpokenSubtitle(transcript) {
   }
 }
 
+function clearUserSubtitleOutput() {
+  if (userSubtitleTimer) {
+    clearTimeout(userSubtitleTimer);
+    userSubtitleTimer = null;
+  }
+  if (userSubtitleOverlay) {
+    userSubtitleOverlay.hidden = true;
+    userSubtitleOverlay.textContent = "";
+  }
+}
+
 function clearSubtitleOutput() {
   if (subtitleTimer) {
     clearTimeout(subtitleTimer);
@@ -3670,6 +3724,7 @@ function clearSubtitleOutput() {
   }
   subtitleQueue = [];
   resetRealtimeSpokenSubtitles();
+  clearUserSubtitleOutput();
   if (subtitleOverlay) {
     subtitleOverlay.hidden = true;
     subtitleOverlay.textContent = "";
@@ -4324,6 +4379,7 @@ function cleanupConnection() {
   activeAudioResponseId = null;
   structuredCardFocusActive = false;
   spokenSubtitlesActive = false;
+  userTranscriptSubtitlesActive = false;
   resetRealtimeSpokenSubtitles();
   toolCallsInFlight = 0;
   awaitingToolResponse = false;
@@ -5151,6 +5207,7 @@ async function handleServerEvent(event) {
       activeUiLanguage = detectUiLanguageFromText(lastUserTranscript);
       addRetainedContext({ type: "user", text: lastUserTranscript });
       clientLog("user_transcript", { item_id: event.item_id, transcript: lastUserTranscript });
+      showUserSubtitleText(lastUserTranscript);
     }
     inputTranscripts.delete(event.item_id);
   }
@@ -5241,6 +5298,7 @@ async function start({ reconnecting = false } = {}) {
     ...realtimeSupportSnapshot(reconnecting ? "reconnect start" : "start"),
     structuredCardFocusRequested: structuredCardFocusRequested(),
     spokenSubtitlesRequested: spokenSubtitlesRequested(),
+    userTranscriptSubtitlesRequested: userTranscriptSubtitlesRequested(),
   });
   requestWakeLock(reconnecting ? "reconnect start" : "start");
 
@@ -5423,6 +5481,7 @@ async function start({ reconnecting = false } = {}) {
   setStatus("Creating Realtime call");
   structuredCardFocusActive = false;
   spokenSubtitlesActive = false;
+  userTranscriptSubtitlesActive = false;
   const sdpResponse = await fetch(realtimeSessionUrl(), {
     method: "POST",
     headers: {
@@ -5437,6 +5496,7 @@ async function start({ reconnecting = false } = {}) {
   }
   structuredCardFocusActive = sdpResponse.headers.get("X-Structured-Card-Focus") === "1";
   spokenSubtitlesActive = sdpResponse.headers.get("X-Spoken-Subtitles") === "1";
+  userTranscriptSubtitlesActive = sdpResponse.headers.get("X-User-Transcript-Subtitles") === "1";
   clientLog("structured_card_focus_session", {
     requested: structuredCardFocusRequested(),
     active: structuredCardFocusActive,
@@ -5444,6 +5504,10 @@ async function start({ reconnecting = false } = {}) {
   clientLog("spoken_subtitles_session", {
     requested: spokenSubtitlesRequested(),
     active: spokenSubtitlesActive,
+  });
+  clientLog("user_transcript_subtitles_session", {
+    requested: userTranscriptSubtitlesRequested(),
+    active: userTranscriptSubtitlesActive,
   });
 
   const callId = sdpResponse.headers.get("X-OpenAI-Call-ID");
