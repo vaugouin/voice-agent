@@ -108,6 +108,30 @@ const SYNTHETIC_STYLE_VERSION = "v1";
 const CONTEXT_STORAGE_KEY = "voice-agent-context-v1";
 const STRUCTURED_CARD_FOCUS_TOOL = "focus_result_card";
 const maxContextItems = 10;
+const defaultWikipediaMaxSections = 4;
+const defaultWikipediaMaxChars = 1200;
+const verboseWikipediaMaxSections = 10;
+const verboseWikipediaMaxChars = 3000;
+const verboseDetailTriggerPhrases = [
+  "tell me more",
+  "more detail",
+  "more details",
+  "in detail",
+  "full story",
+  "whole story",
+  "go deeper",
+  "longer answer",
+  "more complete",
+  "more verbose",
+  "elaborate",
+  "dis m en plus",
+  "raconte m en plus",
+  "plus de detail",
+  "plus de details",
+  "en detail",
+  "histoire complete",
+  "reponse plus longue",
+];
 const DETAIL_TOOL_ENTITIES = {
   get_movie_detail: "movie",
   get_series_detail: "serie",
@@ -280,6 +304,15 @@ function foldLanguageText(value) {
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/\u0153/g, "oe")
     .replace(/\u00e6/g, "ae");
+}
+
+function normalizedIntentText(value) {
+  return foldLanguageText(value).replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+function isVerboseDetailRequest(value) {
+  const clean = normalizedIntentText(value);
+  return verboseDetailTriggerPhrases.some((phrase) => clean.includes(phrase));
 }
 
 function detectUiLanguageFromText(text) {
@@ -2801,6 +2834,7 @@ async function renderSingleRecordResult(parent, record) {
     const detail = { ...record, ...(output.detail || {}) };
     const stateOutput = { ...output, detail };
     setCurrentDetailState(stateOutput, { ...request, ui_language: output.ui_language || activeUiLanguage }, container, detail);
+    retainDetailToolContext(request.toolName, currentDetailState.args, stateOutput);
     renderSingleDetail(container, detail);
     return {
       output: stateOutput,
@@ -3906,10 +3940,24 @@ async function sendTextChatMessage(text, { source = "typed" } = {}) {
       return;
     }
     for (const toolResult of Array.isArray(output.tool_outputs) ? output.tool_outputs : []) {
+      const toolArgs = toolResult.args || {};
+      const toolOutput = toolResult.output || {};
       if (toolResult.name === "query_text2sql") {
-        await renderText2SqlResult(toolResult.output, toolResult.args || {});
+        await renderText2SqlResult(toolOutput, toolArgs);
+        if (!isCurrentTextChatRequest(requestGeneration, requestAbortController)) {
+          return;
+        }
+        addRetainedContext({
+          type: "tool",
+          tool_name: toolResult.name,
+          ...compactToolContext(toolArgs, toolOutput),
+        });
       } else if (DETAIL_TOOL_ENTITIES[toolResult.name]) {
-        renderEntityDetailOutput(toolResult.output, toolResult.args || {});
+        renderEntityDetailOutput(toolOutput, toolArgs);
+        if (!isCurrentTextChatRequest(requestGeneration, requestAbortController)) {
+          return;
+        }
+        retainDetailToolContext(toolResult.name, toolArgs, toolOutput);
       }
       if (!isCurrentTextChatRequest(requestGeneration, requestAbortController)) {
         return;
@@ -4028,6 +4076,18 @@ function compactToolContext(args, output) {
   };
 }
 
+function retainDetailToolContext(toolName, args = {}, output = {}) {
+  addRetainedContext({
+    type: "tool",
+    tool_name: toolName,
+    entity: output.entity || DETAIL_TOOL_ENTITIES[toolName],
+    id: output.id || args.id || args.wikidata_id || "",
+    endpoint: output.endpoint || "",
+    ui_language: output.ui_language || args.ui_language || "",
+    error: output.error || "",
+  });
+}
+
 function retainedContextText(reason) {
   if (!retainedContext.length) {
     return "";
@@ -4042,15 +4102,28 @@ function retainedContextText(reason) {
     if (item.type === "user") {
       lines.push(`User asked: ${item.text}`);
     } else if (item.type === "tool") {
-      lines.push(`Tool query: ${item.query}`);
-      if (item.answer) {
-        lines.push(`Tool answer: ${item.answer}`);
-      }
-      if (item.result_count !== null && item.result_count !== undefined) {
-        lines.push(`Tool result count: ${item.result_count}`);
-      }
-      if (item.rows?.length) {
-        lines.push(`Tool rows JSON: ${JSON.stringify(item.rows)}`);
+      if (item.tool_name && DETAIL_TOOL_ENTITIES[item.tool_name]) {
+        lines.push(`Detail tool: ${item.tool_name}`);
+        if (item.entity) {
+          lines.push(`Detail entity: ${item.entity}`);
+        }
+        if (item.id !== null && item.id !== undefined && item.id !== "") {
+          lines.push(`Detail id JSON: ${JSON.stringify(item.id)}`);
+        }
+        if (item.endpoint) {
+          lines.push(`Detail endpoint: ${item.endpoint}`);
+        }
+      } else {
+        lines.push(`Tool query: ${item.query || ""}`);
+        if (item.answer) {
+          lines.push(`Tool answer: ${item.answer}`);
+        }
+        if (item.result_count !== null && item.result_count !== undefined) {
+          lines.push(`Tool result count: ${item.result_count}`);
+        }
+        if (item.rows?.length) {
+          lines.push(`Tool rows JSON: ${JSON.stringify(item.rows)}`);
+        }
       }
     } else if (item.type === "assistant") {
       lines.push(`Assistant answered: ${item.text}`);
@@ -4852,9 +4925,11 @@ function toggleLook() {
   clientLog("look_toggle", { enabled: userLookOpen });
 }
 
-function compactWikipediaContent(detail) {
+function compactWikipediaContent(detail, { verbose = false } = {}) {
   const sections = Array.isArray(detail?.wikipedia_content) ? detail.wikipedia_content : [];
   const compact = [];
+  const maxSections = verbose ? verboseWikipediaMaxSections : defaultWikipediaMaxSections;
+  const maxChars = verbose ? verboseWikipediaMaxChars : defaultWikipediaMaxChars;
   for (const section of sections) {
     if (!section || typeof section !== "object") {
       continue;
@@ -4864,18 +4939,18 @@ function compactWikipediaContent(detail) {
     if (!content) {
       continue;
     }
-    if (content.length > 1200) {
-      content = `${content.slice(0, 1200).trimEnd()}...`;
+    if (content.length > maxChars) {
+      content = `${content.slice(0, maxChars).trimEnd()}...`;
     }
     compact.push({ title, content });
-    if (compact.length >= 4) {
+    if (compact.length >= maxSections) {
       break;
     }
   }
   return compact;
 }
 
-function compactDetailForModel(output, fallbackEntity) {
+function compactDetailForModel(output, fallbackEntity, { verbose = false } = {}) {
   const detail = output?.detail && typeof output.detail === "object" ? output.detail : null;
   if (!detail) {
     return output;
@@ -4889,7 +4964,8 @@ function compactDetailForModel(output, fallbackEntity) {
     endpoint: output.endpoint || "",
     ui_language: output.ui_language || "",
     detail: compactDetail,
-    wikipedia_content: compactWikipediaContent(detail),
+    wikipedia_content: compactWikipediaContent(detail, { verbose }),
+    wikipedia_content_mode: verbose ? "verbose" : "compact",
   };
 }
 
@@ -5150,9 +5226,10 @@ async function handleFunctionCall(item) {
         ui_language: output.ui_language || args.ui_language || "",
         detail: output.detail || null,
       };
+  const verboseDetailRequest = DETAIL_TOOL_ENTITIES[item.name] && isVerboseDetailRequest(lastUserTranscript);
   const modelToolOutput = item.name === "query_text2sql"
     ? toolOutput
-    : compactDetailForModel(toolOutput, DETAIL_TOOL_ENTITIES[item.name]);
+    : compactDetailForModel(toolOutput, DETAIL_TOOL_ENTITIES[item.name], { verbose: verboseDetailRequest });
   lastToolOutput = toolOutput;
   addRetainedContext({
     type: "tool",

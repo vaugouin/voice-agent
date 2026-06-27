@@ -39,6 +39,35 @@ DEFAULT_TRANSCRIPTION_MODEL = "gpt-4o-transcribe"
 STRUCTURED_CARD_FOCUS_TOOL = "focus_result_card"
 BOOLEAN_TRUE_VALUES = {"1", "true", "yes", "on"}
 BOOLEAN_FALSE_VALUES = {"0", "false", "no", "off"}
+DEFAULT_WIKIPEDIA_MAX_SECTIONS = 4
+DEFAULT_WIKIPEDIA_MAX_CHARS = 1200
+VERBOSE_WIKIPEDIA_MAX_SECTIONS = 10
+VERBOSE_WIKIPEDIA_MAX_CHARS = 3000
+VERBOSE_DETAIL_TRIGGER_PHRASES = (
+    "tell me more",
+    "more detail",
+    "more details",
+    "in detail",
+    "full story",
+    "whole story",
+    "go deeper",
+    "longer answer",
+    "more complete",
+    "more verbose",
+    "elaborate",
+    "dis m en plus",
+    "raconte m en plus",
+    "plus de detail",
+    "plus de details",
+    "en detail",
+    "histoire complete",
+    "reponse plus longue",
+)
+GENERIC_VERBOSE_DETAIL_PATTERNS = (
+    r"^(?:please\s+)?(?:tell me more|more details?|in detail|the full story|full story|go deeper|elaborate)(?:\s+please)?[.!?]*$",
+    r"^(?:can you\s+)?(?:tell me more|go deeper|elaborate)(?:\s+on (?:it|this|that|this one|that one))?(?:\s+please)?[.!?]*$",
+    r"^(?:peux tu\s+)?(?:dis m en plus|raconte m en plus|plus de details?|en detail|histoire complete)(?:\s+sur (?:ca|cela|ceci|lui|elle))?(?:\s+s il te plait)?[.!?]*$",
+)
 FRENCH_MARKERS = {
     "acteur",
     "acteurs",
@@ -424,6 +453,21 @@ def strip_diacritics(value: str) -> str:
     return clean.replace("\u0153", "oe").replace("\u00e6", "ae")
 
 
+def normalized_intent_text(value: Any) -> str:
+    folded = strip_diacritics(str(value or "").lower())
+    return re.sub(r"[^a-z0-9]+", " ", folded).strip()
+
+
+def is_verbose_detail_request(value: Any) -> bool:
+    clean = normalized_intent_text(value)
+    return any(phrase in clean for phrase in VERBOSE_DETAIL_TRIGGER_PHRASES)
+
+
+def is_generic_verbose_detail_request(value: Any) -> bool:
+    clean = normalized_intent_text(value)
+    return any(re.search(pattern, clean) for pattern in GENERIC_VERBOSE_DETAIL_PATTERNS)
+
+
 def detect_ui_language_from_text(text: Any) -> str:
     raw = str(text or "").strip().lower()
     if not raw:
@@ -635,13 +679,19 @@ def detail_query_params(args: dict[str, Any], ui_language: str) -> dict[str, Any
     return params
 
 
-def compact_wikipedia_content(detail: Any, max_sections: int = 4, max_chars: int = 1200) -> list[dict[str, str]]:
+def compact_wikipedia_content(
+    detail: Any,
+    *,
+    verbose: bool = False,
+) -> list[dict[str, str]]:
     if not isinstance(detail, dict):
         return []
     sections = detail.get("wikipedia_content")
     if not isinstance(sections, list):
         return []
 
+    max_sections = VERBOSE_WIKIPEDIA_MAX_SECTIONS if verbose else DEFAULT_WIKIPEDIA_MAX_SECTIONS
+    max_chars = VERBOSE_WIKIPEDIA_MAX_CHARS if verbose else DEFAULT_WIKIPEDIA_MAX_CHARS
     compact_sections: list[dict[str, str]] = []
     for section in sections:
         if not isinstance(section, dict):
@@ -658,7 +708,7 @@ def compact_wikipedia_content(detail: Any, max_sections: int = 4, max_chars: int
     return compact_sections
 
 
-def compact_detail_for_model(output: dict[str, Any]) -> dict[str, Any]:
+def compact_detail_for_model(output: dict[str, Any], *, verbose: bool = False) -> dict[str, Any]:
     detail = output.get("detail")
     if not isinstance(detail, dict):
         return output
@@ -675,7 +725,8 @@ def compact_detail_for_model(output: dict[str, Any]) -> dict[str, Any]:
         "endpoint": output.get("endpoint", ""),
         "ui_language": output.get("ui_language", ""),
         "detail": compact_detail,
-        "wikipedia_content": compact_wikipedia_content(detail),
+        "wikipedia_content": compact_wikipedia_content(detail, verbose=verbose),
+        "wikipedia_content_mode": "verbose" if verbose else "compact",
     }
 
 
@@ -707,6 +758,21 @@ RECOVERY_INSTRUCTIONS = (
     "why; never invent an answer."
 )
 
+VERBOSE_DETAIL_INSTRUCTIONS = (
+    "Default to concise answers. If the user explicitly asks to tell me more, "
+    "answer in detail, explain the full story, go deeper, or asks for a longer "
+    "answer about an entity, treat that as a one-turn verbose detail request. "
+    "For a verbose detail request, call the dedicated detail tool for the "
+    "specific or most recently discussed entity before answering, even if you "
+    "already saw a compact detail result earlier. Use the returned "
+    "wikipedia_content as grounding for a noticeably longer paraphrased "
+    "summary. Organize the answer around the useful sections that are present, "
+    "such as intro, plot, production, reception, career, or biography. Do not "
+    "read Wikipedia content verbatim, do not quote long passages, and do not "
+    "invent facts. After that response, return to concise answers unless the "
+    "user asks for detail again."
+)
+
 
 def realtime_session_config(
     voice: str = DEFAULT_REALTIME_VOICE,
@@ -727,7 +793,7 @@ def realtime_session_config(
         "for a movie plot, call get_movie_detail with ID_MOVIE. Pass "
         "ui_language to search and detail tools, using fr for French "
         "questions and en otherwise. Use returned detail fields to "
-        "respond in a short spoken summary. When wikipedia_content is "
+        "respond in a short spoken summary by default. When wikipedia_content is "
         "returned for an entity, use it as grounding for questions asking "
         "for background, history, biography, plot context, or explanatory "
         "details. IDs are internal tool arguments only: never mention IMDb, "
@@ -735,7 +801,7 @@ def realtime_session_config(
         "in user-facing spoken answers. Use entity names, titles, and visible "
         "result numbers instead."
     )
-    instructions += " " + RECOVERY_INSTRUCTIONS
+    instructions += " " + VERBOSE_DETAIL_INSTRUCTIONS + " " + RECOVERY_INSTRUCTIONS
     tools = [
         {
             "type": "function",
@@ -1228,6 +1294,57 @@ async def execute_text_tool(tool_name: str, args: dict[str, Any]) -> dict[str, A
         raise
 
 
+def detail_args_from_context_item(item: dict[str, Any]) -> tuple[str, dict[str, Any]] | None:
+    tool_name = str(item.get("tool_name", "")).strip()
+    entity = DETAIL_TOOL_BY_NAME.get(tool_name)
+    if not entity:
+        return None
+
+    config = DETAIL_ENTITY_CONFIG[entity]
+    path_params = config.get("path_params") or [
+        {
+            "name": config["id_param"],
+            "id_name": config["id_name"],
+            "type": config["id_type"],
+        }
+    ]
+    args: dict[str, Any] = {}
+    stored_id = item.get("id")
+    if isinstance(stored_id, dict):
+        for param in path_params:
+            value = stored_id.get(param["name"], stored_id.get(param["id_name"]))
+            if value is not None and value != "":
+                args[param["name"]] = value
+    elif stored_id is not None and stored_id != "" and len(path_params) == 1:
+        args[path_params[0]["name"]] = stored_id
+
+    endpoint = str(item.get("endpoint") or "").strip()
+    if endpoint and len(args) < len(path_params):
+        endpoint_path = endpoint.split(" ", 1)[-1].split("?", 1)[0].strip("/")
+        parts = endpoint_path.split("/")
+        if parts and parts[0] == config["path"] and len(parts[1:]) >= len(path_params):
+            for param, value in zip(path_params, parts[1:]):
+                args.setdefault(param["name"], value)
+
+    ui_language = item.get("ui_language")
+    if ui_language:
+        args["ui_language"] = normalize_ui_language(ui_language)
+
+    if all(str(args.get(param["name"], "")).strip() for param in path_params):
+        return tool_name, args
+    return None
+
+
+def latest_detail_tool_context(context: list[dict[str, Any]]) -> tuple[str, dict[str, Any]] | None:
+    for item in reversed(context):
+        if not isinstance(item, dict) or item.get("type") != "tool":
+            continue
+        detail_context = detail_args_from_context_item(item)
+        if detail_context:
+            return detail_context
+    return None
+
+
 @app.post("/text-chat")
 async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
     api_key = os.getenv("OPENAI_API_KEY")
@@ -1239,6 +1356,13 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         raise HTTPException(status_code=400, detail="Missing message")
 
     model = os.getenv("OPENAI_TEXT_MODEL", "gpt-5.1")
+    verbose_detail_request = is_verbose_detail_request(message)
+    generic_verbose_detail_request = is_generic_verbose_detail_request(message)
+    latest_detail_context = (
+        latest_detail_tool_context(payload.context)
+        if generic_verbose_detail_request
+        else None
+    )
     context_lines = []
     for item in payload.context[-10:]:
         item_type = str(item.get("type", "")).strip()
@@ -1247,8 +1371,17 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
             context_lines.append(f"{item_type}: {text}")
         elif item_type == "tool":
             tool_name = str(item.get("tool_name", "tool")).strip()
+            entity = str(item.get("entity", "")).strip()
+            item_id = item.get("id")
             endpoint = str(item.get("endpoint", "")).strip()
-            context_lines.append(f"tool: {tool_name} {endpoint}".strip())
+            detail_bits = [f"tool: {tool_name}"]
+            if entity:
+                detail_bits.append(f"entity={entity}")
+            if item_id is not None and item_id != "":
+                detail_bits.append(f"id={json.dumps(item_id, ensure_ascii=False)}")
+            if endpoint:
+                detail_bits.append(f"endpoint={endpoint}")
+            context_lines.append(" ".join(detail_bits).strip())
 
     input_text = (
         "Recent conversation context:\n"
@@ -1283,7 +1416,7 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         "subtitle text. Use entity names, titles, and visible result numbers "
         "instead."
     )
-    instructions += " " + RECOVERY_INSTRUCTIONS
+    instructions += " " + VERBOSE_DETAIL_INSTRUCTIONS + " " + RECOVERY_INSTRUCTIONS
     request_base = {
         "model": model,
         "instructions": instructions,
@@ -1312,6 +1445,30 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
             "forced": True,
         }
     ]
+    if latest_detail_context:
+        detail_tool_name, detail_args = latest_detail_context
+        detail_args = {**detail_args, "ui_language": ui_language}
+        verbose_detail_output = await execute_text_tool(detail_tool_name, detail_args)
+        input_items.append(
+            {
+                "role": "user",
+                "content": (
+                    "Verbose detail tool output for the user's generic tell-me-more request. "
+                    "Answer from this without calling the same detail tool again unless it is insufficient:\n"
+                    + json.dumps(
+                        compact_detail_for_model(verbose_detail_output, verbose=True),
+                        ensure_ascii=False,
+                    )
+                ),
+            }
+        )
+        tool_outputs.append({
+            "name": detail_tool_name,
+            "args": detail_args,
+            "output": verbose_detail_output,
+            "forced": True,
+            "verbose": True,
+        })
     upstream_body: Any = {}
 
     async with httpx.AsyncClient(timeout=60) as client:
@@ -1364,9 +1521,10 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
                     "name": tool_name,
                     "args": arguments,
                     "output": output,
+                    "verbose": bool(verbose_detail_request and DETAIL_TOOL_BY_NAME.get(tool_name)),
                 })
                 model_output = (
-                    compact_detail_for_model(output)
+                    compact_detail_for_model(output, verbose=verbose_detail_request)
                     if DETAIL_TOOL_BY_NAME.get(tool_name)
                     else output
                 )
