@@ -337,6 +337,8 @@ Realtime typed response behavior:
 
 - Each returned `query_text2sql` tool output renders through `renderText2SqlResult()`.
 - Each returned entity detail tool output renders through `renderEntityDetailOutput()`.
+- Returned tool outputs are added to retained context so follow-up turns can refer to the latest search or entity detail.
+- A generic verbose follow-up such as `tell me more` can reuse the latest retained entity detail context and request a longer Wikipedia-grounded answer for that turn.
 - Returned assistant text is added to retained context.
 - Returned assistant text is also shown through the subtitle overlay.
 - Status becomes `Text response` with live dot.

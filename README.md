@@ -344,6 +344,7 @@ Click-through behavior:
 - Supported click-through records include movies, series, seasons, episodes, people, companies, networks, collections, topics, lists, movements, technicals, groups, deaths, awards, nominations, and Wikidata-backed locations.
 - The detail view uses the same local `GET /tool/detail/{entity}/{id}?ui_language=...` adapter as Realtime detail tool calls, then renders the returned record content in the results panel.
 - Entity detail tool outputs keep compact `wikipedia_content` available to the model for grounding background, history, biography, plot-context, and explanatory answers, but the UI does not render Wikipedia content sections on detail pages.
+- Normal detail answers stay concise. When the user explicitly asks "tell me more", "in detail", "the full story", or a similar verbose follow-up, the app treats that single turn as a verbose detail request: it relaxes the model-facing `wikipedia_content` caps for the relevant detail tool output and instructs the model to give a longer paraphrased answer grounded in the returned Wikipedia sections. The raw Wikipedia sections are still not rendered as UI content and should not be read verbatim.
 - Entity detail pages use the same click-through behavior for their embedded relation cards. For example, a movie page's cast, topics, collections, awards, companies, and similar page elements can be clicked to replace the current page with that related entity detail page.
 - Embedded relation sections on movie, series, person, and other entity detail pages render as single-row horizontal rails. Upstream detail endpoints return the first page of each related collection plus per-collection totals. Rails show the loaded count when pagination metadata is present. When the user scrolls or slides close to the right edge of a paginatable rail, the next targeted collection page is fetched automatically. The returned cards are appended to the right side of the existing rail without rebuilding the detail page or moving the current horizontal position. The rail can still be moved with the left/right controls or native horizontal scrolling, and every returned card remains clickable.
 - The Back and Forward controls maintain a client-side page history across text2sql result pages, loaded result pages, direct detail tool pages, and clicked entity detail pages.
@@ -397,6 +398,7 @@ The retained context includes:
 
 - user speech transcripts
 - text2sql tool queries and compact results
+- entity detail tool context, including the current entity, endpoint, and ID
 - assistant output transcripts
 
 When a new data channel opens, the app seeds the new session with retained context. If a reconnect happens mid-answer, the resume prompt also includes that retained context.
@@ -628,8 +630,8 @@ Adjust the container name if your Nginx container is not named `reverseproxy`.
 The HTML references static assets with version query strings:
 
 ```html
-styles.css?v=20260626-user-transcript-subtitles
-app.js?v=20260626-user-transcript-subtitles
+styles.css?v=20260627-tell-me-more
+app.js?v=20260627-tell-me-more
 ```
 
 When changing frontend behavior, bump the version to force Safari and other browsers to fetch the new asset after deployment.
