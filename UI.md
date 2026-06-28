@@ -66,6 +66,7 @@ Element: `.appHeader`, containing the `Voice Movie Database` title.
 
 The control row is `.controls`. It contains, in order:
 
+- App menu button.
 - Start/Stop button slot.
 - Microphone open/closed toggle slot.
 - Look on/off toggle slot.
@@ -74,7 +75,6 @@ The control row is `.controls`. It contains, in order:
 - Text entry.
 - Submit question button.
 - New conversation button.
-- App menu button.
 
 The row uses flex layout, bottom alignment, 10px gaps, and wrapping when the viewport is narrow.
 
