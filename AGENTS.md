@@ -87,3 +87,15 @@ Pipeline stages:
 - This app is built and run as a Docker container via the repo's root `Dockerfile`. The image is based on `python:3.13-slim`, installs `requirements.txt`, copies the `app` package, creates `/app/logs`, and `EXPOSE`s port `3000`.
 - The container starts with `uvicorn app.main:app --host 0.0.0.0 --port 3000` (the same port used for local browser verification at `http://127.0.0.1:3000/`).
 - Pass secrets (e.g. the OpenAI API key, text2SQL API config) at runtime via env vars / an env file; do not bake them into the image.
+
+## Backlog (Nestor second-brain)
+
+The prioritized, agent-ready implementation backlog for this repo lives in the **Nestor**
+knowledge repo (a separate repo, not cloned alongside this one):
+
+- This repo: `C:\Users\vaugo\Nestor\projets\t2s-backlog\repos\voice-agent.md`
+- Cross-repo dashboard: `C:\Users\vaugo\Nestor\projets\t2s-backlog\index.md`
+
+Consult it before implementing: tasks are `VOICE-AGENT-NNN` with status (done / in-progress /
+todo), priority, and quick-wins. NOTE: these are local paths on Philippe's PC and do not
+resolve on the VPS or on cloud agents (claude.ai/code).
