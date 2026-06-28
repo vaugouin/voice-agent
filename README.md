@@ -18,7 +18,8 @@ The app serves a minimal web UI on port `3000`. The browser creates an `RTCPeerC
 - Text question input beside Start/Stop for mixed voice/text turns. `Enter` submits and `Shift+Enter` inserts a new line.
 - Back and Forward buttons beside the text input for navigating previously displayed result and detail pages.
 - PNG app icon configured for browser tabs, web app metadata, and iPhone Add to Home Screen.
-- Voice selector for Realtime voices.
+- Server-side Realtime voice selection through `AGENT_VOICE`.
+- Burger menu with Settings controls for subtitle URL overrides and an About section with OpenAI Realtime and TMDb attribution.
 - Rolling retained context in `localStorage` so reconnects can continue with prior user requests and tool results during the current page lifetime.
 - Web Worker keepalive on the `oai-events` data channel to keep ICE/NAT alive during silent periods, including in unfocused windows.
 - Disconnect watchdog with self-heal check that avoids tearing down sessions that recover on their own.
@@ -147,7 +148,7 @@ In other words, the model does the planning and tool selection, while the browse
 The server creates a session with:
 
 - model: `OPENAI_REALTIME_MODEL`, default `gpt-realtime-2`
-- voice: selected by the UI, default `ash`
+- voice: selected server-side by `AGENT_VOICE`, default `ash`
 - input transcription: `gpt-4o-transcribe`
 - turn detection: server VAD
 - tools: `query_text2sql` plus dedicated detail tools for movies, series, seasons, episodes, persons, companies, networks, collections, topics, lists, movements, technicals, groups, deaths, awards, nominations, and locations
@@ -320,6 +321,14 @@ The browser forwards `spoken_subtitles=0` or `1` to `/session` when the page URL
 When active, `response.output_audio_transcript.delta` and `response.audio_transcript.delta` feed a pending subtitle queue instead of rendering immediately. The browser starts releasing readable chunks only after `output_audio_buffer.started`, paces them from the audio-start timestamp, keeps the last chunk visible while audio is still playing, and clears pending voice subtitles on barge-in, typed Realtime interruption, New conversation, or output cancellation. `response.output_audio_transcript.done` supplies the final transcript so the last chunk can be flushed without racing ahead of speech. Text-mode `/text-chat` subtitles continue to use the same overlay and are unaffected by this flag.
 
 `ENABLE_USER_TRANSCRIPT_SUBTITLES` controls whether completed Realtime voice input transcripts appear in the native top user subtitle lane. It defaults to `false`. The browser forwards `user_transcript_subtitles=0` or `1` to `/session` when the page URL contains `?userTranscriptSubtitles=0`, `?userTranscriptSubtitles=1`, `?user_transcript_subtitles=0`, or `?user_transcript_subtitles=1`. The server returns the resolved value as `X-User-Transcript-Subtitles`, and the browser only feeds `conversation.item.input_audio_transcription.completed` text to `#userSubtitleOverlay` when that header is `1`.
+
+## App Menu
+
+The burger button in the control row opens a right-side drawer. It is keyboard accessible, traps focus while open, closes from the close button, backdrop, or `Escape`, and restores focus to the burger button or the element that opened it.
+
+Settings exposes two real controls: **Assistant subtitles** and **User transcript lane**. These controls update the current page URL with `spokenSubtitles=0/1` and `userTranscriptSubtitles=0/1`, which the browser already forwards to `/session` as `spoken_subtitles` and `user_transcript_subtitles` on the next Realtime session negotiation. They do not edit `.env`; server defaults still come from `ENABLE_SPOKEN_SUBTITLES` and `ENABLE_USER_TRANSCRIPT_SUBTITLES` when no URL override is present.
+
+About credits the OpenAI Realtime API for voice and includes the TMDb attribution required for TMDb API usage.
 
 ## Launch Showcase
 
@@ -635,8 +644,8 @@ Adjust the container name if your Nginx container is not named `reverseproxy`.
 The HTML references static assets with version query strings:
 
 ```html
-styles.css?v=20260627-tell-me-more
-app.js?v=20260628-audio-paced-subtitles
+styles.css?v=20260628-burger-menu
+app.js?v=20260628-burger-menu
 ```
 
 When changing frontend behavior, bump the version to force Safari and other browsers to fetch the new asset after deployment.

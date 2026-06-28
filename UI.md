@@ -74,8 +74,65 @@ The control row is `.controls`. It contains, in order:
 - Text entry.
 - Submit question button.
 - New conversation button.
+- App menu button.
 
 The row uses flex layout, bottom alignment, 10px gaps, and wrapping when the viewport is narrow.
+
+## App Menu Button And Drawer
+
+Elements:
+
+- `#appMenuButton`
+- `#appMenuBackdrop`
+- `#appMenuDrawer`
+- `#appMenuCloseButton`
+- `#spokenSubtitlesMenuToggle`
+- `#userTranscriptSubtitlesMenuToggle`
+
+Purpose: opens a compact right-side drawer with Settings and About content.
+
+Default state:
+
+- `#appMenuButton` is visible in the control row with `aria-expanded="false"`.
+- `#appMenuBackdrop` is hidden.
+- `#appMenuDrawer` is hidden.
+- `body.appMenuOpen` is not present.
+
+Open behavior:
+
+1. Click `#appMenuButton`.
+2. Sync the Settings toggles from the current URL preferences.
+3. Unhide `#appMenuBackdrop` and `#appMenuDrawer`.
+4. Add `body.appMenuOpen` to prevent background scrolling.
+5. Set `#appMenuButton[aria-expanded="true"]`.
+6. Move focus into the drawer, preferring `#appMenuCloseButton`.
+
+Close behavior:
+
+- Click `#appMenuCloseButton`.
+- Click `#appMenuBackdrop`.
+- Press `Escape` while the drawer is open.
+
+Closing hides the drawer and backdrop, removes `body.appMenuOpen`, sets `#appMenuButton[aria-expanded="false"]`, and restores focus to the element that opened the drawer when it is still connected.
+
+Keyboard behavior:
+
+- `Tab` and `Shift+Tab` stay inside the open drawer.
+- `Escape` closes the drawer before it can reach the fullscreen image viewer handler.
+- The drawer has `role="dialog"`, `aria-modal="true"`, and `aria-labelledby="appMenuTitle"`.
+
+Settings:
+
+- **Assistant subtitles** toggles the page URL between `spokenSubtitles=1` and `spokenSubtitles=0`, deleting any snake_case duplicate parameter.
+- **User transcript lane** toggles the page URL between `userTranscriptSubtitles=1` and `userTranscriptSubtitles=0`, deleting any snake_case duplicate parameter.
+- These controls affect the URL override that `realtimeSessionUrl()` forwards on the next `/session` call. They do not edit server environment defaults.
+- With no URL override present, both toggles render unchecked because the documented server defaults are disabled.
+
+About:
+
+- Shows OpenAI Realtime API voice credit.
+- Shows TMDb API attribution.
+- States that search and detail answers are grounded in the Agent BBB movie and TV database.
 
 ## Start And Stop Buttons
 
@@ -855,6 +912,7 @@ Voice-mode enablement:
 
 - `ENABLE_SPOKEN_SUBTITLES` defaults to false.
 - A page URL can override it for the next Realtime session with `?spokenSubtitles=1`, `?spokenSubtitles=0`, `?spoken_subtitles=1`, or `?spoken_subtitles=0`.
+- The App Menu **Assistant subtitles** toggle writes the camelCase URL override.
 - The browser forwards the override to `/session` as `spoken_subtitles=0` or `1`.
 - `/session` returns `X-Spoken-Subtitles`; the browser stores the value in `spokenSubtitlesActive`.
 - When a Realtime `response.created` event arrives, the browser clears the previous Realtime subtitle buffer and, if spoken subtitles are active, hides any previous visible assistant subtitle before the new answer begins.
@@ -897,6 +955,7 @@ Voice-mode enablement:
 
 - `ENABLE_USER_TRANSCRIPT_SUBTITLES` defaults to false.
 - A page URL can override it for the next Realtime session with `?userTranscriptSubtitles=1`, `?userTranscriptSubtitles=0`, `?user_transcript_subtitles=1`, or `?user_transcript_subtitles=0`.
+- The App Menu **User transcript lane** toggle writes the camelCase URL override.
 - The browser forwards the override to `/session` as `user_transcript_subtitles=0` or `1`.
 - `/session` returns `X-User-Transcript-Subtitles`; the browser stores the value in `userTranscriptSubtitlesActive`.
 - New conversation and subtitle cleanup hide the lane and clear its active timer.

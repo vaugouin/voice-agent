@@ -8,6 +8,12 @@ const historyForwardButton = document.querySelector("#historyForwardButton");
 const questionInput = document.querySelector("#questionInput");
 const submitQuestionButton = document.querySelector("#submitQuestionButton");
 const newConversationButton = document.querySelector("#newConversationButton");
+const appMenuButton = document.querySelector("#appMenuButton");
+const appMenuBackdrop = document.querySelector("#appMenuBackdrop");
+const appMenuDrawer = document.querySelector("#appMenuDrawer");
+const appMenuCloseButton = document.querySelector("#appMenuCloseButton");
+const spokenSubtitlesMenuToggle = document.querySelector("#spokenSubtitlesMenuToggle");
+const userTranscriptSubtitlesMenuToggle = document.querySelector("#userTranscriptSubtitlesMenuToggle");
 const statusText = document.querySelector("#statusText");
 const statusDot = document.querySelector("#statusDot");
 const logEl = document.querySelector("#log");
@@ -93,6 +99,7 @@ let realtimeSpokenSubtitleAudioStopped = false;
 let realtimeSpokenSubtitleLastText = "";
 let realtimeSpokenSubtitleSawDelta = false;
 let pendingRealtimeTextTurns = [];
+let appMenuPreviouslyFocused = null;
 const handledCallIds = new Set();
 let currentSearchState = null;
 let currentDetailState = null;
@@ -419,6 +426,138 @@ function realtimeSessionUrl() {
     url.searchParams.set("user_transcript_subtitles", userTranscriptSubtitlePreference ? "1" : "0");
   }
   return url.toString();
+}
+
+function setUrlBooleanPreference(camelName, snakeName, enabled) {
+  const url = new URL(window.location.href);
+  url.searchParams.set(camelName, enabled ? "1" : "0");
+  url.searchParams.delete(snakeName);
+  window.history.replaceState({}, "", `${url.pathname}${url.search}${url.hash}`);
+}
+
+function updateAppMenuToggles() {
+  if (spokenSubtitlesMenuToggle) {
+    spokenSubtitlesMenuToggle.checked = spokenSubtitlesPreference() === true;
+  }
+  if (userTranscriptSubtitlesMenuToggle) {
+    userTranscriptSubtitlesMenuToggle.checked = userTranscriptSubtitlesPreference() === true;
+  }
+}
+
+function appMenuFocusableElements() {
+  if (!appMenuDrawer || appMenuDrawer.hidden) {
+    return [];
+  }
+  const selector = [
+    "a[href]",
+    "button:not([disabled])",
+    "input:not([disabled])",
+    "select:not([disabled])",
+    "textarea:not([disabled])",
+    "[tabindex]:not([tabindex='-1'])",
+  ].join(",");
+  return Array.from(appMenuDrawer.querySelectorAll(selector)).filter((element) => {
+    return element.getClientRects().length > 0;
+  });
+}
+
+function focusAppMenuStart() {
+  if (!appMenuDrawer || appMenuDrawer.hidden) {
+    return;
+  }
+  const focusTarget = appMenuCloseButton || appMenuFocusableElements()[0] || appMenuDrawer;
+  if (focusTarget && typeof focusTarget.focus === "function") {
+    focusTarget.focus({ preventScroll: true });
+  }
+}
+
+function openAppMenu() {
+  if (!appMenuDrawer || !appMenuBackdrop || !appMenuButton) {
+    return;
+  }
+  if (!appMenuDrawer.hidden) {
+    focusAppMenuStart();
+    return;
+  }
+  updateAppMenuToggles();
+  appMenuPreviouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+  appMenuBackdrop.hidden = false;
+  appMenuDrawer.hidden = false;
+  document.body.classList.add("appMenuOpen");
+  appMenuButton.setAttribute("aria-expanded", "true");
+  window.requestAnimationFrame(focusAppMenuStart);
+  clientLog("app_menu_opened");
+}
+
+function closeAppMenu({ restoreFocus = true } = {}) {
+  if (!appMenuDrawer || appMenuDrawer.hidden) {
+    return;
+  }
+  appMenuDrawer.hidden = true;
+  if (appMenuBackdrop) {
+    appMenuBackdrop.hidden = true;
+  }
+  document.body.classList.remove("appMenuOpen");
+  if (appMenuButton) {
+    appMenuButton.setAttribute("aria-expanded", "false");
+  }
+  if (
+    restoreFocus &&
+    appMenuPreviouslyFocused &&
+    document.contains(appMenuPreviouslyFocused) &&
+    typeof appMenuPreviouslyFocused.focus === "function"
+  ) {
+    appMenuPreviouslyFocused.focus({ preventScroll: true });
+  }
+  appMenuPreviouslyFocused = null;
+  clientLog("app_menu_closed");
+}
+
+function handleAppMenuKeydown(event) {
+  if (!appMenuDrawer || appMenuDrawer.hidden) {
+    return;
+  }
+  if (event.key === "Escape") {
+    event.preventDefault();
+    event.stopPropagation();
+    closeAppMenu();
+    return;
+  }
+  if (event.key !== "Tab") {
+    return;
+  }
+
+  const focusable = appMenuFocusableElements();
+  if (!focusable.length) {
+    event.preventDefault();
+    appMenuDrawer.focus({ preventScroll: true });
+    return;
+  }
+
+  const first = focusable[0];
+  const last = focusable[focusable.length - 1];
+  if (!appMenuDrawer.contains(document.activeElement)) {
+    event.preventDefault();
+    first.focus({ preventScroll: true });
+    return;
+  }
+  if (event.shiftKey && document.activeElement === first) {
+    event.preventDefault();
+    last.focus({ preventScroll: true });
+  } else if (!event.shiftKey && document.activeElement === last) {
+    event.preventDefault();
+    first.focus({ preventScroll: true });
+  }
+}
+
+function setAppMenuBooleanSetting(toggle, camelName, snakeName, settingName) {
+  if (!toggle) {
+    return;
+  }
+  const enabled = toggle.checked;
+  setUrlBooleanPreference(camelName, snakeName, enabled);
+  updateAppMenuToggles();
+  clientLog("app_menu_setting_changed", { setting: settingName, enabled });
 }
 
 function setConversationActive(active) {
@@ -6167,11 +6306,48 @@ updateLookToggle();
 setSessionRunning(false);
 updateHistoryButtons();
 newConversationButton.addEventListener("click", startNewConversation);
+if (appMenuButton) {
+  appMenuButton.addEventListener("click", openAppMenu);
+}
+if (appMenuCloseButton) {
+  appMenuCloseButton.addEventListener("click", () => closeAppMenu());
+}
+if (appMenuBackdrop) {
+  appMenuBackdrop.addEventListener("click", () => closeAppMenu());
+}
+if (appMenuDrawer) {
+  appMenuDrawer.addEventListener("keydown", handleAppMenuKeydown);
+}
+if (spokenSubtitlesMenuToggle) {
+  spokenSubtitlesMenuToggle.addEventListener("change", () => {
+    setAppMenuBooleanSetting(
+      spokenSubtitlesMenuToggle,
+      "spokenSubtitles",
+      "spoken_subtitles",
+      "spoken_subtitles"
+    );
+  });
+}
+if (userTranscriptSubtitlesMenuToggle) {
+  userTranscriptSubtitlesMenuToggle.addEventListener("change", () => {
+    setAppMenuBooleanSetting(
+      userTranscriptSubtitlesMenuToggle,
+      "userTranscriptSubtitles",
+      "user_transcript_subtitles",
+      "user_transcript_subtitles"
+    );
+  });
+}
+updateAppMenuToggles();
 loadMoreButton.addEventListener("click", () => loadNextPage({ isAuto: false }));
 window.addEventListener("scroll", maybeLoadNextPage, { passive: true });
 window.addEventListener("resize", maybeLoadNextPage, { passive: true });
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
+    if (appMenuDrawer && !appMenuDrawer.hidden) {
+      closeAppMenu();
+      return;
+    }
     closeFullscreenImageViewer();
   }
 });

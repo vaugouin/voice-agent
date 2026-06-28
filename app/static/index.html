@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" sizes="1254x1254" href="./static/icons/voice-agent-1254x1254.png" />
     <link rel="apple-touch-icon" href="./static/icons/voice-agent-1254x1254.png" />
     <link rel="manifest" href="./static/site.webmanifest" />
-    <link rel="stylesheet" href="./static/styles.css?v=20260627-tell-me-more" />
+    <link rel="stylesheet" href="./static/styles.css?v=20260628-burger-menu" />
   </head>
   <body>
     <main>
@@ -73,6 +73,13 @@
               <path d="M15.5 4.5a2.1 2.1 0 0 1 3 3L11 15l-4 1 1-4 7.5-7.5z" />
             </svg>
           </button>
+          <button id="appMenuButton" class="iconButton" type="button" aria-label="Open menu" title="Open menu" aria-expanded="false" aria-controls="appMenuDrawer">
+            <svg aria-hidden="true" viewBox="0 0 24 24">
+              <path d="M4 7h16" />
+              <path d="M4 12h16" />
+              <path d="M4 17h16" />
+            </svg>
+          </button>
         </div>
         <div class="status">
           <span id="statusDot" class="dot"></span>
@@ -94,7 +101,44 @@
       </section>
     </main>
     <div id="subtitleOverlay" class="subtitleOverlay" aria-live="polite" hidden></div>
+    <div id="appMenuBackdrop" class="appMenuBackdrop" hidden></div>
+    <aside id="appMenuDrawer" class="appMenuDrawer" aria-labelledby="appMenuTitle" aria-modal="true" role="dialog" tabindex="-1" hidden>
+      <div class="appMenuHeader">
+        <h2 id="appMenuTitle">Menu</h2>
+        <button id="appMenuCloseButton" class="iconButton appMenuCloseButton" type="button" aria-label="Close menu" title="Close menu">
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M6 6l12 12" />
+            <path d="M18 6L6 18" />
+          </svg>
+        </button>
+      </div>
 
-    <script src="./static/app.js?v=20260628-audio-paced-subtitles" type="module"></script>
+      <section class="appMenuSection" aria-labelledby="settingsTitle">
+        <h3 id="settingsTitle">Settings</h3>
+        <label class="menuToggle">
+          <span>
+            <strong>Assistant subtitles</strong>
+            <span>Show voice answers as bottom captions on the next Realtime session.</span>
+          </span>
+          <input id="spokenSubtitlesMenuToggle" type="checkbox" autocomplete="off" />
+        </label>
+        <label class="menuToggle">
+          <span>
+            <strong>User transcript lane</strong>
+            <span>Show completed voice questions above the results on the next Realtime session.</span>
+          </span>
+          <input id="userTranscriptSubtitlesMenuToggle" type="checkbox" autocomplete="off" />
+        </label>
+      </section>
+
+      <section class="appMenuSection" aria-labelledby="aboutTitle">
+        <h3 id="aboutTitle">About</h3>
+        <p>Voice via OpenAI Realtime API.</p>
+        <p>This product uses the TMDb API but is not endorsed or certified by TMDb.</p>
+        <p>Search and detail answers are grounded in the Agent BBB movie and TV database.</p>
+      </section>
+    </aside>
+
+    <script src="./static/app.js?v=20260628-burger-menu" type="module"></script>
   </body>
 </html>
