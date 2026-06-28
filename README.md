@@ -317,7 +317,7 @@ Set `ENABLE_STRUCTURED_CARD_FOCUS=false` to remove the tool and the related inst
 
 The browser forwards `spoken_subtitles=0` or `1` to `/session` when the page URL contains `?spokenSubtitles=0`, `?spokenSubtitles=1`, `?spoken_subtitles=0`, or `?spoken_subtitles=1`. The server returns the resolved value as `X-Spoken-Subtitles`, and the browser only feeds Realtime assistant transcripts to `#subtitleOverlay` when that header is `1`.
 
-When active, `response.output_audio_transcript.delta` and `response.audio_transcript.delta` progressively update the existing bottom subtitle overlay with the latest readable chunk of the assistant answer. `response.output_audio_transcript.done` refreshes the final chunk or, if no deltas arrived, falls back to the existing subtitle chunking path. Text-mode `/text-chat` subtitles continue to use the same overlay and are unaffected by this flag.
+When active, `response.output_audio_transcript.delta` and `response.audio_transcript.delta` feed a pending subtitle queue instead of rendering immediately. The browser starts releasing readable chunks only after `output_audio_buffer.started`, paces them from the audio-start timestamp, keeps the last chunk visible while audio is still playing, and clears pending voice subtitles on barge-in, typed Realtime interruption, New conversation, or output cancellation. `response.output_audio_transcript.done` supplies the final transcript so the last chunk can be flushed without racing ahead of speech. Text-mode `/text-chat` subtitles continue to use the same overlay and are unaffected by this flag.
 
 `ENABLE_USER_TRANSCRIPT_SUBTITLES` controls whether completed Realtime voice input transcripts appear in the native top user subtitle lane. It defaults to `false`. The browser forwards `user_transcript_subtitles=0` or `1` to `/session` when the page URL contains `?userTranscriptSubtitles=0`, `?userTranscriptSubtitles=1`, `?user_transcript_subtitles=0`, or `?user_transcript_subtitles=1`. The server returns the resolved value as `X-User-Transcript-Subtitles`, and the browser only feeds `conversation.item.input_audio_transcription.completed` text to `#userSubtitleOverlay` when that header is `1`.
 
@@ -636,7 +636,7 @@ The HTML references static assets with version query strings:
 
 ```html
 styles.css?v=20260627-tell-me-more
-app.js?v=20260628-text2sql-question-hash
+app.js?v=20260628-audio-paced-subtitles
 ```
 
 When changing frontend behavior, bump the version to force Safari and other browsers to fetch the new asset after deployment.

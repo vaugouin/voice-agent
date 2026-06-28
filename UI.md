@@ -22,14 +22,14 @@ The app has one persistent shell, one control row, one status row, one hidden au
 - `loadingMore`: true while another page of text2sql rows is loading.
 - `autoPagesLoaded`: counts automatic infinite-scroll page loads before the manual Load more button is shown.
 - `pageHistory` and `pageHistoryIndex`: drive Back and Forward button enablement.
-- `subtitleQueue` and `subtitleTimer`: drive assistant subtitle overlay visibility and sequencing.
+- `subtitleQueue` and `subtitleTimer`: drive text-mode assistant subtitle overlay visibility and sequencing; Realtime assistant subtitles reuse the overlay and timer through their audio-paced queue.
 - `userSubtitleTimer`: drives the opt-in user transcript subtitle lane duration.
 - `activeSpokenCardIndex`: stores the currently highlighted result-card number while the assistant is enumerating visible cards.
 - `spokenAudioHighlightCues`, `spokenAudioHighlightTimer`, and `spokenAudioHighlightPlaying`: pace Realtime spoken-answer card highlights from audio playback start instead of applying full transcript matches immediately.
 - `structuredCardFocusActive`: true when the current Realtime session was created with the browser-handled `focus_result_card` tool enabled.
 - `spokenSubtitlesActive`: true when the current Realtime session returned `X-Spoken-Subtitles: 1`, enabling assistant voice-mode subtitles in the bottom overlay.
 - `userTranscriptSubtitlesActive`: true when the current Realtime session returned `X-User-Transcript-Subtitles: 1`, enabling user voice-mode transcripts in the top lane.
-- `realtimeSpokenSubtitleBuffer`, `realtimeSpokenSubtitleLastText`, and `realtimeSpokenSubtitleSawDelta`: track the assistant transcript text used to progressively update the bottom subtitle overlay during Realtime voice output.
+- `realtimeSpokenSubtitleBuffer`, `realtimeSpokenSubtitleChunks`, `realtimeSpokenSubtitleIndex`, `realtimeSpokenSubtitlePlaying`, `realtimeSpokenSubtitleStartedAt`, `realtimeSpokenSubtitleFinal`, `realtimeSpokenSubtitleAudioStopped`, `realtimeSpokenSubtitleLastText`, and `realtimeSpokenSubtitleSawDelta`: track and audio-pace the assistant transcript text used for the bottom subtitle overlay during Realtime voice output.
 - `activeResponseId`, `activeAudioResponseId`, `toolCallsInFlight`, and `awaitingToolResponse`: drive microphone muting and status transitions during Realtime responses and tool work.
 
 ## Static Shell
@@ -812,8 +812,8 @@ Default state:
 Input:
 
 - `showSubtitleText(text)` removes explicit backend/database ID mentions, then normalizes and splits text into chunks.
-- `appendRealtimeSpokenSubtitleDelta(delta)` updates the overlay progressively from Realtime assistant transcript deltas when `spokenSubtitlesActive` is true.
-- `completeRealtimeSpokenSubtitle(transcript)` refreshes the final visible voice-mode subtitle chunk, or falls back to `showSubtitleText()` if no transcript deltas were received.
+- `appendRealtimeSpokenSubtitleDelta(delta)` appends Realtime assistant transcript deltas to `realtimeSpokenSubtitleBuffer` when `spokenSubtitlesActive` is true, then rebuilds the stable pending chunk list without rendering immediately.
+- `completeRealtimeSpokenSubtitle(transcript)` replaces the buffer with the sanitized final transcript, includes the trailing chunk, and lets the audio-paced queue display any remaining text.
 - The cleanup targets phrases such as IMDb IDs, Wikidata IDs, TMDb IDs, TVDB IDs, `ID_*` fields, and entity/database ID labels. Entity cards and detail links carry those identifiers internally, so subtitles use names, titles, and visible result numbers instead.
 - Inline numbered items such as `4. The Barefoot Contessa (1954)` are promoted to structural subtitle blocks before chunking.
 - Numbered list items are kept as separate chunks when practical so spoken-card highlighting can move from card to card.
@@ -842,6 +842,8 @@ Visibility rules:
 - Hidden after the queue is exhausted.
 - A new call to `showSubtitleText()` replaces any existing queue.
 - New conversation clears the current queue, cancels the timer, hides the overlay, and clears any spoken-card highlight.
+- Realtime voice-mode subtitle chunks do not render on transcript arrival. They start only after `output_audio_buffer.started`, advance from the audio-start timestamp using the estimated spoken-character pace, keep the last visible chunk while audio is still playing, and hide only after `output_audio_buffer.stopped` plus a short hold.
+- Realtime barge-in, a new typed Realtime turn, New conversation, or Realtime output cancellation clears the pending Realtime subtitle chunks and visible voice subtitle.
 
 Known producers:
 
@@ -856,6 +858,7 @@ Voice-mode enablement:
 - The browser forwards the override to `/session` as `spoken_subtitles=0` or `1`.
 - `/session` returns `X-Spoken-Subtitles`; the browser stores the value in `spokenSubtitlesActive`.
 - When a Realtime `response.created` event arrives, the browser clears the previous Realtime subtitle buffer and, if spoken subtitles are active, hides any previous visible assistant subtitle before the new answer begins.
+- `output_audio_buffer.started` switches `realtimeSpokenSubtitlePlaying` on and starts scheduling chunks from the audio clock. `output_audio_buffer.stopped` switches it off, flushes the final chunk if needed, and then hides the overlay after the hold time.
 
 ## User Transcript Subtitle Lane
 

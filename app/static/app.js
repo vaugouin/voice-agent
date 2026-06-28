@@ -84,6 +84,12 @@ let structuredCardFocusActive = false;
 let spokenSubtitlesActive = false;
 let userTranscriptSubtitlesActive = false;
 let realtimeSpokenSubtitleBuffer = "";
+let realtimeSpokenSubtitleChunks = [];
+let realtimeSpokenSubtitleIndex = 0;
+let realtimeSpokenSubtitlePlaying = false;
+let realtimeSpokenSubtitleStartedAt = 0;
+let realtimeSpokenSubtitleFinal = false;
+let realtimeSpokenSubtitleAudioStopped = false;
 let realtimeSpokenSubtitleLastText = "";
 let realtimeSpokenSubtitleSawDelta = false;
 let pendingRealtimeTextTurns = [];
@@ -3434,6 +3440,10 @@ function syncSpokenCardHighlightFromTranscriptDelta(delta) {
 const subtitleChunkTarget = 150;
 const subtitleLongBlockLimit = 260;
 const subtitleListItemPattern = /^(?:\d{1,3}[.)]|[-*]|\u2022)\s+\S/;
+const realtimeSpokenSubtitleInitialDelayMs = 450;
+const realtimeSpokenSubtitleMsPerChar = 68;
+const realtimeSpokenSubtitleMinGapMs = 500;
+const realtimeSpokenSubtitleStopHoldMs = 3600;
 const spokenAudioHighlightInitialDelayMs = 450;
 const spokenAudioHighlightMsPerChar = 52;
 const spokenAudioHighlightMinDelayMs = 80;
@@ -3674,12 +3684,31 @@ function showUserSubtitleText(text) {
   }, duration);
 }
 
-function realtimeSpokenSubtitleTail(text) {
+function stableRealtimeSpokenSubtitleChunks(text, { includeTrailing = false } = {}) {
   const chunks = splitSubtitleText(sanitizeAssistantFeedbackText(text));
-  return chunks[chunks.length - 1] || "";
+  const isStableChunk = (chunk) => /[.!?]["')\]]?$/.test(String(chunk || "").trim());
+  if (includeTrailing) {
+    return chunks;
+  }
+  if (chunks.length <= 1) {
+    const onlyChunk = chunks[0] || "";
+    return isStableChunk(onlyChunk) ? chunks : [];
+  }
+  const lastChunk = chunks[chunks.length - 1] || "";
+  if (isStableChunk(lastChunk)) {
+    return chunks;
+  }
+  return chunks.slice(0, -1);
 }
 
-function showRealtimeSpokenSubtitleChunk(text, { holdMs = null } = {}) {
+function realtimeSpokenSubtitleDueMs(index) {
+  const previousChars = realtimeSpokenSubtitleChunks
+    .slice(0, index)
+    .reduce((total, chunk) => total + Math.max(20, chunk.length), 0);
+  return realtimeSpokenSubtitleInitialDelayMs + previousChars * realtimeSpokenSubtitleMsPerChar;
+}
+
+function renderRealtimeSpokenSubtitleChunk(text) {
   if (!subtitleOverlay) {
     return;
   }
@@ -3687,33 +3716,143 @@ function showRealtimeSpokenSubtitleChunk(text, { holdMs = null } = {}) {
   if (!clean) {
     return;
   }
-  if (subtitleTimer) {
-    clearTimeout(subtitleTimer);
-    subtitleTimer = null;
-  }
   subtitleQueue = [];
   subtitleOverlay.textContent = clean;
   subtitleOverlay.hidden = false;
-  const duration = holdMs ?? Math.max(2200, Math.min(6500, clean.length * 45));
-  subtitleTimer = window.setTimeout(() => {
-    subtitleTimer = null;
-    if (!subtitleQueue.length) {
-      subtitleOverlay.hidden = true;
-      subtitleOverlay.textContent = "";
-    }
-  }, duration);
+  const spokenCardIndex = spokenCardIndexFromText(clean);
+  if (spokenCardIndex) {
+    setActiveSpokenCard(spokenCardIndex);
+  }
+  realtimeSpokenSubtitleLastText = clean;
 }
 
-function resetRealtimeSpokenSubtitles({ clearVisible = false } = {}) {
-  realtimeSpokenSubtitleBuffer = "";
-  realtimeSpokenSubtitleLastText = "";
-  realtimeSpokenSubtitleSawDelta = false;
-  if (!clearVisible || !subtitleOverlay) {
-    return;
-  }
+function finishRealtimeSpokenSubtitleAfterAudioStop() {
   if (subtitleTimer) {
     clearTimeout(subtitleTimer);
     subtitleTimer = null;
+  }
+  const finalChunk = realtimeSpokenSubtitleChunks[realtimeSpokenSubtitleChunks.length - 1] || "";
+  if (
+    realtimeSpokenSubtitleFinal &&
+    finalChunk &&
+    (
+      realtimeSpokenSubtitleIndex < realtimeSpokenSubtitleChunks.length ||
+      realtimeSpokenSubtitleLastText !== finalChunk
+    )
+  ) {
+    realtimeSpokenSubtitleIndex = realtimeSpokenSubtitleChunks.length;
+    renderRealtimeSpokenSubtitleChunk(finalChunk);
+  }
+  if (!subtitleOverlay || subtitleOverlay.hidden) {
+    return;
+  }
+  subtitleTimer = window.setTimeout(() => {
+    subtitleTimer = null;
+    if (!realtimeSpokenSubtitlePlaying && !subtitleQueue.length) {
+      subtitleOverlay.hidden = true;
+      subtitleOverlay.textContent = "";
+    }
+  }, realtimeSpokenSubtitleStopHoldMs);
+}
+
+function scheduleNextRealtimeSpokenSubtitle() {
+  if (
+    !spokenSubtitlesEnabled() ||
+    !realtimeSpokenSubtitlePlaying ||
+    subtitleTimer ||
+    realtimeSpokenSubtitleIndex >= realtimeSpokenSubtitleChunks.length
+  ) {
+    return;
+  }
+
+  const elapsedMs = Date.now() - realtimeSpokenSubtitleStartedAt;
+  const dueMs = realtimeSpokenSubtitleDueMs(realtimeSpokenSubtitleIndex);
+  const delayMs = Math.max(
+    realtimeSpokenSubtitleIndex === 0 ? 0 : realtimeSpokenSubtitleMinGapMs,
+    dueMs - elapsedMs
+  );
+  subtitleTimer = window.setTimeout(() => {
+    subtitleTimer = null;
+    if (!spokenSubtitlesEnabled() || !realtimeSpokenSubtitlePlaying) {
+      return;
+    }
+    const nextText = realtimeSpokenSubtitleChunks[realtimeSpokenSubtitleIndex];
+    realtimeSpokenSubtitleIndex += 1;
+    renderRealtimeSpokenSubtitleChunk(nextText);
+    scheduleNextRealtimeSpokenSubtitle();
+  }, delayMs);
+}
+
+function refreshRealtimeSpokenSubtitleChunks({ final = false } = {}) {
+  if (!spokenSubtitlesEnabled()) {
+    return;
+  }
+  realtimeSpokenSubtitleFinal = realtimeSpokenSubtitleFinal || final;
+  realtimeSpokenSubtitleChunks = stableRealtimeSpokenSubtitleChunks(
+    realtimeSpokenSubtitleBuffer,
+    { includeTrailing: realtimeSpokenSubtitleFinal }
+  );
+  if (
+    realtimeSpokenSubtitleFinal &&
+    realtimeSpokenSubtitleChunks.length &&
+    realtimeSpokenSubtitleIndex >= realtimeSpokenSubtitleChunks.length &&
+    realtimeSpokenSubtitleLastText !== realtimeSpokenSubtitleChunks[realtimeSpokenSubtitleChunks.length - 1]
+  ) {
+    realtimeSpokenSubtitleIndex = realtimeSpokenSubtitleChunks.length - 1;
+  }
+  if (realtimeSpokenSubtitleIndex > realtimeSpokenSubtitleChunks.length) {
+    realtimeSpokenSubtitleIndex = realtimeSpokenSubtitleChunks.length;
+  }
+  if (realtimeSpokenSubtitleAudioStopped) {
+    finishRealtimeSpokenSubtitleAfterAudioStop();
+    return;
+  }
+  scheduleNextRealtimeSpokenSubtitle();
+}
+
+function startRealtimeSpokenSubtitlePlayback() {
+  if (!spokenSubtitlesEnabled()) {
+    return;
+  }
+  realtimeSpokenSubtitlePlaying = true;
+  realtimeSpokenSubtitleAudioStopped = false;
+  realtimeSpokenSubtitleStartedAt = Date.now();
+  scheduleNextRealtimeSpokenSubtitle();
+}
+
+function stopRealtimeSpokenSubtitlePlayback() {
+  if (!realtimeSpokenSubtitlePlaying && realtimeSpokenSubtitleAudioStopped) {
+    return;
+  }
+  realtimeSpokenSubtitlePlaying = false;
+  realtimeSpokenSubtitleAudioStopped = true;
+  finishRealtimeSpokenSubtitleAfterAudioStop();
+}
+
+function resetRealtimeSpokenSubtitles({ clearVisible = false } = {}) {
+  const hadRealtimeSubtitleState = Boolean(
+    realtimeSpokenSubtitleBuffer ||
+    realtimeSpokenSubtitleChunks.length ||
+    realtimeSpokenSubtitlePlaying ||
+    realtimeSpokenSubtitleFinal ||
+    realtimeSpokenSubtitleLastText ||
+    realtimeSpokenSubtitleSawDelta
+  );
+  realtimeSpokenSubtitleBuffer = "";
+  realtimeSpokenSubtitleChunks = [];
+  realtimeSpokenSubtitleIndex = 0;
+  realtimeSpokenSubtitlePlaying = false;
+  realtimeSpokenSubtitleStartedAt = 0;
+  realtimeSpokenSubtitleFinal = false;
+  realtimeSpokenSubtitleAudioStopped = false;
+  realtimeSpokenSubtitleLastText = "";
+  realtimeSpokenSubtitleSawDelta = false;
+  if ((hadRealtimeSubtitleState || clearVisible) && subtitleTimer) {
+    clearTimeout(subtitleTimer);
+    subtitleTimer = null;
+  }
+  if (!clearVisible || !subtitleOverlay) {
+    return;
   }
   subtitleQueue = [];
   subtitleOverlay.hidden = true;
@@ -3730,12 +3869,7 @@ function appendRealtimeSpokenSubtitleDelta(delta) {
   }
   realtimeSpokenSubtitleSawDelta = true;
   realtimeSpokenSubtitleBuffer = `${realtimeSpokenSubtitleBuffer}${text}`;
-  const nextText = realtimeSpokenSubtitleTail(realtimeSpokenSubtitleBuffer);
-  if (!nextText || nextText === realtimeSpokenSubtitleLastText) {
-    return;
-  }
-  realtimeSpokenSubtitleLastText = nextText;
-  showRealtimeSpokenSubtitleChunk(nextText);
+  refreshRealtimeSpokenSubtitleChunks();
 }
 
 function completeRealtimeSpokenSubtitle(transcript) {
@@ -3746,15 +3880,9 @@ function completeRealtimeSpokenSubtitle(transcript) {
   if (!clean) {
     return;
   }
-  if (!realtimeSpokenSubtitleSawDelta) {
-    showSubtitleText(clean);
-    return;
-  }
-  const finalText = realtimeSpokenSubtitleTail(clean) || realtimeSpokenSubtitleLastText;
-  if (finalText) {
-    realtimeSpokenSubtitleLastText = finalText;
-    showRealtimeSpokenSubtitleChunk(finalText, { holdMs: 4000 });
-  }
+  realtimeSpokenSubtitleBuffer = clean;
+  realtimeSpokenSubtitleSawDelta = true;
+  refreshRealtimeSpokenSubtitleChunks({ final: true });
 }
 
 function clearUserSubtitleOutput() {
@@ -3891,6 +4019,10 @@ function sendTypedRealtimeTurn(text, { createResponse = true } = {}) {
     sendEvent({ type: "output_audio_buffer.clear" });
     activeAudioResponseId = null;
   }
+  if (interruptedResponse || interruptedAudio) {
+    resetSpokenAudioHighlightState();
+    resetRealtimeSpokenSubtitles({ clearVisible: spokenSubtitlesEnabled() });
+  }
 
   setStatus("Thinking", "live");
   clientLog("realtime_text_sent", {
@@ -3934,6 +4066,7 @@ async function sendTextChatMessage(text, { source = "typed" } = {}) {
     sendEvent({ type: "response.cancel" });
     activeResponseId = null;
     activeAudioResponseId = null;
+    resetRealtimeSpokenSubtitles({ clearVisible: spokenSubtitlesEnabled() });
   }
   if (pc || dc || localStream) {
     stop();
@@ -4429,6 +4562,7 @@ function cancelRealtimeOutput(reason = "cancelled") {
   activeResponseId = null;
   activeAudioResponseId = null;
   resetSpokenAudioHighlightState();
+  resetRealtimeSpokenSubtitles({ clearVisible: spokenSubtitlesEnabled() });
   clearResponseFallback();
   if (hadActiveResponse || hadActiveAudio || hadRemoteAudio) {
     clientLog("realtime_output_cancelled", {
@@ -5272,6 +5406,10 @@ async function handleServerEvent(event) {
   clientLog("realtime_event", summarizeRealtimeEvent(event), event.type === "error" ? "error" : "info");
 
   if (event.type === "input_audio_buffer.speech_started") {
+    if (activeResponseId || activeAudioResponseId) {
+      resetSpokenAudioHighlightState();
+      resetRealtimeSpokenSubtitles({ clearVisible: spokenSubtitlesEnabled() });
+    }
     if (!canEnableMicrophone()) {
       clientLog("speech_started_while_muted", {
         activeResponseId,
@@ -5338,6 +5476,7 @@ async function handleServerEvent(event) {
   if (event.type === "output_audio_buffer.started") {
     activeAudioResponseId = event.response_id || activeResponseId;
     startSpokenAudioHighlightPlayback();
+    startRealtimeSpokenSubtitlePlayback();
     syncMicrophone("audio playback started");
   }
 
@@ -5346,6 +5485,7 @@ async function handleServerEvent(event) {
       activeAudioResponseId = null;
     }
     resetSpokenAudioHighlightState();
+    stopRealtimeSpokenSubtitlePlayback();
     syncMicrophone("audio playback stopped");
   }
 
