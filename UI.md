@@ -582,6 +582,15 @@ Loading answer text:
 - `Searching: {query}` if a query string exists.
 - `Searching...` otherwise.
 
+Repeated render stability:
+
+- Full search, record-detail, and entity-detail renders compute a lightweight page-view signature before clearing `#resultsContent`.
+- If a newly requested search/detail view has the same signature as the currently rendered view, the app keeps the existing DOM in place instead of clearing and rebuilding it.
+- `setLoadingResults()` and `setLoadingEntityDetail()` also preserve the current view when the pending request targets the same visible search or entity detail.
+- Search signatures include the query, language, page/hash, answer/error text, and stable visible row/card identity.
+- Detail signatures include the detail tool/entity, stable entity key, language, error/empty state, and render-relevant detail data excluding non-rendered `wikipedia_content`.
+- Loading a different search/detail, appending a pagination page, opening a different record, or starting a new conversation resets or updates the signature normally.
+
 ### Text2SQL Answer Block
 
 Created by `renderText2SqlResult()` for search output.
@@ -1153,6 +1162,7 @@ If a visible voice selector is added later, this document should be updated with
 - `resultsPanel.hidden` is the trigger for compact results mode.
 - `renderText2SqlResult()` owns the answer block, result cards, query details toggle, and search pagination state.
 - `renderEntityDetailOutput()` owns entity-detail result states.
+- `currentPageViewSignature` prevents identical full search/detail renders from clearing and rebuilding `#resultsContent`.
 - `setActiveSpokenCard()` owns spoken-card highlight exclusivity; call `clearActiveSpokenCard()` before replacing result content.
 - `showSubtitleText()` owns assistant subtitle queue replacement and display.
 - `showUserSubtitleText()` owns the top user transcript lane display.

@@ -110,6 +110,7 @@ let autoPagesLoaded = 0;
 let pageHistory = [];
 let pageHistoryIndex = -1;
 let restoringHistory = false;
+let currentPageViewSignature = "";
 const maxAutoPages = 4;
 const TMDB_FRONT_BASE_URL = "https://www.vaugouin.com/tmdb";
 const SYNTHETIC_IMAGES_BASE_URL = "https://www.vaugouin.com/synthetic-images";
@@ -623,6 +624,269 @@ function cloneHistoryValue(value) {
   } catch {
     return value;
   }
+}
+
+function stablePageViewStringify(value) {
+  if (value === null || value === undefined) {
+    return "";
+  }
+  if (Array.isArray(value)) {
+    return `[${value.map((item) => stablePageViewStringify(item)).join(",")}]`;
+  }
+  if (typeof value === "object") {
+    return `{${Object.keys(value)
+      .sort()
+      .map((key) => `${JSON.stringify(key)}:${stablePageViewStringify(value[key])}`)
+      .join(",")}}`;
+  }
+  return JSON.stringify(String(value));
+}
+
+function pageViewSignature(kind, payload) {
+  return `${kind}:${stablePageViewStringify(payload)}`;
+}
+
+function firstDetailArgValue(args = {}, keys = []) {
+  for (const key of keys) {
+    const value = args[key];
+    if (value !== null && value !== undefined && String(value).trim() !== "") {
+      return value;
+    }
+  }
+  return "";
+}
+
+function detailArgsSignature(args = {}) {
+  return {
+    id: firstDetailArgValue(args, [
+      "id",
+      "wikidata_id",
+      "ID_MOVIE",
+      "ID_SERIE",
+      "ID_PERSON",
+      "ID_COMPANY",
+      "ID_NETWORK",
+      "ID_T2S_COLLECTION",
+      "ID_TOPIC",
+      "ID_T2S_LIST",
+      "ID_MOVEMENT",
+      "ID_TECHNICAL",
+      "ID_GROUP",
+      "ID_DEATH",
+      "ID_AWARD",
+      "ID_NOMINATION",
+      "ID_WIKIDATA",
+    ]),
+    id_serie: firstDetailArgValue(args, ["id_serie", "ID_SERIE"]),
+    season_number: firstDetailArgValue(args, ["season_number", "SEASON_NUMBER"]),
+    episode_number: firstDetailArgValue(args, ["episode_number", "EPISODE_NUMBER"]),
+    ui_language: normalizeUiLanguage(args.ui_language || activeUiLanguage),
+  };
+}
+
+function recordIdentitySignature(record = {}) {
+  const request = detailRequestFromRecord(record);
+  if (request) {
+    return {
+      toolName: request.toolName,
+      ...detailArgsSignature({ ...request, ui_language: activeUiLanguage }),
+    };
+  }
+  const idKeys = [
+    "ID_MOVIE",
+    "ID_SERIE",
+    "ID_SEASON",
+    "ID_EPISODE",
+    "ID_PERSON",
+    "ID_COMPANY",
+    "ID_NETWORK",
+    "ID_T2S_COLLECTION",
+    "ID_TOPIC",
+    "ID_T2S_LIST",
+    "ID_MOVEMENT",
+    "ID_TECHNICAL",
+    "ID_GROUP",
+    "ID_DEATH",
+    "ID_AWARD",
+    "ID_NOMINATION",
+    "ID_WIKIDATA",
+  ];
+  const ids = {};
+  idKeys.forEach((key) => {
+    if (record[key] !== null && record[key] !== undefined && String(record[key]).trim() !== "") {
+      ids[key] = record[key];
+    }
+  });
+  return {
+    content_type: record.CONTENT_TYPE || "",
+    title: titleForRecord(record),
+    ids,
+  };
+}
+
+function searchRecordSignature(record = {}) {
+  const cardSpec = cardSpecFromRecord(record);
+  if (cardSpec) {
+    return {
+      identity: recordIdentitySignature(record),
+      title: cardSpec.title || "",
+      subtitle: cardSpec.subtitle || "",
+      imageUrl: cardSpec.imageUrl || "",
+      meta: cardSpec.meta || [],
+      rating: cardSpec.rating ?? "",
+      overview: cardSpec.overview || "",
+    };
+  }
+  return {
+    identity: recordIdentitySignature(record),
+    values: Object.fromEntries(
+      Object.entries(record)
+        .filter(([, value]) => value !== null && value !== undefined && String(value).trim() !== "")
+        .map(([key, value]) => [key, formatScalarValue(key, value)])
+        .filter(([, value]) => value)
+    ),
+  };
+}
+
+function searchPageSignature(output = {}, args = {}, upstream = null, rows = null) {
+  const cleanUpstream = upstream && typeof upstream === "object" ? upstream : output.upstream || {};
+  const cleanRows = Array.isArray(rows)
+    ? rows
+    : Array.isArray(cleanUpstream.result)
+      ? cleanUpstream.result
+      : Array.isArray(output.rows)
+        ? output.rows
+        : [];
+  const uiLanguage = normalizeUiLanguage(
+    args.ui_language ||
+    cleanUpstream.ui_language ||
+    detectUiLanguageFromText(args.query || cleanUpstream.question || lastUserTranscript)
+  );
+  return pageViewSignature("search", {
+    query: args.query || cleanUpstream.question || "",
+    ui_language: uiLanguage,
+    page: Number(output.page || cleanUpstream.page || args.page || 1),
+    question_hashed: output.question_hashed || cleanUpstream.question_hashed || args.question_hashed || "",
+    answer: output.answer || cleanUpstream.answer || "",
+    error: output.error || cleanUpstream.error || "",
+    rows: cleanRows.map((item) => searchRecordSignature(item?.data || item || {})),
+  });
+}
+
+function currentSearchDomSignature() {
+  const cards = Array.from(resultsContent.querySelectorAll(".search-poster-card")).map((card) => ({
+    title: card.dataset.resultTitle || "",
+    titleKey: card.dataset.resultTitleKey || "",
+    subtitle: card.dataset.resultSubtitle || "",
+    detailTool: card.dataset.resultDetailTool || "",
+    detailId: card.dataset.resultDetailId || "",
+  }));
+  return pageViewSignature("search-dom", {
+    query: currentSearchState?.query || "",
+    ui_language: currentSearchState?.ui_language || activeUiLanguage,
+    page: currentSearchState?.page || 1,
+    question_hashed: currentSearchState?.question_hashed || "",
+    cards,
+  });
+}
+
+function detailRecordSignature(record = {}) {
+  const ignoredKeys = new Set(["wikipedia_content"]);
+  const compact = {};
+  Object.keys(record || {})
+    .sort()
+    .forEach((key) => {
+      if (!ignoredKeys.has(key)) {
+        compact[key] = record[key];
+      }
+    });
+  return {
+    identity: recordIdentitySignature(record),
+    title: titleForRecord(record),
+    detail: compact,
+  };
+}
+
+function entityDetailPageSignature(output = {}, args = {}) {
+  const entity = output.entity || DETAIL_TOOL_ENTITIES[args.toolName] || "";
+  const toolName = args.toolName || DETAIL_ENTITY_TO_TOOL[entity] || "";
+  const uiLanguage = normalizeUiLanguage(output.ui_language || args.ui_language || activeUiLanguage);
+  const detail = output.detail && typeof output.detail === "object" ? output.detail : null;
+  const detailForSignature = detail
+    ? {
+        ...detail,
+        ID_WIKIDATA: detail.ID_WIKIDATA || args.ID_WIKIDATA || args.wikidata_id,
+      }
+    : null;
+  return pageViewSignature("entity-detail", {
+    toolName,
+    entity,
+    args: detailArgsSignature({ ...args, ui_language: uiLanguage }),
+    error: output.error || "",
+    empty: detail ? "" : "1",
+    detail: detailForSignature ? detailRecordSignature(detailForSignature) : null,
+  });
+}
+
+function currentEntityDetailPageSignature() {
+  if (!currentDetailState) {
+    return "";
+  }
+  return entityDetailPageSignature(currentDetailState.output, currentDetailState.args);
+}
+
+function isSameRenderedEntityDetail(output = {}, args = {}) {
+  const signature = entityDetailPageSignature(output, args);
+  return Boolean(
+    isSameRenderedPageView(signature) ||
+    (currentDetailState && !resultsPanel.hidden && currentEntityDetailPageSignature() === signature)
+  );
+}
+
+function recordDetailPageSignature(record = {}, uiLanguage = activeUiLanguage) {
+  return pageViewSignature("record-detail", {
+    ui_language: normalizeUiLanguage(uiLanguage),
+    record: detailRecordSignature(record),
+  });
+}
+
+function isSameRenderedPageView(signature) {
+  return Boolean(
+    signature &&
+    currentPageViewSignature === signature &&
+    !resultsPanel.hidden &&
+    resultsContent.childElementCount
+  );
+}
+
+function markRenderedPageView(signature) {
+  currentPageViewSignature = signature || "";
+}
+
+function clearRenderedPageViewSignature() {
+  currentPageViewSignature = "";
+}
+
+function matchesCurrentSearchRequest(query, uiLanguage = "") {
+  return Boolean(
+    currentPageViewSignature &&
+    !resultsPanel.hidden &&
+    currentSearchState &&
+    String(currentSearchState.query || "") === String(query || "") &&
+    normalizeUiLanguage(currentSearchState.ui_language || activeUiLanguage) === normalizeUiLanguage(uiLanguage || activeUiLanguage)
+  );
+}
+
+function matchesCurrentDetailRequest(toolName, args = {}) {
+  if (!currentPageViewSignature || resultsPanel.hidden || !currentDetailState) {
+    return false;
+  }
+  const currentArgs = detailArgsSignature(currentDetailState.args || {});
+  const nextArgs = detailArgsSignature(args || {});
+  return (
+    currentDetailState.toolName === toolName &&
+    stablePageViewStringify(currentArgs) === stablePageViewStringify(nextArgs)
+  );
 }
 
 function updateHistoryButtons() {
@@ -1282,9 +1546,19 @@ function setLoadingResults(query, uiLanguage = "") {
   activeUiLanguage = uiLanguage
     ? normalizeUiLanguage(uiLanguage)
     : detectUiLanguageFromText(query || lastUserTranscript);
+  if (matchesCurrentSearchRequest(query, activeUiLanguage)) {
+    resultsPanel.hidden = false;
+    resultsLoader.hidden = true;
+    loadMoreButton.hidden = true;
+    resultsEnd.hidden = true;
+    loadingMore = false;
+    autoPagesLoaded = 0;
+    return;
+  }
   resultsPanel.hidden = false;
   clearActiveSpokenCard();
   assistantSpokenHighlightBuffer = "";
+  clearRenderedPageViewSignature();
   resultsContent.replaceChildren();
   resultsLoader.hidden = true;
   loadMoreButton.hidden = true;
@@ -3012,8 +3286,17 @@ async function showRecordDetail(record, { skipHistory = false, ui_language = "" 
   dismissLaunchShowcase();
   setConversationActive(true);
   activeUiLanguage = currentUiLanguage({ ui_language });
+  const request = detailRequestFromRecord(record);
+  if (request && matchesCurrentDetailRequest(request.toolName, { ...request, ui_language: activeUiLanguage })) {
+    return;
+  }
+  const recordSignature = recordDetailPageSignature(record, activeUiLanguage);
+  if (isSameRenderedPageView(recordSignature)) {
+    return;
+  }
   resultsPanel.hidden = false;
   clearQueryDetailsDock();
+  clearRenderedPageViewSignature();
   resultsContent.replaceChildren();
   resultsLoader.hidden = true;
   loadMoreButton.hidden = true;
@@ -3026,6 +3309,9 @@ async function showRecordDetail(record, { skipHistory = false, ui_language = "" 
   const renderedDetail = await renderSingleRecordResult(resultsContent, record);
   const renderedOutput = renderedDetail?.output || {};
   const renderedArgs = renderedDetail?.args || detailRequestFromRecord(record) || {};
+  markRenderedPageView(renderedDetail
+    ? entityDetailPageSignature(renderedOutput, renderedArgs)
+    : recordSignature);
   if (!skipHistory) {
     if (renderedDetail) {
       pushPageHistory({ type: "entityDetail", output: renderedDetail.output, args: renderedDetail.args });
@@ -3038,8 +3324,18 @@ async function showRecordDetail(record, { skipHistory = false, ui_language = "" 
 function setLoadingEntityDetail(toolName, args) {
   setConversationActive(true);
   activeUiLanguage = currentUiLanguage(args);
+  if (matchesCurrentDetailRequest(toolName, { ...args, ui_language: activeUiLanguage })) {
+    resultsPanel.hidden = false;
+    resultsLoader.hidden = true;
+    loadMoreButton.hidden = true;
+    resultsEnd.hidden = true;
+    loadingMore = false;
+    autoPagesLoaded = 0;
+    return;
+  }
   resultsPanel.hidden = false;
   clearQueryDetailsDock();
+  clearRenderedPageViewSignature();
   resultsContent.replaceChildren();
   resultsLoader.hidden = true;
   loadMoreButton.hidden = true;
@@ -3063,8 +3359,13 @@ function renderEntityDetailOutput(output, args = {}, { skipHistory = false } = {
   dismissLaunchShowcase();
   setConversationActive(true);
   activeUiLanguage = currentUiLanguage({ ui_language: output.ui_language || args.ui_language });
+  const outputSignature = entityDetailPageSignature(output, args);
+  if (isSameRenderedEntityDetail(output, args)) {
+    return;
+  }
   resultsPanel.hidden = false;
   clearQueryDetailsDock();
+  clearRenderedPageViewSignature();
   resultsContent.replaceChildren();
   resultsLoader.hidden = true;
   loadMoreButton.hidden = true;
@@ -3083,6 +3384,7 @@ function renderEntityDetailOutput(output, args = {}, { skipHistory = false } = {
       CONTENT_TITLE: "Unable to load details",
     };
     renderSingleDetail(container, errorRecord, { error: output.error });
+    markRenderedPageView(outputSignature);
     if (!skipHistory) {
       pushPageHistory({ type: "entityDetail", output, args });
     }
@@ -3095,6 +3397,7 @@ function renderEntityDetailOutput(output, args = {}, { skipHistory = false } = {
       CONTENT_TITLE: output.entity ? prettyLabel(output.entity) : "Details",
     };
     renderSingleDetail(container, emptyRecord, { error: "No detail record returned." });
+    markRenderedPageView(outputSignature);
     if (!skipHistory) {
       pushPageHistory({ type: "entityDetail", output, args });
     }
@@ -3108,6 +3411,7 @@ function renderEntityDetailOutput(output, args = {}, { skipHistory = false } = {
   const stateOutput = { ...output, detail: detailRecord };
   setCurrentDetailState(stateOutput, args, container, detailRecord);
   renderSingleDetail(container, detailRecord);
+  markRenderedPageView(entityDetailPageSignature(stateOutput, currentDetailState.args));
   if (!skipHistory) {
     pushPageHistory({ type: "entityDetail", output: stateOutput, args: currentDetailState.args });
   }
@@ -3130,6 +3434,14 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
     : Array.isArray(output.rows)
       ? output.rows
       : [];
+  const outputSignature = searchPageSignature(output, args, upstream, rows);
+  if (!append && isSameRenderedPageView(outputSignature)) {
+    resultsPanel.hidden = false;
+    resultsLoader.hidden = true;
+    loadMoreButton.hidden = true;
+    refreshPaginationControls();
+    return;
+  }
 
   let grid = resultsContent.querySelector(".search-poster-card-grid");
 
@@ -3137,6 +3449,7 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
     clearActiveSpokenCard();
     clearQueryDetailsDock();
     resetDetailState();
+    clearRenderedPageViewSignature();
     resultsContent.replaceChildren();
 
     const answerBlock = document.createElement("div");
@@ -3188,6 +3501,7 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
         const renderedOutput = renderedDetail?.output || {};
         const renderedArgs = renderedDetail?.args || detailRequestFromRecord(record) || {};
         refreshPaginationControls();
+        markRenderedPageView(outputSignature);
         if (!skipHistory) {
           pushPageHistory({ type: "search", output, args });
         }
@@ -3243,6 +3557,7 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
   } else if (append && !skipHistory) {
     appendCurrentSearchHistory(output, args);
   }
+  markRenderedPageView(append ? currentSearchDomSignature() : outputSignature);
 }
 
 function loadedCardCount() {
@@ -6199,6 +6514,7 @@ function clearConversationUi() {
   resetSpokenAudioHighlightState();
   resultsPanel.hidden = true;
   clearQueryDetailsDock();
+  clearRenderedPageViewSignature();
   resultsContent.replaceChildren();
   resultsLoader.hidden = true;
   loadMoreButton.hidden = true;

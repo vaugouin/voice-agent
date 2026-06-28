@@ -645,7 +645,7 @@ The HTML references static assets with version query strings:
 
 ```html
 styles.css?v=20260628-burger-menu
-app.js?v=20260628-burger-menu
+app.js?v=20260628-no-repeat-blink
 ```
 
 When changing frontend behavior, bump the version to force Safari and other browsers to fetch the new asset after deployment.
