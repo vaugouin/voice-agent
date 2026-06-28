@@ -561,16 +561,33 @@ function appendCurrentSearchHistory(output, args) {
   }
 
   currentOutput.page = nextOutput.page || args.page || currentOutput.page;
-  currentOutput.has_more = nextOutput.has_more;
-  currentOutput.question_hashed = nextOutput.question_hashed || currentOutput.question_hashed;
+  currentOutput.has_more = Boolean(nextOutput.has_more);
+  currentOutput.question_hashed = currentOutput.has_more
+    ? nextOutput.question_hashed || args.question_hashed || currentOutput.question_hashed || null
+    : null;
   pageHistory[pageHistoryIndex] = {
     type: "search",
     output: currentOutput,
     args: {
       ...current.args,
       page: currentOutput.page,
-      question_hashed: currentOutput.question_hashed || current.args?.question_hashed,
+      question_hashed: currentOutput.question_hashed,
     },
+  };
+}
+
+function reusableText2SqlQuestionHash(output, upstream, args, rows, rowsPerPage) {
+  const questionHashed = output.question_hashed || upstream.question_hashed || args.question_hashed || null;
+  const hasSql = Boolean(output.sql_query || upstream.sql_query);
+  const inferredHasMore = rowsPerPage && rows.length === rowsPerPage;
+  const hasMore = Boolean(
+    questionHashed &&
+    hasSql &&
+    (output.has_more ?? upstream.has_more ?? inferredHasMore)
+  );
+  return {
+    question_hashed: hasMore ? questionHashed : null,
+    has_more: hasMore,
   };
 }
 
@@ -3008,15 +3025,15 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
     resultsContent.append(queryDetailsDock);
 
     const rowsPerPage = Number(output.rows_per_page || upstream.rows_per_page || rows.length || 0);
-    const questionHashed = output.question_hashed || upstream.question_hashed || args.question_hashed || null;
+    const pagination = reusableText2SqlQuestionHash(output, upstream, args, rows, rowsPerPage);
     const page = Number(output.page || upstream.page || args.page || 1);
     currentSearchState = {
       query: args.query || upstream.question || "",
       ui_language: uiLanguage,
-      question_hashed: questionHashed,
+      question_hashed: pagination.question_hashed,
       page,
       rows_per_page: rowsPerPage,
-      has_more: Boolean(questionHashed && (output.has_more ?? upstream.has_more ?? (rowsPerPage && rows.length === rowsPerPage))),
+      has_more: pagination.has_more,
     };
 
     if (rows.length === 1) {
@@ -3065,15 +3082,15 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
   }
 
   const rowsPerPage = Number(output.rows_per_page || upstream.rows_per_page || rows.length || 0);
-  const questionHashed = output.question_hashed || upstream.question_hashed || args.question_hashed || null;
+  const pagination = reusableText2SqlQuestionHash(output, upstream, args, rows, rowsPerPage);
   const page = Number(output.page || upstream.page || args.page || 1);
   currentSearchState = {
     query: args.query || upstream.question || "",
     ui_language: uiLanguage,
-    question_hashed: questionHashed,
+    question_hashed: pagination.question_hashed,
     page,
     rows_per_page: rowsPerPage,
-    has_more: Boolean(questionHashed && (output.has_more ?? upstream.has_more ?? (rowsPerPage && rows.length === rowsPerPage))),
+    has_more: pagination.has_more,
   };
   refreshPaginationControls();
   if (!append && !skipHistory) {

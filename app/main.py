@@ -1117,6 +1117,37 @@ def _text2sql_diagnostic(upstream_body: Any) -> dict[str, Any]:
     return diagnostic
 
 
+def build_text2sql_request_json(
+    payload: Text2SqlRequest,
+    *,
+    ui_language: str,
+    rows_per_page: int,
+) -> dict[str, Any]:
+    request_json = {
+        "question": payload.query,
+        "question_hashed": payload.question_hashed or None,
+        "ui_language": ui_language,
+        "page": payload.page,
+        "rows_per_page": rows_per_page,
+        "retrieve_from_cache": True,
+        "store_to_cache": True,
+        "complex_question_processing": False,
+    }
+    return {key: value for key, value in request_json.items() if value is not None}
+
+
+def reusable_text2sql_question_hash(upstream_body: Any, *, has_more: bool) -> str | None:
+    if not has_more or not isinstance(upstream_body, dict):
+        return None
+    question_hashed = str(upstream_body.get("question_hashed") or "").strip()
+    sql_query = str(upstream_body.get("sql_query") or "").strip()
+    if not question_hashed or not sql_query:
+        return None
+    if upstream_body.get("ambiguous_question_for_text2sql") or upstream_body.get("error"):
+        return None
+    return question_hashed
+
+
 async def _post_text2sql_with_retry(
     url: str,
     request_json: dict[str, Any],
@@ -1158,17 +1189,11 @@ async def query_text2sql_data(payload: Text2SqlRequest) -> dict[str, Any]:
 
     rows_per_page = int(os.getenv("TEXT2SQL_ROWS_PER_PAGE", "50"))
     ui_language = resolve_ui_language(payload.ui_language, payload.query)
-    request_json = {
-        "question": payload.query if not payload.question_hashed else None,
-        "question_hashed": payload.question_hashed,
-        "ui_language": ui_language,
-        "page": payload.page,
-        "rows_per_page": rows_per_page,
-        "retrieve_from_cache": True,
-        "store_to_cache": True,
-        "complex_question_processing": False,
-    }
-    request_json = {key: value for key, value in request_json.items() if value is not None}
+    request_json = build_text2sql_request_json(
+        payload,
+        ui_language=ui_language,
+        rows_per_page=rows_per_page,
+    )
 
     response = await _post_text2sql_with_retry(text2sql_url, request_json, headers)
 
@@ -1187,30 +1212,24 @@ async def query_text2sql_data(payload: Text2SqlRequest) -> dict[str, Any]:
             },
         )
 
+    raw_rows = upstream_body.get("result", []) if isinstance(upstream_body, dict) else []
+    rows = raw_rows if isinstance(raw_rows, list) else []
+    page_filled = rows_per_page > 0 and len(rows) == rows_per_page
+    question_hashed = reusable_text2sql_question_hash(upstream_body, has_more=page_filled)
+    has_more = bool(question_hashed)
+
     return {
         "configured": True,
         "query": payload.query,
         "ui_language": ui_language,
         "answer": upstream_body.get("answer", "") if isinstance(upstream_body, dict) else "",
         "error": upstream_body.get("error", "") if isinstance(upstream_body, dict) else "",
-        "result_count": (
-            len(upstream_body.get("result", [])) if isinstance(upstream_body, dict) else None
-        ),
-        "rows": (
-            upstream_body.get("result", [])[:rows_per_page]
-            if isinstance(upstream_body, dict)
-            else []
-        ),
+        "result_count": (len(rows) if isinstance(upstream_body, dict) else None),
+        "rows": (rows[:rows_per_page] if isinstance(upstream_body, dict) else []),
         "page": payload.page,
         "rows_per_page": rows_per_page,
-        "question_hashed": (
-            upstream_body.get("question_hashed") if isinstance(upstream_body, dict) else None
-        ),
-        "has_more": (
-            len(upstream_body.get("result", [])) == rows_per_page
-            if isinstance(upstream_body, dict)
-            else False
-        ),
+        "question_hashed": question_hashed,
+        "has_more": has_more,
         "sql_query": (
             upstream_body.get("sql_query", "") if isinstance(upstream_body, dict) else ""
         ),
@@ -1567,70 +1586,7 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
 
 @app.post("/tool/text2sql")
 async def query_text2sql(payload: Text2SqlRequest) -> dict[str, Any]:
-    text2sql_url = f"{text2sql_base_url()}/search/text2sql"
-    headers = text2sql_headers()
-
-    rows_per_page = int(os.getenv("TEXT2SQL_ROWS_PER_PAGE", "50"))
-    ui_language = resolve_ui_language(payload.ui_language, payload.query)
-    request_json = {
-        "question": payload.query if not payload.question_hashed else None,
-        "question_hashed": payload.question_hashed,
-        "ui_language": ui_language,
-        "page": payload.page,
-        "rows_per_page": rows_per_page,
-        "retrieve_from_cache": True,
-        "store_to_cache": True,
-        "complex_question_processing": False,
-    }
-    request_json = {key: value for key, value in request_json.items() if value is not None}
-
-    response = await _post_text2sql_with_retry(text2sql_url, request_json, headers)
-
-    content_type = response.headers.get("content-type", "")
-    if "application/json" in content_type:
-        upstream_body: Any = response.json()
-    else:
-        upstream_body = response.text
-
-    if response.status_code >= 400:
-        raise HTTPException(
-            status_code=502,
-            detail={
-                "upstream_status": response.status_code,
-                "upstream_body": upstream_body,
-            },
-        )
-
-    return {
-        "configured": True,
-        "query": payload.query,
-        "ui_language": ui_language,
-        "answer": upstream_body.get("answer", "") if isinstance(upstream_body, dict) else "",
-        "error": upstream_body.get("error", "") if isinstance(upstream_body, dict) else "",
-        "result_count": (
-            len(upstream_body.get("result", [])) if isinstance(upstream_body, dict) else None
-        ),
-        "rows": (
-            upstream_body.get("result", [])[:rows_per_page]
-            if isinstance(upstream_body, dict)
-            else []
-        ),
-        "page": payload.page,
-        "rows_per_page": rows_per_page,
-        "question_hashed": (
-            upstream_body.get("question_hashed") if isinstance(upstream_body, dict) else None
-        ),
-        "has_more": (
-            len(upstream_body.get("result", [])) == rows_per_page
-            if isinstance(upstream_body, dict)
-            else False
-        ),
-        "sql_query": (
-            upstream_body.get("sql_query", "") if isinstance(upstream_body, dict) else ""
-        ),
-        "diagnostic": _text2sql_diagnostic(upstream_body),
-        "upstream": upstream_body,
-    }
+    return await query_text2sql_data(payload)
 
 
 @app.get("/tool/detail/{entity}/{entity_id}")

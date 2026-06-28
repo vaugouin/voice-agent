@@ -212,6 +212,7 @@ If the next page is requested, the adapter can send:
 
 ```json
 {
+  "question": "List movies directed by Francois Truffaut",
   "question_hashed": "<hash from previous response>",
   "ui_language": "en",
   "page": 2,
@@ -221,6 +222,10 @@ If the next page is requested, the adapter can send:
   "complex_question_processing": false
 }
 ```
+
+The hash is an optimistic cache pointer for pagination. The adapter still sends the
+original `question` with it so an upstream cache miss can fall back to normal
+text-to-SQL processing instead of surfacing as an error.
 
 Authentication is configured by:
 
@@ -631,7 +636,7 @@ The HTML references static assets with version query strings:
 
 ```html
 styles.css?v=20260627-tell-me-more
-app.js?v=20260627-tell-me-more
+app.js?v=20260628-text2sql-question-hash
 ```
 
 When changing frontend behavior, bump the version to force Safari and other browsers to fetch the new asset after deployment.
