@@ -3,6 +3,7 @@ const stopButton = document.querySelector("#stopButton");
 const microphoneToggleButton = document.querySelector("#microphoneToggleButton");
 const lookToggleButton = document.querySelector("#lookToggleButton");
 const panel = document.querySelector(".panel");
+const appTitle = document.querySelector(".appHeader h1");
 const historyBackButton = document.querySelector("#historyBackButton");
 const historyForwardButton = document.querySelector("#historyForwardButton");
 const questionInput = document.querySelector("#questionInput");
@@ -50,6 +51,22 @@ let launchShowcaseRaf = null;
 let launchShowcaseDismissed = false;
 let launchShowcaseData = null;
 let launchShowcaseLoading = false;
+let launchShowcaseLoadPromise = null;
+
+const launchSplash = document.createElement("section");
+launchSplash.id = "launchSplash";
+launchSplash.className = "launchSplash";
+launchSplash.setAttribute("aria-label", "Launch screen");
+launchSplash.setAttribute("role", "status");
+launchSplash.tabIndex = -1;
+launchSplash.hidden = true;
+document.body.append(launchSplash);
+let launchSplashHasRun = false;
+let launchSplashActive = false;
+let launchSplashDone = false;
+let launchSplashSkipped = false;
+let launchSplashHoldTimer = null;
+let launchSplashHoldResolver = null;
 
 let pc;
 let dc;
@@ -197,11 +214,33 @@ const dictationSilenceThreshold = 0.02;
 const dictationSilenceMs = 1200;
 const dictationNoSpeechMs = 10000;
 const dictationMaxMs = 30000;
+const launchSplashHoldMs = 1500;
+const launchSplashHandoffMs = 620;
+const launchSplashHooks = {
+  en: [
+    "Talk to the movies.",
+    "Ask cinema anything.",
+    "The movie database that talks back.",
+    "Every film. One conversation.",
+    "Say it. See it.",
+  ],
+  fr: [
+    "Parlez aux films.",
+    "Demandez tout au cinéma.",
+    "La base de films qui vous répond.",
+    "Tous les films. Une seule conversation.",
+    "Dites-le. Voyez-le.",
+  ],
+};
 
 let retainedContext = [];
 
 function appUrl(path) {
   return new URL(path, new URL(".", window.location.href)).toString();
+}
+
+function delay(ms) {
+  return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
 const FRENCH_MARKERS = new Set([
@@ -308,6 +347,10 @@ const FRENCH_PHRASES = [
 function normalizeUiLanguage(value) {
   const clean = String(value || "en").trim().toLowerCase().replace("_", "-").split("-", 1)[0];
   return clean === "fr" ? "fr" : "en";
+}
+
+function prefersReducedMotion() {
+  return window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 }
 
 function foldLanguageText(value) {
@@ -6373,7 +6416,7 @@ function startShowcaseMarquee(viewport, lanes) {
   cancelShowcaseAutoScroll();
   // Respect reduced-motion: leave the lanes static and manually scrollable (CSS
   // switches each lane to overflow-x: auto).
-  if (window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+  if (prefersReducedMotion()) {
     return;
   }
   let last = performance.now();
@@ -6402,7 +6445,7 @@ function startShowcaseMarquee(viewport, lanes) {
   launchShowcaseRaf = requestAnimationFrame(step);
 }
 
-function renderLaunchShowcase(categories, uiLanguage) {
+function renderLaunchShowcase(categories, uiLanguage, { animate = false } = {}) {
   const picked = selectShowcaseSamples(flattenSampleTree(categories), 30);
   if (!picked.length) {
     return;
@@ -6459,45 +6502,62 @@ function renderLaunchShowcase(categories, uiLanguage) {
 
   launchShowcase.replaceChildren(heading, viewport);
   launchShowcase.hidden = false;
+  launchShowcase.classList.remove("isEntering");
+  if (animate && !prefersReducedMotion()) {
+    launchShowcase.classList.add("isEntering");
+    window.setTimeout(() => launchShowcase.classList.remove("isEntering"), 700);
+  }
   startShowcaseMarquee(viewport, lanes);
 }
 
-async function maybeShowLaunchShowcase() {
-  if (launchShowcaseDismissed) {
-    return;
-  }
-  if (!resultsPanel.hidden || sessionRunning || textChatInFlight) {
-    return;
-  }
+async function loadLaunchShowcaseData() {
   if (launchShowcaseData) {
-    renderLaunchShowcase(launchShowcaseData.categories, launchShowcaseData.uiLanguage);
-    return;
+    return launchShowcaseData;
   }
-  if (launchShowcaseLoading) {
-    return;
+  if (launchShowcaseLoadPromise) {
+    return launchShowcaseLoadPromise;
   }
   launchShowcaseLoading = true;
-  try {
+  launchShowcaseLoadPromise = (async () => {
     const showcaseUrl = new URL(appUrl("tool/samples"));
     showcaseUrl.searchParams.set("ui_language", launchShowcaseUiLanguage());
     const response = await fetch(showcaseUrl.toString());
     if (!response.ok) {
-      return;
+      return null;
     }
     const data = await response.json();
     launchShowcaseData = {
       categories: Array.isArray(data.categories) ? data.categories : [],
       uiLanguage: data.ui_language,
     };
-    if (launchShowcaseDismissed || !resultsPanel.hidden || sessionRunning || textChatInFlight) {
-      return;
-    }
-    renderLaunchShowcase(launchShowcaseData.categories, launchShowcaseData.uiLanguage);
-  } catch (error) {
-    log("launch showcase load error", error.message);
-  } finally {
-    launchShowcaseLoading = false;
+    return launchShowcaseData;
+  })()
+    .catch((error) => {
+      log("launch showcase load error", error.message);
+      return null;
+    })
+    .finally(() => {
+      launchShowcaseLoading = false;
+      launchShowcaseLoadPromise = null;
+    });
+  return launchShowcaseLoadPromise;
+}
+
+async function maybeShowLaunchShowcase({ animate = false } = {}) {
+  if (launchShowcaseDismissed) {
+    return;
   }
+  if (!resultsPanel.hidden || sessionRunning || textChatInFlight) {
+    return;
+  }
+  const showcaseData = await loadLaunchShowcaseData();
+  if (!showcaseData) {
+    return;
+  }
+  if (launchShowcaseDismissed || !resultsPanel.hidden || sessionRunning || textChatInFlight) {
+    return;
+  }
+  renderLaunchShowcase(showcaseData.categories, showcaseData.uiLanguage, { animate });
 }
 
 function dismissLaunchShowcase() {
@@ -6507,6 +6567,188 @@ function dismissLaunchShowcase() {
     launchShowcase.hidden = true;
     launchShowcase.replaceChildren();
   }
+}
+
+function launchSplashUiLanguage() {
+  return normalizeUiLanguage(activeUiLanguage || launchShowcaseUiLanguage());
+}
+
+function pickLaunchSplashHook(uiLanguage) {
+  const hooks = launchSplashHooks[normalizeUiLanguage(uiLanguage)] || launchSplashHooks.en;
+  return hooks[Math.floor(Math.random() * hooks.length)] || hooks[0];
+}
+
+function launchSplashAppName() {
+  return String(appTitle?.textContent || document.title || "Voice Movie Database").trim();
+}
+
+function renderLaunchSplashContent() {
+  const uiLanguage = launchSplashUiLanguage();
+  const hookText = pickLaunchSplashHook(uiLanguage);
+  const content = document.createElement("div");
+  content.className = "launchSplashContent";
+
+  const hook = document.createElement("p");
+  hook.className = "launchSplashHook";
+  hook.textContent = hookText;
+
+  const name = document.createElement("div");
+  name.className = "launchSplashName";
+  name.textContent = launchSplashAppName();
+
+  content.append(hook, name);
+  launchSplash.replaceChildren(content);
+  clientLog("launch_splash_shown", { ui_language: uiLanguage, hook: hookText });
+}
+
+function resolveLaunchSplashHold(reason) {
+  if (launchSplashHoldTimer !== null) {
+    window.clearTimeout(launchSplashHoldTimer);
+    launchSplashHoldTimer = null;
+  }
+  if (launchSplashHoldResolver) {
+    const resolve = launchSplashHoldResolver;
+    launchSplashHoldResolver = null;
+    resolve(reason);
+  }
+}
+
+function waitForLaunchSplashHold() {
+  return new Promise((resolve) => {
+    launchSplashHoldResolver = resolve;
+    launchSplashHoldTimer = window.setTimeout(() => resolveLaunchSplashHold("timer"), launchSplashHoldMs);
+  });
+}
+
+function isLaunchSplashActive() {
+  return launchSplashActive && !launchSplash.hidden && !launchSplashDone;
+}
+
+function skipLaunchSplash(reason = "skip") {
+  if (!isLaunchSplashActive()) {
+    return;
+  }
+  launchSplashSkipped = true;
+  resolveLaunchSplashHold(reason);
+}
+
+function finishAnimation(animation) {
+  if (!animation?.finished) {
+    return Promise.resolve();
+  }
+  return animation.finished.catch(() => {});
+}
+
+async function animateLaunchSplashTitleToHeader() {
+  const splashName = launchSplash.querySelector(".launchSplashName");
+  if (!splashName || !appTitle || typeof splashName.getBoundingClientRect !== "function") {
+    await delay(launchSplashHandoffMs);
+    return;
+  }
+
+  const sourceRect = splashName.getBoundingClientRect();
+  const targetRect = appTitle.getBoundingClientRect();
+  if (!sourceRect.width || !sourceRect.height || !targetRect.width || !targetRect.height) {
+    await delay(launchSplashHandoffMs);
+    return;
+  }
+
+  const previousVisibility = appTitle.style.visibility;
+  appTitle.style.visibility = "hidden";
+  const targetStyle = window.getComputedStyle(appTitle);
+  const flyTitle = document.createElement("div");
+  flyTitle.className = "launchSplashTitleFly";
+  flyTitle.textContent = launchSplashAppName();
+  flyTitle.style.left = `${targetRect.left}px`;
+  flyTitle.style.top = `${targetRect.top}px`;
+  flyTitle.style.width = `${targetRect.width}px`;
+  flyTitle.style.fontFamily = targetStyle.fontFamily;
+  flyTitle.style.fontSize = targetStyle.fontSize;
+  flyTitle.style.fontWeight = targetStyle.fontWeight;
+  flyTitle.style.lineHeight = targetStyle.lineHeight;
+  flyTitle.style.letterSpacing = targetStyle.letterSpacing;
+  flyTitle.style.color = targetStyle.color;
+  document.body.append(flyTitle);
+
+  splashName.style.visibility = "hidden";
+  const scale = sourceRect.height / targetRect.height;
+  const translateX = sourceRect.left - targetRect.left;
+  const translateY = sourceRect.top - targetRect.top;
+  const startTransform = `translate(${translateX}px, ${translateY}px) scale(${scale})`;
+  try {
+    if (typeof flyTitle.animate !== "function") {
+      await delay(launchSplashHandoffMs);
+      return;
+    }
+    const titleAnimation = flyTitle.animate(
+      [
+        { transform: startTransform, opacity: 1 },
+        { transform: "translate(0, 0) scale(1)", opacity: 1 },
+      ],
+      {
+        duration: launchSplashHandoffMs,
+        easing: "cubic-bezier(0.2, 0.8, 0.2, 1)",
+        fill: "forwards",
+      }
+    );
+    await finishAnimation(titleAnimation);
+  } finally {
+    flyTitle.remove();
+    splashName.style.visibility = "";
+    appTitle.style.visibility = previousVisibility;
+  }
+}
+
+async function animateLaunchSplashHandoff() {
+  launchSplash.classList.add("isLeaving");
+  await Promise.all([animateLaunchSplashTitleToHeader(), delay(launchSplashHandoffMs)]);
+}
+
+function hideLaunchSplash() {
+  resolveLaunchSplashHold("hide");
+  launchSplash.hidden = true;
+  launchSplash.className = "launchSplash";
+  launchSplash.replaceChildren();
+  document.body.classList.remove("launchSplashOpen");
+  launchSplashActive = false;
+  launchSplashDone = false;
+  launchSplashSkipped = false;
+}
+
+async function completeLaunchSplash() {
+  if (launchSplashDone) {
+    return;
+  }
+  launchSplashDone = true;
+  const skipped = launchSplashSkipped;
+  void maybeShowLaunchShowcase({ animate: !launchSplashSkipped && !prefersReducedMotion() });
+  if (!launchSplashSkipped && !prefersReducedMotion()) {
+    await animateLaunchSplashHandoff();
+  }
+  hideLaunchSplash();
+  clientLog("launch_splash_dismissed", { skipped });
+}
+
+async function runLaunchSplash() {
+  if (launchSplashHasRun) {
+    void maybeShowLaunchShowcase();
+    return;
+  }
+  launchSplashHasRun = true;
+  launchSplashActive = true;
+  launchSplashDone = false;
+  launchSplashSkipped = false;
+  document.body.classList.add("launchSplashOpen");
+  renderLaunchSplashContent();
+  launchSplash.hidden = false;
+  launchSplash.focus({ preventScroll: true });
+  void loadLaunchShowcaseData();
+
+  const reason = await waitForLaunchSplashHold();
+  if (reason !== "timer") {
+    launchSplashSkipped = true;
+  }
+  await completeLaunchSplash();
 }
 
 function clearConversationUi() {
@@ -6654,12 +6896,25 @@ if (userTranscriptSubtitlesMenuToggle) {
     );
   });
 }
+launchSplash.addEventListener("pointerdown", () => skipLaunchSplash("pointer"));
+launchSplash.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" || event.key === "Enter" || event.key === " ") {
+    event.preventDefault();
+    event.stopPropagation();
+    skipLaunchSplash(event.key === "Escape" ? "escape" : "keyboard");
+  }
+});
 updateAppMenuToggles();
 loadMoreButton.addEventListener("click", () => loadNextPage({ isAuto: false }));
 window.addEventListener("scroll", maybeLoadNextPage, { passive: true });
 window.addEventListener("resize", maybeLoadNextPage, { passive: true });
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
+    if (isLaunchSplashActive()) {
+      event.preventDefault();
+      skipLaunchSplash("escape");
+      return;
+    }
     if (appMenuDrawer && !appMenuDrawer.hidden) {
       closeAppMenu();
       return;
@@ -6674,5 +6929,9 @@ window.addEventListener("unhandledrejection", (event) => {
   clientLog("unhandled_rejection", { reason: String(event.reason) }, "error");
 });
 
-// Populate the launch showcase once the page is idle with no user query.
-maybeShowLaunchShowcase();
+// On cold load, play the launch title before handing off to the sample showcase.
+runLaunchSplash().catch((error) => {
+  log("launch splash error", error.message);
+  hideLaunchSplash();
+  void maybeShowLaunchShowcase();
+});

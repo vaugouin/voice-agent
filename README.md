@@ -20,6 +20,7 @@ The app serves a minimal web UI on port `3000`. The browser creates an `RTCPeerC
 - PNG app icon configured for browser tabs, web app metadata, and iPhone Add to Home Screen.
 - Server-side Realtime voice selection through `AGENT_VOICE`.
 - Burger menu with Settings controls for subtitle URL overrides and an About section with OpenAI Realtime and TMDb attribution.
+- Cold-load splash screen with a localized hook line, the `Voice Movie Database` title, skip support, and a handoff into the launch showcase.
 - Rolling retained context in `localStorage` so reconnects can continue with prior user requests and tool results during the current page lifetime.
 - Web Worker keepalive on the `oai-events` data channel to keep ICE/NAT alive during silent periods, including in unfocused windows.
 - Disconnect watchdog with self-heal check that avoids tearing down sessions that recover on their own.
@@ -330,10 +331,13 @@ Settings exposes two real controls: **Assistant subtitles** and **User transcrip
 
 About credits the OpenAI Realtime API for voice and includes the TMDb attribution required for TMDb API usage.
 
-## Launch Showcase
+## Launch Splash And Showcase
 
-At launch, while there is no user query yet, the app fills the main content area with an auto-scrolling showcase of suggested sample questions and their result previews, so a first-time visitor immediately sees what the database can answer.
+On the first cold page load, the app shows a full-screen splash before the sample showcase. The splash displays one hardcoded localized hook line and the `Voice Movie Database` title for about 1.5 seconds. The browser starts loading `GET /tool/samples` during that hold, then hands off to the normal launch showcase: the title flies toward the real top-of-screen header while the showcase fades in beneath it.
 
+- The splash is cold-load only. It is not replayed by **New conversation**, history navigation, or result/detail re-renders.
+- Tapping the splash or pressing `Escape` skips it immediately.
+- `prefers-reduced-motion` is honored: the splash uses a brief static hold and cuts to the showcase without the title fly animation.
 - The browser fetches the questions from the local `GET /tool/samples?ui_language=...` proxy, which forwards to the upstream text2sql `GET /samples` endpoint (the API key is injected server-side). The launch showcase has no user query to detect a language from, so it requests English (`ui_language=en`) by default. After a successful load, the browser keeps the samples in memory so **New conversation** can repopulate the launch view immediately.
 - The `/samples` response is a category tree where each sample carries a `simulated_result` preview (entity rows hydrated with title/poster, or a single scalar value). The app flattens the tree, keeps only samples with a renderable preview, and round-robins across top-level categories so the showcase mixes topics rather than clustering one category.
 - Layout is a horizontal marquee: the groups (each a question chip followed inline by its result poster cards) are spread across a few stacked lanes, and every lane scrolls right-to-left so cards enter from the right edge, cross the screen, and exit on the left, looping seamlessly. Lanes run at slightly different speeds for a natural wall effect, and the marquee pauses on hover and while the tab is hidden. The result cards reuse the standard search-result card renderer.
@@ -644,8 +648,8 @@ Adjust the container name if your Nginx container is not named `reverseproxy`.
 The HTML references static assets with version query strings:
 
 ```html
-styles.css?v=20260628-burger-menu
-app.js?v=20260628-no-repeat-blink
+styles.css?v=20260701-launch-splash
+app.js?v=20260701-launch-splash
 ```
 
 When changing frontend behavior, bump the version to force Safari and other browsers to fetch the new asset after deployment.

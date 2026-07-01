@@ -2,7 +2,7 @@
 
 This document describes the current browser UI behavior implemented by `app/static/index.html`, `app/static/app.js`, and `app/static/styles.css`.
 
-The app has one persistent shell, one control row, one status row, one hidden audio element, one results area, one assistant subtitle overlay, one opt-in user transcript subtitle lane, and several dynamic controls created by JavaScript. Most visibility is driven by these state variables:
+The app has one persistent shell, one control row, one status row, one hidden audio element, one results area, one cold-load splash screen, one assistant subtitle overlay, one opt-in user transcript subtitle lane, and several dynamic controls created by JavaScript. Most visibility is driven by these state variables:
 
 - `sessionRunning`: true while a Realtime WebRTC audio session is considered active.
 - `textChatInFlight`: true while a typed question is being processed by `/text-chat`.
@@ -13,10 +13,14 @@ The app has one persistent shell, one control row, one status row, one hidden au
 - `userLookOpen`: stores the Look toggle state. It is `false` on page load and flips only when the Look button is clicked.
 - `pendingRealtimeTextTurns`: typed turns submitted after Start while the Realtime data channel is still opening; they are sent when the channel opens.
 - `resultsPanel.hidden`: determines whether result/detail content is visible and whether compact results mode is active.
+- `launchSplashHasRun`: true after the cold-load splash sequence starts; prevents the splash from replaying on New conversation or later showcase renders.
+- `launchSplashActive`: true while the splash overlay is visible or in its handoff sequence.
+- `launchSplashSkipped`: true when the user taps the splash or presses `Escape`, so the sequence cuts directly to the showcase.
 - `launchShowcaseDismissed`: true once the launch showcase has been dismissed by the first user interaction; blocks it from reappearing until a new conversation resets it.
 - `launchShowcaseRaf`: holds the active `requestAnimationFrame` id for the showcase's horizontal marquee, or `null` when the showcase is not animating.
 - `launchShowcaseData`: stores the last successful `/tool/samples` response so New conversation can render the launch showcase without waiting on another fetch.
 - `launchShowcaseLoading`: true while a launch showcase sample request is in flight.
+- `launchShowcaseLoadPromise`: the in-flight `/tool/samples` request shared by splash preloading and showcase rendering.
 - `currentSearchState`: stores pagination state for text2sql result pages.
 - `activeUiLanguage`: stores the detected API language for the latest user turn or rendered result page; it is `fr` for detected French input and `en` for English or unsupported languages.
 - `loadingMore`: true while another page of text2sql rows is loading.
@@ -508,18 +512,55 @@ status visible = resultsPanel.hidden
 status hidden = !resultsPanel.hidden
 ```
 
+## Launch Splash
+
+Element: `#launchSplash`, a full-screen `<section>` created by `app.js` and appended to `body`.
+
+Purpose: shows the opening title beat before the first launch showcase on a cold page load.
+
+Default state: `hidden`. `runLaunchSplash()` unhides it once during initial page setup, then sets `launchSplashHasRun = true` so it cannot replay during the same page lifetime.
+
+Content:
+
+- A `.launchSplashHook` line, picked randomly from a hardcoded English/French hook list according to `activeUiLanguage` (`en` by default on cold load).
+- A `.launchSplashName` line containing the current app title text, `Voice Movie Database`.
+
+Sequence:
+
+1. `runLaunchSplash()` renders the hook and app name, focuses the splash section, and adds `body.launchSplashOpen` to prevent background scrolling.
+2. It starts `loadLaunchShowcaseData()` immediately so the `/tool/samples` request runs during the splash hold.
+3. The splash holds for about 1500 ms.
+4. Completion calls `maybeShowLaunchShowcase({ animate: true })`.
+5. With normal motion, a temporary `.launchSplashTitleFly` clone animates from the splash title position to the real `.appHeader h1` position while the splash fades out and the showcase fades in.
+6. With `prefers-reduced-motion: reduce`, the fly animation is skipped and the UI cuts from the static splash to the showcase.
+7. The splash element is hidden, emptied, and `body.launchSplashOpen` is removed.
+
+Skip behavior:
+
+- Pointer/tap on the splash skips immediately.
+- `Escape` skips immediately through the global keydown handler.
+- `Enter` or Space skips when focus is on `#launchSplash`.
+- A skipped splash cuts directly to `maybeShowLaunchShowcase()` without the fly animation.
+
+Replay rules:
+
+- The splash is cold-load only.
+- `startNewConversation()` does not reset `launchSplashHasRun`; it only resets `launchShowcaseDismissed` and repopulates the launch showcase.
+- Result/detail renders and history restores never replay the splash.
+
 ## Launch Showcase
 
 Element: `#launchShowcase`, a `<section>` created by `app.js` and inserted into `.panel` immediately after the status row (outside `#resultsPanel`, so it does not trigger compact results mode and the header/status stay visible).
 
 Purpose: at launch, while there is no user query, fills the main content area with an auto-scrolling wall of suggested sample questions and their result previews.
 
-Default state: `hidden`. Populated by `maybeShowLaunchShowcase()`, which runs once on page load and again at the end of `startNewConversation()`.
+Default state: `hidden`. Populated by `maybeShowLaunchShowcase()`, which runs after the cold-load splash handoff and again at the end of `startNewConversation()`.
 
 Population and visibility:
 
 - `maybeShowLaunchShowcase()` no-ops when `launchShowcaseDismissed` is true, when `resultsPanel.hidden === false`, or when `sessionRunning` or `textChatInFlight` is true.
-- If `launchShowcaseData` is already cached, it renders and unhides `#launchShowcase` immediately. Otherwise it fetches `GET /tool/samples?ui_language=...` (defaults to English, `en`, since there is no user query to detect a language from). On success it caches the categories, renders, and unhides `#launchShowcase`. On any failure it silently leaves the showcase hidden.
+- `loadLaunchShowcaseData()` owns the fetch for `GET /tool/samples?ui_language=...` (defaults to English, `en`, since there is no user query to detect a language from). It caches the first successful response in `launchShowcaseData` and shares an in-flight `launchShowcaseLoadPromise` with both the splash preloader and the showcase renderer. On any failure it returns `null` and leaves the showcase hidden.
+- If `launchShowcaseData` is already cached, `maybeShowLaunchShowcase()` renders and unhides `#launchShowcase` immediately. Otherwise it waits for `loadLaunchShowcaseData()` and renders after the data arrives if the no-op guards still pass.
 - Content: a `.showcaseViewport` containing a few stacked `.showcaseLane` rows, each holding a `.showcaseLaneTrack` of `.showcaseGroup` blocks. Each group is a `.showcaseQuestion` chip (a button) followed inline by standard `.search-poster-card` cards (or a `.showcaseScalar` value for scalar previews). Each lane's groups are rendered twice so the marquee wraps seamlessly. Only samples whose `simulated_result` has renderable rows are shown, round-robined across top-level categories and then distributed across lanes.
 - The `.showcaseQuestion` chip uses `white-space: pre-line` with an 8-line clamp: short questions stay on one line, long questions wrap to multiple lines, and multi-line questions keep their newline breaks (carriage returns are normalized to `\n` in `buildShowcaseGroup`). The full text is always available via the chip's `title` tooltip.
 
@@ -527,6 +568,7 @@ Motion:
 
 - `startShowcaseMarquee()` drives a continuous leftward `translateX` on each lane's track via `requestAnimationFrame` (id stored in `launchShowcaseRaf`), wrapping after one copy's width, so cards enter from the right, cross the screen, and exit on the left. Lanes run at slightly different speeds.
 - The marquee pauses on pointer hover over the viewport and while `document.hidden` is true.
+- The splash handoff can pass `animate: true`, which briefly applies `.launchShowcase.isEntering` so the showcase fades in beneath the title handoff.
 - Under `prefers-reduced-motion: reduce`, `startShowcaseMarquee()` returns without animating and each lane becomes `overflow-x: auto` (static, manually scrollable).
 
 Interaction and dismissal:

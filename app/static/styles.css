@@ -35,6 +35,10 @@ body.appMenuOpen {
   overflow: hidden;
 }
 
+body.launchSplashOpen {
+  overflow: hidden;
+}
+
 main {
   min-height: 100vh;
   min-height: 100dvh;
@@ -436,6 +440,85 @@ button:disabled {
 
 .userSubtitleOverlay[hidden] {
   display: none;
+}
+
+.launchSplash {
+  position: fixed;
+  inset: 0;
+  z-index: 1500;
+  display: grid;
+  place-items: center;
+  padding: max(26px, env(safe-area-inset-top)) max(18px, env(safe-area-inset-right))
+    max(26px, env(safe-area-inset-bottom)) max(18px, env(safe-area-inset-left));
+  color: var(--text-primary);
+  background:
+    repeating-linear-gradient(
+      90deg,
+      rgb(255 255 255 / 0%) 0,
+      rgb(255 255 255 / 0%) 88px,
+      rgb(255 255 255 / 4%) 89px,
+      rgb(255 255 255 / 0%) 91px
+    ),
+    linear-gradient(180deg, #101317 0%, #141117 46%, #0d1214 100%);
+  cursor: pointer;
+  overflow: hidden;
+}
+
+.launchSplash::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgb(255 255 255 / 8%);
+  pointer-events: none;
+}
+
+.launchSplash[hidden] {
+  display: none;
+}
+
+.launchSplashContent {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 18px;
+  width: min(100%, 980px);
+  text-align: center;
+}
+
+.launchSplashHook {
+  margin: 0;
+  color: var(--accent-secondary);
+  font-size: 1.45rem;
+  font-weight: 800;
+  line-height: 1.18;
+  letter-spacing: 0;
+  text-transform: uppercase;
+  overflow-wrap: anywhere;
+}
+
+.launchSplashName {
+  margin: 0;
+  color: var(--accent-primary);
+  font-size: 4.8rem;
+  font-weight: 800;
+  line-height: 0.98;
+  letter-spacing: 0;
+  overflow-wrap: anywhere;
+}
+
+.launchSplash.isLeaving {
+  pointer-events: none;
+  animation: launchSplashFadeOut 620ms ease forwards;
+}
+
+.launchSplashTitleFly {
+  position: fixed;
+  z-index: 1510;
+  margin: 0;
+  transform-origin: top left;
+  will-change: transform;
+  pointer-events: none;
+  overflow-wrap: anywhere;
 }
 
 .appMenuBackdrop {
@@ -1373,6 +1456,18 @@ button.detailVisualCard:hover {
     min-height: 28px;
     padding: 0 9px;
   }
+
+  .launchSplashContent {
+    gap: 14px;
+  }
+
+  .launchSplashHook {
+    font-size: 1.1rem;
+  }
+
+  .launchSplashName {
+    font-size: 3.2rem;
+  }
 }
 
 @media (orientation: landscape) and (max-height: 520px) {
@@ -1390,6 +1485,22 @@ button.detailVisualCard:hover {
   .panel.resultsMode {
     padding-top: 0;
   }
+
+  .launchSplash {
+    padding: 18px;
+  }
+
+  .launchSplashContent {
+    gap: 10px;
+  }
+
+  .launchSplashHook {
+    font-size: 1rem;
+  }
+
+  .launchSplashName {
+    font-size: 2.65rem;
+  }
 }
 
 @media (max-width: 520px) {
@@ -1404,6 +1515,10 @@ button.detailVisualCard:hover {
   .appMenuDrawer {
     width: 100vw;
   }
+
+  .launchSplashName {
+    font-size: 2.6rem;
+  }
 }
 
 /* ---------------------------------------------------------------------------
@@ -1417,6 +1532,10 @@ button.detailVisualCard:hover {
 
 .launchShowcase[hidden] {
   display: none;
+}
+
+.launchShowcase.isEntering {
+  animation: showcaseFadeIn 520ms ease both;
 }
 
 .showcaseHeading {
@@ -1526,6 +1645,24 @@ button.detailVisualCard:hover {
   white-space: nowrap;
 }
 
+@keyframes launchSplashFadeOut {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes showcaseFadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(12px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 @media (min-width: 1024px) {
   .showcaseGroup .search-poster-card {
     width: 132px;
@@ -1537,6 +1674,11 @@ button.detailVisualCard:hover {
 @media (prefers-reduced-motion: reduce) {
   .showcaseLane {
     overflow-x: auto;
+  }
+
+  .launchSplash.isLeaving,
+  .launchShowcase.isEntering {
+    animation: none;
   }
 
   .appMenuDrawer,
