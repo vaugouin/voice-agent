@@ -111,7 +111,6 @@ let spokenAudioHighlightCueKeys = new Set();
 let spokenAudioHighlightPlaying = false;
 let spokenAudioHighlightStartedAt = 0;
 let structuredCardFocusActive = false;
-let structuredFocusAppliedThisResponse = false;
 let spokenSubtitlesActive = false;
 let userTranscriptSubtitlesActive = false;
 let realtimeSpokenSubtitleBuffer = "";
@@ -4008,21 +4007,41 @@ function addTitleSpokenCardMatches(matches, paddedText, cardCount) {
     }
   }
 
-  const usedDuplicateTitleMatches = new Map();
+  // Collect every title-key hit with its start position first, so we can keep only the
+  // most specific (longest) title at each position. Otherwise a short article-stripped
+  // key ("avengers", from "The Avengers") matches as a prefix of longer titles
+  // ("Avengers: Endgame") and steals every mention.
+  const hits = [];
   for (const [key, group] of titleGroups.entries()) {
     const uniqueGroup = Array.from(
       new Map(group.map((card) => [card.index, card])).values()
     ).sort((a, b) => a.index - b.index);
     findInPaddedText(paddedText, key, (position) => {
-      if (uniqueGroup.length === 1) {
-        pushSpokenCardMatch(matches, uniqueGroup[0].index, position, key.length);
-        return;
-      }
-      const resolved = resolveDuplicateTitleCard(uniqueGroup, paddedText, position, key, usedDuplicateTitleMatches);
-      if (resolved?.card) {
-        pushSpokenCardMatch(matches, resolved.card.index, position, resolved.keyLength);
-      }
+      hits.push({ key, position, group: uniqueGroup });
     });
+  }
+
+  const longestKeyLengthByPosition = new Map();
+  for (const hit of hits) {
+    const previous = longestKeyLengthByPosition.get(hit.position) || 0;
+    if (hit.key.length > previous) {
+      longestKeyLengthByPosition.set(hit.position, hit.key.length);
+    }
+  }
+
+  const usedDuplicateTitleMatches = new Map();
+  for (const hit of hits) {
+    if (hit.key.length < (longestKeyLengthByPosition.get(hit.position) || 0)) {
+      continue; // a longer, more specific card title matched at this same position
+    }
+    if (hit.group.length === 1) {
+      pushSpokenCardMatch(matches, hit.group[0].index, hit.position, hit.key.length);
+      continue;
+    }
+    const resolved = resolveDuplicateTitleCard(hit.group, paddedText, hit.position, hit.key, usedDuplicateTitleMatches);
+    if (resolved?.card) {
+      pushSpokenCardMatch(matches, resolved.card.index, hit.position, resolved.keyLength);
+    }
   }
 }
 
@@ -4087,10 +4106,10 @@ function spokenCardIndexFromText(text) {
 }
 
 function applyFallbackSpokenCard(index, options = {}) {
-  // focus_result_card is authoritative: once the model has explicitly focused a
-  // card in this response, do not let title/number transcript matching move the
-  // highlight (it can mis-resolve duplicate titles and override the correct card).
-  if (structuredCardFocusEnabled() && structuredFocusAppliedThisResponse) {
+  // When structured card focus is on, focus_result_card (a stable card index) is the
+  // sole highlight driver. Never let prose/title text-matching move the highlight in
+  // that mode: it can point at the wrong card, and a wrong highlight is worse than none.
+  if (structuredCardFocusEnabled()) {
     return;
   }
   setActiveSpokenCard(index, options);
@@ -4117,7 +4136,6 @@ function resetSpokenAudioHighlightState({ clearHighlight = true } = {}) {
   spokenAudioHighlightCueKeys = new Set();
   spokenAudioHighlightPlaying = false;
   spokenAudioHighlightStartedAt = 0;
-  structuredFocusAppliedThisResponse = false;
   if (clearHighlight) {
     clearActiveSpokenCard();
   }
@@ -6005,7 +6023,6 @@ function handleStructuredCardFocusCall(item, args) {
   };
 
   if (enabled && validIndex) {
-    structuredFocusAppliedThisResponse = true;
     setActiveSpokenCard(requestedIndex);
   } else if (!enabled) {
     output.error = "Structured card focus is disabled for this session.";
