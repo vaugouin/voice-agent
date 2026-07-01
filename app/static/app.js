@@ -4106,12 +4106,10 @@ function spokenCardIndexFromText(text) {
 }
 
 function applyFallbackSpokenCard(index, options = {}) {
-  // When structured card focus is on, focus_result_card (a stable card index) is the
-  // sole highlight driver. Never let prose/title text-matching move the highlight in
-  // that mode: it can point at the wrong card, and a wrong highlight is worse than none.
-  if (structuredCardFocusEnabled()) {
-    return;
-  }
+  // Voice and text both rely on the (now prefix-safe) title matcher to follow the
+  // enumerated card: in practice the model rarely calls focus_result_card, so this is
+  // what actually drives the highlight. focus_result_card, when it IS called, highlights
+  // the same card directly; with accurate matching the two agree instead of fighting.
   setActiveSpokenCard(index, options);
 }
 
