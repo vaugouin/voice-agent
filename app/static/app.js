@@ -111,6 +111,7 @@ let spokenAudioHighlightCueKeys = new Set();
 let spokenAudioHighlightPlaying = false;
 let spokenAudioHighlightStartedAt = 0;
 let structuredCardFocusActive = false;
+let structuredFocusAppliedThisResponse = false;
 let spokenSubtitlesActive = false;
 let userTranscriptSubtitlesActive = false;
 let realtimeSpokenSubtitleBuffer = "";
@@ -4085,10 +4086,20 @@ function spokenCardIndexFromText(text) {
   return latest?.index || null;
 }
 
+function applyFallbackSpokenCard(index, options = {}) {
+  // focus_result_card is authoritative: once the model has explicitly focused a
+  // card in this response, do not let title/number transcript matching move the
+  // highlight (it can mis-resolve duplicate titles and override the correct card).
+  if (structuredCardFocusEnabled() && structuredFocusAppliedThisResponse) {
+    return;
+  }
+  setActiveSpokenCard(index, options);
+}
+
 function syncSpokenCardHighlightFromText(text, options = {}) {
   const index = spokenCardIndexFromText(text);
   if (index) {
-    setActiveSpokenCard(index, options);
+    applyFallbackSpokenCard(index, options);
   }
 }
 
@@ -4106,6 +4117,7 @@ function resetSpokenAudioHighlightState({ clearHighlight = true } = {}) {
   spokenAudioHighlightCueKeys = new Set();
   spokenAudioHighlightPlaying = false;
   spokenAudioHighlightStartedAt = 0;
+  structuredFocusAppliedThisResponse = false;
   if (clearHighlight) {
     clearActiveSpokenCard();
   }
@@ -4124,7 +4136,7 @@ function scheduleNextSpokenAudioHighlightCue() {
     spokenAudioHighlightTimer = null;
     const nextCue = spokenAudioHighlightCues.shift();
     if (nextCue) {
-      setActiveSpokenCard(nextCue.index);
+      applyFallbackSpokenCard(nextCue.index);
     }
     scheduleNextSpokenAudioHighlightCue();
   }, delayMs);
@@ -4374,7 +4386,7 @@ function showNextSubtitle() {
   subtitleOverlay.hidden = false;
   const spokenCardIndex = spokenCardIndexFromText(text);
   if (spokenCardIndex) {
-    setActiveSpokenCard(spokenCardIndex);
+    applyFallbackSpokenCard(spokenCardIndex);
   }
   const duration = Math.max(3500, Math.min(12000, text.length * 65));
   subtitleTimer = window.setTimeout(showNextSubtitle, duration);
@@ -4444,7 +4456,7 @@ function renderRealtimeSpokenSubtitleChunk(text) {
   subtitleOverlay.hidden = false;
   const spokenCardIndex = spokenCardIndexFromText(clean);
   if (spokenCardIndex) {
-    setActiveSpokenCard(spokenCardIndex);
+    applyFallbackSpokenCard(spokenCardIndex);
   }
   realtimeSpokenSubtitleLastText = clean;
 }
@@ -5993,6 +6005,7 @@ function handleStructuredCardFocusCall(item, args) {
   };
 
   if (enabled && validIndex) {
+    structuredFocusAppliedThisResponse = true;
     setActiveSpokenCard(requestedIndex);
   } else if (!enabled) {
     output.error = "Structured card focus is disabled for this session.";

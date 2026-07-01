@@ -844,7 +844,11 @@ def realtime_session_config(
             "the result or card number unless the user explicitly asks for "
             "numbered output. Use only indexes present in visible_results; "
             "do not call focus_result_card for hidden cards, aggregate rows, "
-            "or entity detail pages."
+            "or entity detail pages. When you go through several results in "
+            "turn, call focus_result_card for each card at the moment you "
+            "mention it, so the on-screen highlight follows the card you are "
+            "naming; present the list conversationally without spoken position "
+            "numbers."
         )
         tools.append(focus_result_card_tool_definition())
     return {
