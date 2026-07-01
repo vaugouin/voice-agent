@@ -4196,7 +4196,11 @@ const realtimeSpokenSubtitleMsPerChar = 68;
 const realtimeSpokenSubtitleMinGapMs = 500;
 const realtimeSpokenSubtitleStopHoldMs = 3600;
 const spokenAudioHighlightInitialDelayMs = 450;
-const spokenAudioHighlightMsPerChar = 52;
+// ms per normalized-transcript char. Realtime voices speak at ~65-70 ms per raw char, and
+// the cue position is measured on the punctuation-stripped normalized text (fewer chars),
+// so this must sit a bit above the raw rate to track real speech. 52 ran the highlight
+// noticeably ahead of the voice.
+const spokenAudioHighlightMsPerChar = 72;
 const spokenAudioHighlightMinDelayMs = 80;
 const publicIdValuePattern = String.raw`(?:tt\d{5,}|nm\d{5,}|co\d{5,}|ev\d{5,}|ch\d{5,}|Q\d+)`;
 const labeledIdValuePattern = String.raw`(?:${publicIdValuePattern}|[A-Z]{1,8}\d{2,}|[A-Za-z0-9_-]{8,}|\d+)`;
