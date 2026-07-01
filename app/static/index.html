@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" sizes="1254x1254" href="./static/icons/voice-agent-1254x1254.png" />
     <link rel="apple-touch-icon" href="./static/icons/voice-agent-1254x1254.png" />
     <link rel="manifest" href="./static/site.webmanifest" />
-    <link rel="stylesheet" href="./static/styles.css?v=20260701-launch-splash" />
+    <link rel="stylesheet" href="./static/styles.css?v=20260701-menu-screens" />
   </head>
   <body>
     <main>
@@ -104,6 +104,12 @@
     <div id="appMenuBackdrop" class="appMenuBackdrop" hidden></div>
     <aside id="appMenuDrawer" class="appMenuDrawer" aria-labelledby="appMenuTitle" aria-modal="true" role="dialog" tabindex="-1" hidden>
       <div class="appMenuHeader">
+        <button id="appMenuBackButton" class="iconButton appMenuBackButton" type="button" aria-label="Back to menu" title="Back to menu" hidden>
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M19 12H5" />
+            <path d="M12 19l-7-7 7-7" />
+          </svg>
+        </button>
         <h2 id="appMenuTitle">Menu</h2>
         <button id="appMenuCloseButton" class="iconButton appMenuCloseButton" type="button" aria-label="Close menu" title="Close menu">
           <svg aria-hidden="true" viewBox="0 0 24 24">
@@ -113,7 +119,28 @@
         </button>
       </div>
 
-      <section class="appMenuSection" aria-labelledby="settingsTitle">
+      <nav id="appMenuIndexScreen" class="appMenuScreen appMenuIndex" aria-label="Menu sections" data-app-menu-screen="index">
+        <button id="appMenuSettingsButton" class="appMenuNavItem" type="button" aria-controls="appMenuSettingsScreen">
+          <span>
+            <strong>Settings</strong>
+            <span>Subtitles, language, and voice.</span>
+          </span>
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+        <button id="appMenuAboutButton" class="appMenuNavItem" type="button" aria-controls="appMenuAboutScreen">
+          <span>
+            <strong>About</strong>
+            <span>Credits and data attribution.</span>
+          </span>
+          <svg aria-hidden="true" viewBox="0 0 24 24">
+            <path d="M9 5l7 7-7 7" />
+          </svg>
+        </button>
+      </nav>
+
+      <section id="appMenuSettingsScreen" class="appMenuScreen appMenuSection" aria-labelledby="settingsTitle" data-app-menu-screen="settings" hidden>
         <h3 id="settingsTitle">Settings</h3>
         <label class="menuToggle">
           <span>
@@ -129,9 +156,28 @@
           </span>
           <input id="userTranscriptSubtitlesMenuToggle" type="checkbox" autocomplete="off" />
         </label>
+        <label class="menuSetting">
+          <span>
+            <strong>UI language</strong>
+            <span>French / English</span>
+          </span>
+          <select id="uiLanguageMenuSlot" aria-label="UI language" disabled>
+            <option>English</option>
+            <option>French</option>
+          </select>
+        </label>
+        <label class="menuSetting">
+          <span>
+            <strong>Realtime voice</strong>
+            <span>Ash, new sessions only</span>
+          </span>
+          <select id="realtimeVoiceMenuSlot" aria-label="Realtime voice" disabled>
+            <option>Ash</option>
+          </select>
+        </label>
       </section>
 
-      <section class="appMenuSection" aria-labelledby="aboutTitle">
+      <section id="appMenuAboutScreen" class="appMenuScreen appMenuSection" aria-labelledby="aboutTitle" data-app-menu-screen="about" hidden>
         <h3 id="aboutTitle">About</h3>
         <p>Voice via OpenAI Realtime API.</p>
         <p>This product uses the TMDb API but is not endorsed or certified by TMDb.</p>
@@ -139,6 +185,6 @@
       </section>
     </aside>
 
-    <script src="./static/app.js?v=20260701-launch-splash" type="module"></script>
+    <script src="./static/app.js?v=20260701-menu-screens" type="module"></script>
   </body>
 </html>

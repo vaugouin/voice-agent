@@ -19,7 +19,7 @@ The app serves a minimal web UI on port `3000`. The browser creates an `RTCPeerC
 - Back and Forward buttons beside the text input for navigating previously displayed result and detail pages.
 - PNG app icon configured for browser tabs, web app metadata, and iPhone Add to Home Screen.
 - Server-side Realtime voice selection through `AGENT_VOICE`.
-- Burger menu with Settings controls for subtitle URL overrides and an About section with OpenAI Realtime and TMDb attribution.
+- Burger menu with Settings and About screens, subtitle URL override controls, reserved language/voice slots, and OpenAI Realtime plus TMDb attribution.
 - Cold-load splash screen with a localized hook line, the `Voice Movie Database` title, skip support, and a handoff into the launch showcase.
 - Rolling retained context in `localStorage` so reconnects can continue with prior user requests and tool results during the current page lifetime.
 - Web Worker keepalive on the `oai-events` data channel to keep ICE/NAT alive during silent periods, including in unfocused windows.
@@ -648,8 +648,8 @@ Adjust the container name if your Nginx container is not named `reverseproxy`.
 The HTML references static assets with version query strings:
 
 ```html
-styles.css?v=20260701-launch-splash
-app.js?v=20260701-launch-splash
+styles.css?v=20260701-menu-screens
+app.js?v=20260701-menu-screens
 ```
 
 When changing frontend behavior, bump the version to force Safari and other browsers to fetch the new asset after deployment.

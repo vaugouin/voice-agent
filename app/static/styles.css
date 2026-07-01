@@ -540,7 +540,7 @@ button:disabled {
   z-index: 1300;
   width: min(390px, calc(100vw - 28px));
   display: grid;
-  grid-template-rows: auto auto auto 1fr;
+  grid-template-rows: auto 1fr;
   gap: 18px;
   padding: 18px;
   border-left: 1px solid var(--border);
@@ -557,21 +557,97 @@ button:disabled {
 }
 
 .appMenuHeader {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
   gap: 12px;
 }
 
 .appMenuHeader h2 {
+  grid-column: 2;
+  min-width: 0;
   margin: 0;
   color: var(--text-primary);
   font-size: 1.2rem;
   line-height: 1.2;
 }
 
+.appMenuBackButton,
 .appMenuCloseButton {
   flex: 0 0 auto;
+}
+
+.appMenuBackButton {
+  grid-column: 1;
+}
+
+.appMenuCloseButton {
+  grid-column: 3;
+}
+
+.appMenuScreen {
+  min-width: 0;
+}
+
+.appMenuScreen[hidden] {
+  display: none;
+}
+
+.appMenuIndex {
+  display: grid;
+  align-content: start;
+  gap: 10px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+}
+
+.appMenuNavItem {
+  width: 100%;
+  min-width: 0;
+  min-height: 68px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  background: #1b2028;
+  text-align: left;
+}
+
+.appMenuNavItem:hover {
+  background: #222833;
+}
+
+.appMenuNavItem span {
+  min-width: 0;
+}
+
+.appMenuNavItem strong {
+  display: block;
+  font-size: 1rem;
+  line-height: 1.25;
+}
+
+.appMenuNavItem span span {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+  font-weight: 500;
+  line-height: 1.35;
+}
+
+.appMenuNavItem svg {
+  width: 20px;
+  height: 20px;
+  fill: none;
+  stroke: var(--accent-secondary);
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-linejoin: round;
 }
 
 .appMenuSection {
@@ -597,26 +673,37 @@ button:disabled {
   line-height: 1.45;
 }
 
-.menuToggle {
+.menuToggle,
+.menuSetting {
   display: grid;
   grid-template-columns: minmax(0, 1fr) auto;
   gap: 14px;
   align-items: center;
+}
+
+.menuToggle {
   cursor: pointer;
 }
 
-.menuToggle span {
+.menuSetting {
+  cursor: default;
+}
+
+.menuToggle span,
+.menuSetting span {
   min-width: 0;
 }
 
-.menuToggle strong {
+.menuToggle strong,
+.menuSetting strong {
   display: block;
   color: var(--text-primary);
   font-size: 0.98rem;
   line-height: 1.25;
 }
 
-.menuToggle span span {
+.menuToggle span span,
+.menuSetting span span {
   display: block;
   margin-top: 3px;
   color: var(--text-secondary);
@@ -654,6 +741,25 @@ button:disabled {
 .menuToggle input:checked::before {
   background: #ffffff;
   transform: translateX(20px);
+}
+
+.menuSetting select {
+  min-width: 118px;
+  min-height: 36px;
+  border: 1px solid #5b6370;
+  border-radius: 6px;
+  padding: 0 10px;
+  color: var(--text-primary);
+  background: #242b35;
+  font: inherit;
+  font-size: 0.9rem;
+  font-weight: 700;
+}
+
+.menuSetting select:disabled {
+  color: var(--text-secondary);
+  cursor: not-allowed;
+  opacity: 0.72;
 }
 
 .answerBlock {

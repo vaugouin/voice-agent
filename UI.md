@@ -89,27 +89,44 @@ Elements:
 - `#appMenuButton`
 - `#appMenuBackdrop`
 - `#appMenuDrawer`
+- `#appMenuBackButton`
 - `#appMenuCloseButton`
+- `#appMenuIndexScreen`
+- `#appMenuSettingsButton`
+- `#appMenuAboutButton`
+- `#appMenuSettingsScreen`
+- `#appMenuAboutScreen`
 - `#spokenSubtitlesMenuToggle`
 - `#userTranscriptSubtitlesMenuToggle`
+- `#uiLanguageMenuSlot`
+- `#realtimeVoiceMenuSlot`
 
-Purpose: opens a compact right-side drawer with Settings and About content.
+Purpose: opens a compact right-side drawer with a two-level menu. The index screen shows Settings and About entries; each entry opens its own screen with a Back control.
 
 Default state:
 
 - `#appMenuButton` is visible in the control row with `aria-expanded="false"`.
 - `#appMenuBackdrop` is hidden.
 - `#appMenuDrawer` is hidden.
+- `#appMenuIndexScreen` is the selected drawer screen.
+- `#appMenuSettingsScreen` and `#appMenuAboutScreen` are hidden.
 - `body.appMenuOpen` is not present.
 
 Open behavior:
 
 1. Click `#appMenuButton`.
 2. Sync the Settings toggles from the current URL preferences.
-3. Unhide `#appMenuBackdrop` and `#appMenuDrawer`.
-4. Add `body.appMenuOpen` to prevent background scrolling.
-5. Set `#appMenuButton[aria-expanded="true"]`.
-6. Move focus into the drawer, preferring `#appMenuCloseButton`.
+3. Reset the drawer to the index screen and title `Menu`.
+4. Unhide `#appMenuBackdrop` and `#appMenuDrawer`.
+5. Add `body.appMenuOpen` to prevent background scrolling.
+6. Set `#appMenuButton[aria-expanded="true"]`.
+7. Move focus into the drawer, preferring `#appMenuCloseButton`.
+
+Screen navigation:
+
+- Click `#appMenuSettingsButton` to hide the index, show `#appMenuSettingsScreen`, update the title to `Settings`, unhide `#appMenuBackButton`, and move focus to the first Settings control.
+- Click `#appMenuAboutButton` to hide the index, show `#appMenuAboutScreen`, update the title to `About`, unhide `#appMenuBackButton`, and move focus into the About screen or to Back when there is no focusable About control.
+- Click `#appMenuBackButton` to return to the index, hide Back, update the title to `Menu`, and restore focus to the Settings/About entry that opened the screen when it is still connected.
 
 Close behavior:
 
@@ -117,13 +134,14 @@ Close behavior:
 - Click `#appMenuBackdrop`.
 - Press `Escape` while the drawer is open.
 
-Closing hides the drawer and backdrop, removes `body.appMenuOpen`, sets `#appMenuButton[aria-expanded="false"]`, and restores focus to the element that opened the drawer when it is still connected.
+Closing hides the drawer and backdrop, removes `body.appMenuOpen`, sets `#appMenuButton[aria-expanded="false"]`, resets the drawer to the index screen for the next open, and restores focus to the element that opened the drawer when it is still connected.
 
 Keyboard behavior:
 
 - `Tab` and `Shift+Tab` stay inside the open drawer.
 - `Escape` closes the drawer before it can reach the fullscreen image viewer handler.
 - The drawer has `role="dialog"`, `aria-modal="true"`, and `aria-labelledby="appMenuTitle"`.
+- Screen changes do not create a new focus trap; they swap the visible drawer screen inside the same dialog.
 
 Settings:
 
@@ -131,6 +149,8 @@ Settings:
 - **User transcript lane** toggles the page URL between `userTranscriptSubtitles=1` and `userTranscriptSubtitles=0`, deleting any snake_case duplicate parameter.
 - These controls affect the URL override that `realtimeSessionUrl()` forwards on the next `/session` call. They do not edit server environment defaults.
 - With no URL override present, both toggles render unchecked because the documented server defaults are disabled.
+- **UI language** is a visible disabled French/English select slot only. It is not wired to `activeUiLanguage`, request forwarding, or persistence yet.
+- **Realtime voice** is a visible disabled voice select slot showing `Ash`. It is not wired to `AGENT_VOICE`, session creation, or persistence yet.
 
 About:
 

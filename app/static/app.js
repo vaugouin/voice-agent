@@ -12,7 +12,14 @@ const newConversationButton = document.querySelector("#newConversationButton");
 const appMenuButton = document.querySelector("#appMenuButton");
 const appMenuBackdrop = document.querySelector("#appMenuBackdrop");
 const appMenuDrawer = document.querySelector("#appMenuDrawer");
+const appMenuTitle = document.querySelector("#appMenuTitle");
+const appMenuBackButton = document.querySelector("#appMenuBackButton");
 const appMenuCloseButton = document.querySelector("#appMenuCloseButton");
+const appMenuIndexScreen = document.querySelector("#appMenuIndexScreen");
+const appMenuSettingsScreen = document.querySelector("#appMenuSettingsScreen");
+const appMenuAboutScreen = document.querySelector("#appMenuAboutScreen");
+const appMenuSettingsButton = document.querySelector("#appMenuSettingsButton");
+const appMenuAboutButton = document.querySelector("#appMenuAboutButton");
 const spokenSubtitlesMenuToggle = document.querySelector("#spokenSubtitlesMenuToggle");
 const userTranscriptSubtitlesMenuToggle = document.querySelector("#userTranscriptSubtitlesMenuToggle");
 const statusText = document.querySelector("#statusText");
@@ -117,6 +124,7 @@ let realtimeSpokenSubtitleLastText = "";
 let realtimeSpokenSubtitleSawDelta = false;
 let pendingRealtimeTextTurns = [];
 let appMenuPreviouslyFocused = null;
+let appMenuScreenReturnFocus = null;
 const handledCallIds = new Set();
 let currentSearchState = null;
 let currentDetailState = null;
@@ -488,6 +496,22 @@ function updateAppMenuToggles() {
   }
 }
 
+const APP_MENU_SCREEN_TITLES = {
+  index: "Menu",
+  settings: "Settings",
+  about: "About",
+};
+
+function appMenuScreenElement(screenName) {
+  if (screenName === "settings") {
+    return appMenuSettingsScreen;
+  }
+  if (screenName === "about") {
+    return appMenuAboutScreen;
+  }
+  return appMenuIndexScreen;
+}
+
 function appMenuFocusableElements() {
   if (!appMenuDrawer || appMenuDrawer.hidden) {
     return [];
@@ -505,14 +529,90 @@ function appMenuFocusableElements() {
   });
 }
 
+function focusAppMenuScreen(screenName, fallbackElement = null) {
+  if (!appMenuDrawer || appMenuDrawer.hidden) {
+    return;
+  }
+  const screen = appMenuScreenElement(screenName);
+  const focusable = appMenuFocusableElements();
+  const screenTarget = screen ? focusable.find((element) => screen.contains(element)) : null;
+  const focusTarget =
+    fallbackElement || screenTarget || (screenName === "index" ? appMenuCloseButton : appMenuBackButton) || appMenuDrawer;
+  if (focusTarget && typeof focusTarget.focus === "function") {
+    focusTarget.focus({ preventScroll: true });
+  }
+}
+
 function focusAppMenuStart() {
   if (!appMenuDrawer || appMenuDrawer.hidden) {
     return;
   }
-  const focusTarget = appMenuCloseButton || appMenuFocusableElements()[0] || appMenuDrawer;
-  if (focusTarget && typeof focusTarget.focus === "function") {
-    focusTarget.focus({ preventScroll: true });
+  const currentScreen = appMenuDrawer.dataset.menuScreen || "index";
+  if (currentScreen === "index") {
+    const focusTarget = appMenuCloseButton || appMenuFocusableElements()[0] || appMenuDrawer;
+    if (focusTarget && typeof focusTarget.focus === "function") {
+      focusTarget.focus({ preventScroll: true });
+    }
+    return;
   }
+  focusAppMenuScreen(currentScreen);
+}
+
+function setAppMenuScreen(screenName, { focus = true, returnFocus = null } = {}) {
+  if (!appMenuDrawer) {
+    return;
+  }
+  const nextScreen = APP_MENU_SCREEN_TITLES[screenName] ? screenName : "index";
+  const screens = {
+    index: appMenuIndexScreen,
+    settings: appMenuSettingsScreen,
+    about: appMenuAboutScreen,
+  };
+  Object.entries(screens).forEach(([name, screen]) => {
+    if (screen) {
+      screen.hidden = name !== nextScreen;
+    }
+  });
+  appMenuDrawer.dataset.menuScreen = nextScreen;
+  if (appMenuTitle) {
+    appMenuTitle.textContent = APP_MENU_SCREEN_TITLES[nextScreen];
+  }
+  if (appMenuBackButton) {
+    appMenuBackButton.hidden = nextScreen === "index";
+  }
+  if (nextScreen === "settings") {
+    updateAppMenuToggles();
+  }
+  if (returnFocus) {
+    appMenuScreenReturnFocus = returnFocus;
+  } else if (nextScreen === "index") {
+    appMenuScreenReturnFocus = null;
+  }
+  if (focus) {
+    window.requestAnimationFrame(() => focusAppMenuScreen(nextScreen));
+  }
+}
+
+function openAppMenuScreen(screenName, triggerElement) {
+  setAppMenuScreen(screenName, {
+    focus: true,
+    returnFocus: triggerElement instanceof HTMLElement ? triggerElement : null,
+  });
+  clientLog("app_menu_screen_opened", { screen: screenName });
+}
+
+function backToAppMenuIndex() {
+  const focusTarget =
+    appMenuScreenReturnFocus &&
+    document.contains(appMenuScreenReturnFocus) &&
+    typeof appMenuScreenReturnFocus.focus === "function"
+      ? appMenuScreenReturnFocus
+      : null;
+  setAppMenuScreen("index", { focus: false });
+  window.requestAnimationFrame(() => {
+    focusAppMenuScreen("index", focusTarget || appMenuSettingsButton || appMenuCloseButton || appMenuDrawer);
+  });
+  clientLog("app_menu_back");
 }
 
 function openAppMenu() {
@@ -524,6 +624,7 @@ function openAppMenu() {
     return;
   }
   updateAppMenuToggles();
+  setAppMenuScreen("index", { focus: false });
   appMenuPreviouslyFocused = document.activeElement instanceof HTMLElement ? document.activeElement : null;
   appMenuBackdrop.hidden = false;
   appMenuDrawer.hidden = false;
@@ -545,6 +646,7 @@ function closeAppMenu({ restoreFocus = true } = {}) {
   if (appMenuButton) {
     appMenuButton.setAttribute("aria-expanded", "false");
   }
+  setAppMenuScreen("index", { focus: false });
   if (
     restoreFocus &&
     appMenuPreviouslyFocused &&
@@ -6867,8 +6969,17 @@ newConversationButton.addEventListener("click", startNewConversation);
 if (appMenuButton) {
   appMenuButton.addEventListener("click", openAppMenu);
 }
+if (appMenuBackButton) {
+  appMenuBackButton.addEventListener("click", backToAppMenuIndex);
+}
 if (appMenuCloseButton) {
   appMenuCloseButton.addEventListener("click", () => closeAppMenu());
+}
+if (appMenuSettingsButton) {
+  appMenuSettingsButton.addEventListener("click", () => openAppMenuScreen("settings", appMenuSettingsButton));
+}
+if (appMenuAboutButton) {
+  appMenuAboutButton.addEventListener("click", () => openAppMenuScreen("about", appMenuAboutButton));
 }
 if (appMenuBackdrop) {
   appMenuBackdrop.addEventListener("click", () => closeAppMenu());
