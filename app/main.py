@@ -798,8 +798,10 @@ def realtime_session_config(
         "for background, history, biography, plot context, or explanatory "
         "details. IDs are internal tool arguments only: never mention IMDb, "
         "Wikidata, TMDb, TVDB, ID_* fields, or any other database identifiers "
-        "in user-facing spoken answers. Use entity names, titles, and visible "
-        "result numbers instead."
+        "in user-facing spoken answers. Use entity names and titles; include "
+        "the visible year or subtitle when it distinguishes duplicate titles. "
+        "Do not recite result or card numbers unless the user explicitly asks "
+        "for numbered output."
     )
     instructions += " " + VERBOSE_DETAIL_INSTRUCTIONS + " " + RECOVERY_INSTRUCTIONS
     tools = [
@@ -836,10 +838,13 @@ def realtime_session_config(
             "values match the 1-based result cards shown in the browser. "
             "Immediately before speaking about, comparing, recommending, or "
             "summarizing a specific visible result card, call focus_result_card "
-            "with that card's index. After the tool returns, refer to the card "
-            "out loud as result N and include its title when natural. Use only "
-            "indexes present in visible_results; do not call focus_result_card "
-            "for hidden cards, aggregate rows, or entity detail pages."
+            "with that card's index as a silent UI action. After the tool "
+            "returns, speak naturally using the card title, adding the "
+            "subtitle or year when it disambiguates duplicates. Do not say "
+            "the result or card number unless the user explicitly asks for "
+            "numbered output. Use only indexes present in visible_results; "
+            "do not call focus_result_card for hidden cards, aggregate rows, "
+            "or entity detail pages."
         )
         tools.append(focus_result_card_tool_definition())
     return {
@@ -1432,8 +1437,10 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         "subtitles unless the user explicitly asks for detail. IDs are "
         "internal tool arguments only: never mention IMDb, Wikidata, TMDb, "
         "TVDB, ID_* fields, or any other database identifiers in user-facing "
-        "subtitle text. Use entity names, titles, and visible result numbers "
-        "instead."
+        "subtitle text. Use entity names and titles; include the visible year "
+        "or subtitle when it distinguishes duplicate titles. Do not enumerate "
+        "cards with result numbers unless the user explicitly asks for "
+        "numbered output."
     )
     instructions += " " + VERBOSE_DETAIL_INSTRUCTIONS + " " + RECOVERY_INSTRUCTIONS
     request_base = {

@@ -691,8 +691,8 @@ For multi-row text2sql results:
 - Company and network cards asynchronously upgrade their visual to the padded 2:3 logo master (`applySyntheticLogo()`): the deterministic master URL is probed off-screen and swapped in only on a successful load, so the raw TMDb logo — or the text fallback tile when the row has no `LOGO_PATH` — remains until the master exists. No layout shift occurs; only the `img` src (or fallback replacement) changes.
 - If no displayable rows exist, the grid shows `No displayable rows.`
 - Every card gets an internal `data-result-index` attribute matching its 1-based position in the current grid.
-- Supported poster/detail cards also store normalized title text for spoken-card matching; the title is not displayed as a badge.
-- When assistant subtitles or Realtime output-audio transcript deltas enumerate a visible card by number, simple ordinal word, or visible card title, `setActiveSpokenCard()` adds `.isSpokenActive` to the matching card and removes that class from the previous card.
+- Supported poster/detail cards also store normalized title text and normalized year tokens from their visible subtitle for spoken-card matching; those values are not displayed as badges.
+- When assistant subtitles or Realtime output-audio transcript deltas reference a visible card by number, simple ordinal word, visible card title, or title plus year/subtitle, `setActiveSpokenCard()` adds `.isSpokenActive` to the matching card and removes that class from the previous card.
 - While a card is active, the grid gets `.hasSpokenActive`; inactive sibling cards are dimmed and the active card receives a cyan outline/glow.
 - The active card is scrolled into view with `scrollIntoView({ block: "nearest", inline: "nearest" })`.
 - Subtitle chunks without a fresh card reference keep the current highlight until another card is referenced or subtitle playback ends.
@@ -722,7 +722,7 @@ Structured focus path:
 - New Realtime sessions default to structured card focus unless the server has `ENABLE_STRUCTURED_CARD_FOCUS=false` or the page URL contains `?structuredCardFocus=0`.
 - The browser sends the URL override to `/session` as `structured_card_focus=0` or `1`.
 - `/session` returns `X-Structured-Card-Focus`; the browser stores this in `structuredCardFocusActive`.
-- When active, `query_text2sql` tool output sent back to the model includes `visible_results`, a compact list of visible result-card indexes and titles.
+- When active, `query_text2sql` tool output sent back to the model includes `visible_results`, a compact list of visible result-card indexes, titles, and subtitles/years when available. The index is for the silent `focus_result_card` call; user-facing speech uses the title and, for duplicate titles, the year/subtitle instead of reciting the card number.
 - If the model calls `focus_result_card`, `handleFunctionCall()` highlights the requested visible card immediately, sends a small `function_call_output`, and creates the next Realtime response so spoken output can continue.
 - If structured focus is disabled for the session, the tool is not included in the Realtime session config. Transcript-derived cue matching below remains the fallback behavior.
 
@@ -733,9 +733,10 @@ Cue detection:
 3. It recognizes ordinal and spoken-number references such as `first`, `second`, `movie one`, or `option two`.
 4. It recognizes visible card titles by comparing normalized transcript text with each card's hidden normalized title metadata.
 5. It also stores a title key without a leading article, so `The Matrix` can match either `the matrix` or `matrix`.
-6. Every match becomes a cue shaped like `{ index, position }`, where `index` is the card's internal 1-based `data-result-index` and `position` is the character position of the reference in the normalized transcript.
-7. Cues are deduplicated with the key `index:Math.round(position / 8)` so repeated parsing of growing transcript deltas does not enqueue the same reference repeatedly.
-8. Cues are sorted by transcript position, then card index.
+6. When multiple cards share a title key, the matcher chooses the card with a nearby year/subtitle token first, then a nearby ordinal or card index; if no disambiguator exists, repeated same-title mentions resolve to the first same-title card not already matched in that text, falling back to the lowest index.
+7. Every match becomes a cue shaped like `{ index, position }`, where `index` is the card's internal 1-based `data-result-index` and `position` is the character position of the reference in the normalized transcript.
+8. Cues are deduplicated with the key `index:Math.round(position / 8)` so repeated parsing of growing transcript deltas does not enqueue the same reference repeatedly.
+9. Cues are sorted by transcript position, then card index.
 
 Cue timing:
 
@@ -942,7 +943,7 @@ Input:
 - `showSubtitleText(text)` removes explicit backend/database ID mentions, then normalizes and splits text into chunks.
 - `appendRealtimeSpokenSubtitleDelta(delta)` appends Realtime assistant transcript deltas to `realtimeSpokenSubtitleBuffer` when `spokenSubtitlesActive` is true, then rebuilds the stable pending chunk list without rendering immediately.
 - `completeRealtimeSpokenSubtitle(transcript)` replaces the buffer with the sanitized final transcript, includes the trailing chunk, and lets the audio-paced queue display any remaining text.
-- The cleanup targets phrases such as IMDb IDs, Wikidata IDs, TMDb IDs, TVDB IDs, `ID_*` fields, and entity/database ID labels. Entity cards and detail links carry those identifiers internally, so subtitles use names, titles, and visible result numbers instead.
+- The cleanup targets phrases such as IMDb IDs, Wikidata IDs, TMDb IDs, TVDB IDs, `ID_*` fields, and entity/database ID labels. Entity cards and detail links carry those identifiers internally, so subtitles use names and titles, with visible years/subtitles when duplicate titles need disambiguation.
 - Inline numbered items such as `4. The Barefoot Contessa (1954)` are promoted to structural subtitle blocks before chunking.
 - Numbered list items are kept as separate chunks when practical so spoken-card highlighting can move from card to card.
 - Paragraph chunks prefer sentence boundaries.
@@ -955,7 +956,7 @@ Display sequence:
 3. The next chunk is shifted from the queue.
 4. If no chunk exists, the overlay is hidden, text is cleared, and spoken-card highlighting is cleared.
 5. If a chunk exists, the overlay becomes visible and its text is set.
-6. If the chunk references a visible result-card number, ordinal, or title, the matching card is highlighted immediately and any previous card highlight is removed.
+6. If the chunk references a visible result-card number, ordinal, title, or title plus year/subtitle, the matching card is highlighted immediately and any previous card highlight is removed.
 7. A timer schedules the next chunk.
 
 Duration rule:

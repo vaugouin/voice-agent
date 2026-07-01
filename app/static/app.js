@@ -146,6 +146,28 @@ const DETAIL_RAIL_AUTO_LOAD_THRESHOLD_PX = 360;
 const SYNTHETIC_STYLE_VERSION = "v1";
 const CONTEXT_STORAGE_KEY = "voice-agent-context-v1";
 const STRUCTURED_CARD_FOCUS_TOOL = "focus_result_card";
+const SPOKEN_CARD_NUMBER_INDEX = Object.freeze({
+  one: 1,
+  two: 2,
+  three: 3,
+  four: 4,
+  five: 5,
+  six: 6,
+  seven: 7,
+  eight: 8,
+  nine: 9,
+  ten: 10,
+  first: 1,
+  second: 2,
+  third: 3,
+  fourth: 4,
+  fifth: 5,
+  sixth: 6,
+  seventh: 7,
+  eighth: 8,
+  ninth: 9,
+  tenth: 10,
+});
 const maxContextItems = 10;
 const defaultWikipediaMaxSections = 4;
 const defaultWikipediaMaxChars = 1200;
@@ -2046,6 +2068,10 @@ function normalizeSpokenCardText(value) {
     .trim();
 }
 
+function yearTokensFromText(value) {
+  return Array.from(new Set(String(value || "").match(/\b(?:18|19|20)\d{2}\b/g) || []));
+}
+
 function titleWithoutLeadingArticle(title) {
   return normalizeSpokenCardText(title).replace(/^(?:the|a|an)\s+/, "");
 }
@@ -2064,6 +2090,10 @@ function assignResultCardIndex(grid, card, { title = "", subtitle = "" } = {}) {
   }
   if (normalizedSubtitle) {
     card.dataset.resultSubtitle = normalizedSubtitle;
+  }
+  const yearKeys = yearTokensFromText(subtitle);
+  if (yearKeys.length) {
+    card.dataset.resultYearKeys = yearKeys.join(" ");
   }
 }
 
@@ -3854,6 +3884,147 @@ function pushSpokenCardMatch(matches, index, position, keyLength = 0) {
   matches.push({ index, position, keyLength });
 }
 
+function spokenCardTitleKeys(card) {
+  return [
+    card.dataset.resultTitle || "",
+    card.dataset.resultTitleKey || "",
+  ].filter((value, position, values) => value && values.indexOf(value) === position);
+}
+
+function spokenCardYearKeys(card) {
+  return String(card.dataset.resultYearKeys || "")
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
+function visibleSpokenCardMetadata(cardCount) {
+  return Array.from(resultsContent.querySelectorAll(".search-poster-card[data-result-index]"))
+    .map((card) => {
+      const index = Number(card.dataset.resultIndex);
+      if (!Number.isInteger(index) || index < 1 || index > cardCount) {
+        return null;
+      }
+      const titleKeys = spokenCardTitleKeys(card).filter(usefulSpokenTitleKey);
+      if (!titleKeys.length) {
+        return null;
+      }
+      return {
+        index,
+        titleKeys,
+        yearKeys: spokenCardYearKeys(card),
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.index - b.index);
+}
+
+function findInPaddedText(paddedText, key, onMatch) {
+  const needle = ` ${key} `;
+  let searchFrom = 0;
+  while (searchFrom < paddedText.length) {
+    const position = paddedText.indexOf(needle, searchFrom);
+    if (position < 0) {
+      break;
+    }
+    onMatch(position);
+    searchFrom = position + Math.max(needle.length - 1, 1);
+  }
+}
+
+function spokenTitleContext(paddedText, position, keyLength) {
+  const radius = 42;
+  const start = Math.max(0, position - radius);
+  const end = Math.min(paddedText.length, position + keyLength + radius);
+  return paddedText.slice(start, end);
+}
+
+function distanceFromSpokenTitle(position, keyLength, tokenStart, tokenLength) {
+  const titleStart = position + 1;
+  const titleEnd = titleStart + keyLength;
+  const tokenEnd = tokenStart + tokenLength;
+  if (tokenEnd <= titleStart) {
+    return titleStart - tokenEnd;
+  }
+  if (tokenStart >= titleEnd) {
+    return tokenStart - titleEnd;
+  }
+  return 0;
+}
+
+function nearbyYearTokens(paddedText, position, keyLength) {
+  const radius = 42;
+  const start = Math.max(0, position - radius);
+  const end = Math.min(paddedText.length, position + keyLength + radius);
+  const context = paddedText.slice(start, end);
+  return Array.from(context.matchAll(/\b(?:18|19|20)\d{2}\b/g))
+    .map((match) => ({
+      year: match[0],
+      distance: distanceFromSpokenTitle(position, keyLength, start + (match.index || 0), match[0].length),
+    }))
+    .sort((a, b) => a.distance - b.distance);
+}
+
+function resolveDuplicateTitleCard(group, paddedText, position, key, usedDuplicateTitleMatches) {
+  const context = spokenTitleContext(paddedText, position, key.length);
+  for (const { year } of nearbyYearTokens(paddedText, position, key.length)) {
+    const matchingYearCards = group.filter((card) => card.yearKeys.includes(year));
+    if (matchingYearCards.length === 1) {
+      return { card: matchingYearCards[0], keyLength: key.length + year.length + 1 };
+    }
+  }
+
+  for (const match of context.matchAll(/\b\d{1,3}\b/g)) {
+    const cardIndex = Number(match[0]);
+    const matchingIndexCard = group.find((card) => card.index === cardIndex);
+    if (matchingIndexCard) {
+      return { card: matchingIndexCard, keyLength: key.length + match[0].length + 1 };
+    }
+  }
+
+  const spokenNumberPattern = /\b(one|two|three|four|five|six|seven|eight|nine|ten|first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)\b/g;
+  for (const match of context.matchAll(spokenNumberPattern)) {
+    const ordinal = SPOKEN_CARD_NUMBER_INDEX[match[1]];
+    if (Number.isInteger(ordinal) && ordinal >= 1 && ordinal <= group.length) {
+      return { card: group[ordinal - 1], keyLength: key.length + match[1].length + 1 };
+    }
+  }
+
+  const used = usedDuplicateTitleMatches.get(key) || new Set();
+  const nextUnusedCard = group.find((card) => !used.has(card.index)) || group[0];
+  used.add(nextUnusedCard.index);
+  usedDuplicateTitleMatches.set(key, used);
+  return { card: nextUnusedCard, keyLength: key.length };
+}
+
+function addTitleSpokenCardMatches(matches, paddedText, cardCount) {
+  const titleGroups = new Map();
+  for (const card of visibleSpokenCardMetadata(cardCount)) {
+    for (const key of card.titleKeys) {
+      if (!titleGroups.has(key)) {
+        titleGroups.set(key, []);
+      }
+      titleGroups.get(key).push(card);
+    }
+  }
+
+  const usedDuplicateTitleMatches = new Map();
+  for (const [key, group] of titleGroups.entries()) {
+    const uniqueGroup = Array.from(
+      new Map(group.map((card) => [card.index, card])).values()
+    ).sort((a, b) => a.index - b.index);
+    findInPaddedText(paddedText, key, (position) => {
+      if (uniqueGroup.length === 1) {
+        pushSpokenCardMatch(matches, uniqueGroup[0].index, position, key.length);
+        return;
+      }
+      const resolved = resolveDuplicateTitleCard(uniqueGroup, paddedText, position, key, usedDuplicateTitleMatches);
+      if (resolved?.card) {
+        pushSpokenCardMatch(matches, resolved.card.index, position, resolved.keyLength);
+      }
+    });
+  }
+}
+
 function spokenCardMatchesFromText(text) {
   const cardCount = resultCardCount();
   if (!cardCount) {
@@ -3874,33 +4045,11 @@ function spokenCardMatchesFromText(text) {
     }
   }
 
-  const spokenNumberIndex = {
-    one: 1,
-    two: 2,
-    three: 3,
-    four: 4,
-    five: 5,
-    six: 6,
-    seven: 7,
-    eight: 8,
-    nine: 9,
-    ten: 10,
-    first: 1,
-    second: 2,
-    third: 3,
-    fourth: 4,
-    fifth: 5,
-    sixth: 6,
-    seventh: 7,
-    eighth: 8,
-    ninth: 9,
-    tenth: 10,
-  };
   const ordinalPattern = /(^|[\s([{])(first|second|third|fourth|fifth|sixth|seventh|eighth|ninth|tenth)\b/gi;
   for (const match of clean.matchAll(ordinalPattern)) {
     pushSpokenCardMatch(
       matches,
-      spokenNumberIndex[match[2].toLowerCase()],
+      SPOKEN_CARD_NUMBER_INDEX[match[2].toLowerCase()],
       (match.index || 0) + match[1].length,
       match[2].length
     );
@@ -3910,7 +4059,7 @@ function spokenCardMatchesFromText(text) {
   for (const match of clean.matchAll(namedReferencePattern)) {
     pushSpokenCardMatch(
       matches,
-      spokenNumberIndex[match[2].toLowerCase()],
+      SPOKEN_CARD_NUMBER_INDEX[match[2].toLowerCase()],
       (match.index || 0) + match[1].length,
       match[2].length
     );
@@ -3918,32 +4067,7 @@ function spokenCardMatchesFromText(text) {
 
   const normalizedText = normalizeSpokenCardText(clean);
   const paddedText = ` ${normalizedText} `;
-  const cards = resultsContent.querySelectorAll(".search-poster-card[data-result-index]");
-  cards.forEach((card) => {
-    const index = Number(card.dataset.resultIndex);
-    if (!Number.isInteger(index) || index < 1 || index > cardCount) {
-      return;
-    }
-    const titleKeys = [
-      card.dataset.resultTitle || "",
-      card.dataset.resultTitleKey || "",
-    ].filter((value, position, values) => value && values.indexOf(value) === position);
-    titleKeys.forEach((key) => {
-      if (!usefulSpokenTitleKey(key)) {
-        return;
-      }
-      let searchFrom = 0;
-      const needle = ` ${key} `;
-      while (searchFrom < paddedText.length) {
-        const position = paddedText.indexOf(needle, searchFrom);
-        if (position < 0) {
-          break;
-        }
-        pushSpokenCardMatch(matches, index, position, key.length);
-        searchFrom = position + Math.max(needle.length - 1, 1);
-      }
-    });
-  });
+  addTitleSpokenCardMatches(matches, paddedText, cardCount);
 
   return matches
     .filter((match) => match.index >= 1 && match.index <= cardCount)

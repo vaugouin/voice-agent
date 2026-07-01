@@ -309,7 +309,7 @@ The Realtime and `/text-chat` prompts act on `diagnostic` (shared `RECOVERY_INST
 
 ## Structured Card Focus
 
-When `ENABLE_STRUCTURED_CARD_FOCUS` is true, the Realtime session includes a browser-handled `focus_result_card` tool. After a `query_text2sql` result page is rendered, the browser adds a compact `visible_results` list to the tool output sent back to the model. Each entry contains the visible 1-based card index and title. Before the voice model speaks about a specific visible card, it can call `focus_result_card` with that index, and the browser highlights the card immediately.
+When `ENABLE_STRUCTURED_CARD_FOCUS` is true, the Realtime session includes a browser-handled `focus_result_card` tool. After a `query_text2sql` result page is rendered, the browser adds a compact `visible_results` list to the tool output sent back to the model. Each entry contains the visible 1-based card index, title, and subtitle/year when available. Before the voice model speaks about a specific visible card, it can silently call `focus_result_card` with that index, and the browser highlights the card immediately. User-facing phrasing uses titles and subtitle/year disambiguators instead of reciting card numbers unless the user explicitly asks for numbered output.
 
 Set `ENABLE_STRUCTURED_CARD_FOCUS=false` to remove the tool and the related instruction from new Realtime sessions. For local testing, add `?structuredCardFocus=0` to the app URL before starting a voice session; the browser forwards that override to `/session`.
 
@@ -453,9 +453,9 @@ When text-mode tool calls return data, the browser renders those results in the 
 
 Text model output is displayed as subtitle-style labels fixed near the bottom of the app. Long responses are split into readable chunks that preserve reply structure, including numbered and bulleted list boundaries, and appear and disappear after a duration based on the amount of text. Realtime voice output can use the same bottom overlay when `ENABLE_SPOKEN_SUBTITLES=true` or a `?spokenSubtitles=1` URL override is active for the session. Realtime voice input can show the completed user question in the top subtitle lane when `ENABLE_USER_TRANSCRIPT_SUBTITLES=true` or a `?userTranscriptSubtitles=1` URL override is active for the session.
 
-User-facing assistant feedback does not mention backend identifiers such as IMDb IDs, Wikidata IDs, TMDb IDs, TVDB IDs, `ID_*` fields, or other database IDs. Entities are represented by cards and detail links in the UI, so subtitles and spoken answers use names, titles, and visible result numbers instead.
+User-facing assistant feedback does not mention backend identifiers such as IMDb IDs, Wikidata IDs, TMDb IDs, TVDB IDs, `ID_*` fields, or other database IDs. Entities are represented by cards and detail links in the UI, so subtitles and spoken answers use names and titles, adding the visible year or subtitle when duplicate titles need disambiguation.
 
-When assistant speech transcripts or subtitle chunks enumerate a search result by number, ordinal, or visible card title, the matching card receives a temporary spoken-focus highlight and the previous spoken-focus card is cleared. Result numbers are tracked internally and are not shown as badges on the cards. Subtitle highlights happen as each subtitle chunk appears. Realtime spoken-answer highlights can also be driven by `focus_result_card` tool calls when structured card focus is enabled; transcript-derived cues remain as the fallback and are paced from the `output_audio_buffer.started` event so final transcript events do not jump the UI ahead of audible playback.
+When assistant speech transcripts or subtitle chunks reference a search result by number, ordinal, visible card title, or title plus year/subtitle, the matching card receives a temporary spoken-focus highlight and the previous spoken-focus card is cleared. Result numbers are tracked internally and are not shown as badges on the cards. Duplicate bare-title matches resolve with nearby year, ordinal, or card-index context first; if no disambiguator is present, repeated same-title mentions are assigned to the lowest-index duplicate not already matched in that text, rather than defaulting to the later duplicate. Subtitle highlights happen as each subtitle chunk appears. Realtime spoken-answer highlights can also be driven by `focus_result_card` tool calls when structured card focus is enabled; transcript-derived cues remain as the fallback and are paced from the `output_audio_buffer.started` event so final transcript events do not jump the UI ahead of audible playback.
 
 The question box grows vertically as lines are added, up to a capped height where it scrolls internally.
 
@@ -648,8 +648,8 @@ Adjust the container name if your Nginx container is not named `reverseproxy`.
 The HTML references static assets with version query strings:
 
 ```html
-styles.css?v=20260701-menu-screens
-app.js?v=20260701-menu-screens
+styles.css?v=20260701-card-focus-duplicates
+app.js?v=20260701-card-focus-duplicates
 ```
 
 When changing frontend behavior, bump the version to force Safari and other browsers to fetch the new asset after deployment.
