@@ -1366,15 +1366,12 @@ function updateMicrophoneToggle() {
     disabled = !localAudioTrack;
   } else if (dictationActive) {
     label = "Stop dictation";
-  } else if (dictationTranscribing) {
-    label = "Transcribing";
-    disabled = true;
-  } else if (textChatInFlight) {
-    label = "Text response in progress";
-    disabled = true;
+  } else if (dictationTranscribing || textChatInFlight) {
+    // Stay enabled: a click supersedes the in-flight answer and starts a new question.
+    label = "Ask again";
   } else if (hasQuestionText()) {
-    label = "Clear typed question to dictate";
-    disabled = true;
+    // Stay enabled: a click clears the typed text and dictates instead.
+    label = "Dictate question";
   } else if (unavailableReason) {
     label = unavailableReason;
     disabled = true;
@@ -5785,6 +5782,14 @@ function toggleMicrophone() {
     if (dictationActive) {
       stopIdleDictation("manual");
       return;
+    }
+    // Supersede any in-flight transcription / text answer (or typed text) so a click
+    // starts a fresh question immediately instead of waiting for the previous answer.
+    if (dictationTranscribing || textChatInFlight || hasQuestionText()) {
+      cancelIdleDictation("superseded by new dictation");
+      cancelAssistantOutput("superseded by new dictation");
+      questionInput.value = "";
+      syncQuestionInputUi();
     }
     startIdleDictation().catch((error) => {
       const permissionDenied =

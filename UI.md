@@ -292,9 +292,9 @@ State:
 - `userMicrophoneOpen` stores the user's manual microphone preference during Realtime sessions.
 - The toggle is disabled during Realtime sessions while no local microphone track exists.
 - When no audio session is running, the control displays the closed state unless idle dictation is recording.
-- Idle dictation is available only when the browser supports `getUserMedia`, `MediaRecorder`, and the question input is empty.
+- Idle dictation is available whenever the browser supports `getUserMedia` and `MediaRecorder`. The control stays enabled even with typed text in the box; it is only disabled when recording is genuinely unsupported (and, during a Realtime session, when no local microphone track exists).
 - While idle dictation is active, the control displays the open state; clicking it stops the recording and submits it for transcription.
-- While idle dictation audio is being transcribed or `/text-chat` is in flight, the control is disabled.
+- While idle dictation audio is being transcribed or `/text-chat` is in flight, the control stays **enabled**: clicking it supersedes the in-flight work (cancels the current transcription/answer) and starts a fresh recording, so the user can ask again without waiting. Labels reflect state: `Ask again` while busy, `Dictate question` when idle.
 - The app can still temporarily mute the microphone while tool output or assistant audio is pending; those automatic gates do not flip `userMicrophoneOpen`.
 
 Click behavior:
@@ -308,11 +308,12 @@ Realtime session:
 
 Idle dictation:
 
-1. Starts microphone capture with `MediaRecorder`.
-2. Sets status to `Dictation listening`.
-3. Auto-stops after detected speech followed by silence, no speech for the no-speech timeout, the max duration cap, or a second click.
-4. Sends the audio blob to `/transcribe`.
-5. Sends the returned transcript to `/text-chat` and renders text-mode results.
+1. If a previous transcription or `/text-chat` answer is still in flight, or the text box has typed text, supersedes it: cancels the in-flight transcription/answer, clears the text box, then continues.
+2. Starts microphone capture with `MediaRecorder`.
+3. Sets status to `Dictation listening`.
+4. Auto-stops after detected speech followed by silence, no speech for the no-speech timeout, the max duration cap, or a second click.
+5. Sends the audio blob to `/transcribe`.
+6. Sends the returned transcript to `/text-chat` and renders text-mode results.
 
 ## Look Toggle
 
