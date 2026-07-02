@@ -673,6 +673,51 @@ button:disabled {
   line-height: 1.45;
 }
 
+.appMenuSection .aboutLink {
+  color: var(--accent-secondary);
+}
+
+.aboutSubhead {
+  margin-top: 4px;
+  font-weight: 700;
+  color: var(--text-primary);
+}
+
+.poweredByGrid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.poweredByGrid li {
+  padding: 4px 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  font-size: 0.8rem;
+  color: var(--text-secondary);
+  background: rgb(255 255 255 / 4%);
+}
+
+.aboutLegal {
+  display: grid;
+  gap: 8px;
+  padding-top: 12px;
+  border-top: 1px solid var(--border);
+}
+
+.aboutLegal p {
+  font-size: 0.78rem;
+  opacity: 0.85;
+}
+
+.aboutCopyright {
+  padding-top: 8px;
+  font-size: 0.8rem;
+}
+
 .menuToggle,
 .menuSetting {
   display: grid;

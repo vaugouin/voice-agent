@@ -19,7 +19,7 @@ The app serves a minimal web UI on port `3000`. The browser creates an `RTCPeerC
 - Back and Forward buttons beside the text input for navigating previously displayed result and detail pages.
 - PNG app icon configured for browser tabs, web app metadata, and iPhone Add to Home Screen.
 - Server-side Realtime voice selection through `AGENT_VOICE`.
-- Burger menu with Settings and About screens, subtitle URL override controls, reserved language/voice slots, and OpenAI Realtime plus TMDb attribution.
+- Burger menu with Settings and About screens, subtitle URL override controls, reserved language/voice slots, and full About credits/attribution (publisher, data sources, powered-by row, OpenAI Realtime, and TMDb/IMDb/Wikipedia/Wikidata legal notices).
 - Cold-load splash screen with a localized hook line, the `Voice Movie Database` title, skip support, and a handoff into the launch showcase.
 - Rolling retained context in `localStorage` so reconnects can continue with prior user requests and tool results during the current page lifetime.
 - Web Worker keepalive on the `oai-events` data channel to keep ICE/NAT alive during silent periods, including in unfocused windows.
@@ -329,7 +329,7 @@ The burger button in the control row opens a right-side drawer. It is keyboard a
 
 Settings exposes two real controls: **Assistant subtitles** and **User transcript lane**. These controls update the current page URL with `spokenSubtitles=0/1` and `userTranscriptSubtitles=0/1`, which the browser already forwards to `/session` as `spoken_subtitles` and `user_transcript_subtitles` on the next Realtime session negotiation. They do not edit `.env`; server defaults still come from `ENABLE_SPOKEN_SUBTITLES` and `ENABLE_USER_TRANSCRIPT_SUBTITLES` when no URL override is present.
 
-About credits the OpenAI Realtime API for voice and includes the TMDb attribution required for TMDb API usage.
+About credits the publisher (A Fistful of Reels, linking to its X profile), the AI agents, and the OpenAI Realtime API voice; lists the data sources (TheMovieDB, Wikipedia, Wikidata, IMDb); shows a "Powered by" technology row; and carries the required legal attributions (the TMDb non-endorsement notice, an IMDb credit, and the Wikipedia CC BY-SA / Wikidata CC0 notice) plus a copyright line.
 
 ## Launch Splash And Showcase
 

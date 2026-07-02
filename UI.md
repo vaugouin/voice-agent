@@ -154,9 +154,10 @@ Settings:
 
 About:
 
-- Shows OpenAI Realtime API voice credit.
-- Shows TMDb API attribution.
-- States that search and detail answers are grounded in the Agent BBB movie and TV database.
+- Credits, in order: "Design by A Fistful of Reels" (links to the X profile), "Built with AI agents", "Voice via OpenAI Realtime API", and "Data and pictures from TheMovieDB, Wikipedia, Wikidata and IMDb".
+- A "Powered by" technology row (`.poweredByGrid`): currently text chips (Python, JavaScript, FastAPI, …); to be replaced by brand logo SVGs, with the tech name kept as each item's title/aria-label.
+- Legal attributions (`.aboutLegal`): the required TMDb non-endorsement notice, an IMDb courtesy credit, and the Wikipedia (CC BY-SA) / Wikidata (CC0) notice.
+- Copyright line: "© 2026 - A Fistful of Reels".
 
 ## Start And Stop Buttons
 
