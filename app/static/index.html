@@ -8,7 +8,7 @@
     <link rel="icon" type="image/png" sizes="1254x1254" href="./static/icons/voice-agent-1254x1254.png" />
     <link rel="apple-touch-icon" href="./static/icons/voice-agent-1254x1254.png" />
     <link rel="manifest" href="./static/site.webmanifest" />
-    <link rel="stylesheet" href="./static/styles.css?v=20260702-about-tmdb-logo" />
+    <link rel="stylesheet" href="./static/styles.css?v=20260702-about-logos" />
   </head>
   <body>
     <main>
@@ -182,40 +182,49 @@
         <p>Design by <a class="aboutLink" href="https://x.com/AFistfulOfReels" target="_blank" rel="noopener noreferrer">A Fistful of Reels</a></p>
         <p>Built with AI agents</p>
         <p>Voice via OpenAI Realtime API</p>
-        <p>Data and pictures from TheMovieDB, Wikipedia, Wikidata and IMDb</p>
+        <p class="aboutSubhead">Data and pictures from</p>
+        <ul class="logoRow logoRow--sources" aria-label="Data sources">
+          <li><img class="tmdbLogo" src="./static/icons/tmdb-logo.svg" alt="The Movie Database (TMDB)" /></li>
+          <li><img src="./static/icons/tech/imdb.svg" alt="IMDb" /></li>
+          <li><img src="./static/icons/tech/wikipedia.svg" alt="Wikipedia" /></li>
+          <li><img src="./static/icons/tech/wikidata.svg" alt="Wikidata" /></li>
+          <li><img src="./static/icons/tech/plex.svg" alt="Plex" /></li>
+          <li><img src="./static/icons/tech/youtube.svg" alt="YouTube" /></li>
+        </ul>
         <p class="aboutSubhead">Powered by</p>
-        <!--
-          TODO (VOICE-AGENT-056): replace the text chips below with the official brand
-          logo SVGs (monochrome/white to fit the dark UI); keep the tech name as each
-          item's title/aria-label for accessibility and image-load fallback. A few items
-          have no clean official logo (SQL, pip, bash) — use a mark where one exists, else
-          keep the text chip. Respect each brand's logo-usage guidelines.
-        -->
-        <ul class="poweredByGrid" aria-label="Technologies used">
-          <li>Python</li>
-          <li>JavaScript</li>
-          <li>FastAPI</li>
-          <li>Linux</li>
-          <li>MariaDB</li>
-          <li>SQL</li>
-          <li>Docker</li>
-          <li>Selenium</li>
-          <li>PHP</li>
-          <li>Apache</li>
-          <li>nginx</li>
-          <li>OVH</li>
-          <li>Claude Code</li>
-          <li>Codex</li>
-          <li>HTML</li>
-          <li>CSS</li>
-          <li>Markdown</li>
-          <li>JSON</li>
-          <li>Let's Encrypt</li>
-          <li>bash</li>
-          <li>pip</li>
+        <ul class="logoRow logoRow--tech" aria-label="Technologies used">
+          <li><img src="./static/icons/tech/python.svg" alt="Python" /></li>
+          <li><img src="./static/icons/tech/javascript.svg" alt="JavaScript" /></li>
+          <li><img src="./static/icons/tech/html5.svg" alt="HTML5" /></li>
+          <li><img src="./static/icons/tech/css.svg" alt="CSS" /></li>
+          <li><img src="./static/icons/tech/markdown.svg" alt="Markdown" /></li>
+          <li><img src="./static/icons/tech/json.svg" alt="JSON" /></li>
+          <li><img src="./static/icons/tech/bash.svg" alt="Bash" /></li>
+          <li><img src="./static/icons/tech/fastapi.svg" alt="FastAPI" /></li>
+          <li><img src="./static/icons/tech/pydantic.svg" alt="Pydantic" /></li>
+          <li><img src="./static/icons/tech/pypi.svg" alt="pip / PyPI" /></li>
+          <li><img src="./static/icons/tech/webrtc.svg" alt="WebRTC" /></li>
+          <li><img src="./static/icons/tech/selenium.svg" alt="Selenium" /></li>
+          <li><img src="./static/icons/tech/mariadb.svg" alt="MariaDB" /></li>
+          <li><img src="./static/icons/tech/php.svg" alt="PHP" /></li>
+          <li><img src="./static/icons/tech/apache.svg" alt="Apache" /></li>
+          <li><img src="./static/icons/tech/nginx.svg" alt="nginx" /></li>
+          <li><img src="./static/icons/tech/docker.svg" alt="Docker" /></li>
+          <li><img src="./static/icons/tech/linux.svg" alt="Linux" /></li>
+          <li><img src="./static/icons/tech/letsencrypt.svg" alt="Let's Encrypt" /></li>
+          <li><img src="./static/icons/tech/git.svg" alt="Git" /></li>
+          <li><img src="./static/icons/tech/github.svg" alt="GitHub" /></li>
+          <li><img src="./static/icons/tech/ovh.svg" alt="OVH" /></li>
+          <li><img src="./static/icons/tech/anthropic.svg" alt="Claude (Anthropic)" /></li>
+          <li><img src="./static/icons/tech/gemini.svg" alt="Google Gemini" /></li>
+          <li class="isTextChip">OpenAI</li>
+          <li class="isTextChip">Codex</li>
+          <li class="isTextChip">PowerShell</li>
+          <li class="isTextChip">ChromaDB</li>
+          <li class="isTextChip">Uvicorn</li>
+          <li class="isTextChip">SQL</li>
         </ul>
         <div class="aboutLegal">
-          <img class="tmdbLogo" src="./static/icons/tmdb-logo.svg" alt="The Movie Database (TMDB)" width="167" height="14" />
           <p>This product uses the TMDb API but is not endorsed or certified by TMDb.</p>
           <p>Information courtesy of IMDb (imdb.com).</p>
           <p>Some text is from Wikipedia, available under the Creative Commons Attribution-ShareAlike License; data from Wikidata is released under CC0.</p>
@@ -224,6 +233,6 @@
       </section>
     </aside>
 
-    <script src="./static/app.js?v=20260702-about-tmdb-logo" type="module"></script>
+    <script src="./static/app.js?v=20260702-about-logos" type="module"></script>
   </body>
 </html>

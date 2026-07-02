@@ -683,22 +683,41 @@ button:disabled {
   color: var(--text-primary);
 }
 
-.poweredByGrid {
+.logoRow {
   display: flex;
   flex-wrap: wrap;
-  gap: 8px;
+  align-items: center;
+  gap: 12px 16px;
   margin: 0;
   padding: 0;
   list-style: none;
 }
 
-.poweredByGrid li {
-  padding: 4px 10px;
+.logoRow li {
+  display: inline-flex;
+  align-items: center;
+}
+
+.logoRow img {
+  display: block;
+  width: auto;
+  opacity: 0.85;
+}
+
+.logoRow--tech img {
+  height: 22px;
+}
+
+.logoRow--sources img {
+  height: 18px;
+}
+
+.logoRow .isTextChip {
+  padding: 3px 8px;
   border: 1px solid var(--border);
   border-radius: 6px;
-  font-size: 0.8rem;
+  font-size: 0.72rem;
   color: var(--text-secondary);
-  background: rgb(255 255 255 / 4%);
 }
 
 .aboutLegal {
@@ -713,10 +732,8 @@ button:disabled {
   opacity: 0.85;
 }
 
-.tmdbLogo {
-  height: 14px;
-  width: auto;
-  margin-bottom: 2px;
+.logoRow--sources .tmdbLogo {
+  height: 13px;
 }
 
 .aboutCopyright {
