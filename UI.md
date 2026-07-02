@@ -155,8 +155,8 @@ Settings:
 About:
 
 - Credits, in order: "Design by A Fistful of Reels" (links to the X profile), "Built with AI agents", and "Voice via OpenAI Realtime API".
-- Data-sources logo row (`.logoRow--sources`): the official TMDb logo (`static/icons/tmdb-logo.svg`) plus IMDb, Wikipedia, Wikidata, Plex, and YouTube (`static/icons/tech/*.svg`, white monochrome), each with alt text.
-- Powered-by logo wall (`.logoRow--tech`): white monochrome brand SVGs under `static/icons/tech/`, plus text chips (`.isTextChip`) for components with no official icon (OpenAI, Codex, PowerShell, ChromaDB, Uvicorn, SQL).
+- Data-sources logo row (`.logoRow--sources`): the official TMDb logo (`static/icons/tmdb-logo.svg`) plus IMDb, Wikipedia, Wikidata, and YouTube (`static/icons/tech/*.svg`, white monochrome), each with alt text.
+- Powered-by logo wall (`.logoRow--tech`): white monochrome brand SVGs under `static/icons/tech/` (including the OpenAI Codex mark from LobeHub), plus text chips (`.isTextChip`) for components with no official icon (OpenAI, PowerShell, ChromaDB, Uvicorn, SQL).
 - Legal attributions (`.aboutLegal`): the required TMDb non-endorsement notice (its logo appears in the sources row), an IMDb courtesy credit, and the Wikipedia (CC BY-SA) / Wikidata (CC0) notice.
 - Copyright line: "© 2026 - A Fistful of Reels".
 
