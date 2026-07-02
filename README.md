@@ -329,7 +329,7 @@ The burger button in the control row opens a right-side drawer. It is keyboard a
 
 Settings exposes two real controls: **Assistant subtitles** and **User transcript lane**. These controls update the current page URL with `spokenSubtitles=0/1` and `userTranscriptSubtitles=0/1`, which the browser already forwards to `/session` as `spoken_subtitles` and `user_transcript_subtitles` on the next Realtime session negotiation. They do not edit `.env`; server defaults still come from `ENABLE_SPOKEN_SUBTITLES` and `ENABLE_USER_TRANSCRIPT_SUBTITLES` when no URL override is present.
 
-About credits the publisher (A Fistful of Reels, linking to its X profile), the AI agents, and the OpenAI Realtime API voice; lists the data sources (TheMovieDB, Wikipedia, Wikidata, IMDb); shows a "Powered by" technology row; and carries the required legal attributions (the TMDb non-endorsement notice, an IMDb credit, and the Wikipedia CC BY-SA / Wikidata CC0 notice) plus a copyright line.
+About credits the publisher (A Fistful of Reels, linking to its X profile), the AI agents, and the OpenAI Realtime API voice; lists the data sources (TheMovieDB, Wikipedia, Wikidata, IMDb); shows a "Powered by" technology row; and carries the required legal attributions (the official TMDb logo with its non-endorsement notice, an IMDb credit, and the Wikipedia CC BY-SA / Wikidata CC0 notice) plus a copyright line.
 
 ## Launch Splash And Showcase
 

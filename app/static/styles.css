@@ -713,6 +713,12 @@ button:disabled {
   opacity: 0.85;
 }
 
+.tmdbLogo {
+  height: 14px;
+  width: auto;
+  margin-bottom: 2px;
+}
+
 .aboutCopyright {
   padding-top: 8px;
   font-size: 0.8rem;
