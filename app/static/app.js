@@ -2605,6 +2605,41 @@ function dedupePersonCrewCredits(items) {
   }));
 }
 
+function castCreditLabels(item) {
+  return uniqueNonEmpty([item.CAST_CHARACTER, item.CHARACTER, item.ROLE]);
+}
+
+// Group a content's cast by person so someone credited for several characters shows a
+// single portrait with all their character names joined below it (mirrors
+// dedupePersonCrewCredits for crew). First-billed occurrence keeps its Map position, so
+// billing order is preserved.
+function dedupePersonCastCredits(items) {
+  const grouped = new Map();
+  for (const item of Array.isArray(items) ? items : []) {
+    if (!item || typeof item !== "object" || !visualTitle(item)) {
+      continue;
+    }
+    const key = personCreditKey(item);
+    const current = grouped.get(key);
+    if (!current) {
+      grouped.set(key, { item: { ...item }, roles: castCreditLabels(item) });
+      continue;
+    }
+    current.roles = uniqueNonEmpty([...current.roles, ...castCreditLabels(item)]);
+    if (!current.item.PROFILE_PATH && item.PROFILE_PATH) {
+      current.item.PROFILE_PATH = item.PROFILE_PATH;
+    }
+    if (!current.item.ID_PERSON && item.ID_PERSON) {
+      current.item.ID_PERSON = item.ID_PERSON;
+    }
+  }
+
+  return Array.from(grouped.values()).map(({ item, roles }) => ({
+    ...item,
+    CAST_CHARACTER: roles.join(", ") || item.CAST_CHARACTER,
+  }));
+}
+
 function visualImage(item, kind = "poster") {
   const size = kind === "profile" ? "w185" : kind === "logo" ? "w342" : "w342";
   return imageUrl(item.PROFILE_PATH || item.POSTER_PATH || item.STILL_PATH || item.IMAGE_PATH || item.LOGO_PATH || item.WIKIPEDIA_IMAGE_PATH, size);
@@ -3297,6 +3332,7 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
 
   if (record.ID_EPISODE || String(record.CONTENT_TYPE || "").toLowerCase() === "episode") {
     const crewCredits = dedupePersonCrewCredits(record.crew);
+    const castCredits = dedupePersonCastCredits(record.cast);
     const episodeNumber = record.EPISODE_NUMBER !== null && record.EPISODE_NUMBER !== undefined
       ? `Episode ${record.EPISODE_NUMBER}`
       : "";
@@ -3309,8 +3345,8 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     }
     appendVisualRail(body, "Series", record.series ? [record.series] : [], { kind: "poster" });
     appendVisualRail(body, "Season", record.season ? [{ ...record.season, ID_SERIE: record.ID_SERIE }] : [], { kind: "poster" });
-    if (!appendVisualRail(body, "Cast", record.cast, { kind: "profile", collectionName: "cast" })) {
-      appendList(body, "Cast", namesFrom(record.cast, "PERSON_NAME", Infinity));
+    if (!appendVisualRail(body, "Cast", castCredits, { kind: "profile", collectionName: "cast" })) {
+      appendList(body, "Cast", namesFrom(castCredits, "PERSON_NAME", Infinity));
     }
     appendVisualRail(body, "Crew", crewCredits, { kind: "profile", collectionName: "crew" });
     appendVisualRail(
@@ -3324,6 +3360,7 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     );
   } else if (record.ID_SEASON || String(record.CONTENT_TYPE || "").toLowerCase() === "season") {
     const crewCredits = dedupePersonCrewCredits(record.crew);
+    const castCredits = dedupePersonCastCredits(record.cast);
     appendMetric(metrics, "Aired", firstValue(formatDate(record.DAT_AIR), record.AIR_YEAR));
     appendMetric(metrics, "Episodes", record.EPISODE_COUNT);
     appendMetric(metrics, "Rating", formatRating(record.VOTE_AVERAGE));
@@ -3337,13 +3374,14 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
       episodeRailItems(record.episodes, record.ID_SERIE, record.SEASON_NUMBER),
       { kind: "poster", collectionName: "episodes" }
     );
-    if (!appendVisualRail(body, "Cast", record.cast, { kind: "profile", collectionName: "cast" })) {
-      appendList(body, "Cast", namesFrom(record.cast, "PERSON_NAME", Infinity));
+    if (!appendVisualRail(body, "Cast", castCredits, { kind: "profile", collectionName: "cast" })) {
+      appendList(body, "Cast", namesFrom(castCredits, "PERSON_NAME", Infinity));
     }
     appendVisualRail(body, "Crew", crewCredits, { kind: "profile", collectionName: "crew" });
   } else if (record.ID_MOVIE || String(record.CONTENT_TYPE || "").toLowerCase() === "movie") {
     const director = directorCredit(record);
     const crewCredits = dedupePersonCrewCredits(record.crew);
+    const castCredits = dedupePersonCastCredits(record.cast);
     appendMetric(metrics, "Released", firstValue(formatDate(record.DAT_RELEASE), record.RELEASE_YEAR));
     appendMetric(metrics, "Duration", formatRuntime(record.RUNTIME));
     appendMetric(metrics, "IMDb", formatRating(record.IMDB_RATING || record.IMDB_RATING_WEIGHTED));
@@ -3351,8 +3389,8 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     if (metrics.children.length) {
       body.append(metrics);
     }
-    if (!appendVisualRail(body, "Cast", record.cast, { kind: "profile", collectionName: "cast" })) {
-      appendList(body, "Cast", namesFrom(record.cast, "PERSON_NAME", Infinity));
+    if (!appendVisualRail(body, "Cast", castCredits, { kind: "profile", collectionName: "cast" })) {
+      appendList(body, "Cast", namesFrom(castCredits, "PERSON_NAME", Infinity));
     }
     appendVisualRail(body, "Crew", crewCredits, { kind: "profile", collectionName: "crew" });
     appendVisualRail(body, "Technicals", record.technicals, { kind: "poster", collectionName: "technicals" });
@@ -3360,6 +3398,7 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
   } else if (record.ID_SERIE || String(record.CONTENT_TYPE || "").toLowerCase() === "serie") {
     const director = directorCredit(record);
     const crewCredits = dedupePersonCrewCredits(record.crew);
+    const castCredits = dedupePersonCastCredits(record.cast);
     appendMetric(metrics, "First aired", firstValue(formatDate(record.DAT_FIRST_AIR), record.FIRST_AIR_YEAR));
     appendMetric(metrics, "Seasons", record.NUMBER_OF_SEASONS);
     appendMetric(metrics, "Episodes", record.NUMBER_OF_EPISODES);
@@ -3369,8 +3408,8 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
       body.append(metrics);
     }
     appendVisualRail(body, "Seasons", seasonRailItems(record.seasons, record.ID_SERIE), { kind: "poster", collectionName: "seasons" });
-    if (!appendVisualRail(body, "Cast", record.cast, { kind: "profile", collectionName: "cast" })) {
-      appendList(body, "Cast", namesFrom(record.cast, "PERSON_NAME", Infinity));
+    if (!appendVisualRail(body, "Cast", castCredits, { kind: "profile", collectionName: "cast" })) {
+      appendList(body, "Cast", namesFrom(castCredits, "PERSON_NAME", Infinity));
     }
     appendVisualRail(body, "Crew", crewCredits, { kind: "profile", collectionName: "crew" });
     appendMixedVisualSections(body, record);

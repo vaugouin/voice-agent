@@ -839,6 +839,7 @@ If detail exists:
 - series detail pages render returned `seasons` as a clickable `Seasons` rail above the `Cast` rail, injecting the parent `ID_SERIE` needed by the composite season route
 - season detail pages render parent-series navigation and metrics, then a clickable `Episodes` rail from returned `episodes` summaries above the `Cast` rail, followed by crew; each episode card inherits the season composite route context and opens its full episode page
 - episode detail pages render parent-series and parent-season navigation, metrics, cast, crew, and returned still-image cards
+- Cast and Crew rails on content detail pages (movie / series / season / episode) group credits **by person**: someone credited for several characters shows a single portrait with the character names joined (`dedupePersonCastCredits`), the same way crew with several roles is joined (`dedupePersonCrewCredits`). The rail's `N of N` header still reflects the raw (ungrouped) upstream credit count
 - technical detail pages use localized `DESCRIPTION` as the title, show `TECHNICAL_TYPE` as a type metric, and render associated `movies` plus same-type `siblings` as clickable rails when returned
 - company and network detail pages asynchronously swap their main logo visual to the padded 2:3 master (`applySyntheticLogo()`) when the deterministically derived URL loads; embedded `Companies`/`Networks` relation rails on any detail page apply the same upgrade per rail item, keyed on the item's `ID_COMPANY`/`ID_NETWORK`. On 404 the raw TMDb logo or text fallback stays
 
