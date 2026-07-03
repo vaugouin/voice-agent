@@ -2030,6 +2030,11 @@ function buildCardMedia(title, imageUrl, synthetic = null) {
 
   if (imageUrl) {
     const img = document.createElement("img");
+    // Lazy-load (set before src) + async decode so the launch showcase — up to ~237
+    // sample groups, each with poster cards, duplicated for the marquee — does not fetch
+    // every poster on cold start; posters load as they scroll into view.
+    img.loading = "lazy";
+    img.decoding = "async";
     img.src = imageUrl;
     setImageText(img, title);
     media.append(img);
@@ -6572,7 +6577,7 @@ function flattenSampleTree(categories, topLabel = "") {
 
 // Keep samples that have a renderable preview, then round-robin across categories
 // so the showcase mixes topics instead of clustering one category.
-function selectShowcaseSamples(flat, max = 18) {
+function selectShowcaseSamples(flat, max = 300) {
   const renderable = flat.filter(
     (sample) =>
       sample.question &&
@@ -6717,7 +6722,7 @@ function startShowcaseMarquee(viewport, lanes) {
 }
 
 function renderLaunchShowcase(categories, uiLanguage, { animate = false } = {}) {
-  const picked = selectShowcaseSamples(flattenSampleTree(categories), 30);
+  const picked = selectShowcaseSamples(flattenSampleTree(categories), 300);
   if (!picked.length) {
     return;
   }
