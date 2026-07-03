@@ -1772,6 +1772,14 @@ button.detailVisualCard:hover {
   width: 118px;
 }
 
+/* Showcase is a posters-only teaser wall: hide the title/year text under each card so the
+   tiles stay uniform (no truncation / uneven heights). The name stays available as the
+   card's title tooltip, and imageless entities still show their name in the poster
+   fallback tile (which lives inside the media, not this text block). */
+.showcaseGroup .search-poster-card-text {
+  display: none;
+}
+
 .showcaseQuestion {
   flex: 0 0 auto;
   max-width: 340px;

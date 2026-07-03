@@ -6657,6 +6657,11 @@ function buildShowcaseGroup(sample) {
       const cardSpec = cardSpecFromRecord(record);
       if (cardSpec) {
         appendCard(group, cardSpec);
+        // Showcase cards are posters-only (title text is hidden via CSS); keep the name
+        // as a hover tooltip on the card so it stays identifiable and accessible.
+        if (cardSpec.title) {
+          group.lastElementChild?.setAttribute("title", cardSpec.title);
+        }
       } else {
         appendAggregateCard(group, record);
       }
