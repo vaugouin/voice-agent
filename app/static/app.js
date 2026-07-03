@@ -6646,7 +6646,11 @@ function buildShowcaseGroup(sample) {
     group.append(answer);
     rendered = 1;
   } else {
-    for (const row of sample.sim.result.slice(0, 8)) {
+    // Image-query samples (fastapi sets sim.image_gallery) preview the entity's full
+    // poster/portrait set, so lift the usual 8-row cap for them, bounded to keep the
+    // marquee sane. Each row is the entity with one of its images swapped in.
+    const rowLimit = sample.sim.image_gallery ? 40 : 8;
+    for (const row of sample.sim.result.slice(0, rowLimit)) {
       const record = row?.data || row;
       if (!record || typeof record !== "object") {
         continue;
