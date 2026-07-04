@@ -47,6 +47,7 @@ Pipeline stages:
 ## Editing Rules Specific To This App
 
 - Frontend asset cache busting matters. When changing `app/static/app.js` or `app/static/styles.css`, bump the query string versions in `app/static/index.html` and keep the README cache-busting section aligned.
+- CSS specificity vs the `hidden` attribute: screens/panels are shown/hidden via the `hidden` attribute plus a shared low-specificity rule (e.g. `.appMenuScreen[hidden] { display: none }`). An `#id` rule that sets `display` (e.g. `#appMenuAboutScreen { display: flex }`) outranks that rule and un-hides the element in every state. Always scope screen-specific styles with `:not([hidden])` — e.g. `#appMenuAboutScreen:not([hidden]) { … }` — so the hide toggle keeps working. (Regression fixed 2026-07-04: the About credits leaked onto the burger-menu index for exactly this reason.)
 - Keep the browser UI and `UI.md` in sync. If a visibility rule changes, document the state transition, not just the visual result.
 - Avoid adding user-facing project explanations to `AGENTS.md`; put them in `README.md` or `UI.md` as appropriate.
 - Keep generated UI text and labels consistent with existing controls. The UI is compact and utility-focused, especially in result/detail mode.
