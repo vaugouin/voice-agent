@@ -698,6 +698,15 @@ button:disabled {
   align-items: center;
 }
 
+/* Each logo/icon links to its official site without changing the icon's look:
+   the anchor wraps the image tightly (no baseline gap, no text decoration). */
+.logoRow a {
+  display: inline-flex;
+  line-height: 0;
+  text-decoration: none;
+  color: inherit;
+}
+
 .logoRow img {
   display: block;
   width: auto;

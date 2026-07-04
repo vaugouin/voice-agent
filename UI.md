@@ -158,7 +158,7 @@ About:
 - Credits, in order: "Design by A Fistful of Reels" (links to the X profile), "Built with AI agents", and "Voice via OpenAI Realtime API".
 - Data-sources logo row (`.logoRow--sources`): the official TMDb logo (`static/icons/tmdb-logo.svg`) plus IMDb, Wikipedia, Wikidata, and YouTube (`static/icons/tech/*.svg`, white monochrome).
 - Powered-by logo wall (`.logoRow--tech`): white monochrome brand SVGs under `static/icons/tech/` (including the OpenAI Codex mark from LobeHub). ChromaDB, Uvicorn and SQL use simple original monochrome marks (`chroma.svg` overlapping circles, `uvicorn.svg` bolt, `sql.svg` database cylinder) rather than official brand logos; the PowerShell chip was removed. No `.isTextChip` text fallbacks remain in the wall (the class is still defined for potential future use).
-- Every logo and chip in both rows carries `alt` and `title` set to the tech/source name, so hovering shows a tooltip.
+- Every logo in both rows carries `alt` and `title` set to the tech/source name (tooltip on hover) and is wrapped in an anchor (`target="_blank" rel="noopener noreferrer"`) linking to that project's official website; `.logoRow a` is styled to wrap the image tightly (`display: inline-flex; line-height: 0`) so the link does not change the icon's appearance.
 - Legal attributions (`.aboutLegal`): the required TMDb non-endorsement notice (its logo appears in the sources row), an IMDb courtesy credit, and the Wikipedia (CC BY-SA) / Wikidata (CC0) notice.
 - Copyright line: "© 2026 - A Fistful of Reels".
 
