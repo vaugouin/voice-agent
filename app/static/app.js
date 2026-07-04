@@ -206,6 +206,7 @@ const DETAIL_TOOL_ENTITIES = {
   get_list_detail: "list",
   get_movement_detail: "movement",
   get_technical_detail: "technical",
+  get_genre_detail: "genre",
   get_group_detail: "group",
   get_death_detail: "death",
   get_award_detail: "award",
@@ -838,6 +839,7 @@ function detailArgsSignature(args = {}) {
       "ID_T2S_LIST",
       "ID_MOVEMENT",
       "ID_TECHNICAL",
+      "ID_GENRE",
       "ID_GROUP",
       "ID_DEATH",
       "ID_AWARD",
@@ -872,6 +874,7 @@ function recordIdentitySignature(record = {}) {
     "ID_T2S_LIST",
     "ID_MOVEMENT",
     "ID_TECHNICAL",
+    "ID_GENRE",
     "ID_GROUP",
     "ID_DEATH",
     "ID_AWARD",
@@ -2251,6 +2254,7 @@ function cardSpecFromRecord(record) {
     record.LIST_NAME ||
     record.COLLECTION_NAME ||
     record.MOVEMENT_NAME ||
+    record.GENRE_NAME ||
     record.DESCRIPTION ||
     record.DESCRIPTION_FR ||
     record.GROUP_NAME ||
@@ -2367,6 +2371,9 @@ function detailRequestFromRecord(record) {
   }
   if (record.ID_TECHNICAL) {
     return { toolName: "get_technical_detail", id: record.ID_TECHNICAL };
+  }
+  if (record.ID_GENRE) {
+    return { toolName: "get_genre_detail", id: record.ID_GENRE };
   }
   if (record.ID_GROUP) {
     return { toolName: "get_group_detail", id: record.ID_GROUP };
@@ -3258,6 +3265,7 @@ function titleForRecord(record) {
     record.TOPIC_NAME,
     record.LIST_NAME,
     record.MOVEMENT_NAME,
+    record.GENRE_NAME,
     record.DESCRIPTION,
     record.DESCRIPTION_FR,
     record.GROUP_NAME,

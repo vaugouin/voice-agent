@@ -364,6 +364,18 @@ DETAIL_ENTITY_CONFIG = {
             "sharing the same technical type."
         ),
     },
+    "genre": {
+        "tool_name": "get_genre_detail",
+        "path": "genres",
+        "id_name": "ID_GENRE",
+        "id_param": "id",
+        "id_type": "integer",
+        "description": (
+            "Get a movie / TV genre by ID_GENRE (the TMDb genre code, e.g. "
+            "28 = Action, 878 = Science Fiction, 18 = Drama), including its name "
+            "and its best-rated member movies and TV series."
+        ),
+    },
     "group": {
         "tool_name": "get_group_detail",
         "path": "groups",

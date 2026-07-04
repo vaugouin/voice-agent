@@ -152,7 +152,7 @@ The server creates a session with:
 - voice: selected server-side by `AGENT_VOICE`, default `ash`
 - input transcription: `gpt-4o-transcribe`
 - turn detection: server VAD
-- tools: `query_text2sql` plus dedicated detail tools for movies, series, seasons, episodes, persons, companies, networks, collections, topics, lists, movements, technicals, groups, deaths, awards, nominations, and locations
+- tools: `query_text2sql` plus dedicated detail tools for movies, series, seasons, episodes, persons, companies, networks, collections, topics, lists, movements, technicals, genres, groups, deaths, awards, nominations, and locations
 - optional spoken-card focus tool: `focus_result_card`, enabled by default with `ENABLE_STRUCTURED_CARD_FOCUS=true`
 
 Supported voice values in this app:
@@ -263,6 +263,7 @@ The local adapter forwards to the text2sql API detail endpoints documented in `C
 | `get_list_detail` | `GET /lists/{id}?ui_language=...` | `ID_T2S_LIST` |
 | `get_movement_detail` | `GET /movements/{id}?ui_language=...` | `ID_MOVEMENT` |
 | `get_technical_detail` | `GET /technicals/{id}?ui_language=...` | `ID_TECHNICAL` |
+| `get_genre_detail` | `GET /genres/{id}?ui_language=...` | `ID_GENRE` |
 | `get_group_detail` | `GET /groups/{id}?ui_language=...` | `ID_GROUP` |
 | `get_death_detail` | `GET /deaths/{id}?ui_language=...` | `ID_DEATH` |
 | `get_award_detail` | `GET /awards/{id}?ui_language=...` | `ID_AWARD` |
@@ -359,7 +360,7 @@ Search result answer panels include an icon-only query-details toggle on the rig
 Click-through behavior:
 
 - Cards for records with a supported entity ID open the matching in-app detail page instead of navigating away.
-- Supported click-through records include movies, series, seasons, episodes, people, companies, networks, collections, topics, lists, movements, technicals, groups, deaths, awards, nominations, and Wikidata-backed locations.
+- Supported click-through records include movies, series, seasons, episodes, people, companies, networks, collections, topics, lists, movements, technicals, genres, groups, deaths, awards, nominations, and Wikidata-backed locations.
 - The detail view uses the same local `GET /tool/detail/{entity}/{id}?ui_language=...` adapter as Realtime detail tool calls, then renders the returned record content in the results panel.
 - Entity detail tool outputs keep compact `wikipedia_content` available to the model for grounding background, history, biography, plot-context, and explanatory answers, but the UI does not render Wikipedia content sections on detail pages.
 - Normal detail answers stay concise. When the user explicitly asks "tell me more", "in detail", "the full story", or a similar verbose follow-up, the app treats that single turn as a verbose detail request: it relaxes the model-facing `wikipedia_content` caps for the relevant detail tool output and instructs the model to give a longer paraphrased answer grounded in the returned Wikipedia sections. The raw Wikipedia sections are still not rendered as UI content and should not be read verbatim.
@@ -403,6 +404,7 @@ Detail page header behavior:
 - Movie and series detail pages use the `/movies/{id}` and `/series/{id}` `backdrops` arrays to show a wide swipeable backdrop viewer below the poster, with `BACKDROP_PATH` as a fallback. Clicking a backdrop toggles fullscreen zoom. Sliding horizontally moves to the previous or next backdrop. A top-right play button starts a slideshow across all available backdrops and changes to a stop button while the slideshow is running; the control remains visible in normal and fullscreen modes.
 - Clicking the main portrait, poster, logo, or Wikipedia image on any entity detail page expands the current image to a full-screen viewer. Clicking the full-screen image or pressing `Escape` returns it to the normal detail-page position.
 - Collection, topic, list, movement, technical, group, death, award, nomination, company, network, and location detail pages show available type/count/rating metrics in the top metric area. Technical detail pages use the localized `DESCRIPTION` value as their display title, show `TECHNICAL_TYPE` as the type metric, and render associated movies plus same-type sibling technicals as clickable rails.
+- Genre detail pages (`get_genre_detail` → `GET /genres/{id}`) use the localized `GENRE_NAME` as their title and render the genre's best-rated member `movies` and `series` as clickable rails. Genres currently have no own image or Wikidata/Wikipedia block (the `T_WC_TMDB_GENRE` table has no `ID_WIKIDATA` yet), so the detail poster falls back to the genre name.
 
 ## Retained Context
 
