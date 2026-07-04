@@ -154,6 +154,7 @@ Settings:
 
 About:
 
+- Layout: while the About screen is shown the drawer expands to **full-screen at any size** (`.appMenuDrawer:has(#appMenuAboutScreen:not([hidden]))`), and the About content becomes a full-height centered flex column that distributes its blocks to fill the viewport like end-of-film credits (`#appMenuAboutScreen`, `justify-content: space-between`); logo heights scale with viewport height so everything fits, with scroll only as a fallback on very short screens. Settings and the menu index keep the compact right-side drawer.
 - Credits, in order: "Design by A Fistful of Reels" (links to the X profile), "Built with AI agents", and "Voice via OpenAI Realtime API".
 - Data-sources logo row (`.logoRow--sources`): the official TMDb logo (`static/icons/tmdb-logo.svg`) plus IMDb, Wikipedia, Wikidata, and YouTube (`static/icons/tech/*.svg`, white monochrome).
 - Powered-by logo wall (`.logoRow--tech`): white monochrome brand SVGs under `static/icons/tech/` (including the OpenAI Codex mark from LobeHub), plus text chips (`.isTextChip`) for components with no official icon (PowerShell, ChromaDB, Uvicorn, SQL).

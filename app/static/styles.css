@@ -741,6 +741,59 @@ button:disabled {
   font-size: 0.8rem;
 }
 
+/* About screen — always full-screen at any size, with every element distributed
+   to fill the viewport like end-of-film credits. The drawer expands edge-to-edge
+   only while the About screen is shown (:has fallback: plain panel on old browsers). */
+.appMenuDrawer:has(#appMenuAboutScreen:not([hidden])) {
+  width: 100vw;
+  max-width: 100vw;
+  padding: 14px 0 0;
+  border-left: none;
+  background: #0b0e12;
+}
+
+#appMenuAboutScreen {
+  height: 100%;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  align-items: center;
+  text-align: center;
+  gap: clamp(4px, 1.2vh, 16px);
+  padding: clamp(10px, 2.4vh, 30px) clamp(16px, 5vw, 72px) clamp(14px, 3vh, 40px);
+  border-top: none;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+#appMenuAboutScreen > * {
+  flex: 0 0 auto;
+  width: 100%;
+  max-width: 780px;
+}
+
+#appMenuAboutScreen .logoRow {
+  justify-content: center;
+}
+
+#appMenuAboutScreen .logoRow--tech img {
+  height: clamp(16px, 2.2vh, 22px);
+}
+
+#appMenuAboutScreen .logoRow--sources img {
+  height: clamp(14px, 1.9vh, 18px);
+}
+
+#appMenuAboutScreen .logoRow--sources .tmdbLogo {
+  height: clamp(11px, 1.5vh, 13px);
+}
+
+#appMenuAboutScreen .aboutLegal {
+  border-top: none;
+  padding-top: 0;
+}
+
 .menuToggle,
 .menuSetting {
   display: grid;
