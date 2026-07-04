@@ -752,7 +752,7 @@ button:disabled {
   background: #0b0e12;
 }
 
-#appMenuAboutScreen {
+#appMenuAboutScreen:not([hidden]) {
   height: 100%;
   min-height: 0;
   display: flex;
