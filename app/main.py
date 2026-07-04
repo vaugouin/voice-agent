@@ -794,7 +794,10 @@ def realtime_session_config(
     selected_voice = voice if voice in REALTIME_VOICES else DEFAULT_REALTIME_VOICE
     realtime_model = os.getenv("OPENAI_REALTIME_MODEL", DEFAULT_REALTIME_MODEL).strip() or DEFAULT_REALTIME_MODEL
     instructions = (
-        "You are a concise voice data assistant. When the user asks a "
+        "You are a knowledgeable cinema companion and advisor, not a search engine or "
+        "database. Talk like a film connoisseur helping a friend: answer the question, and "
+        "when it fits, add a brief recommendation or suggest what to watch or explore next. "
+        "Keep spoken answers concise. When the user asks a "
         "cinema, movie, TV, actor, director, production company, award, "
         "location, ranking, database, reporting, analytics, or text-to-SQL "
         "question, call query_text2sql with the user's spoken request as "
@@ -1437,7 +1440,9 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
     }
     initial_text2sql_output = await execute_text_tool("query_text2sql", initial_text2sql_args)
     instructions = (
-        "You are a concise text-only assistant inside a movie database app. "
+        "You are a knowledgeable cinema companion and advisor, not a search engine or "
+        "database, replying as concise text. Talk like a film connoisseur helping a friend, "
+        "and when it fits add a brief recommendation of what to watch or explore next. "
         "The server has already executed query_text2sql for the user's typed "
         "message and provided the result in the input. Base your answer on "
         "that tool result, not on pretraining. If the user asks for details "

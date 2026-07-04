@@ -251,7 +251,6 @@ const launchSplashHooks = {
   en: [
     "Talk to the movies.",
     "Ask cinema anything.",
-    "The movie database that talks back.",
     "Every film. One conversation.",
     "Say it. See it.",
     "Ask. And watch it answer.",
@@ -260,13 +259,14 @@ const launchSplashHooks = {
     "A film buff you can talk to.",
     "Posters, not paragraphs.",
     "Cinema, on speaking terms.",
-    "Question the whole catalogue.",
-    "The database that listens.",
+    "What should I watch? Just ask.",
+    "Recommendations, out loud.",
+    "Tell it what you love.",
+    "Your cinema connoisseur, on call.",
   ],
   fr: [
     "Parlez aux films.",
     "Demandez tout au cinéma.",
-    "La base de films qui vous répond.",
     "Tous les films. Une seule conversation.",
     "Dites-le. Voyez-le.",
     "Demandez. Et regardez-le répondre.",
@@ -275,8 +275,10 @@ const launchSplashHooks = {
     "Un cinéphile à qui parler.",
     "Des affiches, pas des paragraphes.",
     "Le cinéma, à portée de voix.",
-    "Interrogez tout le catalogue.",
-    "La base de données qui écoute.",
+    "Que regarder ? Demandez, tout simplement.",
+    "Des recommandations, à voix haute.",
+    "Dites-lui ce que vous aimez.",
+    "Votre connaisseur cinéma, à la demande.",
   ],
 };
 
