@@ -1685,13 +1685,17 @@ async def get_episode_detail(
 
 
 @app.get("/tool/samples")
-async def get_samples(ui_language: str = "en") -> dict[str, Any]:
+async def get_samples(ui_language: str = "en", set: str = "sample") -> dict[str, Any]:
     """Proxy the upstream text2sql /samples endpoint.
 
     Returns the curated tree of suggested sample questions (each with its parsed
     `assertion` and a `simulated_result` preview) so the browser can render a launch
     showcase without database access. The API key is injected server-side, like the
     other /tool/* proxies.
+
+    ``set`` is forwarded to the upstream: "sample" (all IS_SAMPLE) or "showcase"
+    (the curated IS_SHOWCASE picks for the advisor home screen). The launch showcase
+    requests "showcase".
     """
     samples_url = f"{text2sql_base_url()}/samples"
     resolved_language = normalize_ui_language(ui_language)
@@ -1700,7 +1704,7 @@ async def get_samples(ui_language: str = "en") -> dict[str, Any]:
             response = await client.get(
                 samples_url,
                 headers=text2sql_headers(),
-                params={"ui_language": resolved_language},
+                params={"ui_language": resolved_language, "set": set},
             )
         except httpx.HTTPError as exc:
             raise HTTPException(status_code=502, detail=str(exc)) from exc

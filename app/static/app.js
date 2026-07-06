@@ -6862,6 +6862,7 @@ async function loadLaunchShowcaseData() {
   launchShowcaseLoadPromise = (async () => {
     const showcaseUrl = new URL(appUrl("tool/samples"));
     showcaseUrl.searchParams.set("ui_language", launchShowcaseUiLanguage());
+    showcaseUrl.searchParams.set("set", "showcase");  // advisor home-screen picks (IS_SHOWCASE=1)
     const response = await fetch(showcaseUrl.toString());
     if (!response.ok) {
       return null;
