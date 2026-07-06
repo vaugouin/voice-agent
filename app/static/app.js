@@ -2165,6 +2165,20 @@ function cardSpecFromRecord(record) {
     detailRequest,
   });
 
+  // Image-wall rows (person_image / movie_image / serie_image result_entity): each row is one
+  // image from T_WC_T2S_*_IMAGE (ID_ROW PK, TYPE_IMAGE, image path in POSTER_PATH aliased from
+  // IMAGE_PATH). Render the image itself, not a "Person 505710" entity card with a blank portrait.
+  if (record.ID_ROW && record.TYPE_IMAGE && (record.POSTER_PATH || record.IMAGE_PATH)) {
+    const rawPath = record.POSTER_PATH || record.IMAGE_PATH;
+    const typeImage = String(record.TYPE_IMAGE || "").toLowerCase();
+    const size = typeImage === "backdrop" || typeImage === "still" ? "w780" : "w500";
+    const title = record.PERSON_NAME || record.MOVIE_TITLE || record.SERIE_TITLE || record.CONTENT_TITLE || "";
+    return withRecordDetail({
+      title,
+      imageUrl: tmdbImage(rawPath, size),
+    });
+  }
+
   if (record.ID_MOVIE || type === "movie") {
     const title = record.MOVIE_TITLE || record.CONTENT_TITLE || record.TITLE || `Movie ${record.ID_MOVIE || ""}`;
     const year = yearFromDate(record.DAT_RELEASE);
