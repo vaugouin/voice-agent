@@ -3031,7 +3031,30 @@ function buildDetailVisualCard(item, kind = "poster") {
   const text = document.createElement("div");
   text.className = "detailVisualText";
   appendText(text, "detailVisualTitle", title);
-  appendText(text, "detailVisualSubtitle", visualSubtitle(item));
+  const subtitleText = visualSubtitle(item);
+  if (subtitleText) {
+    const subtitle = document.createElement("div");
+    subtitle.className = "detailVisualSubtitle";
+    subtitle.textContent = subtitleText;
+    // Long credits (e.g. one actor's many roles) are clamped to 3 lines so cards
+    // keep an even height; tapping a clamped subtitle reveals the full text.
+    // stopPropagation keeps that tap from also opening the card's detail page.
+    subtitle.addEventListener("click", (event) => {
+      if (!subtitle.classList.contains("isClampable")) {
+        return;
+      }
+      event.stopPropagation();
+      subtitle.classList.toggle("isExpanded");
+    });
+    text.append(subtitle);
+    // Flag as clampable only once it's laid out and actually overflows, so short
+    // credits stay non-interactive.
+    requestAnimationFrame(() => {
+      if (subtitle.scrollHeight > subtitle.clientHeight + 1) {
+        subtitle.classList.add("isClampable");
+      }
+    });
+  }
   card.append(media, text);
   return card;
 }

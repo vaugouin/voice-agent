@@ -1625,6 +1625,19 @@ button.detailVisualCard:hover {
   color: rgb(255 255 255 / 70%);
   font-size: 0.75rem;
   line-height: 1.2;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+}
+
+.detailVisualSubtitle.isClampable {
+  cursor: pointer;
+}
+
+.detailVisualSubtitle.isExpanded {
+  -webkit-line-clamp: unset;
+  overflow: visible;
 }
 
 .scalarGrid {
