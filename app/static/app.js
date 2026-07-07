@@ -6315,6 +6315,7 @@ async function handleServerEvent(event) {
     const transcript = event.transcript || "";
     if (transcript.trim()) {
       addRetainedContext({ type: "assistant", text: transcript.trim() });
+      clientLog("assistant_transcript", { item_id: event.item_id, transcript: transcript.trim() });
       assistantSpokenHighlightBuffer = transcript.trim();
       enqueueSpokenAudioHighlightCues(assistantSpokenHighlightBuffer);
       completeRealtimeSpokenSubtitle(transcript);

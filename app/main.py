@@ -1747,6 +1747,7 @@ HARNESS_LOG_EVENTS = frozenset({
     "tool_call_success",
     "tool_call_error",
     "user_transcript",
+    "assistant_transcript",
     "text_chat_sent",
     "text_chat_success",
     "text_chat_error",
