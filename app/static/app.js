@@ -3457,6 +3457,8 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     }
     appendVisualRail(body, "Crew", crewCredits, { kind: "profile", collectionName: "crew" });
     appendVisualRail(body, "Technicals", record.technicals, { kind: "poster", collectionName: "technicals" });
+    appendVisualRail(body, "Similar", record.similar, { kind: "poster", collectionName: "similar" });
+    appendVisualRail(body, "Recommended", record.recommendations, { kind: "poster", collectionName: "recommendations" });
     appendMixedVisualSections(body, record);
   } else if (record.ID_SERIE || String(record.CONTENT_TYPE || "").toLowerCase() === "serie") {
     const director = directorCredit(record);
@@ -3475,6 +3477,8 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
       appendList(body, "Cast", namesFrom(castCredits, "PERSON_NAME", Infinity));
     }
     appendVisualRail(body, "Crew", crewCredits, { kind: "profile", collectionName: "crew" });
+    appendVisualRail(body, "Similar", record.similar, { kind: "poster", collectionName: "similar" });
+    appendVisualRail(body, "Recommended", record.recommendations, { kind: "poster", collectionName: "recommendations" });
     appendMixedVisualSections(body, record);
   } else if (record.ID_PERSON) {
     appendMetric(metrics, "Born", record.BIRTH_YEAR);
