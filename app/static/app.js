@@ -3457,6 +3457,7 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     }
     appendVisualRail(body, "Crew", crewCredits, { kind: "profile", collectionName: "crew" });
     appendVisualRail(body, "Technicals", record.technicals, { kind: "poster", collectionName: "technicals" });
+    appendVisualRail(body, record.collection_name || "Collection", record.collection_movies, { kind: "poster", collectionName: "collection_movies" });
     appendVisualRail(body, "Similar", record.similar, { kind: "poster", collectionName: "similar" });
     appendVisualRail(body, "Recommended", record.recommendations, { kind: "poster", collectionName: "recommendations" });
     appendMixedVisualSections(body, record);
