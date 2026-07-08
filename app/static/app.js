@@ -3478,6 +3478,10 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
       appendList(body, "Cast", namesFrom(castCredits, "PERSON_NAME", Infinity));
     }
     appendVisualRail(body, "Crew", crewCredits, { kind: "profile", collectionName: "crew" });
+    // FASTAPI-152: cross-type T2S collection rail — a collection can hold both films and
+    // series (e.g. Star Trek); each card routes to the right detail by its own ID_MOVIE /
+    // ID_SERIE (detailRequestFromRecord), so movies and series mix in one chronological rail.
+    appendVisualRail(body, record.collection_name || "Collection", record.collection_movies, { kind: "poster", collectionName: "collection_movies" });
     appendVisualRail(body, "Similar", record.similar, { kind: "poster", collectionName: "similar" });
     appendVisualRail(body, "Recommended", record.recommendations, { kind: "poster", collectionName: "recommendations" });
     appendMixedVisualSections(body, record);
