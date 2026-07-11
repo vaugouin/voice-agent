@@ -683,6 +683,14 @@ button:disabled {
   color: var(--text-primary);
 }
 
+/* VOICE-AGENT-069: the app name, shown above the "Design by" line in About. */
+.aboutAppName {
+  margin: 2px 0 10px;
+  font-size: 1.15rem;
+  font-weight: 800;
+  color: var(--accent, #b388ff);
+}
+
 .logoRow {
   display: flex;
   flex-wrap: wrap;
