@@ -1766,6 +1766,17 @@ function yearFromDate(value) {
   return String(value || "").slice(0, 4);
 }
 
+// VOICE-AGENT-067: air-year range for a serie card — "2000-2003", "2020-" (ongoing, no end),
+// "2026-2026" (single year). Begin from DAT_FIRST_AIR, or DAT_RELEASE when the item is a
+// collection serie member (first-air is aliased to DAT_RELEASE there). "" for non-series.
+function serieAirYears(item) {
+  const first = item.DAT_FIRST_AIR || (item.ENTITY_TYPE === "serie" ? item.DAT_RELEASE : "");
+  const begin = yearFromDate(first);
+  if (!begin) return "";
+  const end = yearFromDate(item.DAT_LAST_AIR);
+  return end ? `${begin}-${end}` : `${begin}-`;
+}
+
 function formatRating(value) {
   const number = Number(value);
   return Number.isFinite(number) && number > 0 ? number.toFixed(1) : "";
@@ -2492,6 +2503,7 @@ function visualSubtitle(item) {
     item.EPISODE_SUBTITLE,
     item.CAST_CHARACTER,
     item.CREW_DEPARTMENT,
+    serieAirYears(item),
     yearFromDate(item.DAT_RELEASE),
     yearFromDate(item.DAT_FIRST_AIR),
     item.GROUP_TYPE,
