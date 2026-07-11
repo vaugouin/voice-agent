@@ -3291,6 +3291,161 @@ function appendVisualRail(parent, title, items, { kind = "poster", collectionNam
   return true;
 }
 
+// VOICE-AGENT-070: YouTube/Vimeo video rail on a movie/serie detail. The API `videos`
+// field already carries THUMBNAIL_URL / EMBED_URL / WATCH_URL / VIDEO_NAME per row; clicking
+// a card plays the video inline in a modal (no leaving the app).
+function isPlayableVideo(video) {
+  if (!video || typeof video !== "object") return false;
+  const embeddable = video.EMBED_URL || video.WATCH_URL;
+  const hasThumb = video.THUMBNAIL_URL || video.VIDEO_KEY;
+  return Boolean(embeddable && hasThumb);
+}
+
+function videoThumbUrl(video) {
+  if (video.THUMBNAIL_URL) return video.THUMBNAIL_URL;
+  if (String(video.VIDEO_SITE || "").toLowerCase() === "youtube" && video.VIDEO_KEY) {
+    return `https://img.youtube.com/vi/${video.VIDEO_KEY}/hqdefault.jpg`;
+  }
+  return "";
+}
+
+function openVideoModal(video) {
+  const site = String(video.VIDEO_SITE || "").toLowerCase();
+  let embed = video.EMBED_URL || "";
+  if (!embed && site === "youtube" && video.VIDEO_KEY) embed = `https://www.youtube.com/embed/${video.VIDEO_KEY}`;
+  if (!embed) {
+    if (video.WATCH_URL) window.open(video.WATCH_URL, "_blank", "noopener");
+    return;
+  }
+  const src = embed + (embed.includes("?") ? "&" : "?") + "autoplay=1&rel=0";
+  const overlay = document.createElement("div");
+  overlay.className = "videoModalOverlay";
+  const frameWrap = document.createElement("div");
+  frameWrap.className = "videoModalFrame";
+  const iframe = document.createElement("iframe");
+  iframe.src = src;
+  iframe.title = video.VIDEO_NAME || "Video";
+  iframe.setAttribute("allow", "accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share");
+  iframe.setAttribute("allowfullscreen", "");
+  const closeBtn = document.createElement("button");
+  closeBtn.type = "button";
+  closeBtn.className = "videoModalClose";
+  closeBtn.setAttribute("aria-label", "Close video");
+  closeBtn.textContent = "✕";
+  const close = () => {
+    overlay.remove();
+    document.removeEventListener("keydown", onKey);
+  };
+  const onKey = (event) => { if (event.key === "Escape") close(); };
+  overlay.addEventListener("click", (event) => { if (event.target === overlay) close(); });
+  closeBtn.addEventListener("click", close);
+  document.addEventListener("keydown", onKey);
+  frameWrap.append(iframe, closeBtn);
+  overlay.append(frameWrap);
+  document.body.append(overlay);
+}
+
+function buildVideoCard(video) {
+  const name = video.VIDEO_NAME || "Video";
+  const card = document.createElement("button");
+  card.type = "button";
+  card.className = "detailVisualCard videoCard";
+  card.setAttribute("aria-label", `Play ${name}`);
+  card.addEventListener("click", () => openVideoModal(video));
+
+  const media = document.createElement("div");
+  media.className = "detailVisualMedia videoMedia";
+  const thumb = videoThumbUrl(video);
+  if (thumb) {
+    const img = document.createElement("img");
+    img.loading = "lazy";
+    img.decoding = "async";
+    img.src = thumb;
+    setImageText(img, name);
+    media.append(img);
+  } else {
+    const fallback = document.createElement("div");
+    fallback.className = "posterFallback";
+    fallback.textContent = name;
+    media.append(fallback);
+  }
+  const play = document.createElement("span");
+  play.className = "videoPlayBadge";
+  media.append(play);
+
+  const text = document.createElement("div");
+  text.className = "detailVisualText";
+  appendText(text, "detailVisualTitle", name);
+  const subtitleText = video.VIDEO_TYPE || "";
+  if (subtitleText) {
+    const subtitle = document.createElement("div");
+    subtitle.className = "detailVisualSubtitle";
+    subtitle.textContent = subtitleText;
+    text.append(subtitle);
+  }
+  card.append(media, text);
+  return card;
+}
+
+function appendVideoRail(parent, videos) {
+  const clean = (Array.isArray(videos) ? videos : []).filter(isPlayableVideo);
+  if (!clean.length) return false;
+
+  const section = document.createElement("section");
+  section.className = "detailVisualSection";
+  const header = document.createElement("div");
+  header.className = "detailRailHeader";
+  const titleBlock = document.createElement("div");
+  titleBlock.className = "detailRailTitleBlock";
+  appendText(titleBlock, "detailSubheading", "Videos");
+  header.append(titleBlock);
+
+  const controls = document.createElement("div");
+  controls.className = "detailRailControls";
+  const previous = document.createElement("button");
+  previous.className = "detailRailControl";
+  previous.type = "button";
+  previous.textContent = "<";
+  previous.setAttribute("aria-label", "Scroll Videos left");
+  const next = document.createElement("button");
+  next.className = "detailRailControl";
+  next.type = "button";
+  next.textContent = ">";
+  next.setAttribute("aria-label", "Scroll Videos right");
+  controls.append(previous, next);
+  header.append(controls);
+
+  const rail = document.createElement("div");
+  rail.className = "detailVisualRail";
+  clean.forEach((video) => rail.append(buildVideoCard(video)));
+
+  const scrollRail = (direction) => {
+    const firstCard = rail.querySelector(".detailVisualCard");
+    const cardWidth = firstCard ? firstCard.getBoundingClientRect().width : 220;
+    rail.scrollBy({ left: direction * Math.max(cardWidth * 3, rail.clientWidth * 0.75), behavior: "smooth" });
+  };
+  const updateControls = () => {
+    const hasOverflow = rail.scrollWidth > rail.clientWidth + 1;
+    previous.hidden = !hasOverflow;
+    next.hidden = !hasOverflow;
+    previous.disabled = !hasOverflow || rail.scrollLeft <= 1;
+    next.disabled = !hasOverflow || rail.scrollLeft + rail.clientWidth >= rail.scrollWidth - 1;
+  };
+  previous.addEventListener("click", () => scrollRail(-1));
+  next.addEventListener("click", () => scrollRail(1));
+  rail.addEventListener("scroll", updateControls, { passive: true });
+  window.requestAnimationFrame(updateControls);
+  if (typeof ResizeObserver === "function") {
+    new ResizeObserver(updateControls).observe(rail);
+  } else {
+    window.addEventListener("resize", updateControls);
+  }
+
+  section.append(header, rail);
+  parent.append(section);
+  return true;
+}
+
 function appendMixedVisualSections(parent, record) {
   appendVisualRail(parent, "Movies", record.movies, { kind: "poster", collectionName: "movies" });
   appendVisualRail(parent, "Series", record.series, { kind: "poster", collectionName: "series" });
@@ -3460,6 +3615,7 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     appendVisualRail(body, record.collection_name || "Collection", record.collection_movies, { kind: "poster", collectionName: "collection_movies" });
     appendVisualRail(body, "Similar", record.similar, { kind: "poster", collectionName: "similar" });
     appendVisualRail(body, "Recommended", record.recommendations, { kind: "poster", collectionName: "recommendations" });
+    appendVideoRail(body, record.videos); // VOICE-AGENT-070
     appendMixedVisualSections(body, record);
   } else if (record.ID_SERIE || String(record.CONTENT_TYPE || "").toLowerCase() === "serie") {
     const director = directorCredit(record);
@@ -3484,6 +3640,7 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     appendVisualRail(body, record.collection_name || "Collection", record.collection_movies, { kind: "poster", collectionName: "collection_movies" });
     appendVisualRail(body, "Similar", record.similar, { kind: "poster", collectionName: "similar" });
     appendVisualRail(body, "Recommended", record.recommendations, { kind: "poster", collectionName: "recommendations" });
+    appendVideoRail(body, record.videos); // VOICE-AGENT-070
     appendMixedVisualSections(body, record);
   } else if (record.ID_PERSON) {
     appendMetric(metrics, "Born", record.BIRTH_YEAR);

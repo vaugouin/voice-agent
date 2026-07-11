@@ -1614,6 +1614,81 @@ button.detailVisualCard:hover {
   padding: 8px;
 }
 
+/* VOICE-AGENT-070: video rail — wider 16:9 cards + play badge + inline player modal */
+.videoCard {
+  flex: 0 0 220px;
+  width: 220px;
+}
+.videoCard .detailVisualMedia,
+.videoMedia {
+  aspect-ratio: 16 / 9;
+  position: relative;
+}
+.videoPlayBadge {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  width: 46px;
+  height: 46px;
+  transform: translate(-50%, -50%);
+  border-radius: 50%;
+  background: rgb(0 0 0 / 55%);
+  pointer-events: none;
+}
+.videoPlayBadge::after {
+  content: "";
+  position: absolute;
+  top: 50%;
+  left: 54%;
+  transform: translate(-50%, -50%);
+  border-style: solid;
+  border-width: 8px 0 8px 14px;
+  border-color: transparent transparent transparent #ffffff;
+}
+.videoModalOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 24px;
+  background: rgb(0 0 0 / 80%);
+}
+.videoModalFrame {
+  position: relative;
+  width: min(960px, 100%);
+  aspect-ratio: 16 / 9;
+  background: #000000;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 12px 40px rgb(0 0 0 / 60%);
+}
+.videoModalFrame iframe {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  border: 0;
+}
+.videoModalClose {
+  position: absolute;
+  top: -14px;
+  right: -14px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgb(255 255 255 / 25%);
+  background: #1a1a1a;
+  color: #ffffff;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+@media (max-width: 640px) {
+  .videoModalClose { top: 6px; right: 6px; }
+}
+
 .detailVisualTitle {
   color: var(--text-primary);
   font-size: 0.82rem;
