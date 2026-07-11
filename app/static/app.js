@@ -58,6 +58,7 @@ let launchShowcaseRaf = null;
 let launchShowcaseDismissed = false;
 let launchShowcaseData = null;
 let launchShowcaseLoading = false;
+let showcaseResizeReflowBound = false; // VOICE-AGENT-074: window-resize re-flow bound once
 let launchShowcaseLoadPromise = null;
 
 const launchSplash = document.createElement("section");
@@ -6941,15 +6942,18 @@ function buildShowcaseGroup(sample) {
         continue;
       }
       const cardSpec = cardSpecFromRecord(record);
-      if (cardSpec) {
-        appendCard(group, cardSpec);
-        // Showcase cards are posters-only (title text is hidden via CSS); keep the name
-        // as a hover tooltip on the card so it stays identifiable and accessible.
-        if (cardSpec.title) {
-          group.lastElementChild?.setAttribute("title", cardSpec.title);
-        }
-      } else {
-        appendAggregateCard(group, record);
+      // VOICE-AGENT-068: the showcase is a posters-only teaser wall, so an element with no
+      // image would render as an alt-text-only fallback tile and read like a bug. Skip
+      // image-less cards here (aggregate cards too). Normal result screens are unaffected —
+      // they still render image-less items with their alt text.
+      if (!cardSpec || !cardSpec.imageUrl) {
+        continue;
+      }
+      appendCard(group, cardSpec);
+      // Showcase cards are posters-only (title text is hidden via CSS); keep the name
+      // as a hover tooltip on the card so it stays identifiable and accessible.
+      if (cardSpec.title) {
+        group.lastElementChild?.setAttribute("title", cardSpec.title);
       }
       rendered += 1;
     }
@@ -7002,7 +7006,39 @@ function startShowcaseMarquee(viewport, lanes) {
   launchShowcaseRaf = requestAnimationFrame(step);
 }
 
+// VOICE-AGENT-074: how many showcase rows (lanes) fit the visible height. The showcase
+// viewport is a fixed-height flex column — clamp(320px, 100dvh - 260px, 1100px), 18px gap
+// (see .showcaseViewport in styles.css) — and each lane is ~one poster-card tall (a 118px
+// poster is ~177px at 2:3, plus the 18px flex gap). Mirror the CSS clamp, then fit as many
+// full lanes as the space allows. Recomputed on resize so the wall always fills the height.
+function computeShowcaseLaneCount() {
+  const viewportHeight = Math.max(320, Math.min(1100, window.innerHeight - 260));
+  const laneHeight = 177 + 18; // poster height + flex gap
+  return Math.max(2, Math.min(6, Math.floor((viewportHeight + 18) / laneHeight)));
+}
+
+// Re-flow the lane count when the window is resized (bound once).
+function bindShowcaseResizeReflow() {
+  if (showcaseResizeReflowBound) {
+    return;
+  }
+  showcaseResizeReflowBound = true;
+  let resizeTimer = null;
+  window.addEventListener("resize", () => {
+    window.clearTimeout(resizeTimer);
+    resizeTimer = window.setTimeout(() => {
+      if (
+        launchShowcase && !launchShowcase.hidden && !launchShowcaseDismissed &&
+        launchShowcaseData && resultsPanel.hidden && !sessionRunning && !textChatInFlight
+      ) {
+        renderLaunchShowcase(launchShowcaseData.categories, launchShowcaseData.uiLanguage, { animate: false });
+      }
+    }, 250);
+  });
+}
+
 function renderLaunchShowcase(categories, uiLanguage, { animate = false } = {}) {
+  bindShowcaseResizeReflow();
   const picked = selectShowcaseSamples(flattenSampleTree(categories), 300);
   if (!picked.length) {
     return;
@@ -7016,9 +7052,9 @@ function renderLaunchShowcase(categories, uiLanguage, { animate = false } = {}) 
   const viewport = document.createElement("div");
   viewport.className = "showcaseViewport";
 
-  // Spread the groups over a few horizontal lanes to fill the screen height
-  // (each lane is roughly one poster-card tall).
-  const laneCount = Math.max(2, Math.min(4, Math.floor((window.innerHeight - 200) / 240)));
+  // Spread the groups over as many horizontal lanes as fit the available height, so the
+  // wall fills the screen instead of leaving an empty band below (VOICE-AGENT-074).
+  const laneCount = computeShowcaseLaneCount();
   const laneSamples = Array.from({ length: laneCount }, () => []);
   picked.forEach((sample, index) => {
     laneSamples[index % laneCount].push(sample);
