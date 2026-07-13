@@ -80,7 +80,7 @@ main {
 
 h1 {
   margin: 0;
-  color: var(--accent-primary);
+  color: #ffffff; /* VOICE-AGENT-081: white app title on the main screen */
   font-size: clamp(32px, 6vw, 48px);
   line-height: 1.05;
   letter-spacing: 0;
@@ -506,7 +506,7 @@ button:disabled {
 
 .launchSplashName {
   margin: 0;
-  color: var(--accent-primary);
+  color: #ffffff; /* VOICE-AGENT-081: white app title on the splash screen */
   font-size: 4.8rem;
   font-weight: 800;
   line-height: 0.98;
@@ -694,9 +694,9 @@ button:disabled {
 /* VOICE-AGENT-069: the app name, shown above the "Design by" line in About. */
 .aboutAppName {
   margin: 2px 0 10px;
-  font-size: 1.15rem;
+  font-size: 1.7rem; /* VOICE-AGENT-081: larger app title on the About page */
   font-weight: 800;
-  color: var(--accent, #b388ff);
+  color: #ffffff; /* VOICE-AGENT-081: white to match splash/main (was accent purple) */
 }
 
 .logoRow {

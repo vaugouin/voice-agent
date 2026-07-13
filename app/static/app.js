@@ -643,6 +643,18 @@ function openAppMenuScreen(screenName, triggerElement) {
   clientLog("app_menu_screen_opened", { screen: screenName });
 }
 
+// VOICE-AGENT-080: open the App Menu straight to the About screen (credits/attribution).
+// Used by the "?" keyboard shortcut and reusable elsewhere.
+function openAboutScreen() {
+  if (!appMenuAboutScreen) {
+    return;
+  }
+  if (appMenuDrawer && appMenuDrawer.hidden) {
+    openAppMenu();
+  }
+  openAppMenuScreen("about", appMenuButton);
+}
+
 function backToAppMenuIndex() {
   const focusTarget =
     appMenuScreenReturnFocus &&
@@ -7582,6 +7594,20 @@ window.addEventListener("keydown", (event) => {
       return;
     }
     closeFullscreenImageViewer();
+    return;
+  }
+  // VOICE-AGENT-080: "?" opens the About page (credits/attribution). Ignored while typing
+  // in the question box (or any input) and during the launch splash; preventDefault stops
+  // Firefox's quick-find from hijacking the key. Esc already closes the menu (symmetric).
+  if (event.key === "?" && !event.ctrlKey && !event.metaKey && !event.altKey) {
+    const target = event.target;
+    const isTyping = target instanceof HTMLElement &&
+      (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
+    if (isTyping || isLaunchSplashActive()) {
+      return;
+    }
+    event.preventDefault();
+    openAboutScreen();
   }
 });
 window.addEventListener("error", (event) => {

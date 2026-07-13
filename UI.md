@@ -138,6 +138,7 @@ Closing hides the drawer and backdrop, removes `body.appMenuOpen`, sets `#appMen
 
 Keyboard behavior:
 
+- `?` (from anywhere except while typing in an input/textarea, and not during the launch splash) opens the App Menu directly on the **About** screen via `openAboutScreen()` (VOICE-AGENT-080). It is ignored when Ctrl/Cmd/Alt is held, and `preventDefault()` stops the browser quick-find. `Escape` closes it — symmetric open/close.
 - `Tab` and `Shift+Tab` stay inside the open drawer.
 - `Escape` closes the drawer before it can reach the fullscreen image viewer handler.
 - The drawer has `role="dialog"`, `aria-modal="true"`, and `aria-labelledby="appMenuTitle"`.
