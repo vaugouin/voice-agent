@@ -1006,8 +1006,8 @@ Purpose: shows the completed Realtime voice input transcript as a temporary top 
 
 Visual:
 
-- In-panel lane below the status row and above the results/audio area.
-- Centered with maximum width `min(860px, 100%)`.
+- **Fixed overlay pinned to the window top** (`position: fixed; top: 22px`), mirroring the assistant `#subtitleOverlay` at the bottom, so it stays on screen when the page is scrolled instead of scrolling away with the in-panel flow (VOICE-AGENT-079). Horizontally centered via `left: 50%; transform: translateX(-50%)`, above content at `z-index: 1200`.
+- Width clamped to `min(860px, calc(100vw - 32px))` so it never touches the viewport edges.
 - Amber accent border and dark translucent background.
 - Bold centered text.
 - Pointer events disabled.

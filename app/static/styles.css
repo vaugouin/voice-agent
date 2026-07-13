@@ -419,9 +419,17 @@ button:disabled {
 }
 
 .userSubtitleOverlay {
-  justify-self: center;
-  max-width: min(860px, 100%);
-  min-width: min(360px, 100%);
+  /* VOICE-AGENT-079: float pinned to the window top (mirrors .subtitleOverlay at the
+     bottom) so the spoken-question transcript stays on screen even when the page is
+     scrolled, instead of scrolling away with the in-panel flow. */
+  position: fixed;
+  left: 50%;
+  right: auto;
+  top: 22px;
+  z-index: 1200;
+  transform: translateX(-50%);
+  max-width: min(860px, calc(100vw - 32px));
+  min-width: min(360px, calc(100vw - 32px));
   border: 1px solid rgb(255 183 77 / 48%);
   border-left: 4px solid #ffb74d;
   border-radius: 8px;
