@@ -694,7 +694,7 @@ button:disabled {
 /* VOICE-AGENT-069: the app name, shown above the "Design by" line in About. */
 .aboutAppName {
   margin: 2px 0 10px;
-  font-size: 1.7rem; /* VOICE-AGENT-081: larger app title on the About page */
+  font-size: 3.4rem; /* VOICE-AGENT-081: app title on the About page, doubled (was 1.7rem) */
   font-weight: 800;
   color: #ffffff; /* VOICE-AGENT-081: white to match splash/main (was accent purple) */
 }
