@@ -4178,7 +4178,7 @@ function clearActiveSpokenCard() {
   });
 }
 
-function setActiveSpokenCard(index, { scroll = true } = {}) {
+function setActiveSpokenCard(index) {
   const numericIndex = Number(index);
   if (!Number.isInteger(numericIndex) || numericIndex < 1) {
     clearActiveSpokenCard();
@@ -4199,9 +4199,9 @@ function setActiveSpokenCard(index, { scroll = true } = {}) {
   card.classList.add("isSpokenActive");
   card.setAttribute("aria-current", "true");
   card.closest(".search-poster-card-grid")?.classList.add("hasSpokenActive");
-  if (scroll) {
-    card.scrollIntoView({ block: "nearest", inline: "nearest", behavior: "smooth" });
-  }
+  // VOICE-AGENT-065: highlight only, no auto-scroll. The page used to scrollIntoView the
+  // spoken card, which yanked content under the user mid-read; the highlight alone conveys
+  // which card is being discussed. Manual scrolling is untouched.
 }
 
 function usefulSpokenTitleKey(key) {
