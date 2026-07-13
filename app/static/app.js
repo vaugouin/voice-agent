@@ -136,6 +136,12 @@ let autoPagesLoaded = 0;
 let pageHistory = [];
 let pageHistoryIndex = -1;
 let restoringHistory = false;
+// VOICE-AGENT-082: remember the backdrop-slideshow frame per page (like the scroll offset).
+// activeBackdropViewer exposes the on-screen viewer's live index for save-time; the pending
+// index is set from a history entry just before its page is re-rendered and consumed by the
+// next buildBackdropSwipeViewer.
+let activeBackdropViewer = null;
+let pendingBackdropSlideshowIndex = null;
 let currentPageViewSignature = "";
 const maxAutoPages = 4;
 const TMDB_FRONT_BASE_URL = "https://www.vaugouin.com/tmdb";
@@ -1134,7 +1140,10 @@ async function goHistory(direction) {
   pageHistoryIndex = nextIndex;
   updateHistoryButtons();
   const entry = pageHistory[pageHistoryIndex];
+  // VOICE-AGENT-082: hand the saved backdrop frame to the next buildBackdropSwipeViewer.
+  pendingBackdropSlideshowIndex = typeof entry.slideshowIndex === "number" ? entry.slideshowIndex : null;
   await renderHistoryEntry(entry);
+  pendingBackdropSlideshowIndex = null; // clear if the restored page had no backdrop to consume it
   restoreScrollPosition(entry);
 }
 
@@ -1155,7 +1164,20 @@ function saveCurrentScrollPosition() {
   const entry = pageHistory[pageHistoryIndex];
   if (entry) {
     entry.scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+    // VOICE-AGENT-082: also remember the current backdrop-slideshow frame, if this page has one.
+    entry.slideshowIndex = activeBackdropViewer ? activeBackdropViewer.getIndex() : undefined;
   }
+}
+
+// VOICE-AGENT-082: read (and clear) the pending backdrop frame set from a restored history
+// entry, clamped to the images actually available on the re-rendered page.
+function consumePendingBackdropIndex(count) {
+  const pending = pendingBackdropSlideshowIndex;
+  pendingBackdropSlideshowIndex = null;
+  if (typeof pending !== "number" || !Number.isFinite(pending) || count <= 0) {
+    return 0;
+  }
+  return Math.min(Math.max(0, Math.floor(pending)), count - 1);
 }
 
 function restoreScrollPosition(entry) {
@@ -1233,6 +1255,9 @@ function reusableText2SqlQuestionHash(output, upstream, args, rows, rowsPerPage)
 function resetDetailState() {
   currentDetailState = null;
   loadingDetailCollections = new Set();
+  // VOICE-AGENT-082: the on-screen backdrop viewer is about to be torn down; a page without
+  // one leaves this null so save-time reads no stale index.
+  activeBackdropViewer = null;
 }
 
 function baseDetailArgs(args = {}) {
@@ -2960,10 +2985,13 @@ function buildBackdropSwipeViewer(record) {
 
   const viewer = document.createElement("div");
   viewer.className = "personPortraitViewer backdropViewer";
-  let index = 0;
+  // VOICE-AGENT-082: start on the frame saved when this page was last left (0 otherwise),
+  // and expose the live index so save-time can capture where the slideshow currently is.
+  let index = consumePendingBackdropIndex(images.length);
   let pointerStartX = null;
   let swiped = false;
   let slideshowTimer = null;
+  activeBackdropViewer = { getIndex: () => index };
 
   const img = document.createElement("img");
   setImageText(img, `${titleForRecord(record)} backdrop`);

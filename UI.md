@@ -1196,6 +1196,7 @@ For backdrop viewers with slideshow support:
 - It starts or stops a slideshow across available backdrops.
 - The control remains visible in normal and fullscreen modes.
 - The slideshow **auto-starts** when the movie/serie detail page is rendered (more than one backdrop), so the button shows the running (■) state on arrival. Under `prefers-reduced-motion: reduce` it does not auto-start and stays paused (▶). The interval self-stops when the viewer leaves the DOM (`viewer.isConnected`) or when the button is toggled.
+- The current backdrop frame is **remembered per page** in its history entry (`entry.slideshowIndex`, alongside the scroll offset) and **restored** on Back/Forward: returning to a movie/serie page rebuilds the slideshow starting on the frame that was showing when you left, not frame 1 (VOICE-AGENT-082). `activeBackdropViewer.getIndex()` reads the live index at save-time; `consumePendingBackdropIndex()` clamps the restored index to the images still available. Fresh navigation starts at frame 1.
 
 ## Voice Selection
 
