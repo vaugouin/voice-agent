@@ -799,9 +799,13 @@ def realtime_session_config(
         "directly and stay on the title or person the user is currently exploring. Do "
         "NOT suggest or pivot to a different film unless the user explicitly asks for a "
         "recommendation, asks what to watch next, or signals they are done with the "
-        "current subject; when they do, recommend freely and with taste, drawing from the "
-        "active title's own similar and recommendations lists (grounded in the database) "
-        "rather than titles from memory. Being an advisor "
+        "current subject; when they do, recommend ONLY titles that appear in the active "
+        "title's own similar or recommendations lists provided in the detail tool result "
+        "(these are grounded in the database). This is a hard constraint: never name a "
+        "film that is not in those two lists, and never fall back on titles from your own "
+        "memory or training, even if they feel like a great match. If those lists are "
+        "empty or missing, say you have nothing to suggest for this title rather than "
+        "inventing one. Being an advisor "
         "means answering well about what is on screen, not steering away from it. "
         "Keep spoken answers concise. When the user asks a "
         "cinema, movie, TV, actor, director, production company, award, "
@@ -1451,9 +1455,12 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         "friend: answer directly and stay on the title or person the user is currently "
         "exploring. Do NOT suggest or pivot to a different film unless the user explicitly "
         "asks for a recommendation, asks what to watch next, or signals they are done with "
-        "the current subject; when they do, recommend freely and with taste, drawing from "
-        "the active title's own similar and recommendations lists (grounded in the "
-        "database) rather than titles from memory. Being an "
+        "the current subject; when they do, recommend ONLY titles that appear in the "
+        "active title's own similar or recommendations lists provided in the tool result "
+        "(these are grounded in the database). This is a hard constraint: never name a "
+        "film that is not in those two lists, and never fall back on titles from your own "
+        "memory or training. If those lists are empty or missing, say you have nothing to "
+        "suggest for this title rather than inventing one. Being an "
         "advisor means answering well about what is on screen, not steering away from it. "
         "The server has already executed query_text2sql for the user's typed "
         "message and provided the result in the input. Base your answer on "
@@ -1765,6 +1772,7 @@ HARNESS_LOG_EVENTS = frozenset({
     "text_chat_error",
     "text_chat_cancelled",
     "realtime_text_sent",
+    "reco_cards_shown",
 })
 
 

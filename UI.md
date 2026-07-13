@@ -1075,6 +1075,12 @@ Click behavior:
 - Forward calls `goHistory(1)`.
 - The selected history entry is re-rendered with `skipHistory: true`.
 
+Scroll position (the document scrolls; there is no inner overflow container):
+
+- Each history entry stores its own vertical scroll offset (`entry.scrollY`).
+- `saveCurrentScrollPosition()` records `window.scrollY` on the current entry just before a new render tears the page down (at the top of `showRecordDetail`, `renderEntityDetailOutput`, and the non-append branch of `renderText2SqlResult`) and at the start of `goHistory` for the page being left. It is a no-op while restoring history.
+- After a Back/Forward render, `restoreScrollPosition(entry)` scrolls the window back to the saved offset (double `requestAnimationFrame` so restored cards/images are laid out first; the offset is clamped if the page is shorter than before). So returning to a movie page from a clicked recommendation rail lands back at the rail, not the top.
+
 New conversation behavior:
 
 - Clears all page history.
@@ -1188,6 +1194,7 @@ For backdrop viewers with slideshow support:
 - `.slideshowToggle` appears in the top-right of the viewer.
 - It starts or stops a slideshow across available backdrops.
 - The control remains visible in normal and fullscreen modes.
+- The slideshow **auto-starts** when the movie/serie detail page is rendered (more than one backdrop), so the button shows the running (■) state on arrival. Under `prefers-reduced-motion: reduce` it does not auto-start and stays paused (▶). The interval self-stops when the viewer leaves the DOM (`viewer.isConnected`) or when the button is toggled.
 
 ## Voice Selection
 

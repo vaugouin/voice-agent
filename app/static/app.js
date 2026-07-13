@@ -1117,15 +1117,44 @@ async function goHistory(direction) {
   if (nextIndex < 0 || nextIndex >= pageHistory.length) {
     return;
   }
+  // Remember where we are on the page we are leaving, so the reverse move restores it too.
+  saveCurrentScrollPosition();
   pageHistoryIndex = nextIndex;
   updateHistoryButtons();
-  await renderHistoryEntry(pageHistory[pageHistoryIndex]);
+  const entry = pageHistory[pageHistoryIndex];
+  await renderHistoryEntry(entry);
+  restoreScrollPosition(entry);
 }
 
 function clearPageHistory() {
   pageHistory = [];
   pageHistoryIndex = -1;
   updateHistoryButtons();
+}
+
+// VOICE-AGENT-077: the whole document scrolls (no inner overflow container), so a
+// detail/search page keeps its scroll offset in its own history entry. Save it just
+// before the current page is torn down (a new render replaces #resultsContent) so the
+// Back/Forward buttons can put the user back where the rail they clicked from was.
+function saveCurrentScrollPosition() {
+  if (restoringHistory || pageHistoryIndex < 0) {
+    return;
+  }
+  const entry = pageHistory[pageHistoryIndex];
+  if (entry) {
+    entry.scrollY = window.scrollY || document.documentElement.scrollTop || 0;
+  }
+}
+
+function restoreScrollPosition(entry) {
+  const target = entry && typeof entry.scrollY === "number" ? entry.scrollY : 0;
+  // Restore after layout settles. Double rAF covers the reflow once the restored
+  // cards/images are in the DOM; the offset is clamped by the browser if the page is
+  // shorter than expected, which is the best we can do without measuring every image.
+  window.requestAnimationFrame(() => {
+    window.scrollTo(0, target);
+    window.requestAnimationFrame(() => window.scrollTo(0, target));
+  });
 }
 
 function appendCurrentSearchHistory(output, args) {
@@ -3002,6 +3031,12 @@ function buildBackdropSwipeViewer(record) {
   update();
   if (images.length > 1) {
     viewer.append(counter, slideshowButton);
+    // Auto-play the backdrop slideshow as soon as a movie/serie page is shown,
+    // unless the user prefers reduced motion. The interval self-stops when the
+    // viewer leaves the DOM (isConnected check) or when the button is toggled.
+    if (!prefersReducedMotion()) {
+      setSlideshowRunning(true);
+    }
   }
   return viewer;
 }
@@ -3459,6 +3494,25 @@ function appendVideoRail(parent, videos) {
   return true;
 }
 
+// VOICE-AGENT-076 (from the -063 proposal): make the client.log self-sufficient for
+// grounded-reco attribution. When a movie/serie detail page renders its Similar /
+// Recommended rails, journal the entity IDs actually shown per collection, so a later
+// reco turn can be cross-checked against the on-screen grounded set (no fuzzy title
+// matching, no Nosferatu-style collisions). Observability only — not the grounding fix.
+function logRecoCardsShown(record) {
+  const activeId = record?.ID_MOVIE || record?.ID_SERIE || null;
+  ["similar", "recommendations"].forEach((source) => {
+    const ids = (Array.isArray(record?.[source]) ? record[source] : [])
+      .filter((item) => item && typeof item === "object" && visualTitle(item))
+      .map((item) => item.ID_MOVIE || item.ID_SERIE)
+      .filter((id) => id !== undefined && id !== null && id !== "");
+    if (!ids.length) {
+      return;
+    }
+    clientLog("reco_cards_shown", { movie_id: activeId, source, ids });
+  });
+}
+
 function appendMixedVisualSections(parent, record) {
   appendVisualRail(parent, "Movies", record.movies, { kind: "poster", collectionName: "movies" });
   appendVisualRail(parent, "Series", record.series, { kind: "poster", collectionName: "series" });
@@ -3628,6 +3682,7 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     appendVisualRail(body, record.collection_name || "Collection", record.collection_movies, { kind: "poster", collectionName: "collection_movies" });
     appendVisualRail(body, "Similar", record.similar, { kind: "poster", collectionName: "similar" });
     appendVisualRail(body, "Recommended", record.recommendations, { kind: "poster", collectionName: "recommendations" });
+    logRecoCardsShown(record);
     appendVideoRail(body, record.videos); // VOICE-AGENT-070
     appendMixedVisualSections(body, record);
   } else if (record.ID_SERIE || String(record.CONTENT_TYPE || "").toLowerCase() === "serie") {
@@ -3653,6 +3708,7 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     appendVisualRail(body, record.collection_name || "Collection", record.collection_movies, { kind: "poster", collectionName: "collection_movies" });
     appendVisualRail(body, "Similar", record.similar, { kind: "poster", collectionName: "similar" });
     appendVisualRail(body, "Recommended", record.recommendations, { kind: "poster", collectionName: "recommendations" });
+    logRecoCardsShown(record);
     appendVideoRail(body, record.videos); // VOICE-AGENT-070
     appendMixedVisualSections(body, record);
   } else if (record.ID_PERSON) {
@@ -3752,6 +3808,7 @@ async function showRecordDetail(record, { skipHistory = false, ui_language = "" 
   if (isSameRenderedPageView(recordSignature)) {
     return;
   }
+  saveCurrentScrollPosition();
   resultsPanel.hidden = false;
   clearQueryDetailsDock();
   clearRenderedPageViewSignature();
@@ -3821,6 +3878,7 @@ function renderEntityDetailOutput(output, args = {}, { skipHistory = false } = {
   if (isSameRenderedEntityDetail(output, args)) {
     return;
   }
+  saveCurrentScrollPosition();
   resultsPanel.hidden = false;
   clearQueryDetailsDock();
   clearRenderedPageViewSignature();
@@ -3904,6 +3962,7 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
   let grid = resultsContent.querySelector(".search-poster-card-grid");
 
   if (!append || !grid) {
+    saveCurrentScrollPosition();
     clearActiveSpokenCard();
     clearQueryDetailsDock();
     resetDetailState();
