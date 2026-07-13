@@ -691,12 +691,15 @@ button:disabled {
   color: var(--text-primary);
 }
 
-/* VOICE-AGENT-069: the app name, shown above the "Design by" line in About. */
-.aboutAppName {
+/* VOICE-AGENT-069: the app name, shown above the "Design by" line in About.
+   VOICE-AGENT-081: scoped under #appMenuAboutScreen so specificity (1,1,0) beats
+   `.appMenuSection p` (0,1,1) — otherwise that rule pinned the title at 0.95rem grey and
+   neither the enlarge nor the white ever applied. */
+#appMenuAboutScreen .aboutAppName {
   margin: 2px 0 10px;
-  font-size: 3.4rem; /* VOICE-AGENT-081: app title on the About page, doubled (was 1.7rem) */
+  font-size: 2.4rem; /* app title on the About page, prominent (was silently stuck at 0.95rem) */
   font-weight: 800;
-  color: #ffffff; /* VOICE-AGENT-081: white to match splash/main (was accent purple) */
+  color: #ffffff; /* white to match splash/main (was accent purple, itself overridden to grey) */
 }
 
 .logoRow {
