@@ -97,6 +97,7 @@ h1 {
   display: grid;
   width: 52px;
   min-width: 52px;
+  position: relative;
 }
 
 .sessionButtonSlot > button {
@@ -109,6 +110,99 @@ h1 {
   display: grid;
   width: 52px;
   min-width: 52px;
+  position: relative;
+}
+
+/* Keyboard-shortcut hint badges (VOICE-AGENT-087). A small kbd chip pinned to the
+   bottom-right corner of each main control, showing the key that triggers it. The
+   host button/slot must be position:relative; the chip is pointer-transparent so it
+   never intercepts clicks, and it is hidden on touch devices (no physical keyboard). */
+.iconButton,
+.submitQuestionButton {
+  position: relative;
+}
+
+.keyHint {
+  position: absolute;
+  right: -4px;
+  bottom: -4px;
+  z-index: 3;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 15px;
+  height: 15px;
+  padding: 0 3px;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+  color: #eafff9;
+  background: rgb(0 0 0 / 66%);
+  border: 1px solid rgb(255 255 255 / 32%);
+  border-radius: 4px;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 45%);
+  pointer-events: none;
+}
+
+.keyHint.keyHintWide {
+  font-size: 9px;
+  letter-spacing: -0.5px;
+  padding: 0 2px;
+}
+
+@media (hover: none) and (pointer: coarse) {
+  .keyHint {
+    display: none;
+  }
+}
+
+/* Floating status toast for shortcut-driven state changes (mic, look, session,
+   new conversation). Pinned top-right so it clears the top-centre spoken-question
+   overlay and the bottom-centre assistant-subtitle overlay. */
+.shortcutToast {
+  position: fixed;
+  top: 20px;
+  right: 16px;
+  z-index: 1300;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  max-width: min(320px, calc(100vw - 32px));
+  padding: 9px 15px;
+  color: #eafff9;
+  background: rgb(15 24 22 / 94%);
+  border: 1px solid rgb(255 255 255 / 18%);
+  border-radius: 999px;
+  box-shadow: 0 12px 28px rgb(0 0 0 / 42%);
+  font-weight: 700;
+  font-size: 0.95rem;
+  white-space: nowrap;
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 160ms ease, transform 160ms ease;
+  pointer-events: none;
+}
+
+.shortcutToast.isVisible {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.shortcutToast[hidden] {
+  display: none;
+}
+
+.shortcutToastIcon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shortcutToast {
+    transition: none;
+    transform: none;
+  }
 }
 
 .microphoneToggleButton,
@@ -767,6 +861,12 @@ button:disabled {
 .aboutCopyright {
   padding-top: 8px;
   font-size: 0.8rem;
+}
+
+.aboutVersion {
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
 }
 
 /* About screen — always full-screen at any size, with every element distributed

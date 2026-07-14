@@ -9,6 +9,9 @@ const historyForwardButton = document.querySelector("#historyForwardButton");
 const questionInput = document.querySelector("#questionInput");
 const submitQuestionButton = document.querySelector("#submitQuestionButton");
 const newConversationButton = document.querySelector("#newConversationButton");
+const shortcutToast = document.querySelector("#shortcutToast");
+const shortcutToastIcon = document.querySelector("#shortcutToastIcon");
+const shortcutToastLabel = document.querySelector("#shortcutToastLabel");
 const appMenuButton = document.querySelector("#appMenuButton");
 const appMenuBackdrop = document.querySelector("#appMenuBackdrop");
 const appMenuDrawer = document.querySelector("#appMenuDrawer");
@@ -7674,6 +7677,125 @@ window.addEventListener("keydown", (event) => {
     }
     event.preventDefault();
     openAboutScreen();
+  }
+});
+
+// VOICE-AGENT-087: floating status toast for shortcut-driven state changes. Auto-
+// dismisses; role="status" + aria-live announce the change to assistive tech. The
+// hidden attribute is removed before the transition so the fade-in runs from the
+// off-screen state, and reinstated after the fade-out so screen readers don't read
+// stale content.
+let shortcutToastShowTimer = null;
+let shortcutToastHideTimer = null;
+function showToast(label, icon = "") {
+  if (!shortcutToast) {
+    return;
+  }
+  clearTimeout(shortcutToastShowTimer);
+  clearTimeout(shortcutToastHideTimer);
+  shortcutToastIcon.textContent = icon;
+  shortcutToastIcon.hidden = !icon;
+  shortcutToastLabel.textContent = label;
+  shortcutToast.hidden = false;
+  void shortcutToast.offsetWidth; // force reflow so the transition starts from hidden
+  shortcutToast.classList.add("isVisible");
+  shortcutToastShowTimer = setTimeout(() => {
+    shortcutToast.classList.remove("isVisible");
+    shortcutToastHideTimer = setTimeout(() => {
+      shortcutToast.hidden = true;
+      shortcutToastLabel.textContent = "";
+      shortcutToastIcon.textContent = "";
+    }, 240);
+  }, 1500);
+}
+
+// VOICE-AGENT-087: single-key shortcuts for the main controls. Each key maps to the
+// existing button and reuses its click handler, so all disabled/hidden guards and
+// state updates stay in one place; a shortcut is a no-op when its button is hidden
+// or disabled. Ignored while typing, during the launch splash, and while the burger
+// menu is open, and it never fires with Ctrl/Meta/Alt held (those are OS/browser).
+function isTypingTarget(target) {
+  return (
+    target instanceof HTMLElement &&
+    (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
+  );
+}
+function triggerControl(button) {
+  if (button && !button.hidden && !button.disabled) {
+    button.click();
+    return true;
+  }
+  return false;
+}
+window.addEventListener("keydown", (event) => {
+  if (event.ctrlKey || event.metaKey || event.altKey) {
+    return;
+  }
+  if (isTypingTarget(event.target) || isLaunchSplashActive()) {
+    return;
+  }
+  if (appMenuDrawer && !appMenuDrawer.hidden) {
+    return;
+  }
+  // Don't hijack keys while a modal overlay owns the screen (Escape closes those).
+  if (document.body.classList.contains("imageViewerOpen") || document.querySelector(".videoModalOverlay")) {
+    return;
+  }
+
+  // Backspace / Shift+Backspace = history back / forward (browser-style navigation).
+  if (event.key === "Backspace") {
+    const target = event.shiftKey ? historyForwardButton : historyBackButton;
+    if (triggerControl(target)) {
+      event.preventDefault();
+    }
+    return;
+  }
+  // The remaining shortcuts are all shift-free single letters.
+  if (event.shiftKey) {
+    return;
+  }
+
+  switch (event.key.toLowerCase()) {
+    case "t": {
+      // Start / Stop the Realtime session (only one of the pair is ever actionable).
+      const wasRunning = sessionRunning;
+      if (triggerControl(wasRunning ? stopButton : startButton)) {
+        event.preventDefault();
+        showToast(wasRunning ? "Session stopped" : "Starting session", wasRunning ? "⏹️" : "🎙️");
+      }
+      break;
+    }
+    case "m": {
+      // In a session: mute / unmute (aria-pressed reflects the new state synchronously).
+      // Idle: the same control drives dictation (async), so label by intent instead.
+      const wasRunning = sessionRunning;
+      const wasDictating = dictationActive;
+      if (triggerControl(microphoneToggleButton)) {
+        event.preventDefault();
+        if (wasRunning) {
+          const open = microphoneToggleButton.getAttribute("aria-pressed") === "true";
+          showToast(open ? "Mic on" : "Mic off", open ? "🎙️" : "🔇");
+        } else {
+          showToast(wasDictating ? "Dictation sent" : "Listening…", wasDictating ? "✅" : "🎙️");
+        }
+      }
+      break;
+    }
+    case "l":
+      if (triggerControl(lookToggleButton)) {
+        event.preventDefault();
+        const open = lookToggleButton.getAttribute("aria-pressed") === "true";
+        showToast(open ? "Look on" : "Look off", open ? "👁️" : "🙈");
+      }
+      break;
+    case "n":
+      if (triggerControl(newConversationButton)) {
+        event.preventDefault();
+        showToast("New conversation", "🔄");
+      }
+      break;
+    default:
+      break;
   }
 });
 window.addEventListener("error", (event) => {

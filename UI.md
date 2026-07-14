@@ -1211,6 +1211,35 @@ Voice selection is currently server-side:
 
 If a visible voice selector is added later, this document should be updated with its state, validation, and session-lifecycle rules.
 
+## Keyboard Shortcuts
+
+Single-key shortcuts (VOICE-AGENT-087) drive the main controls from a physical keyboard. Each key is a thin wrapper over the matching button: it calls the button's own click handler, so every visibility/disabled/state rule documented above still applies. A shortcut is a **no-op when its button is hidden or disabled** (for example `N` does nothing until a conversation is active, and `⌫` / `⇧⌫` do nothing at the ends of history).
+
+| Key | Control | Action |
+| --- | --- | --- |
+| `T` | Start / Stop | Toggles the Realtime session. Presses Stop when a session is running, Start otherwise. |
+| `M` | Microphone toggle | In a session: mute / unmute. Idle: starts / sends idle dictation (same as clicking the mic button). |
+| `L` | Look toggle | Toggles the Look state. |
+| `N` | New conversation | Clears the UI and retained context (only while the New conversation button is visible). |
+| `⌫` Backspace | History back | Steps back through the result history (browser-style). |
+| `⇧⌫` Shift+Backspace | History forward | Steps forward through the result history. |
+| `Enter` | Submit question | Sends the typed question (existing behavior; badged for discoverability). |
+| `?` | About | Opens the About screen (existing behavior). |
+| `Esc` | Close | Closes the menu, image viewer, video modal, or splash (existing behavior). |
+
+Guards (a keypress is ignored when any hold):
+
+- The focus is a text field (`INPUT`, `TEXTAREA`, or `contentEditable`), so typing is never intercepted — including Backspace inside the question box.
+- The launch splash is active, the burger menu is open, or a modal overlay owns the screen (`body.imageViewerOpen` or a `.videoModalOverlay`). `Esc` still closes these.
+- `Ctrl`, `Meta`, or `Alt` is held (those combinations belong to the OS/browser). `Shift` is honored only for `Shift+Backspace`.
+
+Visual affordances:
+
+- Each main button carries a small `<kbd class="keyHint">` badge in its bottom-right corner showing its key. Badges are `pointer-events: none` (never block a click) and are **hidden on touch devices** via `@media (hover: none) and (pointer: coarse)`.
+- Toggling mic, Look, the session, or starting a new conversation shows a floating status toast (`#shortcutToast`, `role="status"`, `aria-live="polite"`) pinned to the top-right corner. It auto-dismisses after ~1.5s, clears its text when hidden (so assistive tech does not re-read stale content), and respects `prefers-reduced-motion`. The top-right position clears the top-centre spoken-question overlay and the bottom-centre assistant subtitle overlay. The mic toast reads the toggle's new `aria-pressed` state during a session, and labels by intent (`Listening…` / `Dictation sent`) when idle, because idle dictation starts asynchronously.
+
+`showToast(label, icon)` in `app/static/app.js` is the reusable entry point; the shortcut handler and any future caller can surface a transient status the same way.
+
 ## State Summary
 
 | State | Start | Stop | Mic toggle | Look toggle | Text input | Status row | Results panel | Header | New conversation | Subtitles |
