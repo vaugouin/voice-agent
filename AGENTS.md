@@ -46,7 +46,12 @@ Pipeline stages:
 
 ## App version (single source of truth — BUMP ON EVERY UPDATE)
 
-- **`VERSION` at the repo root is the one source of truth for the app version** (semantic `MAJOR.MINOR.PATCH`). **Bump it on every app change you commit** — frontend, backend, or docs — as part of the same change. Guideline: PATCH for fixes/small tweaks, MINOR for a new feature, MAJOR for a breaking or large overhaul. There is no separate per-asset cache-busting string to maintain anymore.
+- **`VERSION` at the repo root is the one source of truth for the app version** (semantic `MAJOR.MINOR.PATCH`). **Bump it on every app change you commit** — frontend, backend, or docs — as part of the same change. There is no separate per-asset cache-busting string to maintain anymore.
+- **How to decide the bump (workflow, not just a guideline):**
+  - **PATCH** (third digit, e.g. `1.0.0 → 1.0.1`) — the **default**. Apply it automatically for fixes, tweaks, refactors, doc changes — anything that is not a new feature or a breaking change. Do this without asking.
+  - **MINOR** (second digit, resets patch to 0, e.g. `1.0.4 → 1.1.0`) — a **new user-facing feature**. Do **not** apply silently: *propose* it and get Philippe's confirmation first.
+  - **MAJOR** (first digit, resets minor+patch to 0, e.g. `1.4.2 → 2.0.0`) — a **breaking change or large overhaul**. Same as minor: *propose and confirm* before applying.
+  - So: if a change looks like a feature or a breaking change, **flag it and ask which bump**; otherwise bump PATCH and move on. Philippe always has the final say and can override in either direction. You own the semver arithmetic (the digit resets).
 - One string drives four surfaces, all fed from `APP_VERSION` (`app/main.py`, read once at import from `VERSION`):
   1. **JS/CSS cache-busting** — the `GET /` route (`index()`) swaps the `__APP_VERSION__` placeholder in `app/static/index.html` into `styles.css?v=…` and `app.js?v=…`. Bumping `VERSION` therefore refreshes the browser's JS/CSS even for a **server-only** change. Do **not** hardcode a `?v=` slug in `index.html`; leave the `__APP_VERSION__` placeholder in place.
   2. **About page** — the `Version __APP_VERSION__` line (`app/static/index.html`, `.aboutVersion`), templated the same way.
