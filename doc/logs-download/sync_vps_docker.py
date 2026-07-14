@@ -10,6 +10,11 @@ Pulls NEW and NEWER files from the VPS down into the local copy, over SFTP
   * Creates any missing local directories.
   * NEVER deletes anything locally — files removed on the VPS stay in the mirror.
   * One-way only (remote -> local). Local changes are never pushed up.
+  * Resilient to dropped SFTP sessions: if the SSH transport dies mid-walk, the
+    session is rebuilt and the failing operation retried, and a failure in one
+    top-level root is isolated so the remaining roots still sync — so a single
+    channel blip no longer aborts the whole run and silently starves the tail
+    of the alphabet.
 
 By default it runs as **root** so it can read EVERYTHING (incl. root-owned TLS
 private keys and the ChromaDB store). It mirrors the main `--remote`
@@ -97,6 +102,12 @@ PART_SUFFIX = ".part-sync"
 CONNECT_TIMEOUT = 60.0     # TCP connect + SSH banner + auth
 SFTP_TIMEOUT = 600.0       # per-SFTP-operation (listdir/get) channel timeout
 
+# When the SSH transport drops mid-walk, rebuild the session rather than aborting
+# the whole run. Each rebuild retries this many times with a linear backoff.
+RECONNECT_ATTEMPTS = 5
+RECONNECT_BACKOFF = 3.0        # seconds; grows per attempt (attempt * backoff)
+RECONNECT_BACKOFF_MAX = 30.0   # cap on the per-attempt sleep
+
 
 class Stats:
     def __init__(self) -> None:
@@ -107,6 +118,7 @@ class Stats:
         self.dirs_created = 0
         self.bytes_copied = 0
         self.excluded = 0
+        self.reconnects = 0
 
 
 def human(n: float) -> str:
@@ -186,7 +198,7 @@ def should_copy(remote_attr, local_path: str) -> tuple[bool, str]:
     return False, "up-to-date"
 
 
-def copy_file(sftp, remote_path: str, local_path: str, remote_attr, stats: Stats,
+def copy_file(session, remote_path: str, local_path: str, remote_attr, stats: Stats,
               reason: str, dry_run: bool) -> None:
     if dry_run:
         print(f"  WOULD COPY ({reason}): {remote_path}  [{human(remote_attr.st_size or 0)}]")
@@ -199,7 +211,7 @@ def copy_file(sftp, remote_path: str, local_path: str, remote_attr, stats: Stats
     os.makedirs(os.path.dirname(local_path), exist_ok=True)
     tmp = local_path + PART_SUFFIX
     try:
-        sftp.get(remote_path, tmp)
+        session.get(remote_path, tmp)
         os.replace(tmp, local_path)
         mtime = remote_attr.st_mtime or time.time()
         os.utime(local_path, (mtime, mtime))      # preserve remote mtime
@@ -219,11 +231,11 @@ def copy_file(sftp, remote_path: str, local_path: str, remote_attr, stats: Stats
         print(f"  !! FAILED: {remote_path}  ({exc})", file=sys.stderr)
 
 
-def sync_dir(sftp, remote_dir: str, local_dir: str, stats: Stats,
+def sync_dir(session, remote_dir: str, local_dir: str, stats: Stats,
              excludes: list[str], follow_symlinks: bool, dry_run: bool,
              other_roots: set[str]) -> None:
     try:
-        entries = sftp.listdir_attr(remote_dir)
+        entries = session.listdir_attr(remote_dir)
     except (PermissionError, IOError, OSError) as exc:
         stats.failed += 1
         print(f"  !! Cannot list {remote_dir}: {exc}", file=sys.stderr)
@@ -256,12 +268,12 @@ def sync_dir(sftp, remote_dir: str, local_dir: str, stats: Stats,
             continue
 
         if stat.S_ISDIR(mode) or (stat.S_ISLNK(mode) and follow_symlinks):
-            sync_dir(sftp, remote_path, local_path, stats, excludes,
+            sync_dir(session, remote_path, local_path, stats, excludes,
                      follow_symlinks, dry_run, other_roots)
         elif stat.S_ISREG(mode):
             do_copy, reason = should_copy(attr, local_path)
             if do_copy:
-                copy_file(sftp, remote_path, local_path, attr, stats, reason, dry_run)
+                copy_file(session, remote_path, local_path, attr, stats, reason, dry_run)
             else:
                 stats.skipped += 1
         else:
@@ -289,6 +301,97 @@ def connect(args) -> paramiko.SSHClient:
 
     client.connect(**kwargs)
     return client
+
+
+class SftpSession:
+    """SSH+SFTP connection that transparently rebuilds itself if the transport
+    drops mid-walk.
+
+    A single long root-owned walk over a high-latency link occasionally loses its
+    SSH channel (channel timeout, ``EOFError``, ``SSHException``, a NAS/link blip).
+    Before, that exception propagated to the top-level guard in :func:`main` and
+    aborted the ENTIRE run — always starving the alphabetically-late directories
+    not yet reached. Here a dead transport triggers a reconnect and the failing
+    operation is retried; per-file/per-dir errors (permission denied, vanished
+    file) leave the transport alive and are re-raised so the caller's existing
+    handlers deal with them.
+    """
+
+    def __init__(self, args, stats: Stats) -> None:
+        self.args = args
+        self.stats = stats
+        self.client = None
+        self.sftp = None
+        self._open()
+
+    def _open(self) -> None:
+        self.client = connect(self.args)
+        self.sftp = self.client.open_sftp()
+        # Generous per-operation timeout so listing a huge dir / fetching a big
+        # file doesn't abort mid-run.
+        try:
+            self.sftp.get_channel().settimeout(SFTP_TIMEOUT)
+        except Exception:  # noqa: BLE001 — channel may be None on odd transports
+            pass
+
+    def _transport_alive(self) -> bool:
+        try:
+            transport = self.client.get_transport() if self.client else None
+            return bool(transport and transport.is_active())
+        except Exception:  # noqa: BLE001
+            return False
+
+    def _reconnect(self) -> bool:
+        """Tear down and rebuild the session; return True on success."""
+        self.close()
+        for attempt in range(1, RECONNECT_ATTEMPTS + 1):
+            try:
+                time.sleep(min(RECONNECT_BACKOFF * attempt, RECONNECT_BACKOFF_MAX))
+                self._open()
+                self.stats.reconnects += 1
+                print(f"  ~~ SFTP session re-established "
+                      f"(reconnect #{self.stats.reconnects})", file=sys.stderr)
+                return True
+            except Exception as exc:  # noqa: BLE001 — keep trying until attempts run out
+                print(f"  ~~ reconnect {attempt}/{RECONNECT_ATTEMPTS} failed: {exc}",
+                      file=sys.stderr)
+        return False
+
+    def _run(self, op, retries: int = 2):
+        """Run an SFTP op, rebuilding the session if the transport has died.
+
+        A still-alive transport means the error is specific to this path
+        (permission denied, no such file) — re-raise for the caller to handle.
+        Only a dead transport triggers a reconnect + retry.
+        """
+        attempt = 0
+        while True:
+            try:
+                return op()
+            except Exception:
+                if self._transport_alive():
+                    raise
+                attempt += 1
+                if attempt > retries or not self._reconnect():
+                    raise
+
+    def listdir_attr(self, remote_dir: str):
+        return self._run(lambda: self.sftp.listdir_attr(remote_dir))
+
+    def get(self, remote_path: str, local_path: str):
+        return self._run(lambda: self.sftp.get(remote_path, local_path))
+
+    def stat(self, remote_path: str):
+        return self._run(lambda: self.sftp.stat(remote_path))
+
+    def close(self) -> None:
+        if self.client is not None:
+            try:
+                self.client.close()
+            except Exception:  # noqa: BLE001
+                pass
+        self.client = None
+        self.sftp = None
 
 
 def main() -> int:
@@ -377,26 +480,25 @@ def main() -> int:
 
     stats = Stats()
     started = time.time()
-    client = None
+    session = None
     try:
-        client = connect(args)
-        sftp = client.open_sftp()
-        # Apply a generous per-operation timeout to the SFTP channel so listing a
-        # very large directory (or fetching a big file) doesn't abort mid-run.
-        try:
-            sftp.get_channel().settimeout(SFTP_TIMEOUT)
-        except Exception:  # noqa: BLE001 — channel may be None on odd transports
-            pass
+        session = SftpSession(args, stats)
         for remote_root, local_root in roots:
             try:
-                sftp.stat(remote_root)
+                session.stat(remote_root)
             except IOError:
                 print(f"  (skip) remote root not found: {remote_root}", file=sys.stderr)
                 continue
             print(f"\n>>> {remote_root}  ->  {local_root}")
-            sync_dir(sftp, remote_root, local_root, stats, excludes,
-                     follow_symlinks=args.follow_symlinks, dry_run=args.dry_run,
-                     other_roots=other_roots)
+            try:
+                sync_dir(session, remote_root, local_root, stats, excludes,
+                         follow_symlinks=args.follow_symlinks, dry_run=args.dry_run,
+                         other_roots=other_roots)
+            except Exception as exc:  # noqa: BLE001 — isolate a root failure so the
+                # remaining roots still sync (e.g. a reconnect that ultimately failed).
+                stats.failed += 1
+                print(f"  !! root aborted: {remote_root}: {exc} — continuing with next root",
+                      file=sys.stderr)
     except paramiko.AuthenticationException:
         print("ERROR: authentication failed. Check user/password/key.", file=sys.stderr)
         return 3
@@ -404,8 +506,8 @@ def main() -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
     finally:
-        if client is not None:
-            client.close()
+        if session is not None:
+            session.close()
 
     elapsed = time.time() - started
     print("-" * 70)
@@ -416,6 +518,7 @@ def main() -> int:
     print(f"  excluded:     {stats.excluded}")
     print(f"  dirs created: {stats.dirs_created}")
     print(f"  failed:       {stats.failed}")
+    print(f"  reconnects:   {stats.reconnects}")
     print(f"  data copied:  {human(stats.bytes_copied)}")
     return 0
 
