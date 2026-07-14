@@ -2002,6 +2002,32 @@ function prettyEpisodeType(type) {
   return prettyLabel(value);
 }
 
+// TMDb GENDER code -> label; "" (tile dropped) for 0/unknown/missing. VOICE-AGENT-092.
+function formatGender(gender) {
+  const code = Number(gender);
+  if (code === 1) return "Female";
+  if (code === 2) return "Male";
+  if (code === 3) return "Non-binary";
+  return "";
+}
+
+// A delimited string (newline / pipe / comma) or an array -> trimmed non-empty items,
+// capped. Feeds chip strips from fields like ALSO_KNOWN_AS / ALIASES.
+function splitList(value, cap = 12) {
+  let items;
+  if (Array.isArray(value)) {
+    items = value;
+  } else {
+    const text = String(value ?? "").trim();
+    if (!text) {
+      return [];
+    }
+    const delimiter = text.includes("\n") ? "\n" : text.includes("|") ? "|" : ",";
+    items = text.split(delimiter);
+  }
+  return items.map((item) => String(item ?? "").trim()).filter(Boolean).slice(0, cap);
+}
+
 function prettyLabel(key) {
   const label = String(key || "Value")
     .replace(/[()*]/g, " ")
@@ -3925,13 +3951,18 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     appendVideoRail(body, record.videos); // VOICE-AGENT-070
     appendMixedVisualSections(body, record);
   } else if (record.ID_PERSON) {
-    appendMetric(metrics, "Born", record.BIRTH_YEAR);
-    appendMetric(metrics, "Died", record.DEATH_YEAR);
+    // VOICE-AGENT-092: full birth/death dates (fall back to the year), plus Gender and
+    // Popularity, to match the tmdb-front person page.
+    appendMetric(metrics, "Born", firstValue(formatDate(record.BIRTHDAY), record.BIRTH_YEAR));
+    appendMetric(metrics, "Died", firstValue(formatDate(record.DEATHDAY), record.DEATH_YEAR));
     appendMetric(metrics, "Known for", record.KNOWN_FOR_DEPARTMENT);
+    appendMetric(metrics, "Gender", formatGender(record.GENDER));
+    appendMetric(metrics, "Popularity", formatRating(record.POPULARITY));
     appendMetric(metrics, "Country", countryFlag(record.COUNTRY_OF_BIRTH));
     if (metrics.children.length) {
       body.append(metrics);
     }
+    appendChipStrip(body, "Also known as", splitList(record.ALSO_KNOWN_AS ?? record.ALIASES, 10));
     const knownForActing = String(record.KNOWN_FOR_DEPARTMENT || "").toLowerCase() === "acting";
     const movieCrewCredits = dedupeCrewCredits(record.movie_crew);
     const seriesCrewCredits = dedupeCrewCredits(record.series_crew);
@@ -3954,14 +3985,31 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
       );
     }
   } else {
+    // Shared branch for company / network / collection / topic / list / location / movement /
+    // technical / genre / group / death / award / nomination. Every tile is skip-empty, so each
+    // entity surfaces only the fields its own table carries (VOICE-AGENT-092).
     appendMetric(metrics, "Type", firstValue(record.COLLECTION_TYPE, record.TOPIC_TYPE, record.LIST_TYPE, record.MOVEMENT_TYPE, record.TECHNICAL_TYPE ? prettyLabel(record.TECHNICAL_TYPE) : "", record.GROUP_TYPE, record.DEATH_TYPE, record.AWARD_TYPE, record.NOMINATION_TYPE, record.INSTANCE_OF));
     appendMetric(metrics, "Movies", record.MOVIE_COUNT);
     appendMetric(metrics, "Series", record.SERIE_COUNT);
     appendMetric(metrics, "Persons", record.PERSON_COUNT);
     appendMetric(metrics, "IMDb", formatRating(record.IMDB_RATING || record.IMDB_RATING_WEIGHTED));
+    appendMetric(metrics, "Popularity", formatRating(record.POPULARITY));           // company/collection/topic/list/movement/technical/group
+    appendMetric(metrics, "Country", countryFlag(record.ORIGIN_COUNTRY));            // company/network
+    appendMetric(metrics, "Headquarters", record.HEADQUARTERS);                      // company/network
+    // Provenance, only for the entities whose source value is human-readable (keyword /
+    // custom / collection…). group/death/award/nomination sources are raw Wikidata property
+    // codes (P108, P166…), so they are intentionally not shown.
+    const sourceValue = firstValue(record.COLLECTION_SOURCE, record.TOPIC_SOURCE, record.LIST_SOURCE);
+    appendMetric(metrics, "Source", sourceValue ? prettyLabel(sourceValue) : "");
     if (metrics.children.length) {
       body.append(metrics);
     }
+    // genre: which content types it applies to.
+    const appliesTo = [];
+    if (record.APPLIES_TO_MOVIE) { appliesTo.push("Movies"); }
+    if (record.APPLIES_TO_SERIE) { appliesTo.push("Series"); }
+    appendChipStrip(body, "Applies to", appliesTo);
+    appendChipStrip(body, "Also known as", splitList(record.ALIASES ?? record.ALSO_KNOWN_AS, 10));
     appendMixedVisualSections(body, record);
     if (!record.movies?.length && !record.series?.length && !record.persons?.length) {
       appendList(body, "Movies", namesFrom(record.movies, "MOVIE_TITLE", Infinity));
