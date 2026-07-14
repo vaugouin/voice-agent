@@ -1956,22 +1956,30 @@ function formatLanguageCode(languageCode) {
     return code.toUpperCase();
   }
 }
-function formatCountryName(countryCode) {
+function countryName(countryCode) {
   const code = String(countryCode || "").trim().toUpperCase();
   if (!code) {
     return "";
   }
-  let name = code;
   try {
     if (!_regionDisplayNames) {
       _regionDisplayNames = new Intl.DisplayNames(["en"], { type: "region" });
     }
-    name = _regionDisplayNames.of(code) || code;
+    return _regionDisplayNames.of(code) || code;
   } catch (error) {
-    name = code;
+    return code;
   }
-  const flag = countryFlagEmoji(code);
-  return flag ? `${flag} ${name}` : name;
+}
+
+// A country shown as its flag emoji (a Unicode regional-indicator pair) instead of the
+// raw 2-letter code. Falls back to the code when it isn't a valid region. The full name
+// is kept as a tooltip by the callers (chip title / metric). VOICE-AGENT-090.
+function countryFlag(countryCode) {
+  const code = String(countryCode || "").trim().toUpperCase();
+  if (!code) {
+    return "";
+  }
+  return countryFlagEmoji(code) || code;
 }
 
 function prettyLabel(key) {
@@ -2185,10 +2193,14 @@ function appendMetric(parent, label, value, { record = null } = {}) {
 // rail (image-less cards are hidden), so they get a compact pill row instead. No-op
 // when the list is empty.
 function appendChipStrip(parent, label, chips) {
-  const clean = (Array.isArray(chips) ? chips : [])
-    .map((chip) => String(chip || "").trim())
-    .filter(Boolean);
-  if (!clean.length) {
+  // Each chip is a plain string, or { text, title } when a hover tooltip is wanted
+  // (e.g. a country flag chip with the full country name as its title).
+  const items = (Array.isArray(chips) ? chips : [])
+    .map((chip) => (chip && typeof chip === "object")
+      ? { text: String(chip.text ?? "").trim(), title: String(chip.title ?? "").trim() }
+      : { text: String(chip ?? "").trim(), title: "" })
+    .filter((item) => item.text);
+  if (!items.length) {
     return;
   }
   const strip = document.createElement("div");
@@ -2196,10 +2208,13 @@ function appendChipStrip(parent, label, chips) {
   appendText(strip, "detailChipStripLabel", label);
   const list = document.createElement("div");
   list.className = "detailChips";
-  for (const value of clean) {
+  for (const item of items) {
     const chip = document.createElement("span");
     chip.className = "detailChip";
-    chip.textContent = value;
+    chip.textContent = item.text;
+    if (item.title) {
+      chip.title = item.title;
+    }
     list.append(chip);
   }
   strip.append(list);
@@ -3839,7 +3854,7 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     // Image-less label lists -> chip strips (no poster rail: image-less cards are hidden).
     appendChipStrip(body, "Genres", (record.genres || []).map((genre) => genre && genre.GENRE_NAME));
     appendChipStrip(body, "Spoken languages", (record.spoken_languages || []).map(formatLanguageCode));
-    appendChipStrip(body, "Production countries", (record.production_countries || []).map(formatCountryName));
+    appendChipStrip(body, "Production countries", (record.production_countries || []).map((code) => ({ text: countryFlag(code), title: countryName(code) })));
     if (!appendVisualRail(body, "Cast", castCredits, { kind: "profile", collectionName: "cast" })) {
       appendList(body, "Cast", namesFrom(castCredits, "PERSON_NAME", Infinity));
     }
@@ -3852,17 +3867,27 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     appendVideoRail(body, record.videos); // VOICE-AGENT-070
     appendMixedVisualSections(body, record);
   } else if (record.ID_SERIE || String(record.CONTENT_TYPE || "").toLowerCase() === "serie") {
-    const director = directorCredit(record);
     const crewCredits = dedupePersonCrewCredits(record.crew);
     const castCredits = dedupePersonCastCredits(record.cast);
     appendMetric(metrics, "First aired", firstValue(formatDate(record.DAT_FIRST_AIR), record.FIRST_AIR_YEAR));
     appendMetric(metrics, "Seasons", record.NUMBER_OF_SEASONS);
     appendMetric(metrics, "Episodes", record.NUMBER_OF_EPISODES);
     appendMetric(metrics, "IMDb", formatRating(record.IMDB_RATING || record.IMDB_RATING_WEIGHTED));
-    appendMetric(metrics, "Director", movieDirectorName(record), { record: director });
+    appendMetric(metrics, "Popularity", formatRating(record.POPULARITY));
+    appendMetric(metrics, "Original language", formatLanguageCode(record.ORIGINAL_LANGUAGE));
+    // VOICE-AGENT-090: mirror the movie page — Director tile removed (it's in the Crew rail),
+    // Original title only when it differs from the shown title.
+    const shownSerieTitleKey = String(titleForRecord(record) || record.SERIE_TITLE || "").trim().toLowerCase();
+    const originalSerieTitle = String(record.ORIGINAL_TITLE || "").trim();
+    if (originalSerieTitle && originalSerieTitle.toLowerCase() !== shownSerieTitleKey) {
+      appendMetric(metrics, "Original title", originalSerieTitle);
+    }
     if (metrics.children.length) {
       body.append(metrics);
     }
+    appendChipStrip(body, "Genres", (record.genres || []).map((genre) => genre && genre.GENRE_NAME));
+    appendChipStrip(body, "Spoken languages", (record.spoken_languages || []).map(formatLanguageCode));
+    appendChipStrip(body, "Production countries", (record.production_countries || []).map((code) => ({ text: countryFlag(code), title: countryName(code) })));
     appendVisualRail(body, "Seasons", seasonRailItems(record.seasons, record.ID_SERIE), { kind: "poster", collectionName: "seasons" });
     if (!appendVisualRail(body, "Cast", castCredits, { kind: "profile", collectionName: "cast" })) {
       appendList(body, "Cast", namesFrom(castCredits, "PERSON_NAME", Infinity));
@@ -3881,7 +3906,7 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     appendMetric(metrics, "Born", record.BIRTH_YEAR);
     appendMetric(metrics, "Died", record.DEATH_YEAR);
     appendMetric(metrics, "Known for", record.KNOWN_FOR_DEPARTMENT);
-    appendMetric(metrics, "Country", formatCountryCode(record.COUNTRY_OF_BIRTH));
+    appendMetric(metrics, "Country", countryFlag(record.COUNTRY_OF_BIRTH));
     if (metrics.children.length) {
       body.append(metrics);
     }
