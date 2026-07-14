@@ -645,16 +645,21 @@ docker exec reverseproxy nginx -s reload
 
 Adjust the container name if your Nginx container is not named `reverseproxy`.
 
-## Cache Busting
+## App version & cache busting
 
-The HTML references static assets with version query strings:
+The app has a single version string, kept in the **`VERSION`** file at the repo root
+(semantic `MAJOR.MINOR.PATCH`). **Bump it on every update** — it is the one place to change.
 
-```html
-styles.css?v=20260714-detail-card-highlight-ring
-app.js?v=20260714-detail-card-highlight
-```
+That version is shown on the **About** screen, written into every `logs/client.log` entry
+(a `version` field), and printed at startup so `docker logs -f voice-agent` shows the running
+version. It also drives cache busting: the server (`GET /`) injects the version into the
+`styles.css?v=…` and `app.js?v=…` query strings, so bumping `VERSION` forces Safari and other
+browsers to fetch the current JS/CSS after a deploy — including for server-only changes. There
+is no per-asset version string to edit; the HTML carries a `__APP_VERSION__` placeholder that the
+server fills in.
 
-When changing frontend behavior, bump the version to force Safari and other browsers to fetch the new asset after deployment.
+The value is read once at import, so a bump takes effect on restart (every deploy restarts the
+container). The `Dockerfile` copies `VERSION` into the image.
 
 ## Common Troubleshooting
 

@@ -21,6 +21,26 @@ load_dotenv()
 ROOT = Path(__file__).resolve().parent
 STATIC_DIR = ROOT / "static"
 CLIENT_LOG_PATH = ROOT.parent / "logs" / "client.log"
+
+
+def _read_app_version() -> str:
+    """Single source of truth for the app version: the repo-root ``VERSION`` file.
+
+    Bump it on every app update (see AGENTS.md). One string drives four surfaces:
+    the About page, the JS/CSS cache-busting query strings (the ``/`` route swaps the
+    ``__APP_VERSION__`` placeholder), every ``logs/client.log`` entry, and the startup
+    banner in ``docker logs``. Read once at import, so a bump takes effect on restart
+    (which every deploy does). Falls back to ``0.0.0`` if the file is missing.
+    """
+    try:
+        return (ROOT.parent / "VERSION").read_text(encoding="utf-8").strip() or "0.0.0"
+    except Exception:
+        return "0.0.0"
+
+
+APP_VERSION = _read_app_version()
+# Startup banner so `docker logs -f voice-agent` shows the running version.
+print(f"[voice-agent] version {APP_VERSION}", flush=True)
 REALTIME_VOICES = {
     "alloy",
     "ash",
@@ -1003,7 +1023,11 @@ def transcription_file_extension(content_type: str) -> str:
 
 @app.get("/", response_class=HTMLResponse)
 async def index() -> str:
-    return (STATIC_DIR / "index.html").read_text(encoding="utf-8")
+    # Inject the global app version into the cache-busting query strings, the About
+    # page, and any other `__APP_VERSION__` placeholder, so one VERSION bump refreshes
+    # the browser's JS/CSS and updates the displayed version in a single place.
+    html = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
+    return html.replace("__APP_VERSION__", APP_VERSION)
 
 
 @app.post("/session", response_class=PlainTextResponse)
@@ -1814,6 +1838,7 @@ def write_client_log(event: str, data: dict[str, Any], level: str = "info") -> N
         return
     entry = {
         "ts": datetime.now(timezone.utc).isoformat(),
+        "version": APP_VERSION,
         "level": level,
         "event": event,
         "data": data or {},

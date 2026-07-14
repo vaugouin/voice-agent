@@ -44,9 +44,19 @@ Pipeline stages:
   - `README.md` before changing human-facing behavior or configuration.
 - For any task that asks about the text2SQL API, uses a text2SQL endpoint, changes text2SQL tool behavior, or depends on text2SQL response shapes, read the upstream API documentation first: `C:\Users\vaugo\Code\fastapi-text2sql\README.md`. Treat it as the source of truth for available endpoints, entity IDs, response fields, embedded relations, and current first-class entities.
 
+## App version (single source of truth — BUMP ON EVERY UPDATE)
+
+- **`VERSION` at the repo root is the one source of truth for the app version** (semantic `MAJOR.MINOR.PATCH`). **Bump it on every app change you commit** — frontend, backend, or docs — as part of the same change. Guideline: PATCH for fixes/small tweaks, MINOR for a new feature, MAJOR for a breaking or large overhaul. There is no separate per-asset cache-busting string to maintain anymore.
+- One string drives four surfaces, all fed from `APP_VERSION` (`app/main.py`, read once at import from `VERSION`):
+  1. **JS/CSS cache-busting** — the `GET /` route (`index()`) swaps the `__APP_VERSION__` placeholder in `app/static/index.html` into `styles.css?v=…` and `app.js?v=…`. Bumping `VERSION` therefore refreshes the browser's JS/CSS even for a **server-only** change. Do **not** hardcode a `?v=` slug in `index.html`; leave the `__APP_VERSION__` placeholder in place.
+  2. **About page** — the `Version __APP_VERSION__` line (`app/static/index.html`, `.aboutVersion`), templated the same way.
+  3. **`logs/client.log`** — every persisted entry carries a `version` field (`write_client_log`, `app/main.py`).
+  4. **`docker logs -f voice-agent`** — a `[voice-agent] version <x>` banner printed at import/startup.
+- The value is read **once at import**, so a bump takes effect on **restart** (every deploy restarts the container — fine). Local dev (`uvicorn app.main:app` from repo root) and Docker both resolve `VERSION`: the `Dockerfile` has `COPY VERSION .` so it lands at `/app/VERSION` alongside `ROOT.parent`. If you move `VERSION`, update both the `Dockerfile` and `_read_app_version()`.
+
 ## Editing Rules Specific To This App
 
-- Frontend asset cache busting matters. When changing `app/static/app.js` or `app/static/styles.css`, bump the query string versions in `app/static/index.html` and keep the README cache-busting section aligned.
+- Frontend asset cache busting is handled by the global app version (see **App version** above): bump `VERSION`, do not add per-asset `?v=` slugs. Keep the `__APP_VERSION__` placeholders in `index.html` intact.
 - CSS specificity vs the `hidden` attribute: screens/panels are shown/hidden via the `hidden` attribute plus a shared low-specificity rule (e.g. `.appMenuScreen[hidden] { display: none }`). An `#id` rule that sets `display` (e.g. `#appMenuAboutScreen { display: flex }`) outranks that rule and un-hides the element in every state. Always scope screen-specific styles with `:not([hidden])` — e.g. `#appMenuAboutScreen:not([hidden]) { … }` — so the hide toggle keeps working. (Regression fixed 2026-07-04: the About credits leaked onto the burger-menu index for exactly this reason.)
 - Keep the browser UI and `UI.md` in sync. If a visibility rule changes, document the state transition, not just the visual result.
 - Avoid adding user-facing project explanations to `AGENTS.md`; put them in `README.md` or `UI.md` as appropriate.
