@@ -1919,6 +1919,61 @@ function formatCountryCode(countryCode) {
   return flag ? `${flag} ${code}` : code;
 }
 
+// Compact money label: 15000000 -> "$15M", 47010480 -> "$47M", 1500000 -> "$1.5M".
+// Empty string for missing / non-positive amounts (so the tile is dropped).
+function formatMoney(value) {
+  const amount = Number(value);
+  if (!Number.isFinite(amount) || amount <= 0) {
+    return "";
+  }
+  if (amount >= 1e9) {
+    return `$${(amount / 1e9).toFixed(amount >= 1e10 ? 0 : 1)}B`;
+  }
+  if (amount >= 1e6) {
+    return `$${(amount / 1e6).toFixed(amount >= 1e7 ? 0 : 1)}M`;
+  }
+  if (amount >= 1e3) {
+    return `$${Math.round(amount / 1e3)}K`;
+  }
+  return `$${Math.round(amount)}`;
+}
+
+// ISO language/region codes -> readable names via Intl.DisplayNames, cached, with the
+// raw code as a graceful fallback. "en" -> "English", "GB" -> "🇬🇧 United Kingdom".
+let _languageDisplayNames = null;
+let _regionDisplayNames = null;
+function formatLanguageCode(languageCode) {
+  const code = String(languageCode || "").trim().toLowerCase();
+  if (!code) {
+    return "";
+  }
+  try {
+    if (!_languageDisplayNames) {
+      _languageDisplayNames = new Intl.DisplayNames(["en"], { type: "language" });
+    }
+    return _languageDisplayNames.of(code) || code.toUpperCase();
+  } catch (error) {
+    return code.toUpperCase();
+  }
+}
+function formatCountryName(countryCode) {
+  const code = String(countryCode || "").trim().toUpperCase();
+  if (!code) {
+    return "";
+  }
+  let name = code;
+  try {
+    if (!_regionDisplayNames) {
+      _regionDisplayNames = new Intl.DisplayNames(["en"], { type: "region" });
+    }
+    name = _regionDisplayNames.of(code) || code;
+  } catch (error) {
+    name = code;
+  }
+  const flag = countryFlagEmoji(code);
+  return flag ? `${flag} ${name}` : name;
+}
+
 function prettyLabel(key) {
   const label = String(key || "Value")
     .replace(/[()*]/g, " ")
@@ -2123,6 +2178,32 @@ function appendMetric(parent, label, value, { record = null } = {}) {
     appendText(item, "detailMetricValue", formatted);
   }
   parent.append(item);
+}
+
+// VOICE-AGENT-089: a labelled strip of text chips for short label lists that have no
+// image (genres, spoken languages, production countries) — these can't go in a poster
+// rail (image-less cards are hidden), so they get a compact pill row instead. No-op
+// when the list is empty.
+function appendChipStrip(parent, label, chips) {
+  const clean = (Array.isArray(chips) ? chips : [])
+    .map((chip) => String(chip || "").trim())
+    .filter(Boolean);
+  if (!clean.length) {
+    return;
+  }
+  const strip = document.createElement("div");
+  strip.className = "detailChipStrip";
+  appendText(strip, "detailChipStripLabel", label);
+  const list = document.createElement("div");
+  list.className = "detailChips";
+  for (const value of clean) {
+    const chip = document.createElement("span");
+    chip.className = "detailChip";
+    chip.textContent = value;
+    list.append(chip);
+  }
+  strip.append(list);
+  parent.append(strip);
 }
 
 function buildReveal(meta, rating, overview) {
@@ -3736,16 +3817,29 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     }
     appendVisualRail(body, "Crew", crewCredits, { kind: "profile", collectionName: "crew" });
   } else if (record.ID_MOVIE || String(record.CONTENT_TYPE || "").toLowerCase() === "movie") {
-    const director = directorCredit(record);
     const crewCredits = dedupePersonCrewCredits(record.crew);
     const castCredits = dedupePersonCastCredits(record.cast);
     appendMetric(metrics, "Released", firstValue(formatDate(record.DAT_RELEASE), record.RELEASE_YEAR));
     appendMetric(metrics, "Duration", formatRuntime(record.RUNTIME));
     appendMetric(metrics, "IMDb", formatRating(record.IMDB_RATING || record.IMDB_RATING_WEIGHTED));
-    appendMetric(metrics, "Director", movieDirectorName(record), { record: director });
+    appendMetric(metrics, "Popularity", formatRating(record.POPULARITY));
+    appendMetric(metrics, "Budget", formatMoney(record.BUDGET));
+    appendMetric(metrics, "Revenue", formatMoney(record.REVENUE));
+    appendMetric(metrics, "Original language", formatLanguageCode(record.ORIGINAL_LANGUAGE));
+    // VOICE-AGENT-089: Director tile removed (it's already in the Crew rail below).
+    // Original title only when it differs from the shown title (else it's a duplicate).
+    const shownTitleKey = String(titleForRecord(record) || record.MOVIE_TITLE || "").trim().toLowerCase();
+    const originalTitle = String(record.ORIGINAL_TITLE || "").trim();
+    if (originalTitle && originalTitle.toLowerCase() !== shownTitleKey) {
+      appendMetric(metrics, "Original title", originalTitle);
+    }
     if (metrics.children.length) {
       body.append(metrics);
     }
+    // Image-less label lists -> chip strips (no poster rail: image-less cards are hidden).
+    appendChipStrip(body, "Genres", (record.genres || []).map((genre) => genre && genre.GENRE_NAME));
+    appendChipStrip(body, "Spoken languages", (record.spoken_languages || []).map(formatLanguageCode));
+    appendChipStrip(body, "Production countries", (record.production_countries || []).map(formatCountryName));
     if (!appendVisualRail(body, "Cast", castCredits, { kind: "profile", collectionName: "cast" })) {
       appendList(body, "Cast", namesFrom(castCredits, "PERSON_NAME", Infinity));
     }

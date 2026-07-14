@@ -1604,6 +1604,42 @@ button.search-poster-card-link {
   cursor: pointer;
 }
 
+/* VOICE-AGENT-089: chip strips for image-less label lists (genres, spoken languages,
+   production countries) on a detail page — a labelled row of wrapping text pills. */
+.detailChipStrip {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 6px 10px;
+}
+
+.detailChipStripLabel {
+  flex: 0 0 auto;
+  color: var(--text-secondary);
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.detailChips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.detailChip {
+  padding: 3px 10px;
+  border: 1px solid rgb(3 218 198 / 32%);
+  border-radius: 999px;
+  background: rgb(3 218 198 / 10%);
+  color: var(--text-primary);
+  font-size: 0.85rem;
+  font-weight: 600;
+  line-height: 1.35;
+  white-space: nowrap;
+}
+
 .detailMetricLink:hover {
   color: var(--accent-secondary);
 }
