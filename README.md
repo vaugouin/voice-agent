@@ -650,7 +650,7 @@ Adjust the container name if your Nginx container is not named `reverseproxy`.
 The HTML references static assets with version query strings:
 
 ```html
-styles.css?v=20260714-detail-card-highlight
+styles.css?v=20260714-detail-card-highlight-ring
 app.js?v=20260714-detail-card-highlight
 ```
 

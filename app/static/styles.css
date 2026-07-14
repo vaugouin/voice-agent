@@ -1090,18 +1090,29 @@ details.queryDetails summary {
 
 /* VOICE-AGENT-085: the same spoken-card highlight on entity detail rail cards
    (recommendations, similar, collection, cast…). Detail cards are `overflow: hidden`
-   and live in a horizontally-scrolling rail, so the cue is drawn with an inset cyan ring
-   (kept fully inside the card, never clipped by the rail) rather than the outer
-   outline/glow used for search cards. Highlight only — no auto-scroll (VOICE-AGENT-065). */
+   and live in a horizontally-scrolling rail, so the ring is drawn as an inset `::after`
+   overlay painted ON TOP of the poster/portrait (like the search cards), not an inset
+   box-shadow — a shadow paints behind the card's children, so the edge-to-edge image
+   hides it. The overlay keeps the ring fully visible with no layout shift (the image is
+   never resized). Highlight only — no auto-scroll (VOICE-AGENT-065). */
 .detailVisualRail.hasSpokenActive .detailVisualCard:not(.isSpokenActive) {
   opacity: 0.62;
 }
 
 .detailVisualCard.isSpokenActive {
+  position: relative;
   border-color: var(--accent-secondary);
-  box-shadow:
-    inset 0 0 0 2px var(--accent-secondary),
-    inset 0 0 0 4px rgb(3 218 198 / 28%);
+}
+
+.detailVisualCard.isSpokenActive::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--accent-secondary);
+  border-radius: inherit;
+  box-shadow: inset 0 0 0 2px rgb(3 218 198 / 28%);
+  pointer-events: none;
+  z-index: 2;
 }
 
 button.detailVisualCard.isSpokenActive:hover {
