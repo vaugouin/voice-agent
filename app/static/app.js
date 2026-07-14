@@ -105,6 +105,11 @@ let subtitleTimer = null;
 let userSubtitleTimer = null;
 let subtitleQueue = [];
 let activeSpokenCardIndex = null;
+// VOICE-AGENT-085: page-scoped counter that assigns a unique `data-result-index` to
+// highlightable detail-page rail cards (recommendations, similar, collection, cast…),
+// so the spoken-card highlight works on an entity detail page the same way it does on a
+// search result grid. Reset at the start of each detail render.
+let detailSpokenCardIndexCounter = 0;
 let assistantSpokenHighlightBuffer = "";
 let spokenAudioHighlightTimer = null;
 let spokenAudioHighlightCues = [];
@@ -153,6 +158,15 @@ const DETAIL_RAIL_AUTO_LOAD_THRESHOLD_PX = 360;
 const SYNTHETIC_STYLE_VERSION = "v1";
 const CONTEXT_STORAGE_KEY = "voice-agent-context-v1";
 const STRUCTURED_CARD_FOCUS_TOOL = "focus_result_card";
+// VOICE-AGENT-085: the spoken-card highlight targets two card families that never
+// coexist in `#resultsContent` — search grid cards (`.search-poster-card`) and entity
+// detail rail cards (`.detailVisualCard`). One selector covers both so the matcher,
+// count, and highlight apply/clear helpers work identically in search and page mode.
+const SPOKEN_CARD_SELECTOR = ".search-poster-card[data-result-index], .detailVisualCard[data-result-index]";
+const SPOKEN_CARD_ACTIVE_SELECTOR = ".search-poster-card.isSpokenActive, .detailVisualCard.isSpokenActive";
+const SPOKEN_CARD_GROUP_SELECTOR = ".search-poster-card-grid, .detailVisualRail";
+const spokenCardSelectorForIndex = (index) =>
+  `.search-poster-card[data-result-index="${index}"], .detailVisualCard[data-result-index="${index}"]`;
 const SPOKEN_CARD_NUMBER_INDEX = Object.freeze({
   one: 1,
   two: 2,
@@ -2177,9 +2191,10 @@ function titleWithoutLeadingArticle(title) {
   return normalizeSpokenCardText(title).replace(/^(?:the|a|an)\s+/, "");
 }
 
-function assignResultCardIndex(grid, card, { title = "", subtitle = "" } = {}) {
-  const index = grid.querySelectorAll(".search-poster-card").length + 1;
-  card.dataset.resultIndex = String(index);
+// Store the normalized title / title-key / subtitle / year tokens a card exposes for
+// spoken-card matching (VOICE-AGENT-028/048). Shared by search grid cards and detail
+// rail cards; the caller owns `data-result-index` assignment.
+function setSpokenCardMatchData(card, { title = "", subtitle = "" } = {}) {
   const normalizedTitle = normalizeSpokenCardText(title);
   const normalizedTitleKey = titleWithoutLeadingArticle(title);
   const normalizedSubtitle = normalizeSpokenCardText(subtitle);
@@ -2196,6 +2211,12 @@ function assignResultCardIndex(grid, card, { title = "", subtitle = "" } = {}) {
   if (yearKeys.length) {
     card.dataset.resultYearKeys = yearKeys.join(" ");
   }
+}
+
+function assignResultCardIndex(grid, card, { title = "", subtitle = "" } = {}) {
+  const index = grid.querySelectorAll(".search-poster-card").length + 1;
+  card.dataset.resultIndex = String(index);
+  setSpokenCardMatchData(card, { title, subtitle });
 }
 
 function appendCard(grid, cardSpec) {
@@ -3143,6 +3164,14 @@ function buildDetailVisualCard(item, kind = "poster") {
       }
     });
   }
+  // VOICE-AGENT-085: make this rail card participate in spoken-card highlighting, so when
+  // the assistant names it (e.g. a recommendation from the Recommend rail) it lights up
+  // like a search result card. Page-scoped unique index (across all rails); highlight only,
+  // no scroll (VOICE-AGENT-065). Cards without a usable title stay unmatched.
+  if (title) {
+    card.dataset.resultIndex = String((detailSpokenCardIndexCounter += 1));
+    setSpokenCardMatchData(card, { title, subtitle: subtitleText });
+  }
   card.append(media, text);
   return card;
 }
@@ -3928,6 +3957,8 @@ function renderEntityDetailOutput(output, args = {}, { skipHistory = false } = {
   resultsEnd.hidden = true;
   currentSearchState = null;
   resetDetailState();
+  // VOICE-AGENT-085: restart per-page spoken-card indexing for the detail rails built below.
+  detailSpokenCardIndexCounter = 0;
   loadingMore = false;
   autoPagesLoaded = 0;
 
@@ -4180,7 +4211,7 @@ function maybeLoadNextPage() {
 }
 
 function resultCardCount() {
-  return resultsContent.querySelectorAll(".search-poster-card[data-result-index]").length;
+  return resultsContent.querySelectorAll(SPOKEN_CARD_SELECTOR).length;
 }
 
 function currentVisibleResultCards() {
@@ -4209,13 +4240,15 @@ function currentVisibleResultCards() {
 
 function clearActiveSpokenCard() {
   activeSpokenCardIndex = null;
-  resultsContent.querySelectorAll(".search-poster-card.isSpokenActive").forEach((card) => {
+  resultsContent.querySelectorAll(SPOKEN_CARD_ACTIVE_SELECTOR).forEach((card) => {
     card.classList.remove("isSpokenActive");
     card.removeAttribute("aria-current");
   });
-  resultsContent.querySelectorAll(".search-poster-card-grid.hasSpokenActive").forEach((grid) => {
-    grid.classList.remove("hasSpokenActive");
-  });
+  resultsContent
+    .querySelectorAll(".search-poster-card-grid.hasSpokenActive, .detailVisualRail.hasSpokenActive")
+    .forEach((group) => {
+      group.classList.remove("hasSpokenActive");
+    });
 }
 
 function setActiveSpokenCard(index) {
@@ -4225,7 +4258,7 @@ function setActiveSpokenCard(index) {
     return;
   }
 
-  const card = resultsContent.querySelector(`.search-poster-card[data-result-index="${numericIndex}"]`);
+  const card = resultsContent.querySelector(spokenCardSelectorForIndex(numericIndex));
   if (!card) {
     return;
   }
@@ -4238,7 +4271,7 @@ function setActiveSpokenCard(index) {
   activeSpokenCardIndex = numericIndex;
   card.classList.add("isSpokenActive");
   card.setAttribute("aria-current", "true");
-  card.closest(".search-poster-card-grid")?.classList.add("hasSpokenActive");
+  card.closest(SPOKEN_CARD_GROUP_SELECTOR)?.classList.add("hasSpokenActive");
   // VOICE-AGENT-065: highlight only, no auto-scroll. The page used to scrollIntoView the
   // spoken card, which yanked content under the user mid-read; the highlight alone conveys
   // which card is being discussed. Manual scrolling is untouched.
@@ -4280,7 +4313,7 @@ function spokenCardYearKeys(card) {
 }
 
 function visibleSpokenCardMetadata(cardCount) {
-  return Array.from(resultsContent.querySelectorAll(".search-poster-card[data-result-index]"))
+  return Array.from(resultsContent.querySelectorAll(SPOKEN_CARD_SELECTOR))
     .map((card) => {
       const index = Number(card.dataset.resultIndex);
       if (!Number.isInteger(index) || index < 1 || index > cardCount) {

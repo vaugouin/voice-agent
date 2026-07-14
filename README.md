@@ -650,8 +650,8 @@ Adjust the container name if your Nginx container is not named `reverseproxy`.
 The HTML references static assets with version query strings:
 
 ```html
-styles.css?v=20260702-mic-always-enabled
-app.js?v=20260702-mic-always-enabled
+styles.css?v=20260714-detail-card-highlight
+app.js?v=20260714-detail-card-highlight
 ```
 
 When changing frontend behavior, bump the version to force Safari and other browsers to fetch the new asset after deployment.
