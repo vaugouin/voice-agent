@@ -114,9 +114,11 @@ h1 {
 }
 
 /* Keyboard-shortcut hint badges (VOICE-AGENT-087). A small kbd chip pinned to the
-   bottom-right corner of each main control, showing the key that triggers it. The
-   host button/slot must be position:relative; the chip is pointer-transparent so it
-   never intercepts clicks, and it is hidden on touch devices (no physical keyboard). */
+   bottom-right corner of each main control, showing the key that triggers it.
+   HIDDEN BY REQUEST: the shortcuts still work (the keydown handlers are untouched),
+   they are just no longer advertised in the UI. Flip `display` back to `inline-flex`
+   to bring the reminders back. The host button/slot keeps position:relative in case
+   they return; the chip is pointer-transparent so it never intercepts clicks. */
 .iconButton,
 .submitQuestionButton {
   position: relative;
@@ -127,7 +129,7 @@ h1 {
   right: -4px;
   bottom: -4px;
   z-index: 3;
-  display: inline-flex;
+  display: none; /* was inline-flex — hints hidden, shortcuts remain active */
   align-items: center;
   justify-content: center;
   min-width: 15px;

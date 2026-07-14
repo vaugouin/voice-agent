@@ -1235,7 +1235,7 @@ Guards (a keypress is ignored when any hold):
 
 Visual affordances:
 
-- Each main button carries a small `<kbd class="keyHint">` badge in its bottom-right corner showing its key. Badges are `pointer-events: none` (never block a click) and are **hidden on touch devices** via `@media (hover: none) and (pointer: coarse)`.
+- Each main button carries a small `<kbd class="keyHint">` badge in its bottom-right corner showing its key. **The badges are hidden by request** (`.keyHint { display: none }` in `styles.css`): the shortcuts are no longer advertised in the UI, but the keydown handlers are untouched so every shortcut still works. The `<kbd>` markup and its styling remain in place; flip `display` back to `inline-flex` to restore the reminders. (Badges are also `pointer-events: none` so they never block a click.)
 - Toggling mic, Look, the session, or starting a new conversation shows a floating status toast (`#shortcutToast`, `role="status"`, `aria-live="polite"`) pinned to the top-right corner. It auto-dismisses after ~1.5s, clears its text when hidden (so assistive tech does not re-read stale content), and respects `prefers-reduced-motion`. The top-right position clears the top-centre spoken-question overlay and the bottom-centre assistant subtitle overlay. The mic toast reads the toggle's new `aria-pressed` state during a session, and labels by intent (`Listening…` / `Dictation sent`) when idle, because idle dictation starts asynchronously.
 
 `showToast(label, icon)` in `app/static/app.js` is the reusable entry point; the shortcut handler and any future caller can surface a transient status the same way.
