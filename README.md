@@ -20,7 +20,7 @@ The app serves a minimal web UI on port `3000`. The browser creates an `RTCPeerC
 - PNG app icon configured for browser tabs, web app metadata, and iPhone Add to Home Screen.
 - Server-side Realtime voice selection through `AGENT_VOICE`.
 - Burger menu with Settings and About screens, subtitle URL override controls, reserved language/voice slots, and full About credits/attribution (publisher, data sources, powered-by row, OpenAI Realtime, and TMDb/IMDb/Wikipedia/Wikidata legal notices).
-- Cold-load splash screen with a localized hook line, the `Voice Movie Database` title, skip support, and a handoff into the launch showcase.
+- Cold-load splash screen with a localized hook line, the `You talkin' to me?` title, skip support, and a handoff into the launch showcase.
 - Rolling retained context in `localStorage` so reconnects can continue with prior user requests and tool results during the current page lifetime.
 - Web Worker keepalive on the `oai-events` data channel to keep ICE/NAT alive during silent periods, including in unfocused windows.
 - Disconnect watchdog with self-heal check that avoids tearing down sessions that recover on their own.
@@ -149,7 +149,7 @@ In other words, the model does the planning and tool selection, while the browse
 The server creates a session with:
 
 - model: `OPENAI_REALTIME_MODEL`, default `gpt-realtime-2`
-- voice: selected server-side by `AGENT_VOICE`, default `ash`
+- voice: selected server-side by `AGENT_VOICE` (currently `shimmer`; falls back to `ash` if unset)
 - input transcription: `gpt-4o-transcribe`
 - turn detection: server VAD
 - tools: `query_text2sql` plus dedicated detail tools for movies, series, seasons, episodes, persons, companies, networks, collections, topics, lists, movements, technicals, genres, groups, deaths, awards, nominations, and locations
@@ -334,7 +334,7 @@ About credits the publisher (A Fistful of Reels, linking to its X profile), the 
 
 ## Launch Splash And Showcase
 
-On the first cold page load, the app shows a full-screen splash before the sample showcase. The splash displays one hardcoded localized hook line and the `Voice Movie Database` title for about 1.5 seconds. The browser starts loading `GET /tool/samples` during that hold, then hands off to the normal launch showcase: the title flies toward the real top-of-screen header while the showcase fades in beneath it.
+On the first cold page load, the app shows a full-screen splash before the sample showcase. The splash displays one hardcoded localized hook line and the `You talkin' to me?` title for about 1.5 seconds. The browser starts loading `GET /tool/samples` during that hold, then hands off to the normal launch showcase: the title flies toward the real top-of-screen header while the showcase fades in beneath it.
 
 - The splash is cold-load only. It is not replayed by **New conversation**, history navigation, or result/detail re-renders.
 - Tapping the splash or pressing `Escape` skips it immediately.
@@ -351,7 +351,7 @@ On the first cold page load, the app shows a full-screen splash before the sampl
 
 When a text2sql result arrives, the app renders result cards in the UI in addition to the spoken answer.
 
-When the results panel contains a search result page or an entity detail page, the app switches to a compact display mode: the `Voice Movie Database` title and the status row are hidden, leaving only the Start/Stop, Back, Forward, text input with its conditional submit button, and New Conversation controls above the result content. Clearing the conversation restores the full header.
+When the results panel contains a search result page or an entity detail page, the app switches to a compact display mode: the `You talkin' to me?` title and the status row are hidden, leaving only the Start/Stop, Back, Forward, text input with its conditional submit button, and New Conversation controls above the result content. Clearing the conversation restores the full header.
 
 On short landscape viewports, including iOS Safari on iPhone 15 Pro Max, the app shell removes the outer page padding and square-corners the main panel so result/detail pages fill the available browser viewport from the top edge.
 

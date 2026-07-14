@@ -822,6 +822,33 @@ button:disabled {
   padding-top: 0;
 }
 
+/* VOICE-AGENT-083: scale the About screen up on larger screens — About page only, the rest
+   of the app keeps its current size. iPhone (base rules above) unchanged; tablet/iPad medium;
+   desktop larger to fill the screen. All rules scoped by #id so they outrank `.appMenuSection p`
+   (the specificity pitfall from -081). */
+/* iPad / mid-size tier. min-height guard keeps iPhone landscape (short) on the base size. */
+@media (min-width: 600px) and (min-height: 600px) {
+  #appMenuAboutScreen p { font-size: 1.15rem; }
+  #appMenuAboutScreen .aboutSubhead { font-size: 1.2rem; }
+  #appMenuAboutScreen .aboutAppName { font-size: 3rem; }
+  #appMenuAboutScreen .aboutLegal p { font-size: 0.92rem; }
+  #appMenuAboutScreen .logoRow--tech img { height: clamp(20px, 2.8vh, 28px); }
+  #appMenuAboutScreen .logoRow--sources img { height: clamp(18px, 2.4vh, 24px); }
+  #appMenuAboutScreen .logoRow--sources .tmdbLogo { height: clamp(14px, 1.9vh, 18px); }
+}
+
+/* Desktop tier. `pointer: fine` targets mouse-driven PCs, so an iPad in landscape (>=1024px
+   but coarse pointer) stays on the medium tier above rather than jumping to the large one. */
+@media (min-width: 1024px) and (pointer: fine) {
+  #appMenuAboutScreen p { font-size: 1.45rem; }
+  #appMenuAboutScreen .aboutSubhead { font-size: 1.55rem; }
+  #appMenuAboutScreen .aboutAppName { font-size: 4rem; }
+  #appMenuAboutScreen .aboutLegal p { font-size: 1.05rem; }
+  #appMenuAboutScreen .logoRow--tech img { height: clamp(28px, 3.6vh, 42px); }
+  #appMenuAboutScreen .logoRow--sources img { height: clamp(24px, 3.1vh, 36px); }
+  #appMenuAboutScreen .logoRow--sources .tmdbLogo { height: clamp(18px, 2.3vh, 26px); }
+}
+
 .menuToggle,
 .menuSetting {
   display: grid;
