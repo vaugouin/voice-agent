@@ -1982,6 +1982,26 @@ function countryFlag(countryCode) {
   return countryFlagEmoji(code) || code;
 }
 
+// Integer count with thousands separators (1234 -> "1,234"); "" when non-positive.
+function formatCount(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number <= 0) {
+    return "";
+  }
+  return new Intl.NumberFormat("en-US").format(Math.round(number));
+}
+
+// TMDb EPISODE_TYPE prettified ("mid_season" -> "Mid Season"), but blank for the
+// unremarkable "standard" so the tile only appears for notable episodes (premiere,
+// finale, mid-season). VOICE-AGENT-091.
+function prettyEpisodeType(type) {
+  const value = String(type || "").trim().toLowerCase();
+  if (!value || value === "standard") {
+    return "";
+  }
+  return prettyLabel(value);
+}
+
 function prettyLabel(key) {
   const label = String(key || "Value")
     .replace(/[()*]/g, " ")
@@ -3793,6 +3813,8 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     appendMetric(metrics, "Aired", firstValue(formatDate(record.DAT_AIR), record.AIR_YEAR));
     appendMetric(metrics, "Duration", formatRuntime(record.RUNTIME));
     appendMetric(metrics, "Rating", formatRating(record.VOTE_AVERAGE));
+    appendMetric(metrics, "Votes", formatCount(record.VOTE_COUNT));         // VOICE-AGENT-091
+    appendMetric(metrics, "Type", prettyEpisodeType(record.EPISODE_TYPE));  // premiere/finale/mid-season only
     if (metrics.children.length) {
       body.append(metrics);
     }
