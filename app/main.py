@@ -770,6 +770,24 @@ RECOVERY_INSTRUCTIONS = (
     "why; never invent an answer."
 )
 
+# A query_text2sql result is only the FIRST PAGE of matches (rows_per_page, currently
+# 50), not the whole set. Without this, the model reads result_count as a definitive
+# total and says things like "there are 50 movies shot in Technicolor" when the real
+# total is unknown and larger. Shared by the Realtime and /text-chat prompts.
+RESULT_COUNT_INSTRUCTIONS = (
+    "Result counts and pagination: a query_text2sql result returns only the FIRST PAGE "
+    "of matches, not the complete set. The result_count field is the number of rows on "
+    "this page (at most rows_per_page, currently 50), NOT the total number of matching "
+    "titles. When has_more is true, or when result_count equals rows_per_page (a full "
+    "page), there are more matches than shown and the true total is unknown: do NOT state "
+    "a specific number of results ('there are 50 movies') and do not imply the list is "
+    "exhaustive. Instead speak qualitatively ('here are some of the many…', 'a first "
+    "selection…', 'among the top matches…') or say there are at least that many. Only "
+    "state an exact total when has_more is false AND it is page 1, so the whole result "
+    "set fits on one page; then result_count is the true total. Never present the "
+    "first-page count as the definitive number of results."
+)
+
 VERBOSE_DETAIL_INSTRUCTIONS = (
     "Default to concise answers. If the user explicitly asks to tell me more, "
     "answer in detail, explain the full story, go deeper, or asks for a longer "
@@ -828,7 +846,11 @@ def realtime_session_config(
         "Do not recite result or card numbers unless the user explicitly asks "
         "for numbered output."
     )
-    instructions += " " + VERBOSE_DETAIL_INSTRUCTIONS + " " + RECOVERY_INSTRUCTIONS
+    instructions += (
+        " " + VERBOSE_DETAIL_INSTRUCTIONS
+        + " " + RECOVERY_INSTRUCTIONS
+        + " " + RESULT_COUNT_INSTRUCTIONS
+    )
     tools = [
         {
             "type": "function",
@@ -1482,7 +1504,11 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         "cards with result numbers unless the user explicitly asks for "
         "numbered output."
     )
-    instructions += " " + VERBOSE_DETAIL_INSTRUCTIONS + " " + RECOVERY_INSTRUCTIONS
+    instructions += (
+        " " + VERBOSE_DETAIL_INSTRUCTIONS
+        + " " + RECOVERY_INSTRUCTIONS
+        + " " + RESULT_COUNT_INSTRUCTIONS
+    )
     request_base = {
         "model": model,
         "instructions": instructions,

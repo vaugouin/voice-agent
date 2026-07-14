@@ -6541,6 +6541,11 @@ async function handleFunctionCall(item) {
         answer: output.answer || "",
         error: output.error || "",
         result_count: output.result_count ?? null,
+        // VOICE-AGENT-086: hand the model the pagination signal so it doesn't report the
+        // first-page count (≤ rows_per_page, e.g. 50) as a definitive total. Without these
+        // the Realtime model only saw result_count and said "there are 50 movies".
+        rows_per_page: output.rows_per_page ?? null,
+        has_more: Boolean(output.has_more),
         visible_results: structuredCardFocusEnabled() ? currentVisibleResultCards() : [],
         rows: output.rows || [],
         sql_query: output.sql_query || "",
