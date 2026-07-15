@@ -237,6 +237,53 @@ TEXT2SQL_API_KEY_NAME=X-API-Key
 TEXT2SQL_API_KEY_VALUE=...
 ```
 
+### Same-Name Disambiguation (VOICE-AGENT-093)
+
+When the user names **one** entity but several in the database share that exact
+name or title (the actor **and** the director *Steve McQueen*; the four films
+titled *Le Bonheur*; twenty *Dracula* films), the API returns a neutral
+`name_ambiguity` object alongside the result (from `FASTAPI-TEXT2SQL-157`):
+
+```json
+{
+  "name_ambiguity": {
+    "entity": "person",
+    "anchor": "Steve McQueen",
+    "count": 2,
+    "candidates": [
+      { "id": 13565, "display": "Steve McQueen", "discriminator": { "birth_year": 1930, "death_year": 1980, "role": "Acting" } },
+      { "id": 72757, "display": "Steve McQueen", "discriminator": { "birth_year": 1969, "death_year": null, "role": "Directing" } }
+    ]
+  }
+}
+```
+
+It appears **only** when the generated SQL is a pure exact-equality match on the
+entity's name/title column(s) and returns ≥2 distinct rows; a query narrowed by a
+year, director, genre, or collection does not carry it. The API only *detects* the
+cluster — it does not decide what to do, because intent (ask vs list) lives in the
+user's phrasing, not in the SQL. The agent applies:
+
+- **Named a single entity** ("tell me about X", "who is X") → **ask which one**
+  before opening a detail page. Persons are distinguished by **role** ("the actor"
+  vs "the director") then birth year; movies and series by **year**. The on-screen
+  title can differ from the spoken word (an English or alternate title), so
+  candidates are identified by year/role, not by repeating the title. If two
+  candidates share the same year (e.g. the two 1989 *Black Rain* films), the agent
+  briefly fetches each detail to tell them apart by director or country.
+- **Asked for a list** ("list all movies called X", "how many people are named X")
+  → **enumerate** the candidates, no question.
+- **No `name_ambiguity`** → unchanged behavior.
+
+The adapter surfaces `name_ambiguity` at the top level of the `/tool/text2sql`
+response, so both paths see it: the Realtime tool output forwards it to the voice
+model, and the browser retains the candidate list (id + discriminator) in the
+[retained context](#retained-context). On the **typed** path the server re-runs
+`query_text2sql` on every message, so a follow-up that merely *selects* a candidate
+("the director") is handled by resolving it against the carried candidate list and
+calling that entity's detail tool by id — the forced search on the reply is kept as
+a fallback (in case the user changes topic) but ignored for a selection.
+
 ## Detail Tool Flow
 
 When the model needs detail fields for a specific entity, it can call a dedicated detail tool. The browser receives the Realtime function call and proxies it through:
