@@ -1726,24 +1726,38 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
 
     output_text = extract_response_text(upstream_body)
 
-    # Server-side parity with the voice path: the browser logs query_text2sql
-    # diagnostics via clientLog on the Realtime path, but typed /text-chat runs the
-    # tool server-side, so log here too — same `tool_call_success` shape so offline
-    # log harvests cover both paths. `source` distinguishes them.
+    # Server-side logging for the typed /text-chat path. The browser only records
+    # lengths for text turns (text_chat_sent / text_chat_success), which made typed
+    # disambiguation impossible to reconstruct from the log (VOICE-AGENT-093 debugging).
+    # Record the same shapes the Realtime path emits — the user message, EVERY tool call
+    # (name + id, not just query_text2sql), and the assistant reply — all tagged
+    # source="text-chat" so one offline harvest covers voice and text uniformly.
+    write_client_log("user_transcript", {"source": "text-chat", "transcript": message})
     for o in tool_outputs:
-        if o.get("name") != "query_text2sql":
-            continue
-        out = o.get("output") or {}
-        if not isinstance(out, dict):
-            continue
-        write_client_log("tool_call_success", {
-            "name": "query_text2sql",
-            "source": "text-chat",
-            "result_count": out.get("result_count"),
-            "has_more": out.get("has_more"),
-            "diagnostic": out.get("diagnostic"),
-            "forced": bool(o.get("forced")),
-        })
+        name = str(o.get("name") or "")
+        out = o.get("output") if isinstance(o.get("output"), dict) else {}
+        if name == "query_text2sql":
+            na = out.get("name_ambiguity")
+            write_client_log("tool_call_success", {
+                "name": "query_text2sql",
+                "source": "text-chat",
+                "result_count": out.get("result_count"),
+                "has_more": out.get("has_more"),
+                "diagnostic": out.get("diagnostic"),
+                "forced": bool(o.get("forced")),
+                # Surface whether the same-name flag fired, so a disambiguation turn is
+                # visible in the log (VOICE-AGENT-093 / FASTAPI-TEXT2SQL-157).
+                "name_ambiguity_count": (na.get("count") if isinstance(na, dict) else None),
+            })
+        elif DETAIL_TOOL_BY_NAME.get(name):
+            write_client_log("tool_call_success", {
+                "name": name,
+                "source": "text-chat",
+                "entity": out.get("entity") or DETAIL_TOOL_BY_NAME.get(name) or "",
+                "id": (o.get("args") or {}).get("id") or out.get("id") or "",
+                "forced": bool(o.get("forced")),
+            })
+    write_client_log("assistant_transcript", {"source": "text-chat", "transcript": output_text})
 
     return {
         "configured": True,
