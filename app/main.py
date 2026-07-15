@@ -1068,12 +1068,21 @@ def transcription_file_extension(content_type: str) -> str:
 
 
 @app.get("/", response_class=HTMLResponse)
-async def index() -> str:
+async def index() -> HTMLResponse:
     # Inject the global app version into the cache-busting query strings, the About
     # page, and any other `__APP_VERSION__` placeholder, so one VERSION bump refreshes
     # the browser's JS/CSS and updates the displayed version in a single place.
     html = (STATIC_DIR / "index.html").read_text(encoding="utf-8")
-    return html.replace("__APP_VERSION__", APP_VERSION)
+    # The `?v=` scheme only busts the SUB-resources (app.js / styles.css); it is gated
+    # by this document, which carries the version string. Mark index.html no-cache so
+    # every load/reload revalidates it and always serves the current `?v=` — otherwise a
+    # browser- or proxy-cached index.html keeps pointing at the old app.js after a deploy
+    # (only Ctrl+Shift+R would recover it). Note: an already-open SPA tab still won't pick
+    # up a new version until it is reloaded — no header fixes "the tab was never reloaded".
+    return HTMLResponse(
+        html.replace("__APP_VERSION__", APP_VERSION),
+        headers={"Cache-Control": "no-cache, must-revalidate"},
+    )
 
 
 @app.post("/session", response_class=PlainTextResponse)
