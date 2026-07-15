@@ -846,7 +846,10 @@ DISAMBIGUATION_TEXT_ADDENDUM = (
     "a name_ambiguity candidate list from an earlier turn and the user's latest message "
     "picks one of those candidates (by role, year, ordinal, or name), answer about THAT "
     "entity: call its detail tool with the candidate's id from that list, and ignore the "
-    "freshly executed query_text2sql output for this reply. If the message is unrelated to "
+    "freshly executed query_text2sql output for this reply. Call the detail tool "
+    "IMMEDIATELY in this same turn and answer from it — do NOT reply that you will look it "
+    "up, do NOT ask the user to confirm again, and do NOT say you only have the list or "
+    "lack the details: you have the id, so fetch it now. If the message is unrelated to "
     "those candidates, ignore them and answer the new question normally."
 )
 
@@ -1512,6 +1515,11 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         else None
     )
     context_lines = []
+    # VOICE-AGENT-093 diagnostic: how many same-name candidates the INCOMING context
+    # carried. On a selection turn this must be > 0 for the model to resolve the choice
+    # by id; a 0 here (with a name_ambiguity offered the turn before) means the browser
+    # did not retain them — typically a stale cached app.js.
+    carried_candidate_count = 0
     for item in payload.context[-10:]:
         item_type = str(item.get("type", "")).strip()
         text = str(item.get("text", "")).strip()
@@ -1534,6 +1542,9 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
             # than from a fresh search of the reply text (see DISAMBIGUATION_TEXT_ADDENDUM).
             name_ambiguity = item.get("name_ambiguity")
             if isinstance(name_ambiguity, dict) and name_ambiguity.get("candidates"):
+                carried_candidate_count = max(
+                    carried_candidate_count, len(name_ambiguity["candidates"])
+                )
                 candidate_bits = []
                 for candidate in name_ambiguity["candidates"][:12]:
                     discriminator = candidate.get("discriminator") or {}
@@ -1732,7 +1743,13 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
     # Record the same shapes the Realtime path emits — the user message, EVERY tool call
     # (name + id, not just query_text2sql), and the assistant reply — all tagged
     # source="text-chat" so one offline harvest covers voice and text uniformly.
-    write_client_log("user_transcript", {"source": "text-chat", "transcript": message})
+    write_client_log("user_transcript", {
+        "source": "text-chat",
+        "transcript": message,
+        # >0 on a selection turn = the browser carried the candidates (fresh app.js);
+        # 0 after a disambiguation offer = candidates lost in transit (stale app.js).
+        "carried_candidate_count": carried_candidate_count,
+    })
     for o in tool_outputs:
         name = str(o.get("name") or "")
         out = o.get("output") if isinstance(o.get("output"), dict) else {}
