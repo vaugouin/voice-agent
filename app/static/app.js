@@ -5585,6 +5585,19 @@ function compactToolContext(args, output) {
     result_count: output?.result_count ?? null,
     rows: (output?.rows || []).slice(0, 5),
     sql_query: output?.sql_query || "",
+    // VOICE-AGENT-093: retain the same-name candidates (id + discriminator) so a
+    // later typed reply that selects one ("the director") can be resolved from this
+    // list instead of re-searching the reply text. Capped to keep the context small.
+    name_ambiguity: output?.name_ambiguity
+      ? {
+          entity: output.name_ambiguity.entity,
+          anchor: output.name_ambiguity.anchor,
+          count: output.name_ambiguity.count,
+          candidates: (output.name_ambiguity.candidates || [])
+            .slice(0, 12)
+            .map((c) => ({ id: c.id, display: c.display, discriminator: c.discriminator })),
+        }
+      : null,
   };
 }
 
@@ -6742,6 +6755,10 @@ async function handleFunctionCall(item) {
         rows: output.rows || [],
         sql_query: output.sql_query || "",
         diagnostic: output.diagnostic || null,
+        // VOICE-AGENT-093: neutral same-name-cluster flag (FASTAPI-TEXT2SQL-157).
+        // Present when the user named one entity but several share the name/title;
+        // the prompt tells the model to ask which one (singular) or list (plural).
+        name_ambiguity: output.name_ambiguity || null,
       }
     : {
         error: output.error || "",

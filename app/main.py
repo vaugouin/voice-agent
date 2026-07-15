@@ -808,6 +808,48 @@ RESULT_COUNT_INSTRUCTIONS = (
     "first-page count as the definitive number of results."
 )
 
+# VOICE-AGENT-093. A query_text2sql result may carry a `name_ambiguity` object
+# (from FASTAPI-TEXT2SQL-157) meaning the user named ONE entity but the database holds
+# several sharing that exact name/title (homonym person, duplicate movie/serie title).
+# The API only DETECTS the cluster; deciding whether to ask or to list is the client's
+# job, and it hinges on the user's phrasing (singular vs plural) — which is NOT in the
+# SQL. Shared by the Realtime and /text-chat prompts.
+DISAMBIGUATION_INSTRUCTIONS = (
+    "Same-name disambiguation: a query_text2sql result may include a name_ambiguity "
+    "object with an anchor, a count, and a candidates list (each candidate has an id and "
+    "a discriminator). It means the user named ONE entity (person, movie, or series) but "
+    "several in the database share that exact name or title. "
+    "When name_ambiguity is present AND the user asked about a SINGLE entity (for example "
+    "'tell me about X', 'who is X', 'what is X about'), do NOT call a detail tool yet. "
+    "First ASK the user which one they mean, naming each candidate by what distinguishes "
+    "it: for a person, lead with the role (say 'the actor' vs 'the director' from the "
+    "discriminator) and add the birth year; for a movie or series, use the year. The "
+    "candidate's on-screen title can differ from the exact word the user said (it may be "
+    "an English or alternate title), so identify candidates by year or role, not by "
+    "repeating the title. If two candidates share the same year, briefly call the detail "
+    "tool for each to tell them apart by director or country. After the user chooses, "
+    "call the detail tool with THAT candidate's id. "
+    "But if the user's request was PLURAL or a listing ('list all movies called X', "
+    "'how many people are named X', 'show me the X films'), do NOT ask — simply present "
+    "the candidates. When name_ambiguity is absent, behave normally."
+)
+
+# VOICE-AGENT-093, text path only. Typed /text-chat is near-stateless: the server
+# re-runs query_text2sql on EVERY message, so the user's follow-up choice ("the
+# director") would otherwise be re-searched as if it were a new question, losing the
+# candidate list. This tells the model to treat such a reply as a SELECTION and resolve
+# it from the carried candidates instead of the freshly forced search.
+DISAMBIGUATION_TEXT_ADDENDUM = (
+    "Handling the user's choice in typed chat: a reply that merely selects among "
+    "previously offered candidates (for example 'the director', 'the 1965 one', 'the "
+    "second', or a name) is NOT a new search. If the recent conversation context contains "
+    "a name_ambiguity candidate list from an earlier turn and the user's latest message "
+    "picks one of those candidates (by role, year, ordinal, or name), answer about THAT "
+    "entity: call its detail tool with the candidate's id from that list, and ignore the "
+    "freshly executed query_text2sql output for this reply. If the message is unrelated to "
+    "those candidates, ignore them and answer the new question normally."
+)
+
 VERBOSE_DETAIL_INSTRUCTIONS = (
     "Default to concise answers. If the user explicitly asks to tell me more, "
     "answer in detail, explain the full story, go deeper, or asks for a longer "
@@ -870,6 +912,7 @@ def realtime_session_config(
         " " + VERBOSE_DETAIL_INSTRUCTIONS
         + " " + RECOVERY_INSTRUCTIONS
         + " " + RESULT_COUNT_INSTRUCTIONS
+        + " " + DISAMBIGUATION_INSTRUCTIONS
     )
     tools = [
         {
@@ -1314,6 +1357,12 @@ async def query_text2sql_data(payload: Text2SqlRequest) -> dict[str, Any]:
             upstream_body.get("sql_query", "") if isinstance(upstream_body, dict) else ""
         ),
         "diagnostic": _text2sql_diagnostic(upstream_body),
+        # VOICE-AGENT-093: neutral same-name-cluster flag from the API
+        # (FASTAPI-TEXT2SQL-157). Surfaced top-level so both the Realtime tool output
+        # and the /text-chat model see it and can disambiguate homonyms/duplicate titles.
+        "name_ambiguity": (
+            upstream_body.get("name_ambiguity") if isinstance(upstream_body, dict) else None
+        ),
         "upstream": upstream_body,
     }
 
@@ -1480,6 +1529,29 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
                 detail_bits.append(f"id={json.dumps(item_id, ensure_ascii=False)}")
             if endpoint:
                 detail_bits.append(f"endpoint={endpoint}")
+            # VOICE-AGENT-093: surface the retained same-name candidates + their IDs so a
+            # later selection reply ("the director") can be resolved from this list rather
+            # than from a fresh search of the reply text (see DISAMBIGUATION_TEXT_ADDENDUM).
+            name_ambiguity = item.get("name_ambiguity")
+            if isinstance(name_ambiguity, dict) and name_ambiguity.get("candidates"):
+                candidate_bits = []
+                for candidate in name_ambiguity["candidates"][:12]:
+                    discriminator = candidate.get("discriminator") or {}
+                    disc_str = ", ".join(
+                        f"{key}={value}"
+                        for key, value in discriminator.items()
+                        if value not in (None, "")
+                    )
+                    label = str(candidate.get("display") or "").strip()
+                    candidate_bits.append(
+                        f"id={json.dumps(candidate.get('id'), ensure_ascii=False)} "
+                        f"{label} ({disc_str})".strip()
+                    )
+                detail_bits.append(
+                    "name_ambiguity anchor="
+                    + json.dumps(name_ambiguity.get("anchor"), ensure_ascii=False)
+                    + " candidates=[" + "; ".join(candidate_bits) + "]"
+                )
             context_lines.append(" ".join(detail_bits).strip())
 
     input_text = (
@@ -1532,6 +1604,8 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         " " + VERBOSE_DETAIL_INSTRUCTIONS
         + " " + RECOVERY_INSTRUCTIONS
         + " " + RESULT_COUNT_INSTRUCTIONS
+        + " " + DISAMBIGUATION_INSTRUCTIONS
+        + " " + DISAMBIGUATION_TEXT_ADDENDUM
     )
     request_base = {
         "model": model,
