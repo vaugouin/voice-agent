@@ -826,9 +826,18 @@ DISAMBIGUATION_INSTRUCTIONS = (
     "discriminator) and add the birth year; for a movie or series, use the year. The "
     "candidate's on-screen title can differ from the exact word the user said (it may be "
     "an English or alternate title), so identify candidates by year or role, not by "
-    "repeating the title. If two candidates share the same year, briefly call the detail "
-    "tool for each to tell them apart by director or country. After the user chooses, "
-    "call the detail tool with THAT candidate's id. "
+    "repeating the title. If two candidates share the same year, tell them apart by their "
+    "release_date in the discriminator (a movie/series candidate carries both year and the "
+    "full release_date), or briefly call the detail tool for each to compare director or "
+    "country. "
+    "As soon as the user's answer points to ONE candidate, call that candidate's detail "
+    "tool with its id and answer from the result. The choice may be DIRECT (by year, role, "
+    "or ordinal), INDIRECT (by director, tagline, country, or 'the most recent / latest / "
+    "oldest one' — resolve it with the candidates' release_date), or a CONFIRMATION of a "
+    "candidate you just named ('yes', 'that one', 'focus on this one'). In every such case "
+    "you already have the id, so fetch it immediately in this same turn: never reply that "
+    "you lack the details, only have the list, or will look it up later without fetching "
+    "first. "
     "But if the user's request was PLURAL or a listing ('list all movies called X', "
     "'how many people are named X', 'show me the X films'), do NOT ask — simply present "
     "the candidates. When name_ambiguity is absent, behave normally."
@@ -840,17 +849,22 @@ DISAMBIGUATION_INSTRUCTIONS = (
 # candidate list. This tells the model to treat such a reply as a SELECTION and resolve
 # it from the carried candidates instead of the freshly forced search.
 DISAMBIGUATION_TEXT_ADDENDUM = (
-    "Handling the user's choice in typed chat: a reply that merely selects among "
-    "previously offered candidates (for example 'the director', 'the 1965 one', 'the "
-    "second', or a name) is NOT a new search. If the recent conversation context contains "
-    "a name_ambiguity candidate list from an earlier turn and the user's latest message "
-    "picks one of those candidates (by role, year, ordinal, or name), answer about THAT "
-    "entity: call its detail tool with the candidate's id from that list, and ignore the "
-    "freshly executed query_text2sql output for this reply. Call the detail tool "
-    "IMMEDIATELY in this same turn and answer from it — do NOT reply that you will look it "
-    "up, do NOT ask the user to confirm again, and do NOT say you only have the list or "
-    "lack the details: you have the id, so fetch it now. If the message is unrelated to "
-    "those candidates, ignore them and answer the new question normally."
+    "Handling the user's choice in typed chat: when the recent conversation context "
+    "contains a name_ambiguity candidate list from an earlier turn, a reply that selects "
+    "among those candidates is NOT a new search, so no query_text2sql is pre-executed for "
+    "it — you must act on the carried candidate list yourself. A selection can be DIRECT "
+    "('the director', 'the 1965 one', 'the second'), INDIRECT ('the one directed by Nolan', "
+    "'the most recent one', 'the oldest' — use each candidate's year and release_date to "
+    "resolve it), or a CONFIRMATION of a candidate you just named ('yes', 'that one', "
+    "'focus on this one'). In every such case, pick the matching candidate and call its "
+    "detail tool with that candidate's id from the list IMMEDIATELY in this same turn, then "
+    "answer from the detail result. Do NOT reply that you will look it up, do NOT ask the "
+    "user to confirm yet again, and do NOT say you only have the list or lack the details: "
+    "you have the id, so fetch it now. If the selection is still genuinely ambiguous (two "
+    "candidates the user's criterion cannot separate, e.g. same director), ask ONE more "
+    "narrowing question instead of guessing. If the message is a NEW question unrelated to "
+    "the carried candidates, call query_text2sql yourself with the user's message and "
+    "answer from that."
 )
 
 VERBOSE_DETAIL_INSTRUCTIONS = (
@@ -1586,7 +1600,20 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         "ui_language": ui_language,
         "page": 1,
     }
-    initial_text2sql_output = await execute_text_tool("query_text2sql", initial_text2sql_args)
+    # VOICE-AGENT-095: on a disambiguation SELECTION turn (an earlier turn offered
+    # name_ambiguity candidates the browser still carries), do NOT pre-force
+    # query_text2sql. Forcing a search of a selection phrase ("the most recent one",
+    # "yes, that one") returns junk / 0 rows whose grid BLANKS the screen (the forced
+    # query drives the render). Instead let the model resolve the pick from the carried
+    # candidates and call the detail tool itself; if the message is actually a new
+    # unrelated question it still has query_text2sql as an auto tool. This finally does
+    # the "don't re-force" deferred in VOICE-AGENT-093.
+    is_selection_turn = carried_candidate_count > 0
+    initial_text2sql_output = (
+        None
+        if is_selection_turn
+        else await execute_text_tool("query_text2sql", initial_text2sql_args)
+    )
     instructions = (
         "You are a knowledgeable cinema companion and advisor, not a search engine or "
         "database, replying as concise text. Talk like a film connoisseur helping a "
@@ -1639,22 +1666,38 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
             "role": "user",
             "content": input_text,
         },
-        {
+    ]
+    tool_outputs: list[dict[str, Any]] = []
+    if initial_text2sql_output is not None:
+        input_items.append({
             "role": "user",
             "content": (
                 "query_text2sql tool output for the user message:\n"
                 + json.dumps(initial_text2sql_output)
             ),
-        },
-    ]
-    tool_outputs: list[dict[str, Any]] = [
-        {
+        })
+        tool_outputs.append({
             "name": "query_text2sql",
             "args": initial_text2sql_args,
             "output": initial_text2sql_output,
             "forced": True,
-        }
-    ]
+        })
+    else:
+        # VOICE-AGENT-095: selection turn — no forced query. Tell the model the carried
+        # candidates are its source and it must fetch the resolved detail (or run
+        # query_text2sql itself if this is actually a new question).
+        input_items.append({
+            "role": "user",
+            "content": (
+                "No query_text2sql was pre-executed for this message: the conversation "
+                "context above carries a name_ambiguity candidate list, so treat this "
+                "message as a possible selection among those candidates. If it selects or "
+                "confirms one candidate (directly, indirectly, or as a confirmation), call "
+                "that candidate's detail tool with its id now and answer from it. If it is "
+                "instead a new question unrelated to the candidates, call query_text2sql "
+                "yourself with the user's message."
+            ),
+        })
     if latest_detail_context:
         detail_tool_name, detail_args = latest_detail_context
         detail_args = {**detail_args, "ui_language": ui_language}
@@ -1758,6 +1801,9 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         # >0 on a selection turn = the browser carried the candidates (fresh app.js);
         # 0 after a disambiguation offer = candidates lost in transit (stale app.js).
         "carried_candidate_count": carried_candidate_count,
+        # VOICE-AGENT-095: True when the forced query_text2sql was skipped so it could
+        # not blank the screen; the model then fetches the resolved detail itself.
+        "forced_query_skipped": is_selection_turn,
     })
     for o in tool_outputs:
         name = str(o.get("name") or "")

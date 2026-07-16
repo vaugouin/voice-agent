@@ -269,8 +269,14 @@ user's phrasing, not in the SQL. The agent applies:
   vs "the director") then birth year; movies and series by **year**. The on-screen
   title can differ from the spoken word (an English or alternate title), so
   candidates are identified by year/role, not by repeating the title. If two
-  candidates share the same year (e.g. the two 1989 *Black Rain* films), the agent
-  briefly fetches each detail to tell them apart by director or country.
+  candidates share the same year (e.g. the two 1989 *Black Rain* films, or *The
+  Odyssey*'s two 2026 films), the discriminator's full **`release_date`**
+  (`FASTAPI-TEXT2SQL-160`) tells them apart, so *"the most recent one"* resolves to
+  a single candidate without an extra query. The selection can be **direct** (year,
+  role, ordinal), **indirect** (director, tagline, "the latest/oldest one"), or a
+  **confirmation** of a candidate the agent just named ("yes, that one"); in every
+  case the agent fetches that candidate's detail immediately rather than saying it
+  lacks the details (`VOICE-AGENT-095`).
 - **Asked for a list** ("list all movies called X", "how many people are named X")
   → **enumerate** the candidates, no question.
 - **No `name_ambiguity`** → unchanged behavior.
@@ -278,11 +284,18 @@ user's phrasing, not in the SQL. The agent applies:
 The adapter surfaces `name_ambiguity` at the top level of the `/tool/text2sql`
 response, so both paths see it: the Realtime tool output forwards it to the voice
 model, and the browser retains the candidate list (id + discriminator) in the
-[retained context](#retained-context). On the **typed** path the server re-runs
-`query_text2sql` on every message, so a follow-up that merely *selects* a candidate
-("the director") is handled by resolving it against the carried candidate list and
-calling that entity's detail tool by id — the forced search on the reply is kept as
-a fallback (in case the user changes topic) but ignored for a selection.
+[retained context](#retained-context). On the **typed** path the server normally
+re-runs `query_text2sql` on every message, but on a **selection turn** — when the
+incoming context still carries a `name_ambiguity` candidate list
+(`carried_candidate_count > 0`) — it **skips** that forced query
+(`VOICE-AGENT-095`). Forcing a search of a selection phrase (*"the most recent
+one"*, *"yes, that one"*) returned junk or zero rows whose grid **blanked the
+screen** (the forced query drives the render); skipping it lets the model resolve
+the pick from the carried candidates and call the detail tool by id, so the screen
+is driven by the **resolved card** (`renderEntityDetailOutput` replaces the grid),
+not by a forced-query artifact. If the message is instead a new unrelated question,
+the model still calls `query_text2sql` itself. The skip is recorded in the log as
+`forced_query_skipped` on the `user_transcript` entry.
 
 ## Detail Tool Flow
 
