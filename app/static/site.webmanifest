@@ -1,6 +1,6 @@
 {
-  "name": "Voice Movie Database",
-  "short_name": "Voice Movies",
+  "name": "You talkin' to me?",
+  "short_name": "You talkin'?",
   "description": "Voice and text movie database assistant.",
   "start_url": "../",
   "scope": "../",

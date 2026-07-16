@@ -59,7 +59,7 @@ The app has one persistent shell, one control row, one status row, one hidden au
 
 ### App Header
 
-Element: `.appHeader`, containing the `Voice Movie Database` title.
+Element: `.appHeader`, containing the `You talkin' to me?` title.
 
 - Visible by default.
 - Hidden when `.panel.resultsMode` is active.
@@ -549,7 +549,7 @@ Default state: `hidden`. `runLaunchSplash()` unhides it once during initial page
 Content:
 
 - A `.launchSplashHook` line, picked randomly from a hardcoded English/French hook list according to `activeUiLanguage` (`en` by default on cold load).
-- A `.launchSplashName` line containing the current app title text, `Voice Movie Database`.
+- A `.launchSplashName` line containing the current app title text, `You talkin' to me?`.
 
 Sequence:
 

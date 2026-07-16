@@ -7519,7 +7519,7 @@ function pickLaunchSplashHook(uiLanguage) {
 }
 
 function launchSplashAppName() {
-  return String(appTitle?.textContent || document.title || "Voice Movie Database").trim();
+  return String(appTitle?.textContent || document.title || "You talkin' to me?").trim();
 }
 
 function renderLaunchSplashContent() {
