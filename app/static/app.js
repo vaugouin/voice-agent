@@ -244,6 +244,13 @@ let activeResponseId = null;
 let activeAudioResponseId = null;
 let toolCallsInFlight = 0;
 let awaitingToolResponse = false;
+// VOICE-AGENT-094: a tool output is ready but the Realtime API had an active response
+// (e.g. a "still loading" filler the model was speaking), so the response.create that
+// makes the model answer from the tool result is deferred until that response ends.
+let pendingToolResponseRequest = false;
+// VOICE-AGENT-094: backstop timer — if the model never picks up a sent tool output, break
+// the stuck `awaitingToolResponse` so the mic can't stay muted and wedge the session.
+let toolResponseWatchdogTimer = null;
 let lastUserTranscript = "";
 let lastToolArgs = null;
 let lastToolOutput = null;
@@ -5701,6 +5708,47 @@ function clearResponseFallback() {
   }
 }
 
+// VOICE-AGENT-094: backstop against a wedged voice turn. A tool output was sent to the
+// model but the response that should speak it never materialised (a filler stole the
+// response slot, or a response.create was dropped in a race). Without this, awaitingToolResponse
+// stays true forever → canEnableMicrophone() returns false → the mic is muted and the user's
+// next questions are never captured (observed: no further log lines at all). After a few
+// seconds, break the stuck state and re-trigger the response if the channel is idle.
+function scheduleToolResponseWatchdog() {
+  clearToolResponseWatchdog();
+  toolResponseWatchdogTimer = window.setTimeout(() => {
+    toolResponseWatchdogTimer = null;
+    if (!dc || dc.readyState !== "open") {
+      return;
+    }
+    if (!awaitingToolResponse && !pendingToolResponseRequest) {
+      return; // The model already responded; nothing stuck.
+    }
+    clientLog("tool_response_watchdog_recover", {
+      awaitingToolResponse,
+      pendingToolResponseRequest,
+      activeResponseId,
+      activeAudioResponseId,
+    }, "error");
+    awaitingToolResponse = false;
+    if (!activeResponseId) {
+      // Channel is idle but the model never answered the tool output — re-trigger it.
+      pendingToolResponseRequest = false;
+      sendEvent({ type: "response.create" });
+    }
+    // If a response is still active, let it finish; clearing awaitingToolResponse above is
+    // enough to un-mute the mic so the session is no longer wedged.
+    syncMicrophone("tool response watchdog");
+  }, 4000);
+}
+
+function clearToolResponseWatchdog() {
+  if (toolResponseWatchdogTimer) {
+    clearTimeout(toolResponseWatchdogTimer);
+    toolResponseWatchdogTimer = null;
+  }
+}
+
 function clearReconnectTimer() {
   if (reconnectTimer) {
     clearTimeout(reconnectTimer);
@@ -5939,6 +5987,9 @@ function cancelRealtimeOutput(reason = "cancelled") {
   resetSpokenAudioHighlightState();
   resetRealtimeSpokenSubtitles({ clearVisible: spokenSubtitlesEnabled() });
   clearResponseFallback();
+  clearToolResponseWatchdog(); // VOICE-AGENT-094
+  pendingToolResponseRequest = false;
+  awaitingToolResponse = false;
   if (hadActiveResponse || hadActiveAudio || hadRemoteAudio) {
     clientLog("realtime_output_cancelled", {
       reason,
@@ -5982,6 +6033,8 @@ function cleanupConnection() {
   resetRealtimeSpokenSubtitles();
   toolCallsInFlight = 0;
   awaitingToolResponse = false;
+  clearToolResponseWatchdog(); // VOICE-AGENT-094
+  pendingToolResponseRequest = false;
 }
 
 function scheduleReconnect(reason, delayMs = 1500) {
@@ -6626,14 +6679,18 @@ function sendFunctionCallOutput(callId, output) {
 
 function requestRealtimeResponseAfterToolOutput() {
   if (!activeResponseId) {
+    pendingToolResponseRequest = false;
     sendEvent({ type: "response.create" });
-  } else {
-    window.setTimeout(() => {
-      if (!activeResponseId) {
-        sendEvent({ type: "response.create" });
-      }
-    }, 250);
+    return;
   }
+  // A response is active (typically a "still loading" filler the model is speaking). The
+  // Realtime API rejects response.create while one is active, so we must wait. The old
+  // code retried once after 250ms and then GAVE UP if the filler was still streaming —
+  // the response.create was silently dropped, the model never spoke from the tool result,
+  // and awaitingToolResponse stayed true → mic muted → session deadlock (VOICE-AGENT-094).
+  // Instead, mark the request pending and fire it deterministically when the active
+  // response ends (see the response.done handler); the watchdog is the final backstop.
+  pendingToolResponseRequest = true;
 }
 
 function handleStructuredCardFocusCall(item, args) {
@@ -6671,6 +6728,7 @@ function handleStructuredCardFocusCall(item, args) {
   }, output.ok ? "info" : "error");
   sendFunctionCallOutput(item.call_id, output);
   requestRealtimeResponseAfterToolOutput();
+  scheduleToolResponseWatchdog(); // VOICE-AGENT-094: same anti-wedge guarantee.
   syncMicrophone("structured card focus output sent");
 }
 
@@ -6790,6 +6848,7 @@ async function handleFunctionCall(item) {
 
   sendFunctionCallOutput(item.call_id, modelToolOutput);
   requestRealtimeResponseAfterToolOutput();
+  scheduleToolResponseWatchdog(); // VOICE-AGENT-094: guarantee this turn can't wedge.
   syncMicrophone("tool output sent");
 }
 
@@ -6862,6 +6921,7 @@ async function handleServerEvent(event) {
     resetRealtimeSpokenSubtitles({ clearVisible: spokenSubtitlesEnabled() });
     awaitingToolResponse = false;
     clearResponseFallback();
+    clearToolResponseWatchdog(); // VOICE-AGENT-094: a response started; the turn isn't wedged.
     syncMicrophone("response created");
     setStatus("Responding", "live");
   }
@@ -6893,6 +6953,14 @@ async function handleServerEvent(event) {
     const output = event.response?.output || [];
     for (const item of output) {
       await handleFunctionCall(item);
+    }
+    // VOICE-AGENT-094: if a tool output was waiting for a free response slot while this
+    // response (e.g. a "still loading" filler) was active, fire the deferred response.create
+    // now so the model actually answers from the tool result instead of stalling. Guarded by
+    // !activeResponseId in case a function_call in this response's own output re-armed one.
+    if (pendingToolResponseRequest && !activeResponseId) {
+      pendingToolResponseRequest = false;
+      sendEvent({ type: "response.create" });
     }
     syncMicrophone("response done");
   }

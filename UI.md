@@ -34,7 +34,7 @@ The app has one persistent shell, one control row, one status row, one hidden au
 - `spokenSubtitlesActive`: true when the current Realtime session returned `X-Spoken-Subtitles: 1`, enabling assistant voice-mode subtitles in the bottom overlay.
 - `userTranscriptSubtitlesActive`: true when the current Realtime session returned `X-User-Transcript-Subtitles: 1`, enabling user voice-mode transcripts in the top lane.
 - `realtimeSpokenSubtitleBuffer`, `realtimeSpokenSubtitleChunks`, `realtimeSpokenSubtitleIndex`, `realtimeSpokenSubtitlePlaying`, `realtimeSpokenSubtitleStartedAt`, `realtimeSpokenSubtitleFinal`, `realtimeSpokenSubtitleAudioStopped`, `realtimeSpokenSubtitleLastText`, and `realtimeSpokenSubtitleSawDelta`: track and audio-pace the assistant transcript text used for the bottom subtitle overlay during Realtime voice output.
-- `activeResponseId`, `activeAudioResponseId`, `toolCallsInFlight`, and `awaitingToolResponse`: drive microphone muting and status transitions during Realtime responses and tool work.
+- `activeResponseId`, `activeAudioResponseId`, `toolCallsInFlight`, and `awaitingToolResponse`: drive microphone muting and status transitions during Realtime responses and tool work. `pendingToolResponseRequest` and `toolResponseWatchdogTimer` (VOICE-AGENT-094) keep a tool output from wedging the turn: the former defers the post-tool `response.create` until an active response ends; the latter is a timeout that breaks a stuck `awaitingToolResponse` so the mic can never stay muted indefinitely.
 
 ## Static Shell
 
