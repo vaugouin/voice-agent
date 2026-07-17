@@ -2095,21 +2095,35 @@ button.detailVisualCard:hover {
   gap: 18px;
   overflow: hidden;
   border-radius: 8px;
-  /* Fade the left and right edges so cards enter/exit softly. */
-  -webkit-mask-image: linear-gradient(
-    to right,
-    transparent 0,
-    #000 48px,
-    #000 calc(100% - 48px),
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to right,
-    transparent 0,
-    #000 48px,
-    #000 calc(100% - 48px),
-    transparent 100%
-  );
+}
+
+/* Fade the left and right edges so cards enter/exit softly.
+   VOICE-AGENT-097: this was a mask-image on this container, which is the lanes' direct
+   parent. WebKit scrolls badly inside a masked subtree: on iPad (Safari AND Chrome — both
+   are WebKit) a lane needed several swipes over several seconds before it moved, while
+   every Windows browser was fine, and `.detailVisualRail` (no masked ancestor) scrolls
+   fine there. Painting the fade as overlays instead leaves the scrollable lanes unmasked.
+   The panel behind is the flat --bg-secondary, so the result is visually identical.
+   pointer-events: none so the overlays never eat a swipe or a tap. */
+.showcaseViewport::before,
+.showcaseViewport::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 48px;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.showcaseViewport::before {
+  left: 0;
+  background: linear-gradient(to right, var(--bg-secondary), transparent);
+}
+
+.showcaseViewport::after {
+  right: 0;
+  background: linear-gradient(to left, var(--bg-secondary), transparent);
 }
 
 /* VOICE-AGENT-097: each lane is a real horizontal scroll container, so a hand gesture
