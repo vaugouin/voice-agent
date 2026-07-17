@@ -984,6 +984,14 @@ def realtime_session_config(
         "instructions": instructions,
         "audio": {
             "input": {
+                # VOICE-AGENT-100: server-side noise reduction, applied BEFORE turn detection
+                # and transcription. The browser already sets echoCancellation/noiseSuppression
+                # on getUserMedia, but it was not enough: the voice log carried transcripts of
+                # room noise in other languages (despite language="en") and, worse, snippets of
+                # the assistant's own speech ("There are several", "Let me") echoed back as user
+                # turns — each a phantom turn that fires a real query_text2sql. near_field is the
+                # profile for a mic held close to the face (phone/tablet in hand).
+                "noise_reduction": {"type": "near_field"},
                 "transcription": {
                     "model": "gpt-4o-transcribe",
                     "language": "en",

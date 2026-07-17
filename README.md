@@ -151,6 +151,7 @@ The server creates a session with:
 - model: `OPENAI_REALTIME_MODEL`, default `gpt-realtime-2`
 - voice: selected server-side by `AGENT_VOICE` (currently `shimmer`; falls back to `ash` if unset)
 - input transcription: `gpt-4o-transcribe`
+- input noise reduction: `near_field` (server-side, applied before turn detection/transcription; suppresses room noise and the assistant's own echo that the browser `echoCancellation` was letting through as phantom user turns)
 - turn detection: server VAD
 - tools: `query_text2sql` plus dedicated detail tools for movies, series, seasons, episodes, persons, companies, networks, collections, topics, lists, movements, technicals, genres, groups, deaths, awards, nominations, and locations
 - optional spoken-card focus tool: `focus_result_card`, enabled by default with `ENABLE_STRUCTURED_CARD_FOCUS=true`
