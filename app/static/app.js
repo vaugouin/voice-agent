@@ -69,6 +69,20 @@ let launchShowcaseLoadPromise = null;
 const SHOWCASE_RESUME_DELAY_MS = 5000;
 let showcaseInteractionTimer = null;
 let showcaseUserPaused = false;
+// VOICE-AGENT-098: how many DISTINCT samples one lane holds before it loops. Each lane
+// renders its samples twice (the seamless wrap), so a lane carries 2x this many groups.
+//
+// Why it is capped at all: the wall used to take 300 samples spread over 2-6 lanes, i.e.
+// 100-300 groups per lane once doubled — a scrollWidth of 140k-420k px and 900-2700 elements
+// per lane. On iOS that made WebKit drop the first swipes for seconds while it tiled such a
+// huge scroll layer, then run fine once built (iPad + iPhone, Safari and Chrome alike);
+// .detailVisualRail, ~5k px, always swiped instantly on the same device.
+//
+// Why 12 costs nothing: at ~72px/s a lane crosses roughly one group per second-and-a-half, so
+// 12 groups is ~4 minutes before the loop repeats — far longer than anyone watches a launch
+// wall — and a viewer only ever sees 1-2 groups per lane in a 30s glance. The old wall built
+// ~100x more DOM than it could possibly show.
+const SHOWCASE_SAMPLES_PER_LANE = 12;
 
 const launchSplash = document.createElement("section");
 launchSplash.id = "launchSplash";
@@ -7547,7 +7561,16 @@ function bindShowcaseResizeReflow() {
 
 function renderLaunchShowcase(categories, uiLanguage, { animate = false } = {}) {
   bindShowcaseResizeReflow();
-  const picked = selectShowcaseSamples(flattenSampleTree(categories), 300);
+  // Spread the groups over as many horizontal lanes as fit the available height, so the
+  // wall fills the screen instead of leaving an empty band below (VOICE-AGENT-074).
+  const laneCount = computeShowcaseLaneCount();
+  // VOICE-AGENT-098: size the pool to what the lanes actually show rather than a flat 300.
+  // selectShowcaseSamples still round-robins across top-level categories, so a smaller pool
+  // stays just as varied — it simply stops building DOM nobody can ever scroll to.
+  const picked = selectShowcaseSamples(
+    flattenSampleTree(categories),
+    laneCount * SHOWCASE_SAMPLES_PER_LANE
+  );
   if (!picked.length) {
     return;
   }
@@ -7560,9 +7583,6 @@ function renderLaunchShowcase(categories, uiLanguage, { animate = false } = {}) 
   const viewport = document.createElement("div");
   viewport.className = "showcaseViewport";
 
-  // Spread the groups over as many horizontal lanes as fit the available height, so the
-  // wall fills the screen instead of leaving an empty band below (VOICE-AGENT-074).
-  const laneCount = computeShowcaseLaneCount();
   const laneSamples = Array.from({ length: laneCount }, () => []);
   picked.forEach((sample, index) => {
     laneSamples[index % laneCount].push(sample);
@@ -7612,6 +7632,24 @@ function renderLaunchShowcase(categories, uiLanguage, { animate = false } = {}) 
     window.setTimeout(() => launchShowcase.classList.remove("isEntering"), 700);
   }
   startShowcaseMarquee(viewport, lanes);
+  // VOICE-AGENT-098: report the wall we actually built. The lane's scrollWidth IS the
+  // subject of this ticket (a 140k-420k px scroller made iOS drop the first swipes), so the
+  // next iPad test should be settled by a measurement, not by how it feels. Sampled a few
+  // seconds in, because posters keep widening the lane as they decode — measuring at render
+  // time would report a fraction of the real width.
+  window.setTimeout(() => {
+    if (!lanes.length || launchShowcase.hidden) {
+      return;
+    }
+    const widths = lanes.map((lane) => Math.round(lane.el.scrollWidth));
+    clientLog("showcase_rendered", {
+      lanes: lanes.length,
+      samples_per_lane: SHOWCASE_SAMPLES_PER_LANE,
+      groups_per_lane: Math.round((lanes[0].el.childElementCount || 0)),
+      scroll_width_max: Math.max(...widths),
+      scroll_width_min: Math.min(...widths),
+    });
+  }, 4000);
 }
 
 async function loadLaunchShowcaseData() {

@@ -1989,6 +1989,10 @@ HARNESS_LOG_EVENTS = frozenset({
     # overflow: hidden) before the fix. Filtering this out is what left us unable to tell,
     # from a log alone, whether the splash had completed at all.
     "launch_splash_dismissed",
+    # VOICE-AGENT-098. Carries the lanes' measured scroll_width. A showcase lane that is
+    # hundreds of thousands of pixels wide is what made iOS drop the first swipes while
+    # WebKit tiled the layer, so this is the number that says whether the cap did its job.
+    "showcase_rendered",
 })
 
 
