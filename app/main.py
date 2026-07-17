@@ -1983,6 +1983,12 @@ HARNESS_LOG_EVENTS = frozenset({
     "text_chat_cancelled",
     "realtime_text_sent",
     "reco_cards_shown",
+    # VOICE-AGENT-099. Emitted right after the splash releases the page. It carries
+    # handoff="animation" | "timeout" | "skipped" | "error": a "timeout" means the handoff
+    # animation hung and the page would have stayed locked (body.launchSplashOpen ->
+    # overflow: hidden) before the fix. Filtering this out is what left us unable to tell,
+    # from a log alone, whether the splash had completed at all.
+    "launch_splash_dismissed",
 })
 
 

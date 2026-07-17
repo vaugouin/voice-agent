@@ -562,6 +562,10 @@ Sequence:
 6. With `prefers-reduced-motion: reduce`, the fly animation is skipped and the UI cuts from the static splash to the showcase.
 7. The splash element is hidden, emptied, and `body.launchSplashOpen` is removed.
 
+Releasing the page (VOICE-AGENT-099): `body.launchSplashOpen` puts `overflow: hidden` on `<body>`, and `hideLaunchSplash()` is the only thing that removes it, so a splash that fails to finish locks the page's vertical scrolling for the whole session — while horizontal rails and clicks keep working (`.launchSplash.isLeaving` is `pointer-events: none`, so the splash looks gone but keeps its lock). `completeLaunchSplash()` therefore calls `hideLaunchSplash()` from a `finally`, and races the handoff against `launchSplashHandoffTimeoutMs` (`launchSplashHandoffMs + 1500`, ~3.4× the nominal duration). The two guards cover different failures: `finally` survives a throw, the race survives a **hang** — which is the real risk, since a throw is already absorbed (`finishAnimation` does `.catch(() => {})` and the fly-title has its own `finally`). The `launch_splash_dismissed` log event reports `handoff`: `"animation"` (normal), `"timeout"` (the animation hung — the page would have stayed locked before this fix), `"skipped"`, or `"error"`.
+
+The same lock family applies to `body.imageViewerOpen`, whose only release path was the Escape key — absent on touch devices. Wiping the results content destroys a fullscreen portrait viewer and would strand the lock, so every wipe goes through `clearResultsContent()`, which re-derives the class from the DOM (`.personPortraitViewer.isFullscreen`) and cannot let it outlive its viewer. `body.appMenuOpen` is added/removed synchronously and needs no such guard.
+
 Skip behavior:
 
 - Pointer/tap on the splash skips immediately.

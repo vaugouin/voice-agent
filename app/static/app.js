@@ -284,6 +284,10 @@ const dictationNoSpeechMs = 10000;
 const dictationMaxMs = 30000;
 const launchSplashHoldMs = 1500;
 const launchSplashHandoffMs = 620;
+// VOICE-AGENT-099: hard ceiling on the splash handoff. The animation is meant to take
+// launchSplashHandoffMs; if its `finished` promise never settles, this releases the page
+// anyway. ~3.4x the nominal duration, so it can never cut a healthy handoff short.
+const launchSplashHandoffTimeoutMs = launchSplashHandoffMs + 1500;
 const launchSplashHooks = {
   en: [
     "Talk to the movies.",
@@ -1841,7 +1845,7 @@ function setLoadingResults(query, uiLanguage = "") {
   clearActiveSpokenCard();
   assistantSpokenHighlightBuffer = "";
   clearRenderedPageViewSignature();
-  resultsContent.replaceChildren();
+  clearResultsContent();
   resultsLoader.hidden = true;
   loadMoreButton.hidden = true;
   resultsEnd.hidden = true;
@@ -2959,6 +2963,22 @@ function toggleFullscreenImageViewer(viewer) {
   if (!wasFullscreen) {
     viewer.classList.add("isFullscreen");
   }
+}
+
+// VOICE-AGENT-099: `body.imageViewerOpen` puts `overflow: hidden` on <body>, and it is only
+// released by closing the viewer — whose sole caller is the Escape key handler, a key a touch
+// device does not have. Wiping the results content destroys any fullscreen portrait viewer
+// along with it and STRANDS the lock: the page then never scrolls again for the whole
+// session. That matches the iPad/iPhone report exactly (vertical scrolling dead on a film
+// detail, while its horizontal rails and every click kept working — the lock only blocks page
+// scrolling). Every content wipe goes through here, so the lock is re-derived from the DOM
+// and can never outlive the viewer that owns it.
+function clearResultsContent() {
+  resultsContent.replaceChildren();
+  document.body.classList.toggle(
+    "imageViewerOpen",
+    Boolean(document.querySelector(".personPortraitViewer.isFullscreen"))
+  );
 }
 
 function closeFullscreenImageViewer() {
@@ -4086,7 +4106,7 @@ async function showRecordDetail(record, { skipHistory = false, ui_language = "" 
   resultsPanel.hidden = false;
   clearQueryDetailsDock();
   clearRenderedPageViewSignature();
-  resultsContent.replaceChildren();
+  clearResultsContent();
   resultsLoader.hidden = true;
   loadMoreButton.hidden = true;
   resultsEnd.hidden = true;
@@ -4125,7 +4145,7 @@ function setLoadingEntityDetail(toolName, args) {
   resultsPanel.hidden = false;
   clearQueryDetailsDock();
   clearRenderedPageViewSignature();
-  resultsContent.replaceChildren();
+  clearResultsContent();
   resultsLoader.hidden = true;
   loadMoreButton.hidden = true;
   resultsEnd.hidden = true;
@@ -4156,7 +4176,7 @@ function renderEntityDetailOutput(output, args = {}, { skipHistory = false } = {
   resultsPanel.hidden = false;
   clearQueryDetailsDock();
   clearRenderedPageViewSignature();
-  resultsContent.replaceChildren();
+  clearResultsContent();
   resultsLoader.hidden = true;
   loadMoreButton.hidden = true;
   resultsEnd.hidden = true;
@@ -4243,7 +4263,7 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
     clearQueryDetailsDock();
     resetDetailState();
     clearRenderedPageViewSignature();
-    resultsContent.replaceChildren();
+    clearResultsContent();
 
     const answerBlock = document.createElement("div");
     answerBlock.className = "answerBlock";
@@ -7800,6 +7820,21 @@ function hideLaunchSplash() {
   launchSplashSkipped = false;
 }
 
+// VOICE-AGENT-099: the splash MUST always release the page. `body.launchSplashOpen` puts
+// `overflow: hidden` on <body>, and hideLaunchSplash() is the ONLY thing that removes it, so
+// anything that skips it locks the page's vertical scrolling for the rest of the session.
+// Observed on iPad/iPhone: a film detail could not be scrolled vertically, while its
+// horizontal rails and every click still worked — because `.launchSplash.isLeaving` is
+// `pointer-events: none`, so the splash looks gone but keeps its lock.
+//
+// Two guards, because they cover different failures:
+//  - `finally` survives a throw;
+//  - the timeout race survives a HANG, which `finally` cannot. That is the real risk here:
+//    a throw is already absorbed (finishAnimation does `.catch(() => {})` and the fly-title
+//    has its own `finally`), so what remains is a Web Animations `finished` promise that
+//    never settles.
+// `handoff` is reported to the log: if it ever reads "timeout", the hang is real and this
+// was indeed the cause — the fix doubles as its own diagnostic.
 async function completeLaunchSplash() {
   if (launchSplashDone) {
     return;
@@ -7807,11 +7842,21 @@ async function completeLaunchSplash() {
   launchSplashDone = true;
   const skipped = launchSplashSkipped;
   void maybeShowLaunchShowcase({ animate: !launchSplashSkipped && !prefersReducedMotion() });
-  if (!launchSplashSkipped && !prefersReducedMotion()) {
-    await animateLaunchSplashHandoff();
+  let handoff = "skipped";
+  try {
+    if (!launchSplashSkipped && !prefersReducedMotion()) {
+      handoff = await Promise.race([
+        animateLaunchSplashHandoff().then(() => "animation"),
+        delay(launchSplashHandoffTimeoutMs).then(() => "timeout"),
+      ]);
+    }
+  } catch (error) {
+    handoff = "error";
+    log("launch splash handoff failed", error?.message || String(error));
+  } finally {
+    hideLaunchSplash();
+    clientLog("launch_splash_dismissed", { skipped, handoff });
   }
-  hideLaunchSplash();
-  clientLog("launch_splash_dismissed", { skipped });
 }
 
 async function runLaunchSplash() {
@@ -7842,7 +7887,7 @@ function clearConversationUi() {
   resultsPanel.hidden = true;
   clearQueryDetailsDock();
   clearRenderedPageViewSignature();
-  resultsContent.replaceChildren();
+  clearResultsContent();
   resultsLoader.hidden = true;
   loadMoreButton.hidden = true;
   resultsEnd.hidden = true;
