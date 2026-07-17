@@ -7440,7 +7440,7 @@ function startShowcaseMarquee(viewport, lanes) {
         lane.carry -= whole;
         // Read-modify-write, so any scrolling the user did since the last frame is kept.
         lane.el.scrollLeft += whole;
-        const loopWidth = lane.track.scrollWidth / 2;
+        const loopWidth = lane.el.scrollWidth / 2;
         if (loopWidth > 0 && lane.el.scrollLeft >= loopWidth) {
           lane.el.scrollLeft -= loopWidth;
         }
@@ -7486,7 +7486,7 @@ function bindShowcaseLaneGestures(lanes) {
       if (!lane.userScrolling) {
         return;
       }
-      const loopWidth = lane.track.scrollWidth / 2;
+      const loopWidth = lane.el.scrollWidth / 2;
       if (loopWidth > 0 && lane.el.scrollLeft <= 0) {
         lane.el.scrollLeft = loopWidth - 1;
       }
@@ -7553,17 +7553,19 @@ function renderLaunchShowcase(categories, uiLanguage, { animate = false } = {}) 
     if (!samples.length) {
       return;
     }
+    // VOICE-AGENT-097: groups go straight into the lane, which is itself the flex scroll
+    // container — the same shape as .detailVisualRail, the rail measured to swipe perfectly
+    // on iPad. The old intermediate .showcaseLaneTrack only existed to carry the marquee's
+    // transform and became dead weight once the auto-scroll moved to the lane's scrollLeft.
     const lane = document.createElement("div");
     lane.className = "showcaseLane";
-    const track = document.createElement("div");
-    track.className = "showcaseLaneTrack";
     let rendered = 0;
     // Two identical passes so the leftward scroll wraps seamlessly.
     for (let pass = 0; pass < 2; pass += 1) {
       for (const sample of samples) {
         const group = buildShowcaseGroup(sample);
         if (group) {
-          track.append(group);
+          lane.append(group);
           rendered += 1;
         }
       }
@@ -7571,12 +7573,11 @@ function renderLaunchShowcase(categories, uiLanguage, { animate = false } = {}) 
     if (!rendered) {
       return;
     }
-    lane.append(track);
     viewport.append(lane);
     // Vary speed per lane for a natural wall; all clearly faster than before.
-    // VOICE-AGENT-097: `el` is the scroll container the auto-scroll and the hand gestures
-    // both drive (was a transform on `track`); `carry` holds the sub-pixel remainder.
-    lanes.push({ el: lane, track, carry: 0, speed: 72 + (laneIndex % 3) * 12, userScrolling: false });
+    // `el` is the scroll container that the auto-scroll and the hand gestures both drive;
+    // `carry` holds the sub-pixel remainder.
+    lanes.push({ el: lane, carry: 0, speed: 72 + (laneIndex % 3) * 12, userScrolling: false });
   });
 
   if (!lanes.length) {

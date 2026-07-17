@@ -2130,8 +2130,18 @@ button.detailVisualCard:hover {
    scrolls it natively (momentum, rubber-band) and the browser suppresses the click that
    would otherwise fire after a swipe — which is exactly why a tap on a question/card still
    behaves as before. Same recipe as .detailVisualRail. */
+/* The lane IS the flex container holding the groups — deliberately the same shape as
+   .detailVisualRail, the one horizontal rail measured to swipe perfectly on iPad. There used
+   to be an intermediate .showcaseLaneTrack (display:flex; width:max-content) inside the lane,
+   but it only existed to receive the marquee's transform; since the auto-scroll drives the
+   lane's scrollLeft it was dead weight, and it was the structural difference from the rail
+   that works. */
 .showcaseLane {
   min-width: 0;
+  display: flex;
+  flex-wrap: nowrap;
+  align-items: center;
+  gap: 18px;
   overflow-x: auto;
   overflow-y: hidden;
   /* Claim the horizontal gesture. Without this the swipe falls through to the page and
@@ -2144,14 +2154,6 @@ button.detailVisualCard:hover {
 
 .showcaseLane::-webkit-scrollbar {
   display: none;
-}
-
-.showcaseLaneTrack {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 18px;
-  width: max-content;
 }
 
 .showcaseGroup {
