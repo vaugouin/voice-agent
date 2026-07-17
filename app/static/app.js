@@ -6781,6 +6781,10 @@ async function handleFunctionCall(item) {
       entity: output.entity,
       id: output.id,
       diagnostic: output.diagnostic ?? null,
+      // VOICE-AGENT-096: same field name as the /text-chat server-side log, so one offline
+      // harvest covers voice and text uniformly. Without it a voice log cannot tell a flag
+      // that never fired from one that simply is not logged (FASTAPI-TEXT2SQL-157 / -093).
+      name_ambiguity_count: output.name_ambiguity?.count ?? null,
     });
     if (item.name === "query_text2sql") {
       await renderText2SqlResult(output, args);
