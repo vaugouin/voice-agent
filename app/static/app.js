@@ -63,6 +63,12 @@ let launchShowcaseData = null;
 let launchShowcaseLoading = false;
 let showcaseResizeReflowBound = false; // VOICE-AGENT-074: window-resize re-flow bound once
 let launchShowcaseLoadPromise = null;
+// VOICE-AGENT-097: a hand gesture pauses the showcase wall, which resumes this long after
+// the LAST interaction. Philippe's call: the wall stays alive, but you get time to read a
+// row you just pulled back.
+const SHOWCASE_RESUME_DELAY_MS = 5000;
+let showcaseInteractionTimer = null;
+let showcaseUserPaused = false;
 
 const launchSplash = document.createElement("section");
 launchSplash.id = "launchSplash";
@@ -7384,44 +7390,108 @@ function cancelShowcaseAutoScroll() {
     cancelAnimationFrame(launchShowcaseRaf);
     launchShowcaseRaf = null;
   }
+  // VOICE-AGENT-097: drop any pending resume so a rebuilt wall (resize re-flow, re-entry)
+  // never inherits a stale pause.
+  if (showcaseInteractionTimer !== null) {
+    window.clearTimeout(showcaseInteractionTimer);
+    showcaseInteractionTimer = null;
+  }
+  showcaseUserPaused = false;
 }
 
-// Horizontal marquee: every lane's track holds two identical copies of its
-// groups and is translated leftward, so cards enter from the right, cross the
-// screen, and exit on the left, wrapping seamlessly after one copy's width.
-// Paused on hover and when the tab is hidden. scrollWidth is read each frame
-// because poster images change the width as they load in.
+// Horizontal marquee: every lane's track holds two identical copies of its groups, and the
+// lane is scrolled rightward through them, so cards enter from the right, cross the screen,
+// and exit on the left, wrapping seamlessly after one copy's width. Paused on hover, during
+// a hand gesture (VOICE-AGENT-097), and when the tab is hidden. scrollWidth is read each
+// frame because poster images change the width as they load in.
+//
+// VOICE-AGENT-097: driven by scrollLeft, not transform. The lane is a native scroll
+// container, which buys three things a hand-rolled drag would have had to reinvent: touch
+// momentum, and — crucially — the browser NOT firing a click after a swipe, so a tap on a
+// question/card still behaves exactly as before.
 function startShowcaseMarquee(viewport, lanes) {
   cancelShowcaseAutoScroll();
-  // Respect reduced-motion: leave the lanes static and manually scrollable (CSS
-  // switches each lane to overflow-x: auto).
+  bindShowcaseLaneGestures(lanes);
+  // Respect reduced-motion: no auto-scroll. The lanes stay hand-scrollable (the CSS makes
+  // every lane overflow-x: auto), so the gesture bindings above still apply.
   if (prefersReducedMotion()) {
     return;
   }
   let last = performance.now();
-  let paused = false;
+  let hoverPaused = false;
   viewport.addEventListener("mouseenter", () => {
-    paused = true;
+    hoverPaused = true;
   });
   viewport.addEventListener("mouseleave", () => {
-    paused = false;
+    hoverPaused = false;
   });
   const step = (now) => {
     const delta = (now - last) / 1000;
     last = now;
-    if (!paused && !document.hidden) {
+    if (!hoverPaused && !showcaseUserPaused && !document.hidden) {
       for (const lane of lanes) {
-        lane.offset += lane.speed * delta;
-        const loopWidth = lane.track.scrollWidth / 2;
-        if (loopWidth > 0 && lane.offset >= loopWidth) {
-          lane.offset -= loopWidth;
+        // Carry the sub-pixel remainder so the lane keeps its exact speed even if the
+        // browser rounds scrollLeft to whole pixels.
+        lane.carry += lane.speed * delta;
+        const whole = Math.trunc(lane.carry);
+        if (!whole) {
+          continue;
         }
-        lane.track.style.transform = `translateX(${-lane.offset}px)`;
+        lane.carry -= whole;
+        // Read-modify-write, so any scrolling the user did since the last frame is kept.
+        lane.el.scrollLeft += whole;
+        const loopWidth = lane.track.scrollWidth / 2;
+        if (loopWidth > 0 && lane.el.scrollLeft >= loopWidth) {
+          lane.el.scrollLeft -= loopWidth;
+        }
       }
     }
     launchShowcaseRaf = requestAnimationFrame(step);
   };
   launchShowcaseRaf = requestAnimationFrame(step);
+}
+
+// VOICE-AGENT-097: hand-gesture handling for the showcase lanes — pause while the user
+// swipes, resume SHOWCASE_RESUME_DELAY_MS after the last interaction, and let the "past"
+// keep unrolling when they swipe backwards.
+function bindShowcaseLaneGestures(lanes) {
+  const markInteraction = (lane) => {
+    showcaseUserPaused = true;
+    lane.userScrolling = true;
+    // Re-armed on every interaction, so a second swipe is never cut short by a resume
+    // scheduled from the first one.
+    window.clearTimeout(showcaseInteractionTimer);
+    showcaseInteractionTimer = window.setTimeout(() => {
+      showcaseInteractionTimer = null;
+      showcaseUserPaused = false;
+      for (const other of lanes) {
+        other.userScrolling = false;
+      }
+    }, SHOWCASE_RESUME_DELAY_MS);
+  };
+
+  for (const lane of lanes) {
+    for (const type of ["pointerdown", "touchstart", "touchmove", "wheel"]) {
+      lane.el.addEventListener(type, () => markInteraction(lane), { passive: true });
+    }
+    // Backward wrap. scrollLeft cannot go below 0 natively, so swiping right would hit a
+    // hard wall at the very start and the past would stop unrolling. When the user reaches
+    // 0, jump forward exactly one copy: the two copies are identical, so the seam is
+    // invisible and they can keep going back.
+    //
+    // Gated on an active gesture on purpose: the forward wrap above lands at ~0, so an
+    // ungated backward wrap would bounce it straight back and the two would ping-pong every
+    // frame. The auto-scroll only ever moves forward, so it never needs this branch.
+    lane.el.addEventListener("scroll", () => {
+      if (!lane.userScrolling) {
+        return;
+      }
+      const loopWidth = lane.track.scrollWidth / 2;
+      if (loopWidth > 0 && lane.el.scrollLeft <= 0) {
+        lane.el.scrollLeft = loopWidth - 1;
+      }
+    }, { passive: true });
+  }
 }
 
 // VOICE-AGENT-074: how many showcase rows (lanes) fit the visible height. The showcase
@@ -7504,7 +7574,9 @@ function renderLaunchShowcase(categories, uiLanguage, { animate = false } = {}) 
     lane.append(track);
     viewport.append(lane);
     // Vary speed per lane for a natural wall; all clearly faster than before.
-    lanes.push({ track, offset: 0, speed: 72 + (laneIndex % 3) * 12 });
+    // VOICE-AGENT-097: `el` is the scroll container the auto-scroll and the hand gestures
+    // both drive (was a transform on `track`); `carry` holds the sub-pixel remainder.
+    lanes.push({ el: lane, track, carry: 0, speed: 72 + (laneIndex % 3) * 12, userScrolling: false });
   });
 
   if (!lanes.length) {

@@ -2112,9 +2112,24 @@ button.detailVisualCard:hover {
   );
 }
 
+/* VOICE-AGENT-097: each lane is a real horizontal scroll container, so a hand gesture
+   scrolls it natively (momentum, rubber-band) and the browser suppresses the click that
+   would otherwise fire after a swipe — which is exactly why a tap on a question/card still
+   behaves as before. Same recipe as .detailVisualRail. */
 .showcaseLane {
   min-width: 0;
-  overflow: hidden;
+  overflow-x: auto;
+  overflow-y: hidden;
+  /* Claim the horizontal gesture. Without this the swipe falls through to the page and
+     Chrome/Edge navigate BACK (circled left arrow) instead of scrolling the lane —
+     observed on Windows 2026-07-16. Firefox/Safari simply did nothing. */
+  overscroll-behavior-x: contain;
+  /* The wall is a teaser: a scrollbar under every lane would be visual noise. */
+  scrollbar-width: none;
+}
+
+.showcaseLane::-webkit-scrollbar {
+  display: none;
 }
 
 .showcaseLaneTrack {
@@ -2123,7 +2138,6 @@ button.detailVisualCard:hover {
   align-items: center;
   gap: 18px;
   width: max-content;
-  will-change: transform;
 }
 
 .showcaseGroup {
@@ -2220,9 +2234,9 @@ button.detailVisualCard:hover {
 /* Respect reduced-motion: keep the showcase but stop the marquee; let each lane
    be scrolled by hand instead. */
 @media (prefers-reduced-motion: reduce) {
-  .showcaseLane {
-    overflow-x: auto;
-  }
+  /* .showcaseLane is overflow-x: auto for everyone since VOICE-AGENT-097, so the lanes stay
+     hand-scrollable here too; reduced motion only means the auto-scroll never starts
+     (startShowcaseMarquee returns early). */
 
   .launchSplash.isLeaving,
   .launchShowcase.isEntering {

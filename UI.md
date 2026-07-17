@@ -18,6 +18,7 @@ The app has one persistent shell, one control row, one status row, one hidden au
 - `launchSplashSkipped`: true when the user taps the splash or presses `Escape`, so the sequence cuts directly to the showcase.
 - `launchShowcaseDismissed`: true once the launch showcase has been dismissed by the first user interaction; blocks it from reappearing until a new conversation resets it.
 - `launchShowcaseRaf`: holds the active `requestAnimationFrame` id for the showcase's horizontal marquee, or `null` when the showcase is not animating.
+- `showcaseUserPaused` / `showcaseInteractionTimer` / `SHOWCASE_RESUME_DELAY_MS` (VOICE-AGENT-097): pause the showcase wall while the user swipes a lane, and resume it 5s after the last interaction.
 - `launchShowcaseData`: stores the last successful `/tool/samples` response so New conversation can render the launch showcase without waiting on another fetch.
 - `launchShowcaseLoading`: true while a launch showcase sample request is in flight.
 - `launchShowcaseLoadPromise`: the in-flight `/tool/samples` request shared by splash preloading and showcase rendering.
@@ -594,8 +595,18 @@ Population and visibility:
 
 Motion:
 
-- `startShowcaseMarquee()` drives a continuous leftward `translateX` on each lane's track via `requestAnimationFrame` (id stored in `launchShowcaseRaf`), wrapping after one copy's width, so cards enter from the right, cross the screen, and exit on the left. Lanes run at slightly different speeds.
+- `startShowcaseMarquee()` drives a continuous rightward `scrollLeft` on each lane via `requestAnimationFrame` (id stored in `launchShowcaseRaf`), wrapping after one copy's width, so cards enter from the right, cross the screen, and exit on the left. Lanes run at slightly different speeds, each carrying its sub-pixel remainder so rounding never slows it down. Each frame reads `scrollLeft` before writing it, so any scrolling the user did meanwhile is preserved.
 - The marquee pauses on pointer hover over the viewport and while `document.hidden` is true.
+
+Hand gestures (VOICE-AGENT-097):
+
+- Every `.showcaseLane` is a **native horizontal scroll container** (`overflow-x: auto`), so a swipe scrolls the row with the platform's own momentum, and past/future questions can be browsed in both directions. This is why the motion is driven by `scrollLeft` rather than a `transform`: the lane must be something the browser can scroll.
+- The lane sets **`overscroll-behavior-x: contain`**. Without it a left-to-right swipe falls through to the page and Chrome/Edge navigate **back** in history (circled left arrow) instead of scrolling the row — observed on Windows before the fix. Same recipe as `.detailVisualRail`.
+- **Clicks are unchanged by construction**: the browser does not fire a `click` after a scroll gesture, so a swipe never opens a question or a card, while a real tap still runs `runShowcaseQuestion()` / the card's detail request. No drag-vs-click threshold is hand-rolled.
+- `bindShowcaseLaneGestures()` pauses the wall on `pointerdown` / `touchstart` / `touchmove` / `wheel` (`showcaseUserPaused`) and resumes `SHOWCASE_RESUME_DELAY_MS` (**5s**) after the *last* interaction — the timer is re-armed each time, so a second swipe is never cut short. Resuming continues from the current position; `document.hidden` still gates it.
+- **Backward wrap**: `scrollLeft` cannot go below 0, so a user swiping back to the very start would hit a hard wall. On reaching 0 during a gesture, the lane jumps forward exactly one copy — the two copies are identical, so the seam is invisible and the past keeps unrolling. It is gated on an active gesture because the forward wrap lands at ~0; ungated, the two would ping-pong every frame. The auto-scroll only moves forward, so it never needs that branch.
+- Under `prefers-reduced-motion: reduce` the auto-scroll never starts, but the lanes stay hand-scrollable (the `overflow-x: auto` is not conditional any more) and the gesture bindings still apply.
+- Lane scrollbars are hidden (`scrollbar-width: none` + `::-webkit-scrollbar`): the wall is a teaser, and a scrollbar under each row would be noise.
 - The splash handoff can pass `animate: true`, which briefly applies `.launchShowcase.isEntering` so the showcase fades in beneath the title handoff.
 - Under `prefers-reduced-motion: reduce`, `startShowcaseMarquee()` returns without animating and each lane becomes `overflow-x: auto` (static, manually scrollable).
 
