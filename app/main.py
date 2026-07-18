@@ -88,6 +88,35 @@ GENERIC_VERBOSE_DETAIL_PATTERNS = (
     r"^(?:can you\s+)?(?:tell me more|go deeper|elaborate)(?:\s+on (?:it|this|that|this one|that one))?(?:\s+please)?[.!?]*$",
     r"^(?:peux tu\s+)?(?:dis m en plus|raconte m en plus|plus de details?|en detail|histoire complete)(?:\s+sur (?:ca|cela|ceci|lui|elle))?(?:\s+s il te plait)?[.!?]*$",
 )
+# VOICE-AGENT-104. A rich background question about the entity already on screen
+# ("how was the production done", "the release and reception") must pull that entity's
+# verbose wikipedia_content into context, exactly like a terse "tell me more". The
+# anchored GENERIC_VERBOSE_DETAIL_PATTERNS only fire on a short whole-message phrase, so a
+# long, specific question falls through and the model answers from the barebones
+# forced-search shell — and even claims the background is absent (Backrooms 2026,
+# 2026-07-17). These markers cover four SAFE background dimensions only: production,
+# release, reception, writing. Deliberately NARROW for now — no broad "story"/"plot"
+# (too many false positives), no cast/actors (that routing is VOICE-AGENT-044). Widen
+# later if recall proves too low. Matched as whole tokens (single words) or substrings
+# (multi-word phrases) against normalized_intent_text (diacritics folded, lowercased).
+BACKGROUND_DETAIL_TOPIC_WORDS = frozenset({
+    # production
+    "production", "productions", "produced", "producing", "filming", "filmed",
+    "shoot", "shooting", "tournage", "produit", "coulisses",
+    # release
+    "release", "released", "premiere", "sortie",
+    # reception
+    "reception", "review", "reviews", "reviewed", "critic", "critics",
+    "critical", "acclaim", "critiques", "accueil", "avis",
+    # writing
+    "writing", "wrote", "screenplay", "screenwriter", "screenwriting",
+    "script", "scripts", "scenario", "scenariste", "ecriture", "ecrit",
+})
+BACKGROUND_DETAIL_TOPIC_PHRASES = (
+    "box office",
+    "behind the scenes",
+    "making of",
+)
 FRENCH_MARKERS = {
     "acteur",
     "acteurs",
@@ -500,6 +529,17 @@ def is_generic_verbose_detail_request(value: Any) -> bool:
     return any(re.search(pattern, clean) for pattern in GENERIC_VERBOSE_DETAIL_PATTERNS)
 
 
+def is_background_detail_request(value: Any) -> bool:
+    # VOICE-AGENT-104: true when the message asks about a safe background dimension
+    # (production / release / reception / writing) of the active entity. Multi-word
+    # phrases match as substrings; single words match as whole tokens so "script" does
+    # not fire inside "prescription".
+    clean = normalized_intent_text(value)
+    if any(phrase in clean for phrase in BACKGROUND_DETAIL_TOPIC_PHRASES):
+        return True
+    return bool(set(clean.split()) & BACKGROUND_DETAIL_TOPIC_WORDS)
+
+
 def detect_ui_language_from_text(text: Any) -> str:
     raw = str(text or "").strip().lower()
     if not raw:
@@ -882,6 +922,25 @@ VERBOSE_DETAIL_INSTRUCTIONS = (
     "user asks for detail again."
 )
 
+# VOICE-AGENT-105. The forced query_text2sql result is only a search-index shell
+# (identifiers, title, year, runtime, tagline); it never carries plot, cast, production,
+# release, or reception data — those live only in the detail tool's wikipedia_content.
+# Without this, the model read the shell as the whole record and told the user the
+# background was "not in the database" while the data sat one get_*_detail call away
+# (Backrooms 2026, 2026-07-17). Shared by the Realtime and /text-chat prompts.
+GROUNDED_ABSENCE_INSTRUCTIONS = (
+    "The query_text2sql result is only a search-index shell (identifiers, title, year, "
+    "runtime, rating, tagline). It is NOT the full record: it does not contain plot, cast, "
+    "crew, production, release, or reception data, which live only in the dedicated detail "
+    "tool's wikipedia_content. Therefore, before telling the user that the plot, story, "
+    "production, release, reception, or any background detail is missing, unavailable, or "
+    "not in the database, you MUST first call the dedicated detail tool (for example "
+    "get_movie_detail with the entity id) for the entity in question and inspect its "
+    "wikipedia_content. Only state that something is absent after that detail fetch has "
+    "returned and genuinely lacks it. Never conclude from the search result alone that "
+    "plot, production, or reception data does not exist."
+)
+
 
 def realtime_session_config(
     voice: str = DEFAULT_REALTIME_VOICE,
@@ -930,6 +989,7 @@ def realtime_session_config(
         + " " + RECOVERY_INSTRUCTIONS
         + " " + RESULT_COUNT_INSTRUCTIONS
         + " " + DISAMBIGUATION_INSTRUCTIONS
+        + " " + GROUNDED_ABSENCE_INSTRUCTIONS
     )
     tools = [
         {
@@ -1540,9 +1600,17 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
     model = os.getenv("OPENAI_TEXT_MODEL", "gpt-5.1")
     verbose_detail_request = is_verbose_detail_request(message)
     generic_verbose_detail_request = is_generic_verbose_detail_request(message)
+    # VOICE-AGENT-104: pre-fetch the active entity's verbose detail not only on the terse
+    # anchored "tell me more" phrases but also when the message is a rich background
+    # question (production / release / reception / writing) about the entity already on
+    # screen. Guarded by an existing active-entity detail context so a brand-new search
+    # never triggers it, and the forced query_text2sql still runs underneath.
+    background_detail_request = is_background_detail_request(message)
+    active_detail_context = latest_detail_tool_context(payload.context)
     latest_detail_context = (
-        latest_detail_tool_context(payload.context)
-        if generic_verbose_detail_request
+        active_detail_context
+        if active_detail_context
+        and (generic_verbose_detail_request or background_detail_request)
         else None
     )
     context_lines = []
@@ -1661,6 +1729,7 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         + " " + RESULT_COUNT_INSTRUCTIONS
         + " " + DISAMBIGUATION_INSTRUCTIONS
         + " " + DISAMBIGUATION_TEXT_ADDENDUM
+        + " " + GROUNDED_ABSENCE_INSTRUCTIONS
     )
     request_base = {
         "model": model,
