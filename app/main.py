@@ -751,16 +751,56 @@ def detail_query_params(args: dict[str, Any], ui_language: str) -> dict[str, Any
     return params
 
 
+# VOICE-AGENT-106: keep the Wikipedia sections whose composite title matches the user's
+# background topic (production / release / reception+critics / writing), so e.g.
+# "Reception - Critical response" survives the max-sections cap even when it sits late in
+# the page (fine sections from WIKIPEDIA-CRAWLER-016). Substring-matched (normalized)
+# against both the question and the section titles. Mirrors the app.js constant.
+BACKGROUND_FAMILY_KEYWORDS = {
+    "reception": ["reception", "critic", "critique", "acclaim", "review", "accueil", "box office", "accolade"],
+    "production": ["production", "filming", "filmed", "shoot", "tournage", "genese", "develop", "casting", "effets", "coulisses", "post production"],
+    "release": ["release", "released", "sortie", "marketing", "distribution", "premiere"],
+    "writing": ["writing", "wrote", "screenplay", "screenwrit", "script", "scenario", "ecriture"],
+}
+
+
+def _relevant_section_keywords(value: Any) -> list[str]:
+    clean = normalized_intent_text(value)
+    if not clean:
+        return []
+    keywords: list[str] = []
+    for family in BACKGROUND_FAMILY_KEYWORDS.values():
+        if any(kw in clean for kw in family):
+            keywords.extend(family)
+    return keywords
+
+
 def compact_wikipedia_content(
     detail: Any,
     *,
     verbose: bool = False,
+    intent_text: Any = None,
 ) -> list[dict[str, str]]:
     if not isinstance(detail, dict):
         return []
     sections = detail.get("wikipedia_content")
     if not isinstance(sections, list):
         return []
+
+    # VOICE-AGENT-106: prioritise the sections whose title matches the background topic
+    # asked about, keeping the first section (Intro) as a grounding anchor. Only when a
+    # topic is detected; otherwise keep the original "first N" order.
+    relevant = _relevant_section_keywords(intent_text)
+    if relevant and sections:
+        def _title_matches(section: Any) -> bool:
+            if not isinstance(section, dict):
+                return False
+            title = normalized_intent_text(section.get("title") or section.get("TITLE") or "")
+            return any(kw in title for kw in relevant)
+        anchor = sections[0]
+        matched = [s for s in sections if s is not anchor and _title_matches(s)]
+        rest = [s for s in sections if s is not anchor and not _title_matches(s)]
+        sections = [anchor, *matched, *rest]
 
     max_sections = VERBOSE_WIKIPEDIA_MAX_SECTIONS if verbose else DEFAULT_WIKIPEDIA_MAX_SECTIONS
     max_chars = VERBOSE_WIKIPEDIA_MAX_CHARS if verbose else DEFAULT_WIKIPEDIA_MAX_CHARS
@@ -780,7 +820,9 @@ def compact_wikipedia_content(
     return compact_sections
 
 
-def compact_detail_for_model(output: dict[str, Any], *, verbose: bool = False) -> dict[str, Any]:
+def compact_detail_for_model(
+    output: dict[str, Any], *, verbose: bool = False, intent_text: Any = None
+) -> dict[str, Any]:
     detail = output.get("detail")
     if not isinstance(detail, dict):
         return output
@@ -797,7 +839,7 @@ def compact_detail_for_model(output: dict[str, Any], *, verbose: bool = False) -
         "endpoint": output.get("endpoint", ""),
         "ui_language": output.get("ui_language", ""),
         "detail": compact_detail,
-        "wikipedia_content": compact_wikipedia_content(detail, verbose=verbose),
+        "wikipedia_content": compact_wikipedia_content(detail, verbose=verbose, intent_text=intent_text),
         "wikipedia_content_mode": "verbose" if verbose else "compact",
     }
 
@@ -1791,7 +1833,7 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
                     "Verbose detail tool output for the user's generic tell-me-more request. "
                     "Answer from this without calling the same detail tool again unless it is insufficient:\n"
                     + json.dumps(
-                        compact_detail_for_model(verbose_detail_output, verbose=True),
+                        compact_detail_for_model(verbose_detail_output, verbose=True, intent_text=message),
                         ensure_ascii=False,
                     )
                 ),
@@ -1859,7 +1901,7 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
                     "verbose": bool(verbose_detail_request and DETAIL_TOOL_BY_NAME.get(tool_name)),
                 })
                 model_output = (
-                    compact_detail_for_model(output, verbose=verbose_detail_request)
+                    compact_detail_for_model(output, verbose=verbose_detail_request, intent_text=message)
                     if DETAIL_TOOL_BY_NAME.get(tool_name)
                     else output
                 )

@@ -511,6 +511,30 @@ function shouldUseVerboseDetail(value) {
   return isVerboseDetailRequest(value) || isBackgroundDetailRequest(value);
 }
 
+// VOICE-AGENT-106: keep the Wikipedia sections whose composite title matches the user's
+// background topic (production / release / reception+critics / writing), so e.g. "Reception
+// - Critical response" survives the max-sections cap even when it sits late in the page
+// (fine sections from WIKIPEDIA-CRAWLER-016). Substring-matched (normalized) against both
+// the question and the section titles.
+const BACKGROUND_FAMILY_KEYWORDS = {
+  reception: ["reception", "critic", "critique", "acclaim", "review", "accueil", "box office", "accolade"],
+  production: ["production", "filming", "filmed", "shoot", "tournage", "genese", "develop", "casting", "effets", "coulisses", "post production"],
+  release: ["release", "released", "sortie", "marketing", "distribution", "premiere"],
+  writing: ["writing", "wrote", "screenplay", "screenwrit", "script", "scenario", "ecriture"],
+};
+
+function relevantSectionKeywords(value) {
+  const clean = normalizedIntentText(value);
+  if (!clean) return [];
+  const keywords = [];
+  for (const family of Object.values(BACKGROUND_FAMILY_KEYWORDS)) {
+    if (family.some((kw) => clean.includes(kw))) {
+      keywords.push(...family);
+    }
+  }
+  return keywords;
+}
+
 function detectUiLanguageFromText(text) {
   const raw = String(text || "").trim().toLowerCase();
   if (!raw) {
@@ -6588,10 +6612,24 @@ function toggleLook() {
 }
 
 function compactWikipediaContent(detail, { verbose = false } = {}) {
-  const sections = Array.isArray(detail?.wikipedia_content) ? detail.wikipedia_content : [];
+  let sections = Array.isArray(detail?.wikipedia_content) ? detail.wikipedia_content : [];
   const compact = [];
   const maxSections = verbose ? verboseWikipediaMaxSections : defaultWikipediaMaxSections;
   const maxChars = verbose ? verboseWikipediaMaxChars : defaultWikipediaMaxChars;
+  // VOICE-AGENT-106: prioritise the sections whose title matches the background topic the
+  // user asked about, keeping the first section (Intro) as a grounding anchor. Only when a
+  // topic is detected; otherwise keep the original "first N" order.
+  const relevantKeywords = relevantSectionKeywords(lastUserTranscript);
+  if (relevantKeywords.length && sections.length) {
+    const titleMatches = (section) => {
+      const title = normalizedIntentText(String(section?.title || section?.TITLE || ""));
+      return relevantKeywords.some((kw) => title.includes(kw));
+    };
+    const anchor = sections[0];
+    const matched = sections.filter((s) => s !== anchor && titleMatches(s));
+    const rest = sections.filter((s) => s !== anchor && !titleMatches(s));
+    sections = [anchor, ...matched, ...rest];
+  }
   for (const section of sections) {
     if (!section || typeof section !== "object") {
       continue;
