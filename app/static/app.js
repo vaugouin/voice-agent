@@ -476,6 +476,41 @@ function isVerboseDetailRequest(value) {
   return verboseDetailTriggerPhrases.some((phrase) => clean.includes(phrase));
 }
 
+// Option 2 (voice parity with /text-chat VOICE-AGENT-104): background-detail topic
+// words/phrases that mean a rich question about the entity already on screen
+// (production / release / reception / writing). Mirrors the server
+// BACKGROUND_DETAIL_TOPIC_WORDS / _PHRASES so the voice path treats "what did critics
+// think", "how was the production", "box office" as verbose-detail requests too.
+const backgroundDetailTopicWords = new Set([
+  // production
+  "production", "productions", "produced", "producing", "filming", "filmed",
+  "shoot", "shooting", "tournage", "produit", "coulisses",
+  // release
+  "release", "released", "premiere", "sortie",
+  // reception
+  "reception", "review", "reviews", "reviewed", "critic", "critics",
+  "critical", "acclaim", "critiques", "accueil", "avis",
+  // writing
+  "writing", "wrote", "screenplay", "screenwriter", "screenwriting",
+  "script", "scripts", "scenario", "scenariste", "ecriture", "ecrit",
+]);
+const backgroundDetailTopicPhrases = ["box office", "behind the scenes", "making of"];
+
+function isBackgroundDetailRequest(value) {
+  const clean = normalizedIntentText(value);
+  if (!clean) return false;
+  if (backgroundDetailTopicPhrases.some((phrase) => clean.includes(phrase))) return true;
+  const tokens = new Set(clean.split(" "));
+  for (const word of backgroundDetailTopicWords) {
+    if (tokens.has(word)) return true;
+  }
+  return false;
+}
+
+function shouldUseVerboseDetail(value) {
+  return isVerboseDetailRequest(value) || isBackgroundDetailRequest(value);
+}
+
 function detectUiLanguageFromText(text) {
   const raw = String(text || "").trim().toLowerCase();
   if (!raw) {
@@ -6871,7 +6906,7 @@ async function handleFunctionCall(item) {
         ui_language: output.ui_language || args.ui_language || "",
         detail: output.detail || null,
       };
-  const verboseDetailRequest = DETAIL_TOOL_ENTITIES[item.name] && isVerboseDetailRequest(lastUserTranscript);
+  const verboseDetailRequest = DETAIL_TOOL_ENTITIES[item.name] && shouldUseVerboseDetail(lastUserTranscript);
   const modelToolOutput = item.name === "query_text2sql"
     ? toolOutput
     : compactDetailForModel(toolOutput, DETAIL_TOOL_ENTITIES[item.name], { verbose: verboseDetailRequest });
@@ -6894,6 +6929,57 @@ async function handleFunctionCall(item) {
   requestRealtimeResponseAfterToolOutput();
   scheduleToolResponseWatchdog(); // VOICE-AGENT-094: guarantee this turn can't wedge.
   syncMicrophone("tool output sent");
+}
+
+// Option 2 (client-forced verbose re-fetch — voice parity with the /text-chat server
+// pre-fetch). On a background-detail question about the entity ALREADY on screen
+// (reception/critics, production, release, writing, box office), the Realtime model was
+// answering from the stale COMPACT detail it already had ("the Wikipedia sections included
+// don't cover reception") or calling the wrong tool (query_text2sql, which carries no
+// Wikipedia prose). Here we deterministically re-fetch that entity's detail in VERBOSE and
+// inject it as grounded context, then drive the answer — exactly what /text-chat does with
+// its forced get_*_detail. NOTE: relies on Realtime timing (create_response:true), so it
+// pre-empts the auto-response with response.cancel; validate with a live voice session.
+let forcedVerboseRefetchInFlight = false;
+async function maybeForceVerboseActiveEntityRefetch(transcript) {
+  if (forcedVerboseRefetchInFlight) return;
+  if (!transcript || !currentDetailState) return;
+  if (!isBackgroundDetailRequest(transcript)) return;
+  const toolName = currentDetailState.toolName;
+  const entity = DETAIL_TOOL_ENTITIES[toolName];
+  if (!entity) return;
+  const args = { ...(currentDetailState.args || {}) };
+  forcedVerboseRefetchInFlight = true;
+  try {
+    // Pre-empt the server's auto-response so we answer from the fresh verbose detail
+    // rather than the model's stale-context reply.
+    sendEvent({ type: "response.cancel" });
+    const output = await callEntityDetail(toolName, args);
+    const verboseDetail = compactDetailForModel(output, entity, { verbose: true });
+    const contextText = [
+      `[Grounding: verbose Wikipedia detail for the ${entity} already on screen. Use these `
+        + `sections to answer the user's background question (production, release, reception, `
+        + `critics, writing). Do NOT say the information is missing without checking here first, `
+        + `and do NOT call query_text2sql for it.]`,
+      JSON.stringify(verboseDetail),
+    ].join("\n");
+    sendEvent({
+      type: "conversation.item.create",
+      item: { type: "message", role: "user", content: [{ type: "input_text", text: contextText }] },
+    });
+    sendEvent({ type: "response.create" });
+    clientLog("forced_verbose_refetch", {
+      tool: toolName,
+      id: args.id ?? args.wikidata_id ?? null,
+      mode: verboseDetail.wikipedia_content_mode,
+    });
+  } catch (error) {
+    clientLog("forced_verbose_refetch_error", { error: error.message }, "error");
+    // Do not strand the turn: let the model answer normally.
+    sendEvent({ type: "response.create" });
+  } finally {
+    forcedVerboseRefetchInFlight = false;
+  }
 }
 
 async function handleServerEvent(event) {
@@ -6935,6 +7021,9 @@ async function handleServerEvent(event) {
       addRetainedContext({ type: "user", text: lastUserTranscript });
       clientLog("user_transcript", { item_id: event.item_id, transcript: lastUserTranscript });
       showUserSubtitleText(lastUserTranscript);
+      // Option 2: on a background question about the active entity, force a verbose
+      // re-fetch + inject grounded context (fire-and-forget; guarded internally).
+      maybeForceVerboseActiveEntityRefetch(lastUserTranscript);
     }
     inputTranscripts.delete(event.item_id);
   }
