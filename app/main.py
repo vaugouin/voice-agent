@@ -2119,6 +2119,15 @@ HARNESS_LOG_EVENTS = frozenset({
     # hundreds of thousands of pixels wide is what made iOS drop the first swipes while
     # WebKit tiled the layer, so this is the number that says whether the cap did its job.
     "showcase_rendered",
+    # VOICE-AGENT-107 (Option 2): the client-forced verbose re-fetch of the active entity on
+    # a background question. Without these in the whitelist a log harvest cannot tell whether
+    # Option 2 fired at all (they were dropped, which made -107 look like it never ran).
+    "forced_verbose_refetch",
+    "forced_verbose_refetch_error",
+    # VOICE-AGENT-108: a click on a name_ambiguity candidate resolved the disambiguation; the
+    # entry carries the exact "Focus on ..." selection text injected to the model.
+    "disambiguation_click_resolved",
+    "disambiguation_click_error",
 })
 
 
