@@ -156,6 +156,10 @@ let appMenuPreviouslyFocused = null;
 let appMenuScreenReturnFocus = null;
 const handledCallIds = new Set();
 let currentSearchState = null;
+// VOICE-AGENT-108: the active name_ambiguity cluster (from the last search), so a click on
+// a candidate card can be treated as the user's disambiguation choice. Null when the last
+// result was not ambiguous. { entity, ids:Set<string>, candidates:[{id, display, discriminator}] }.
+let pendingDisambiguation = null;
 let currentDetailState = null;
 let loadingDetailCollections = new Set();
 let activeUiLanguage = "en";
@@ -4163,7 +4167,60 @@ async function renderSingleRecordResult(parent, record) {
   }
 }
 
+// VOICE-AGENT-108: build the spoken/typed selection the model should act on, using the
+// candidate's discriminator (from FASTAPI-TEXT2SQL-176) so it is unambiguous and grounded.
+function disambiguationChoiceText(candidate, entity) {
+  const display = String(candidate?.display || "").trim() || "that one";
+  const d = candidate?.discriminator || {};
+  const bits = [];
+  if (entity === "person") {
+    const known = Array.isArray(d.known_for) ? d.known_for.filter(Boolean) : [];
+    if (known.length) bits.push(`known for ${known[0]}`);
+    else if (d.role) bits.push(String(d.role).toLowerCase());
+    if (d.birth_year) bits.push(`born ${d.birth_year}`);
+    if (d.country_of_birth) bits.push(String(d.country_of_birth));
+  } else {
+    if (d.year) bits.push(String(d.year));
+    const directors = Array.isArray(d.directors) ? d.directors.filter(Boolean) : [];
+    if (directors.length) bits.push(`directed by ${directors[0]}`);
+  }
+  const suffix = bits.length ? ` (${bits.join(", ")})` : "";
+  return `Focus on ${display}${suffix}.`;
+}
+
+// VOICE-AGENT-108: a click on a name_ambiguity candidate card IS the user's disambiguation
+// choice. Beyond opening the page (the caller does that), tell the model so it resolves the
+// cluster and keeps talking about the chosen entity (voice or text), instead of still
+// waiting or re-asking "which one?". No-op for normal navigation clicks.
+function maybeResolveDisambiguationByClick(record) {
+  const pending = pendingDisambiguation;
+  if (!pending || !pending.ids?.size) {
+    return;
+  }
+  const request = detailRequestFromRecord(record);
+  const id = request && request.id != null ? String(request.id) : null;
+  // Any navigation to a detail ends this disambiguation context (prevents a stale
+  // candidate id from re-firing later while browsing deeper).
+  pendingDisambiguation = null;
+  if (!id || !pending.ids.has(id)) {
+    return; // navigated away, not one of the current candidates
+  }
+  const candidate = (pending.candidates || []).find((c) => String(c.id) === id) || { id };
+  const text = disambiguationChoiceText(candidate, pending.entity);
+  clientLog("disambiguation_click_resolved", { entity: pending.entity, id, text });
+  if (canSendTypedRealtimeTurn()) {
+    sendTypedRealtimeTurn(text); // voice: the model resolves + continues by voice
+  } else {
+    sendTextChatMessage(text, { source: "disambiguation-click" }).catch((error) =>
+      clientLog("disambiguation_click_error", { error: error.message }, "error"));
+  }
+}
+
 async function showRecordDetail(record, { skipHistory = false, ui_language = "" } = {}) {
+  // VOICE-AGENT-108: if this click answers a pending disambiguation, let the model know so
+  // the conversation continues on the chosen entity (done before navigation so it still
+  // fires even when the page is already the current view).
+  maybeResolveDisambiguationByClick(record);
   dismissLaunchShowcase();
   setConversationActive(true);
   activeUiLanguage = currentUiLanguage({ ui_language });
@@ -4437,6 +4494,18 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
     rows_per_page: rowsPerPage,
     has_more: pagination.has_more,
   };
+  // VOICE-AGENT-108: remember the same-name cluster of the fresh result (page 1 only) so a
+  // click on a candidate card resolves the disambiguation. Cleared on a non-ambiguous result.
+  if (!append) {
+    const na = output?.name_ambiguity;
+    pendingDisambiguation = na?.candidates?.length
+      ? {
+          entity: na.entity,
+          ids: new Set((na.candidates || []).map((c) => String(c.id))),
+          candidates: na.candidates || [],
+        }
+      : null;
+  }
   refreshPaginationControls();
   if (!append && !skipHistory) {
     pushPageHistory({ type: "search", output, args });
