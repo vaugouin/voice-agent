@@ -20,7 +20,9 @@ load_dotenv()
 
 ROOT = Path(__file__).resolve().parent
 STATIC_DIR = ROOT / "static"
-CLIENT_LOG_PATH = ROOT.parent / "logs" / "client.log"
+# Client log is rotated per (UTC) day: logs/client-YYYYMMDD.log (dated at write time in
+# write_client_log, matching each entry's UTC `ts`).
+CLIENT_LOG_DIR = ROOT.parent / "logs"
 
 
 def _read_app_version() -> str:
@@ -2130,15 +2132,18 @@ def write_client_log(event: str, data: dict[str, Any], level: str = "info") -> N
     """
     if event not in HARNESS_LOG_EVENTS:
         return
+    now = datetime.now(timezone.utc)
     entry = {
-        "ts": datetime.now(timezone.utc).isoformat(),
+        "ts": now.isoformat(),
         "version": APP_VERSION,
         "level": level,
         "event": event,
         "data": data or {},
     }
     try:
-        with CLIENT_LOG_PATH.open("a", encoding="utf-8") as log_file:
+        log_path = CLIENT_LOG_DIR / f"client-{now.strftime('%Y%m%d')}.log"
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        with log_path.open("a", encoding="utf-8") as log_file:
             log_file.write(json.dumps(entry, ensure_ascii=False) + "\n")
     except Exception:
         pass
