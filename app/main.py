@@ -539,7 +539,12 @@ def is_background_detail_request(value: Any) -> bool:
     clean = normalized_intent_text(value)
     if any(phrase in clean for phrase in BACKGROUND_DETAIL_TOPIC_PHRASES):
         return True
-    return bool(set(clean.split()) & BACKGROUND_DETAIL_TOPIC_WORDS)
+    if set(clean.split()) & BACKGROUND_DETAIL_TOPIC_WORDS:
+        return True
+    # VOICE-AGENT-114: also fire whenever the -106 families would surface sections, so the gate
+    # and the reorder can never drift apart again (see app.js isBackgroundDetailRequest). Additive
+    # on top of the exact-token set, so nothing it already caught regresses.
+    return bool(_relevant_section_keywords(clean))
 
 
 def detect_ui_language_from_text(text: Any) -> str:
@@ -764,8 +769,16 @@ BACKGROUND_FAMILY_KEYWORDS = {
     # ran, leaving those sections unreachable on a long article.
     "reception": ["reception", "critic", "critique", "acclaim", "review", "accueil", "box office",
                   "accolade", "award", "viewership", "rating", "audience", "recompense", "distinction"],
-    "production": ["production", "filming", "filmed", "shoot", "tournage", "genese", "develop", "casting", "effets", "coulisses", "post production"],
-    "release": ["release", "released", "sortie", "marketing", "distribution", "premiere"],
+    # VOICE-AGENT-114: several English words were missing (only "effets", the French one, covered
+    # visual effects) so "how were the visual effects done?" armed nothing. Music / language /
+    # score / soundtrack / VFX added in both tongues. Mirrors app.js.
+    "production": ["production", "filming", "filmed", "shoot", "tournage", "genese", "develop",
+                   "casting", "effets", "effects", "vfx", "visual effect", "coulisses", "post production",
+                   "music", "musique", "score", "soundtrack", "bande originale", "composer", "compositeur",
+                   "language", "languages", "langue", "langage", "cinematography", "editing", "montage",
+                   "costume", "design"],
+    "release": ["release", "released", "sortie", "marketing", "distribution", "premiere", "broadcast",
+                "diffusion", "streaming"],
     "writing": ["writing", "wrote", "screenplay", "screenwrit", "script", "scenario", "ecriture"],
 }
 

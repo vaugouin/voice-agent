@@ -508,7 +508,13 @@ function isBackgroundDetailRequest(value) {
   for (const word of backgroundDetailTopicWords) {
     if (tokens.has(word)) return true;
   }
-  return false;
+  // VOICE-AGENT-114: also open the -107 gate whenever the -106 families would produce sections
+  // to reorder. Before this, the gate (token-exact word set) and the families (substring set)
+  // were two lists that had drifted apart, so "how were the visual effects done?" reordered
+  // nothing AND triggered no refetch. Deriving the gate from the families makes them one
+  // source: if -106 knows what to surface, -107 goes and fetches it. Additive, so every word
+  // the token set already caught still works.
+  return relevantSectionKeywords(clean).length > 0;
 }
 
 function shouldUseVerboseDetail(value) {
@@ -527,8 +533,17 @@ const BACKGROUND_FAMILY_KEYWORDS = {
   // Viewership (idx 20) unreachable on a long article.
   reception: ["reception", "critic", "critique", "acclaim", "review", "accueil", "box office",
     "accolade", "award", "viewership", "rating", "audience", "recompense", "distinction"],
-  production: ["production", "filming", "filmed", "shoot", "tournage", "genese", "develop", "casting", "effets", "coulisses", "post production"],
-  release: ["release", "released", "sortie", "marketing", "distribution", "premiere"],
+  // VOICE-AGENT-114: the families were the moteur for BOTH the section reorder (-106) AND the
+  // -107 refetch gate, but several English words were missing (only "effets", the FRENCH one,
+  // covered visual effects) so "how were the visual effects done?" armed nothing and no refetch
+  // ran. Music / language / score / soundtrack / VFX added in both tongues.
+  production: ["production", "filming", "filmed", "shoot", "tournage", "genese", "develop",
+    "casting", "effets", "effects", "vfx", "visual effect", "coulisses", "post production",
+    "music", "musique", "score", "soundtrack", "bande originale", "composer", "compositeur",
+    "language", "languages", "langue", "langage", "cinematography", "editing", "montage",
+    "costume", "design"],
+  release: ["release", "released", "sortie", "marketing", "distribution", "premiere", "broadcast",
+    "diffusion", "streaming"],
   writing: ["writing", "wrote", "screenplay", "screenwrit", "script", "scenario", "ecriture"],
 };
 
