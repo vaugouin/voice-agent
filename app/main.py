@@ -803,6 +803,23 @@ BACKGROUND_FAMILY_KEYWORDS = {
     "release": ["release", "released", "sortie", "marketing", "distribution", "premiere", "broadcast",
                 "diffusion", "streaming"],
     "writing": ["writing", "wrote", "screenplay", "screenwrit", "script", "scenario", "ecriture"],
+    # VOICE-AGENT-117: PERSON-page families (mirrors app.js). For persons the value is the GATE,
+    # not the reorder (answer sections at avg position 2-6, ~90% of person pages <=10 sections),
+    # so these mainly open the verbose refetch on a person background question. Substring stems;
+    # H3-level stems are dormant until the WIKIPEDIA-CRAWLER-018 fine backfill reaches persons.
+    "person_biography": ["early life", "biograph", "life and career", "background", "education",
+                         "childhood", "upbringing", "biographi", "jeunesse", "carriere", "formation",
+                         "enfance", "debuts"],
+    "person_career": ["career", "filmograph", "discograph", "videograph", "credit", "breakthrough",
+                      "theatre", "theater", "doublage", "uvre"],
+    "person_personal": ["personal", "private life", "family", "relationship", "marriage", "married",
+                        "spouse", "children", "death", "died", "passing", "illness", "divorce",
+                        "vie privee", "vie personnelle", "famille", "mariage", "enfants", "mort", "deces"],
+    "person_accolades": ["award", "honour", "honor", "accolade", "nominat", "recognition", "distinction",
+                         "recompense", "palmares", "prix", "decoration", "hommage"],
+    "person_public": ["legacy", "popular culture", "public image", "political", "politics", "activis",
+                      "philanthrop", "controvers", "influenc", "artistry", "posterite",
+                      "culture populaire", "style", "anecdote", "engagement", "polemique"],
 }
 
 
