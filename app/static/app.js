@@ -6750,10 +6750,23 @@ const DATA_CHANNEL_SAFETY_MARGIN = 2048;
 // 16 KB is the common SCTP negotiated value. Only used when the browser does not expose the
 // negotiated size; `dataChannelMaxMessageSize()` is the authority when it does.
 const DATA_CHANNEL_FALLBACK_MAX = 16384;
+// The 2026-07-23 v1.0.23 session settled this: `pc.sctp.maxMessageSize` OVER-STATES what the
+// connection accepts. Not one `tool_output_truncated` was logged (so the guard judged every
+// payload small enough) yet three `tool_output_send_error` fired. The reported number is
+// therefore an upper HINT, never a permission — it is clamped by this hard cap. 16 KB is the
+// only value the evidence supports: a compact Game of Thrones payload (detail + ~5 KB of
+// sections) goes through, a verbose one (detail + ~30 KB) does not. Raise it only once
+// `payload_bytes` from a real session proves a bigger message survives.
+const DATA_CHANNEL_HARD_CAP = 16384;
 
-function dataChannelMaxMessageSize() {
+// The value the browser claims, kept for logging so we can finally compare claim vs reality.
+function dataChannelReportedMaxMessageSize() {
   const negotiated = Number(pc?.sctp?.maxMessageSize);
   return Number.isFinite(negotiated) && negotiated > 0 ? negotiated : DATA_CHANNEL_FALLBACK_MAX;
+}
+
+function dataChannelMaxMessageSize() {
+  return Math.min(dataChannelReportedMaxMessageSize(), DATA_CHANNEL_HARD_CAP);
 }
 
 function dataChannelBudgetBytes() {
@@ -6778,38 +6791,53 @@ function fitDetailToDataChannel(modelOutput, budgetBytes) {
   if (withinBudget(modelOutput)) {
     return { output: modelOutput, truncated: false, keptSections: sections.length, fits: true };
   }
-  const build = (kept) => ({ ...modelOutput, wikipedia_content: kept, wikipedia_content_truncated: true });
-  // Never trim below the anchor + the first section VOICE-AGENT-106 moved to the front: on a
-  // background question THAT section carries the answer, so it must survive ahead of the
-  // Intro anchor. Trimming blindly to one section would keep Intro and throw the answer away.
-  const minKeep = Math.min(2, sections.length);
-  for (let keep = sections.length - 1; keep >= minKeep; keep -= 1) {
-    const candidate = build(sections.slice(0, keep));
-    if (withinBudget(candidate)) {
-      return { output: candidate, truncated: true, keptSections: keep, fits: true };
+  // Try to fit the sections inside a given base payload (everything except the sections).
+  const tryFit = (base, detailDropped) => {
+    const build = (kept) => ({ ...base, wikipedia_content: kept, wikipedia_content_truncated: true });
+    // Never trim below the anchor + the first section VOICE-AGENT-106 moved to the front: on a
+    // background question THAT section carries the answer, so it must survive ahead of the
+    // Intro anchor. Trimming blindly to one section would keep Intro and throw the answer away.
+    const minKeep = Math.min(2, sections.length);
+    for (let keep = sections.length; keep >= minKeep; keep -= 1) {
+      const candidate = build(sections.slice(0, keep));
+      if (withinBudget(candidate)) {
+        return { output: candidate, truncated: true, keptSections: keep, fits: true, detailDropped };
+      }
     }
-  }
-  // Still over budget: clip the surviving sections' prose by halves rather than dropping the
-  // matched one entirely.
-  let kept = sections.slice(0, minKeep).map((s) => ({ ...s, content: String(s.content || "") }));
-  while (kept.some((s) => s.content.length > 200)) {
-    kept = kept.map((s) => (s.content.length > 200
-      ? { ...s, content: `${s.content.slice(0, Math.floor(s.content.length / 2)).trimEnd()}...` }
-      : s));
-    const candidate = build(kept);
-    if (withinBudget(candidate)) {
-      return { output: candidate, truncated: true, keptSections: kept.length, fits: true };
+    // Still over budget: clip the surviving sections' prose by halves rather than dropping the
+    // matched one entirely.
+    let kept = sections.slice(0, minKeep).map((s) => ({ ...s, content: String(s.content || "") }));
+    while (kept.some((s) => s.content.length > 200)) {
+      kept = kept.map((s) => (s.content.length > 200
+        ? { ...s, content: `${s.content.slice(0, Math.floor(s.content.length / 2)).trimEnd()}...` }
+        : s));
+      const candidate = build(kept);
+      if (withinBudget(candidate)) {
+        return { output: candidate, truncated: true, keptSections: kept.length, fits: true, detailDropped };
+      }
     }
+    const anchorOnly = build(kept.slice(0, 1));
+    if (withinBudget(anchorOnly)) {
+      return { output: anchorOnly, truncated: true, keptSections: 1, fits: true, detailDropped };
+    }
+    return null;
+  };
+
+  const withDetail = tryFit(modelOutput, false);
+  if (withDetail) {
+    return withDetail;
   }
-  const anchorOnly = build(kept.slice(0, 1));
-  if (withinBudget(anchorOnly)) {
-    return { output: anchorOnly, truncated: true, keptSections: 1, fits: true };
+  // Prose over metadata. What actually blows the budget on a big series is the `detail` block
+  // (cast, crew, 8 seasons, 73 episodes) — and that is NOT what a background question is about.
+  // Drop it and give the Wikipedia sections the whole budget, rather than returning an empty
+  // payload that carries neither.
+  const { detail: _droppedDetail, ...withoutDetail } = modelOutput;
+  const leaner = tryFit({ ...withoutDetail, detail_omitted: true }, true);
+  if (leaner) {
+    return leaner;
   }
-  // Even with no Wikipedia prose at all the payload is over budget: the rest of the detail
-  // (cast, crew, seasons, episodes) is itself too large. Nothing more to shave here — the
-  // caller must fall back to a minimal output rather than attempt a doomed send.
-  const stripped = build([]);
-  return { output: stripped, truncated: true, keptSections: 0, fits: withinBudget(stripped) };
+  const stripped = { ...withoutDetail, detail_omitted: true, wikipedia_content: [], wikipedia_content_truncated: true };
+  return { output: stripped, truncated: true, keptSections: 0, fits: withinBudget(stripped), detailDropped: true };
 }
 
 async function callText2Sql(args) {
@@ -7112,10 +7140,16 @@ async function handleFunctionCall(item) {
   // the model waited forever for a function result it never got, awaitingToolResponse stayed
   // true and the mic stayed muted — the VOICE-AGENT-094 watchdog meant to prevent exactly
   // that wedge was itself skipped, because it was scheduled AFTER the risky send.
+  // The model reads this aloud, so it must never describe the plumbing. The 2026-07-23 session
+  // had it saying "the series detail tool response was too large to load fully in this channel"
+  // to the user; an end user has no use for our transport limits.
   const minimalToolOutput = () => ({
-    error: "tool output too large for the realtime channel",
     entity: modelToolOutput?.entity || "",
     id: modelToolOutput?.id || "",
+    partial: true,
+    note: "The full record could not be loaded for this turn. Answer from what is already in the "
+      + "conversation if you can, otherwise say you do not have that detail. Never mention "
+      + "technical, channel or payload-size problems to the user.",
   });
   const fittedToolOutput = fitDetailToDataChannel(modelToolOutput, dataChannelBudgetBytes());
   if (fittedToolOutput.truncated) {
@@ -7125,8 +7159,12 @@ async function handleFunctionCall(item) {
       original_sections: Array.isArray(modelToolOutput?.wikipedia_content)
         ? modelToolOutput.wikipedia_content.length
         : 0,
+      detail_dropped: fittedToolOutput.detailDropped,
+      original_bytes: serializedByteSize(JSON.stringify(modelToolOutput)),
+      sent_bytes: serializedByteSize(JSON.stringify(fittedToolOutput.output)),
       budget_bytes: dataChannelBudgetBytes(),
-      channel_max_message_size: dataChannelMaxMessageSize(),
+      channel_reported_max: dataChannelReportedMaxMessageSize(),
+      channel_effective_max: dataChannelMaxMessageSize(),
       fits: fittedToolOutput.fits,
     });
   }
@@ -7139,6 +7177,12 @@ async function handleFunctionCall(item) {
       tool: item.name,
       call_id: item.call_id,
       error: error.message,
+      // The numbers that tell us claim vs reality: a send that throws BELOW the reported max is
+      // the proof that the reported value cannot be trusted as permission.
+      attempted_bytes: serializedByteSize(JSON.stringify(fittedToolOutput.fits ? fittedToolOutput.output : minimalToolOutput())),
+      budget_bytes: dataChannelBudgetBytes(),
+      channel_reported_max: dataChannelReportedMaxMessageSize(),
+      channel_effective_max: dataChannelMaxMessageSize(),
     }, "error");
     // The model stays blocked until it receives an output for this call_id, so deliver a
     // minimal one rather than nothing.
@@ -7205,9 +7249,18 @@ async function maybeForceVerboseActiveEntityRefetch(transcript) {
       mode: verboseDetail.wikipedia_content_mode,
       truncated: fitted.truncated,
       kept_sections: fitted.keptSections,
+      detail_dropped: fitted.detailDropped,
+      sent_bytes: serializedByteSize(contextText),
+      budget_bytes: dataChannelBudgetBytes(),
+      channel_reported_max: dataChannelReportedMaxMessageSize(),
     });
   } catch (error) {
-    clientLog("forced_verbose_refetch_error", { error: error.message }, "error");
+    clientLog("forced_verbose_refetch_error", {
+      error: error.message,
+      budget_bytes: dataChannelBudgetBytes(),
+      channel_reported_max: dataChannelReportedMaxMessageSize(),
+      channel_effective_max: dataChannelMaxMessageSize(),
+    }, "error");
     // Do not strand the turn: let the model answer normally.
     sendEvent({ type: "response.create" });
   } finally {
