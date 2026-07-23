@@ -521,11 +521,53 @@ function shouldUseVerboseDetail(value) {
 // (fine sections from WIKIPEDIA-CRAWLER-016). Substring-matched (normalized) against both
 // the question and the section titles.
 const BACKGROUND_FAMILY_KEYWORDS = {
-  reception: ["reception", "critic", "critique", "acclaim", "review", "accueil", "box office", "accolade"],
+  // VOICE-AGENT-113: "award", "viewership", "ratings" and "audience" were missing, so a
+  // perfectly natural question ("how were the awards and the viewership?") armed NO family at
+  // all and the reorder never ran — leaving Reception - Awards (idx 19) and Reception -
+  // Viewership (idx 20) unreachable on a long article.
+  reception: ["reception", "critic", "critique", "acclaim", "review", "accueil", "box office",
+    "accolade", "award", "viewership", "rating", "audience", "recompense", "distinction"],
   production: ["production", "filming", "filmed", "shoot", "tournage", "genese", "develop", "casting", "effets", "coulisses", "post production"],
   release: ["release", "released", "sortie", "marketing", "distribution", "premiere"],
   writing: ["writing", "wrote", "screenplay", "screenwrit", "script", "scenario", "ecriture"],
 };
+
+// VOICE-AGENT-113: words too generic to say anything about which SECTION is wanted. They are
+// either conversational filler or the entity type itself, and would otherwise score against
+// unrelated titles.
+const INTENT_STOPWORDS = new Set([
+  "tell", "about", "give", "know", "want", "would", "could", "please", "more", "much", "many",
+  "what", "which", "when", "where", "were", "them", "they", "this", "that", "there", "then",
+  "especially", "particularly", "movie", "film", "serie", "series", "show", "season", "episode",
+  "dis", "moi", "parle", "quoi", "quel", "quelle", "surtout", "notamment", "plus", "cette",
+  "film", "serie", "saison", "episode", "sur",
+]);
+
+function intentTokens(value) {
+  const seen = new Set();
+  for (const token of normalizedIntentText(value).split(" ")) {
+    if (token.length >= 4 && !INTENT_STOPWORDS.has(token)) {
+      seen.add(token);
+    }
+  }
+  return [...seen];
+}
+
+// How specifically does this section title answer THIS question? The family match
+// (VOICE-AGENT-106) says "reception" or "production"; this says "the Music one, not the Casting
+// one". Prefix comparison both ways so "languages" (question) reaches "Language" (title).
+function titleIntentScore(title, questionTokens) {
+  if (!questionTokens.length) return 0;
+  const titleTokens = intentTokens(title);
+  if (!titleTokens.length) return 0;
+  let score = 0;
+  for (const q of questionTokens) {
+    if (titleTokens.some((t) => t.startsWith(q) || q.startsWith(t))) {
+      score += 1;
+    }
+  }
+  return score;
+}
 
 function relevantSectionKeywords(value) {
   const clean = normalizedIntentText(value);
@@ -6697,7 +6739,23 @@ function compactWikipediaContent(detail, { verbose = false } = {}) {
     const anchor = sections[0];
     const matched = sections.filter((s) => s !== anchor && titleMatches(s));
     const rest = sections.filter((s) => s !== anchor && !titleMatches(s));
-    sections = [anchor, ...matched, ...rest];
+    // VOICE-AGENT-113: order the matched sections by how well their title answers THIS
+    // question, not by their position in the article. On "the production, especially the music
+    // and the invented languages" the production family matches 9 sections; ranking by original
+    // index left Music (idx 12) and Language (idx 13) at the very END, so they were the first
+    // two dropped by the byte trimmer and the model answered "I don't see coverage of the score
+    // or the invented languages" (client-20260723.log 13:41:40). Stable: equal scores keep the
+    // article order.
+    const questionTokens = intentTokens(lastUserTranscript);
+    const ranked = matched
+      .map((section, index) => ({
+        section,
+        index,
+        score: titleIntentScore(String(section?.title || section?.TITLE || ""), questionTokens),
+      }))
+      .sort((a, b) => (b.score - a.score) || (a.index - b.index))
+      .map((entry) => entry.section);
+    sections = [anchor, ...ranked, ...rest];
   }
   for (const section of sections) {
     if (!section || typeof section !== "object") {

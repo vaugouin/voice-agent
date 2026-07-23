@@ -759,11 +759,53 @@ def detail_query_params(args: dict[str, Any], ui_language: str) -> dict[str, Any
 # the page (fine sections from WIKIPEDIA-CRAWLER-016). Substring-matched (normalized)
 # against both the question and the section titles. Mirrors the app.js constant.
 BACKGROUND_FAMILY_KEYWORDS = {
-    "reception": ["reception", "critic", "critique", "acclaim", "review", "accueil", "box office", "accolade"],
+    # VOICE-AGENT-113: "award", "viewership", "rating" and "audience" were missing, so a natural
+    # question ("how were the awards and the viewership?") armed NO family and the reorder never
+    # ran, leaving those sections unreachable on a long article.
+    "reception": ["reception", "critic", "critique", "acclaim", "review", "accueil", "box office",
+                  "accolade", "award", "viewership", "rating", "audience", "recompense", "distinction"],
     "production": ["production", "filming", "filmed", "shoot", "tournage", "genese", "develop", "casting", "effets", "coulisses", "post production"],
     "release": ["release", "released", "sortie", "marketing", "distribution", "premiere"],
     "writing": ["writing", "wrote", "screenplay", "screenwrit", "script", "scenario", "ecriture"],
 }
+
+
+# VOICE-AGENT-113: words too generic to say anything about which SECTION is wanted -- either
+# conversational filler or the entity type itself.
+INTENT_STOPWORDS = frozenset({
+    "tell", "about", "give", "know", "want", "would", "could", "please", "more", "much", "many",
+    "what", "which", "when", "where", "were", "them", "they", "this", "that", "there", "then",
+    "especially", "particularly", "movie", "film", "serie", "series", "show", "season", "episode",
+    "dis", "moi", "parle", "quoi", "quel", "quelle", "surtout", "notamment", "plus", "cette",
+    "saison", "sur",
+})
+
+
+def _intent_tokens(value: Any) -> list[str]:
+    seen: dict[str, None] = {}
+    for token in normalized_intent_text(value).split(" "):
+        if len(token) >= 4 and token not in INTENT_STOPWORDS:
+            seen[token] = None
+    return list(seen)
+
+
+def _title_intent_score(title: Any, question_tokens: list[str]) -> int:
+    """How specifically does this section title answer THIS question?
+
+    The family match (VOICE-AGENT-106) says "reception" or "production"; this says "the Music
+    one, not the Casting one". Prefix comparison runs both ways so "languages" (question)
+    reaches "Language" (title).
+    """
+    if not question_tokens:
+        return 0
+    title_tokens = _intent_tokens(title)
+    if not title_tokens:
+        return 0
+    return sum(
+        1
+        for q in question_tokens
+        if any(t.startswith(q) or q.startswith(t) for t in title_tokens)
+    )
 
 
 def _relevant_section_keywords(value: Any) -> list[str]:
@@ -802,6 +844,15 @@ def compact_wikipedia_content(
         anchor = sections[0]
         matched = [s for s in sections if s is not anchor and _title_matches(s)]
         rest = [s for s in sections if s is not anchor and not _title_matches(s)]
+        # VOICE-AGENT-113: order the matched sections by how well their title answers THIS
+        # question, not by their position in the article. Ranking by article order left
+        # "Production - Music" and "Production - Language" at the end of a 9-section family,
+        # so they were the first dropped. sorted() is stable: equal scores keep article order.
+        question_tokens = _intent_tokens(intent_text)
+        matched = sorted(
+            matched,
+            key=lambda s: -_title_intent_score(s.get("title") or s.get("TITLE") or "", question_tokens),
+        )
         sections = [anchor, *matched, *rest]
 
     max_sections = VERBOSE_WIKIPEDIA_MAX_SECTIONS if verbose else DEFAULT_WIKIPEDIA_MAX_SECTIONS
