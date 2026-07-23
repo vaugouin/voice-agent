@@ -2128,6 +2128,13 @@ HARNESS_LOG_EVENTS = frozenset({
     # entry carries the exact "Focus on ..." selection text injected to the model.
     "disambiguation_click_resolved",
     "disambiguation_click_error",
+    # VOICE-AGENT-109: data-channel size guard. "truncated" says the verbose payload had to be
+    # shrunk to fit the SCTP max-message-size; the two "send_error" entries mean the guard was
+    # not enough and the turn fell back to a minimal output. Without these a log harvest cannot
+    # tell a healthy verbose turn from one that silently lost its grounding.
+    "tool_output_truncated",
+    "tool_output_send_error",
+    "tool_output_send_fallback_error",
 })
 
 

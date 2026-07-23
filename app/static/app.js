@@ -6738,6 +6738,80 @@ function compactDetailForModel(output, fallbackEntity, { verbose = false } = {})
   };
 }
 
+// VOICE-AGENT-109: the Realtime data channel caps a single message (SCTP max-message-size).
+// A verbose detail payload can blow past it — observed on Game of Thrones (32 fine sections
+// + 8 seasons / 73 episodes), where `dc.send` threw "Trying to send message larger than
+// max-message-size" and the turn wedged (client-20260723.log). Everything we push through the
+// channel is therefore fitted to the negotiated budget FIRST, so send() never throws.
+const DATA_CHANNEL_SAFETY_MARGIN = 2048;
+// Deliberately pessimistic. The 2026-07-23 session tells us the real ceiling sits BETWEEN a
+// compact Game of Thrones payload (~5 KB of sections, sent fine) and a verbose one (~30 KB,
+// rejected) — so it is far below the 256 KB browsers advertise for their own channels, and
+// 16 KB is the common SCTP negotiated value. Only used when the browser does not expose the
+// negotiated size; `dataChannelMaxMessageSize()` is the authority when it does.
+const DATA_CHANNEL_FALLBACK_MAX = 16384;
+
+function dataChannelMaxMessageSize() {
+  const negotiated = Number(pc?.sctp?.maxMessageSize);
+  return Number.isFinite(negotiated) && negotiated > 0 ? negotiated : DATA_CHANNEL_FALLBACK_MAX;
+}
+
+function dataChannelBudgetBytes() {
+  return Math.max(4096, dataChannelMaxMessageSize() - DATA_CHANNEL_SAFETY_MARGIN);
+}
+
+// Byte length, not character length: the SCTP limit is on bytes, and accented / non-latin
+// content (fr, ja, ru summaries) costs 2-3 bytes per character.
+function serializedByteSize(value) {
+  return new TextEncoder().encode(value).length;
+}
+
+// Shrink a model payload until it fits `budgetBytes`. Sections are dropped from the TAIL
+// first because VOICE-AGENT-106 has already moved the sections the question is about to the
+// front, so the tail is by construction the least useful content.
+function fitDetailToDataChannel(modelOutput, budgetBytes) {
+  const withinBudget = (payload) => serializedByteSize(JSON.stringify(payload)) <= budgetBytes;
+  const sections = Array.isArray(modelOutput?.wikipedia_content) ? modelOutput.wikipedia_content : null;
+  if (!sections || !sections.length) {
+    return { output: modelOutput, truncated: false, keptSections: 0, fits: withinBudget(modelOutput) };
+  }
+  if (withinBudget(modelOutput)) {
+    return { output: modelOutput, truncated: false, keptSections: sections.length, fits: true };
+  }
+  const build = (kept) => ({ ...modelOutput, wikipedia_content: kept, wikipedia_content_truncated: true });
+  // Never trim below the anchor + the first section VOICE-AGENT-106 moved to the front: on a
+  // background question THAT section carries the answer, so it must survive ahead of the
+  // Intro anchor. Trimming blindly to one section would keep Intro and throw the answer away.
+  const minKeep = Math.min(2, sections.length);
+  for (let keep = sections.length - 1; keep >= minKeep; keep -= 1) {
+    const candidate = build(sections.slice(0, keep));
+    if (withinBudget(candidate)) {
+      return { output: candidate, truncated: true, keptSections: keep, fits: true };
+    }
+  }
+  // Still over budget: clip the surviving sections' prose by halves rather than dropping the
+  // matched one entirely.
+  let kept = sections.slice(0, minKeep).map((s) => ({ ...s, content: String(s.content || "") }));
+  while (kept.some((s) => s.content.length > 200)) {
+    kept = kept.map((s) => (s.content.length > 200
+      ? { ...s, content: `${s.content.slice(0, Math.floor(s.content.length / 2)).trimEnd()}...` }
+      : s));
+    const candidate = build(kept);
+    if (withinBudget(candidate)) {
+      return { output: candidate, truncated: true, keptSections: kept.length, fits: true };
+    }
+  }
+  const anchorOnly = build(kept.slice(0, 1));
+  if (withinBudget(anchorOnly)) {
+    return { output: anchorOnly, truncated: true, keptSections: 1, fits: true };
+  }
+  // Even with no Wikipedia prose at all the payload is over budget: the rest of the detail
+  // (cast, crew, seasons, episodes) is itself too large. Nothing more to shave here — the
+  // caller must fall back to a minimal output rather than attempt a doomed send.
+  const stripped = build([]);
+  return { output: stripped, truncated: true, keptSections: 0, fits: withinBudget(stripped) };
+}
+
 async function callText2Sql(args) {
   const uiLanguage = normalizeUiLanguage(
     args.ui_language ||
@@ -7032,10 +7106,55 @@ async function handleFunctionCall(item) {
         }),
   });
 
-  sendFunctionCallOutput(item.call_id, modelToolOutput);
-  requestRealtimeResponseAfterToolOutput();
-  scheduleToolResponseWatchdog(); // VOICE-AGENT-094: guarantee this turn can't wedge.
-  syncMicrophone("tool output sent");
+  // VOICE-AGENT-109: fit the payload to the channel budget first, then guarantee the three
+  // recovery calls below run whatever happens. Previously a throwing send() skipped
+  // requestRealtimeResponseAfterToolOutput / scheduleToolResponseWatchdog / syncMicrophone:
+  // the model waited forever for a function result it never got, awaitingToolResponse stayed
+  // true and the mic stayed muted — the VOICE-AGENT-094 watchdog meant to prevent exactly
+  // that wedge was itself skipped, because it was scheduled AFTER the risky send.
+  const minimalToolOutput = () => ({
+    error: "tool output too large for the realtime channel",
+    entity: modelToolOutput?.entity || "",
+    id: modelToolOutput?.id || "",
+  });
+  const fittedToolOutput = fitDetailToDataChannel(modelToolOutput, dataChannelBudgetBytes());
+  if (fittedToolOutput.truncated) {
+    clientLog("tool_output_truncated", {
+      tool: item.name,
+      kept_sections: fittedToolOutput.keptSections,
+      original_sections: Array.isArray(modelToolOutput?.wikipedia_content)
+        ? modelToolOutput.wikipedia_content.length
+        : 0,
+      budget_bytes: dataChannelBudgetBytes(),
+      channel_max_message_size: dataChannelMaxMessageSize(),
+      fits: fittedToolOutput.fits,
+    });
+  }
+  try {
+    // `fits === false` means even a section-less payload is over budget, so sending it would
+    // throw; go straight to the minimal output, which always fits.
+    sendFunctionCallOutput(item.call_id, fittedToolOutput.fits ? fittedToolOutput.output : minimalToolOutput());
+  } catch (error) {
+    clientLog("tool_output_send_error", {
+      tool: item.name,
+      call_id: item.call_id,
+      error: error.message,
+    }, "error");
+    // The model stays blocked until it receives an output for this call_id, so deliver a
+    // minimal one rather than nothing.
+    try {
+      sendFunctionCallOutput(item.call_id, minimalToolOutput());
+    } catch (fallbackError) {
+      clientLog("tool_output_send_fallback_error", {
+        tool: item.name,
+        error: fallbackError.message,
+      }, "error");
+    }
+  } finally {
+    requestRealtimeResponseAfterToolOutput();
+    scheduleToolResponseWatchdog(); // VOICE-AGENT-094: guarantee this turn can't wedge.
+    syncMicrophone("tool output sent");
+  }
 }
 
 // Option 2 (client-forced verbose re-fetch — voice parity with the /text-chat server
@@ -7063,13 +7182,18 @@ async function maybeForceVerboseActiveEntityRefetch(transcript) {
     sendEvent({ type: "response.cancel" });
     const output = await callEntityDetail(toolName, args);
     const verboseDetail = compactDetailForModel(output, entity, { verbose: true });
-    const contextText = [
-      `[Grounding: verbose Wikipedia detail for the ${entity} already on screen. Use these `
-        + `sections to answer the user's background question (production, release, reception, `
-        + `critics, writing). Do NOT say the information is missing without checking here first, `
-        + `and do NOT call query_text2sql for it.]`,
-      JSON.stringify(verboseDetail),
-    ].join("\n");
+    const prefix = `[Grounding: verbose Wikipedia detail for the ${entity} already on screen. Use these `
+      + `sections to answer the user's background question (production, release, reception, `
+      + `critics, writing). Do NOT say the information is missing without checking here first, `
+      + `and do NOT call query_text2sql for it.]`;
+    // VOICE-AGENT-109: fit to the data-channel budget (minus the prefix + event envelope) so
+    // this injection can never throw "message larger than max-message-size" and lose the
+    // grounding — which is what left the model answering Game of Thrones from memory.
+    const fitted = fitDetailToDataChannel(
+      verboseDetail,
+      dataChannelBudgetBytes() - serializedByteSize(prefix) - 1024,
+    );
+    const contextText = [prefix, JSON.stringify(fitted.output)].join("\n");
     sendEvent({
       type: "conversation.item.create",
       item: { type: "message", role: "user", content: [{ type: "input_text", text: contextText }] },
@@ -7079,6 +7203,8 @@ async function maybeForceVerboseActiveEntityRefetch(transcript) {
       tool: toolName,
       id: args.id ?? args.wikidata_id ?? null,
       mode: verboseDetail.wikipedia_content_mode,
+      truncated: fitted.truncated,
+      kept_sections: fitted.keptSections,
     });
   } catch (error) {
     clientLog("forced_verbose_refetch_error", { error: error.message }, "error");
