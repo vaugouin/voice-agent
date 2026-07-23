@@ -1,5 +1,6 @@
 import asyncio
 import json
+import logging
 import os
 import re
 import unicodedata
@@ -232,6 +233,28 @@ TRANSCRIPTION_MIME_EXTENSIONS = {
     "application/ogg": "ogg",
     "video/webm": "webm",
 }
+
+# VOICE-AGENT-115: the browser POSTs /client-log several times per turn, so uvicorn's access
+# log drowns everything useful ("POST /client-log HTTP/1.1 200 OK" x hundreds in `docker logs`).
+# Filter these high-frequency, low-signal endpoints out of the ACCESS log only -- the log file
+# they carry (client-YYYYMMDD.log) is untouched, and errors on these routes still surface because
+# uvicorn.error is a separate logger. uvicorn formats access records with
+# record.args = (client_addr, method, path, http_version, status_code); we match on the path.
+class _AccessLogPathFilter(logging.Filter):
+    def __init__(self, muted_paths: tuple[str, ...]) -> None:
+        super().__init__()
+        self._muted_paths = muted_paths
+
+    def filter(self, record: logging.LogRecord) -> bool:
+        args = record.args
+        if isinstance(args, tuple) and len(args) >= 3:
+            path = str(args[2]).split("?", 1)[0]
+            if path in self._muted_paths:
+                return False
+        return True
+
+
+logging.getLogger("uvicorn.access").addFilter(_AccessLogPathFilter(("/client-log", "/health")))
 
 app = FastAPI(title="Minimal Realtime WebRTC Voice Agent")
 
