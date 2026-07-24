@@ -541,7 +541,7 @@ const BACKGROUND_FAMILY_KEYWORDS = {
     "casting", "effets", "effects", "vfx", "visual effect", "coulisses", "post production",
     "music", "musique", "score", "soundtrack", "bande originale", "composer", "compositeur",
     "language", "languages", "langue", "langage", "cinematography", "editing", "montage",
-    "costume", "design"],
+    "costume", "design", "theme", "thematique"],
   release: ["release", "released", "sortie", "marketing", "distribution", "premiere", "broadcast",
     "diffusion", "streaming"],
   writing: ["writing", "wrote", "screenplay", "screenwrit", "script", "scenario", "ecriture"],
@@ -565,7 +565,7 @@ const BACKGROUND_FAMILY_KEYWORDS = {
     "recompense", "palmares", "prix", "decoration", "hommage"],
   person_public: ["legacy", "popular culture", "public image", "political", "politics", "activis",
     "philanthrop", "controvers", "influenc", "artistry", "posterite", "culture populaire", "style",
-    "anecdote", "engagement", "polemique"],
+    "anecdote", "engagement", "polemique", "theme", "thematique"],
 };
 
 // VOICE-AGENT-113: words too generic to say anything about which SECTION is wanted. They are
