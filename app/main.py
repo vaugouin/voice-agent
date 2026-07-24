@@ -42,6 +42,31 @@ def _read_app_version() -> str:
 
 
 APP_VERSION = _read_app_version()
+
+
+def _read_agent_soul() -> str:
+    """The agent's persona — who it is, its tone, its boundaries — single-sourced in the
+    repo-root ``SOUL.md`` (VOICE-AGENT-103).
+
+    Before this, the persona was restated inline in BOTH prompt builders (Realtime and
+    ``/text-chat``) and the two copies had already drifted. Reading it once here lets both
+    surfaces share ONE editable definition; the *operational* instructions (tool calls,
+    recovery, disambiguation, id-hiding, per-surface "you speak"/"you write" deltas) stay in
+    code. Markdown headings and HTML comments are stripped and inner whitespace is collapsed,
+    so the file can be human-formatted while the injected text is exactly the persona prose.
+    Falls back to an empty string if the file is missing, so a missing SOUL.md degrades to the
+    operational-only prompt rather than crashing.
+    """
+    try:
+        raw = (ROOT.parent / "SOUL.md").read_text(encoding="utf-8")
+    except Exception:
+        return ""
+    raw = re.sub(r"<!--.*?-->", " ", raw, flags=re.DOTALL)
+    body = "\n".join(line for line in raw.splitlines() if not line.lstrip().startswith("#"))
+    return re.sub(r"\s+", " ", body).strip()
+
+
+AGENT_SOUL = _read_agent_soul()
 # Startup banner so `docker logs -f voice-agent` shows the running version.
 print(f"[voice-agent] version {APP_VERSION}", flush=True)
 REALTIME_VOICES = {
@@ -1103,21 +1128,11 @@ def realtime_session_config(
 ) -> dict[str, Any]:
     selected_voice = voice if voice in REALTIME_VOICES else DEFAULT_REALTIME_VOICE
     realtime_model = os.getenv("OPENAI_REALTIME_MODEL", DEFAULT_REALTIME_MODEL).strip() or DEFAULT_REALTIME_MODEL
+    # VOICE-AGENT-103: persona comes from SOUL.md (AGENT_SOUL); only the surface delta ("you
+    # speak, keep it concise") and the operational instructions below stay inline.
     instructions = (
-        "You are a knowledgeable cinema companion and advisor, not a search engine or "
-        "database. Talk like a film connoisseur helping a friend: answer the question "
-        "directly and stay on the title or person the user is currently exploring. Do "
-        "NOT suggest or pivot to a different film unless the user explicitly asks for a "
-        "recommendation, asks what to watch next, or signals they are done with the "
-        "current subject; when they do, recommend ONLY titles that appear in the active "
-        "title's own similar or recommendations lists provided in the detail tool result "
-        "(these are grounded in the database). This is a hard constraint: never name a "
-        "film that is not in those two lists, and never fall back on titles from your own "
-        "memory or training, even if they feel like a great match. If those lists are "
-        "empty or missing, say you have nothing to suggest for this title rather than "
-        "inventing one. Being an advisor "
-        "means answering well about what is on screen, not steering away from it. "
-        "Keep spoken answers concise. When the user asks a "
+        AGENT_SOUL
+        + " Keep spoken answers concise. When the user asks a "
         "cinema, movie, TV, actor, director, production company, award, "
         "location, ranking, database, reporting, analytics, or text-to-SQL "
         "question, call query_text2sql with the user's spoken request as "
@@ -1844,19 +1859,11 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         if is_selection_turn
         else await execute_text_tool("query_text2sql", initial_text2sql_args)
     )
+    # VOICE-AGENT-103: persona comes from SOUL.md (AGENT_SOUL); only the surface delta ("you
+    # write concise text") and the operational instructions below stay inline.
     instructions = (
-        "You are a knowledgeable cinema companion and advisor, not a search engine or "
-        "database, replying as concise text. Talk like a film connoisseur helping a "
-        "friend: answer directly and stay on the title or person the user is currently "
-        "exploring. Do NOT suggest or pivot to a different film unless the user explicitly "
-        "asks for a recommendation, asks what to watch next, or signals they are done with "
-        "the current subject; when they do, recommend ONLY titles that appear in the "
-        "active title's own similar or recommendations lists provided in the tool result "
-        "(these are grounded in the database). This is a hard constraint: never name a "
-        "film that is not in those two lists, and never fall back on titles from your own "
-        "memory or training. If those lists are empty or missing, say you have nothing to "
-        "suggest for this title rather than inventing one. Being an "
-        "advisor means answering well about what is on screen, not steering away from it. "
+        AGENT_SOUL
+        + " You reply as concise text. "
         "The server has already executed query_text2sql for the user's typed "
         "message and provided the result in the input. Base your answer on "
         "that tool result, not on pretraining. If the user asks for details "

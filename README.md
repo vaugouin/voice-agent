@@ -129,6 +129,7 @@ The harness is split across the FastAPI backend and the browser client.
 Server-side harness:
 
 - `app/main.py::realtime_session_config()` creates the Realtime session definition: model, instructions, audio input/output settings, turn detection, tools, and `tool_choice`.
+- **Agent persona lives in `SOUL.md`** (repo root). `app/main.py::_read_agent_soul()` loads it once at import into `AGENT_SOUL`, and both prompt builders (the Realtime `realtime_session_config()` and the `/text-chat` builder) prepend it, so the personality (cinema companion/advisor, tone, grounded-recommendation boundary) is defined **once** instead of restated inline in each. Only the *operational* instructions (which tool to call, id-hiding, recovery, disambiguation, and the per-surface "you speak" vs "you write" delta) stay in code. Edit `SOUL.md` to change the character; it takes effect on restart, and you should bump `VERSION` (PATCH).
 - `app/main.py::detail_tool_definitions()` creates the dedicated entity detail tool schemas from `DETAIL_ENTITY_CONFIG`.
 - `POST /session` receives the browser SDP offer, combines it with the Realtime session config, calls `https://api.openai.com/v1/realtime/calls`, and returns the OpenAI SDP answer.
 - `POST /tool/text2sql` adapts `query_text2sql` tool calls to the upstream text2sql API.
