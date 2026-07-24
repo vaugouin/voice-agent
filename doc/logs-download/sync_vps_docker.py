@@ -5,8 +5,12 @@ sync_vps_docker.py — Additive, one-way mirror refresh: VPS -> local.
 Pulls NEW and NEWER files from the VPS down into the local copy, over SFTP
 (Paramiko). It is intentionally *additive*:
 
-  * Copies a file if it does not exist locally (NEW), if the remote copy is newer
-    (NEWER), or if the sizes differ.
+  * Copies a file if it does not exist locally (NEW) or if its byte size differs
+    from the remote (content changed). The decision is size-first: a same-size
+    file whose local timestamp merely drifted is NOT re-downloaded — its mtime is
+    realigned locally instead, so an external tool touching the mirror can't cause
+    an endless re-copy loop. Use --strict-mtime for the old timestamp-trusting
+    behavior.
   * Creates any missing local directories.
   * NEVER deletes anything locally — files removed on the VPS stay in the mirror.
   * One-way only (remote -> local). Local changes are never pushed up.
@@ -87,6 +91,11 @@ _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
 DEFAULT_EXCLUDE_FILE = os.path.join(_SCRIPT_DIR, "sync_exclude.conf")
 DEFAULT_ENV_FILE = os.path.join(_SCRIPT_DIR, ".env")
 
+# One log file per run records every file actually copied. It lives in a logs/
+# subfolder beside this script and is named sync_vps_docker_<YYYYMMDD>_<HHMMSS>.log
+# (the run's start time). Not written in --dry-run (nothing is copied then).
+DEFAULT_LOG_DIR = os.path.join(_SCRIPT_DIR, "logs")
+
 # A file counts as "newer" only if it is more than this many seconds newer than
 # the local copy. Guards against filesystem timestamp-resolution jitter.
 MTIME_TOLERANCE = 2.0
@@ -114,6 +123,7 @@ class Stats:
         self.copied_new = 0
         self.copied_newer = 0
         self.skipped = 0
+        self.reconciled = 0
         self.failed = 0
         self.dirs_created = 0
         self.bytes_copied = 0
@@ -127,6 +137,55 @@ def human(n: float) -> str:
             return f"{n:.1f}{unit}" if unit != "B" else f"{int(n)}B"
         n /= 1024
     return f"{n:.1f}TB"
+
+
+def _fmt_time(epoch: float | None) -> str:
+    """Local-time 'YYYY-MM-DD HH:MM:SS' for an epoch timestamp ('' if unknown)."""
+    if not epoch:
+        return ""
+    return time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(epoch))
+
+
+class CopyLog:
+    """Append one tab-separated line per copied file to a per-run log file.
+
+    Columns: copy operation time, full remote path, full local path, and the
+    source file's own modification time. Opened lazily so no empty file is left
+    behind when a run copies nothing; a ``None`` path (e.g. --dry-run) disables
+    logging entirely and every call becomes a no-op.
+    """
+
+    _HEADER = "copy_time\tremote_path\tlocal_path\tsource_mtime\n"
+
+    def __init__(self, path: str | None) -> None:
+        self.path = path
+        self.fh = None
+        self.opened = False   # stays True after close() so the summary can report it
+
+    def _ensure_open(self) -> None:
+        if self.fh is not None or not self.path:
+            return
+        os.makedirs(os.path.dirname(self.path), exist_ok=True)
+        self.fh = open(self.path, "a", encoding="utf-8")
+        self.fh.write(self._HEADER)
+        self.opened = True
+
+    def record(self, remote_path: str, local_path: str, source_mtime: float | None) -> None:
+        if not self.path:
+            return
+        self._ensure_open()
+        copy_time = time.strftime("%Y-%m-%d %H:%M:%S")
+        self.fh.write(f"{copy_time}\t{remote_path}\t"
+                      f"{os.path.abspath(local_path)}\t{_fmt_time(source_mtime)}\n")
+        self.fh.flush()
+
+    def close(self) -> None:
+        if self.fh is not None:
+            try:
+                self.fh.close()
+            except OSError:
+                pass
+            self.fh = None
 
 
 def load_dotenv(path: str | None) -> None:
@@ -181,8 +240,24 @@ def is_excluded(remote_path: str, name: str, excludes: list[str]) -> bool:
     return False
 
 
-def should_copy(remote_attr, local_path: str) -> tuple[bool, str]:
-    """Return (copy?, reason)."""
+def should_copy(remote_attr, local_path: str,
+                strict_mtime: bool = False) -> tuple[bool, str]:
+    """Return (copy?, reason).
+
+    Decision is **size-first**: a file is re-downloaded only when its byte size
+    differs from the remote (a real content change). When the sizes already match
+    but the remote mtime is newer, the content is treated as identical — no
+    transfer — and the reason ``"mtime-drift"`` tells the caller to realign the
+    local mtime with a cheap local ``os.utime``. This is what stops an endless
+    re-copy loop when some other tool rewrites the local mirror's timestamps (the
+    classic case: a backup/mirror job touching the same files); a stray timestamp
+    alone can no longer trigger a needless re-download.
+
+    Pass ``strict_mtime=True`` (CLI ``--strict-mtime``) to restore the old,
+    timestamp-trusting behavior — useful only if you ever expect a genuine
+    content edit that keeps the exact same byte size (rare for text/scripts),
+    since size-first would otherwise not notice it.
+    """
     if not os.path.exists(local_path):
         return True, "new"
     try:
@@ -191,15 +266,24 @@ def should_copy(remote_attr, local_path: str) -> tuple[bool, str]:
         return True, "new"
     r_mtime = remote_attr.st_mtime or 0
     r_size = remote_attr.st_size or 0
+
+    if r_size != lst.st_size:
+        # Different byte size => content really changed. Copy, unless the local
+        # copy is the newer one (never clobber a newer local with an older remote).
+        if r_mtime >= lst.st_mtime:
+            return True, "size-differs"
+        return False, "up-to-date"
+
+    # Same size: assume identical content. Never re-download on mtime alone.
     if r_mtime - lst.st_mtime > MTIME_TOLERANCE:
-        return True, "newer"
-    if r_size != lst.st_size and r_mtime >= lst.st_mtime:
-        return True, "size-differs"
+        if strict_mtime:
+            return True, "newer"
+        return False, "mtime-drift"
     return False, "up-to-date"
 
 
 def copy_file(session, remote_path: str, local_path: str, remote_attr, stats: Stats,
-              reason: str, dry_run: bool) -> None:
+              reason: str, dry_run: bool, log: CopyLog) -> None:
     if dry_run:
         print(f"  WOULD COPY ({reason}): {remote_path}  [{human(remote_attr.st_size or 0)}]")
         if reason == "new":
@@ -220,6 +304,7 @@ def copy_file(session, remote_path: str, local_path: str, remote_attr, stats: St
             stats.copied_new += 1
         else:
             stats.copied_newer += 1
+        log.record(remote_path, local_path, remote_attr.st_mtime)
         print(f"  COPIED ({reason}): {remote_path}  [{human(remote_attr.st_size or 0)}]")
     except (PermissionError, IOError, OSError) as exc:
         stats.failed += 1
@@ -233,7 +318,7 @@ def copy_file(session, remote_path: str, local_path: str, remote_attr, stats: St
 
 def sync_dir(session, remote_dir: str, local_dir: str, stats: Stats,
              excludes: list[str], follow_symlinks: bool, dry_run: bool,
-             other_roots: set[str]) -> None:
+             other_roots: set[str], log: CopyLog, strict_mtime: bool = False) -> None:
     try:
         entries = session.listdir_attr(remote_dir)
     except (PermissionError, IOError, OSError) as exc:
@@ -269,11 +354,26 @@ def sync_dir(session, remote_dir: str, local_dir: str, stats: Stats,
 
         if stat.S_ISDIR(mode) or (stat.S_ISLNK(mode) and follow_symlinks):
             sync_dir(session, remote_path, local_path, stats, excludes,
-                     follow_symlinks, dry_run, other_roots)
+                     follow_symlinks, dry_run, other_roots, log, strict_mtime)
         elif stat.S_ISREG(mode):
-            do_copy, reason = should_copy(attr, local_path)
+            do_copy, reason = should_copy(attr, local_path, strict_mtime)
             if do_copy:
-                copy_file(session, remote_path, local_path, attr, stats, reason, dry_run)
+                copy_file(session, remote_path, local_path, attr, stats, reason, dry_run, log)
+            elif reason == "mtime-drift":
+                # Same byte size, only the local timestamp drifted (e.g. another
+                # tool touched the mirror). Realign the local mtime to the remote
+                # so this file isn't re-evaluated forever — no re-download.
+                if dry_run:
+                    print(f"  ~ WOULD realign mtime (same size): {remote_path}")
+                else:
+                    try:
+                        m = attr.st_mtime or time.time()
+                        os.utime(local_path, (m, m))
+                        print(f"  ~ mtime realigned (same size): {remote_path}")
+                    except OSError as exc:
+                        print(f"  !! mtime realign failed: {remote_path} ({exc})",
+                              file=sys.stderr)
+                stats.reconciled += 1
             else:
                 stats.skipped += 1
         else:
@@ -420,6 +520,8 @@ def main() -> int:
                    help="Path to a private key file for auth")
     p.add_argument("--exclude-file", default=DEFAULT_EXCLUDE_FILE,
                    help="Config file of paths/names to exclude (default: sync_exclude.conf)")
+    p.add_argument("--log-dir", default=env("VPS_LOG_DIR", DEFAULT_LOG_DIR),
+                   help="Directory for the per-run copy log (default: logs/ beside script)")
     p.add_argument("--exclude", action="append", default=[],
                    help="Extra exclude entry (absolute path, name, or glob); repeatable")
     p.add_argument("--extra-root", action="append", default=[],
@@ -428,6 +530,10 @@ def main() -> int:
                    help="Sync only the main --remote tree (skip /etc, /var/lib/docker/volumes, ...)")
     p.add_argument("--follow-symlinks", action="store_true",
                    help="Follow symlinks instead of skipping them")
+    p.add_argument("--strict-mtime", action="store_true",
+                   help="Re-copy a same-size file whenever the remote mtime is newer "
+                        "(legacy behavior). Default is size-first: a timestamp-only "
+                        "drift realigns the local mtime instead of re-downloading.")
     p.add_argument("--dry-run", action="store_true",
                    help="Report what would be copied without writing anything")
     args = p.parse_args()
@@ -480,6 +586,17 @@ def main() -> int:
 
     stats = Stats()
     started = time.time()
+
+    # Per-run copy log (logs/sync_vps_docker_<YYYYMMDD>_<HHMMSS>.log). Disabled on
+    # a dry run since nothing is actually copied.
+    if args.dry_run:
+        log = CopyLog(None)
+    else:
+        log_name = time.strftime("sync_vps_docker_%Y%m%d_%H%M%S.log",
+                                 time.localtime(started))
+        log = CopyLog(os.path.join(args.log_dir, log_name))
+        print(f"Copy log: {log.path}")
+
     session = None
     try:
         session = SftpSession(args, stats)
@@ -493,7 +610,7 @@ def main() -> int:
             try:
                 sync_dir(session, remote_root, local_root, stats, excludes,
                          follow_symlinks=args.follow_symlinks, dry_run=args.dry_run,
-                         other_roots=other_roots)
+                         other_roots=other_roots, log=log, strict_mtime=args.strict_mtime)
             except Exception as exc:  # noqa: BLE001 — isolate a root failure so the
                 # remaining roots still sync (e.g. a reconnect that ultimately failed).
                 stats.failed += 1
@@ -506,6 +623,7 @@ def main() -> int:
         print(f"ERROR: {exc}", file=sys.stderr)
         return 1
     finally:
+        log.close()
         if session is not None:
             session.close()
 
@@ -515,11 +633,14 @@ def main() -> int:
     print(f"  new:          {stats.copied_new}")
     print(f"  updated:      {stats.copied_newer}")
     print(f"  up-to-date:   {stats.skipped}")
+    print(f"  mtime realgn: {stats.reconciled}")
     print(f"  excluded:     {stats.excluded}")
     print(f"  dirs created: {stats.dirs_created}")
     print(f"  failed:       {stats.failed}")
     print(f"  reconnects:   {stats.reconnects}")
     print(f"  data copied:  {human(stats.bytes_copied)}")
+    if log.opened:
+        print(f"  copy log:     {log.path}")
     return 0
 
 
