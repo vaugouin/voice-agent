@@ -82,11 +82,17 @@ TEXT_SUBTITLE_BREVITY = (
 
 
 class Soul(NamedTuple):
-    """One loaded persona: its slug, its display label, its length dial, its injectable prose."""
+    """One loaded persona: its slug, its display label, its length dial, the Realtime voice it
+    speaks with, and its injectable prose.
+
+    ``voice`` is stored as declared and validated at request time, not here: ``REALTIME_VOICES``
+    is defined further down the module, after these loaders have already run at import.
+    """
 
     slug: str
     label: str
     brevity: str
+    voice: str
     prose: str
 
 
@@ -136,7 +142,13 @@ def _read_soul(path: Path, slug: str) -> Soul | None:
     brevity = meta.get("brevity", DEFAULT_SOUL_BREVITY).strip().lower()
     if brevity not in SPOKEN_LENGTH_DIRECTIVES:
         brevity = DEFAULT_SOUL_BREVITY
-    return Soul(slug=slug, label=meta.get("name") or slug, brevity=brevity, prose=prose)
+    return Soul(
+        slug=slug,
+        label=meta.get("name") or slug,
+        brevity=brevity,
+        voice=meta.get("voice", "").strip().lower(),
+        prose=prose,
+    )
 
 
 def _read_agent_souls() -> dict[str, Soul]:
@@ -167,7 +179,7 @@ def _read_agent_souls() -> dict[str, Soul]:
 AGENT_SOUL_CORE_SOUL = _read_soul(SOULS_DIR / SOUL_CORE_FILE, "core")
 AGENT_SOUL_CORE = AGENT_SOUL_CORE_SOUL.prose if AGENT_SOUL_CORE_SOUL else ""
 AGENT_SOULS = _read_agent_souls()
-FALLBACK_SOUL = Soul(DEFAULT_SOUL_SLUG, DEFAULT_SOUL_SLUG, DEFAULT_SOUL_BREVITY, "")
+FALLBACK_SOUL = Soul(DEFAULT_SOUL_SLUG, DEFAULT_SOUL_SLUG, DEFAULT_SOUL_BREVITY, "", "")
 
 
 def resolve_soul(value: Any = None) -> Soul:
@@ -187,19 +199,24 @@ def request_soul(request: Request) -> Soul:
     return resolve_soul(request.query_params.get("soul") or request.query_params.get("soul_slug"))
 
 
-def request_voice(request: Request) -> str:
-    """The Realtime voice for one session: ``?voice=<name>`` overriding the ``AGENT_VOICE``
-    env default (VOICE-AGENT-118).
+def request_voice(request: Request, soul: Soul | None = None) -> str:
+    """The Realtime voice for one session, in order of precedence (VOICE-AGENT-118):
+
+    1. ``?voice=<name>`` — an explicit choice always wins, so a voice can be A/B'd on a persona.
+    2. the persona's own ``voice:`` — the character owns its voice: a face, a prose and a timbre
+       are one artifact, and the pairing must not depend on what a `.env` says.
+    3. ``AGENT_VOICE`` — the deployment default, for personas that declare no voice.
+    4. the built-in default.
 
     Deliberately asymmetric with ``agent_voice()``: a bad **env** value is a misconfiguration
-    and still raises, but a bad **URL** value falls back to the configured voice instead of
-    costing the user a session — same contract as the persona slug. Voice and persona are
-    chosen together (a chatterbox in a flat voice is not the same test), so they travel on the
-    same query string.
+    and still raises, but a bad **URL** or a bad persona declaration falls back instead of
+    costing the user a session.
     """
     override = str(request.query_params.get("voice") or "").strip().lower()
     if override in REALTIME_VOICES:
         return override
+    if soul and soul.voice in REALTIME_VOICES:
+        return soul.voice
     return agent_voice()
 
 
@@ -226,6 +243,46 @@ REALTIME_VOICES = {
 DEFAULT_REALTIME_VOICE = "ash"
 DEFAULT_REALTIME_MODEL = "gpt-realtime-2"
 DEFAULT_TRANSCRIPTION_MODEL = "gpt-4o-transcribe"
+
+
+def _log_soul_startup() -> None:
+    """Second startup line: which character this container actually answers as (VOICE-AGENT-118).
+
+    Lives here, after ``REALTIME_VOICES``, because it resolves the effective voice and the soul
+    loaders run earlier in the module.
+
+    It exists for three failure modes that are otherwise silent:
+    * a typo in ``AGENT_SOUL`` — a persona slug falls back rather than raising (a bad URL must
+      not cost a session), so an unknown *env* value would go unnoticed without this warning;
+    * a missing ``souls/_core.md`` — the loaders degrade to an empty string, which would ship an
+      agent with no grounding rules at all (exactly what the Dockerfile was about to do);
+    * the voice precedence — a persona's own ``voice:`` beats ``AGENT_VOICE``, so editing the
+      env can look like it does nothing. Printing the resolved pair settles it at a glance.
+    """
+    declared = str(os.getenv("AGENT_SOUL") or "").strip().lower()
+    if declared and declared not in AGENT_SOULS:
+        print(
+            f"[voice-agent] WARNING: AGENT_SOUL={declared!r} is not a known persona, "
+            f"falling back to {DEFAULT_SOUL_SLUG!r}. Known: {', '.join(sorted(AGENT_SOULS))}",
+            flush=True,
+        )
+    active = resolve_soul()
+    if active.voice in REALTIME_VOICES:
+        voice, source = active.voice, "persona"
+    else:
+        env_voice = str(os.getenv("AGENT_VOICE") or "").strip().lower()
+        if env_voice in REALTIME_VOICES:
+            voice, source = env_voice, "AGENT_VOICE"
+        else:
+            voice, source = DEFAULT_REALTIME_VOICE, "built-in default"
+    print(
+        f"[voice-agent] persona {active.slug!r}, voice {voice!r} (from {source}), "
+        f"{len(AGENT_SOULS)} loaded, core {'ok' if AGENT_SOUL_CORE else 'MISSING'}",
+        flush=True,
+    )
+
+
+_log_soul_startup()
 STRUCTURED_CARD_FOCUS_TOOL = "focus_result_card"
 BOOLEAN_TRUE_VALUES = {"1", "true", "yes", "on"}
 BOOLEAN_FALSE_VALUES = {"0", "false", "no", "off"}
@@ -1496,10 +1553,26 @@ async def list_souls() -> dict[str, Any]:
         AGENT_SOULS.values(), key=lambda soul: (soul.slug != DEFAULT_SOUL_SLUG, soul.slug)
     )
     return {
-        "default": DEFAULT_SOUL_SLUG,
+        # The persona actually in effect when no ?soul= is given, i.e. AGENT_SOUL resolved —
+        # NOT the literal `default` slug. A client that displays the active character has no
+        # other way to know which one answers by default on this deployment.
+        "default": resolve_soul().slug,
         "core_loaded": bool(AGENT_SOUL_CORE),
         "souls": [
-            {"slug": soul.slug, "label": soul.label, "brevity": soul.brevity}
+            {
+                "slug": soul.slug,
+                "label": soul.label,
+                "brevity": soul.brevity,
+                # The voice the character declares, and the avatar a client can display for it.
+                # Empty voice = this persona defers to AGENT_VOICE; empty avatar = no portrait
+                # shipped for this slug, so a client knows not to request a 404.
+                "voice": soul.voice if soul.voice in REALTIME_VOICES else "",
+                "avatar": (
+                    f"static/souls/{soul.slug}.webp"
+                    if (STATIC_DIR / "souls" / f"{soul.slug}.webp").is_file()
+                    else ""
+                ),
+            }
             for soul in ordered
         ],
     }
@@ -1515,12 +1588,13 @@ async def create_realtime_session(request: Request) -> PlainTextResponse:
     if not sdp.strip():
         raise HTTPException(status_code=400, detail="Missing SDP offer body")
 
-    voice = request_voice(request)
     use_structured_card_focus = structured_card_focus_enabled(request)
     use_spoken_subtitles = spoken_subtitles_enabled(request)
     use_user_transcript_subtitles = user_transcript_subtitles_enabled(request)
-    # VOICE-AGENT-118: same "env default, query-param override" shape as the flags above.
+    # VOICE-AGENT-118: same "env default, query-param override" shape as the flags above. The
+    # persona is resolved FIRST because it can carry the voice (see request_voice).
     active_soul = request_soul(request)
+    voice = request_voice(request, active_soul)
 
     body, boundary = multipart_form_data(
         {
@@ -2442,6 +2516,14 @@ HARNESS_LOG_EVENTS = frozenset({
     "tool_output_truncated",
     "tool_output_send_error",
     "tool_output_send_fallback_error",
+    # Spoken-card highlight diagnostics. `structured_card_focus_session` (emitted once at
+    # session start) says whether the structured-focus mode is active for the session;
+    # `structured_card_focus` is emitted each time the model calls focus_result_card. Without
+    # these whitelisted a log harvest cannot tell whether the model ever drives the highlight
+    # by index (vs the title/year fallback) — the exact blind spot that made the same-title
+    # disambiguation highlight impossible to diagnose from a log.
+    "structured_card_focus",
+    "structured_card_focus_session",
 })
 
 
