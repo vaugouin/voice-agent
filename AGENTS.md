@@ -63,6 +63,7 @@ Pipeline stages:
 
 - Frontend asset cache busting is handled by the global app version (see **App version** above): bump `VERSION`, do not add per-asset `?v=` slugs. Keep the `__APP_VERSION__` placeholders in `index.html` intact.
 - CSS specificity vs the `hidden` attribute: screens/panels are shown/hidden via the `hidden` attribute plus a shared low-specificity rule (e.g. `.appMenuScreen[hidden] { display: none }`). An `#id` rule that sets `display` (e.g. `#appMenuAboutScreen { display: flex }`) outranks that rule and un-hides the element in every state. Always scope screen-specific styles with `:not([hidden])` — e.g. `#appMenuAboutScreen:not([hidden]) { … }` — so the hide toggle keeps working. (Regression fixed 2026-07-04: the About credits leaked onto the burger-menu index for exactly this reason.)
+- **Soul files: the core is not a persona.** `souls/_core.md` holds the rules that must hold whatever the agent sounds like (factual grounding, staying on the subject on screen, comparison-not-recommendation, grounded recommendations); it is injected after every persona. A persona file (`SOUL.md` = `default`, `souls/<slug>.md` = alternates) carries **character only** — never restate, soften, or override a core rule in one, and never put operational instructions (tool routing, id-hiding, recovery) in either. The only dial a persona may turn is `brevity` in its front matter. When you add or edit a soul file, bump `VERSION`, and check `Dockerfile` still copies `SOUL.md` and `souls/` (they are read from `ROOT.parent` at import; if they are missing the loaders return `""` and the agent runs persona-less without erroring).
 - Keep the browser UI and `UI.md` in sync. If a visibility rule changes, document the state transition, not just the visual result.
 - Avoid adding user-facing project explanations to `AGENTS.md`; put them in `README.md` or `UI.md` as appropriate.
 - Keep generated UI text and labels consistent with existing controls. The UI is compact and utility-focused, especially in result/detail mode.
@@ -83,7 +84,7 @@ Pipeline stages:
 
 ## Runtime And State Pitfalls
 
-- The visible voice selector mentioned historically is not present in the current `index.html`; current voice selection is server-side through `AGENT_VOICE`. Re-check the DOM and README before changing voice behavior.
+- The visible voice selector mentioned historically is not present in the current `index.html`; voice selection is server-side through `AGENT_VOICE`, with a per-session `?voice=<name>` URL override forwarded to `/session` (VOICE-AGENT-118). Both are read when the session is created, so a change only lands on a NEW session. Re-check the DOM and README before changing voice behavior.
 - `clearConversationUi()` clears result UI state but does not explicitly clear the subtitle timer. If changing reset behavior, decide whether subtitles should also be cleared and document it in `UI.md`.
 - `stop()` stops audio transport but does not clear results or retained context. `startNewConversation()` is the full reset path.
 - Retained context is used during the current page lifetime and reconnect flow. Page load currently clears stored context instead of restoring it.

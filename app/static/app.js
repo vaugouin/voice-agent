@@ -700,8 +700,35 @@ function userTranscriptSubtitlesEnabled() {
   return userTranscriptSubtitlesActive && userTranscriptSubtitlesRequested();
 }
 
+// VOICE-AGENT-118: persona selection for this page load, e.g. ?soul=video-store. Validated
+// client-side to the same slug shape the server accepts, so a typo travels as "no preference"
+// (server default) instead of as a junk query string. The server re-validates regardless.
+function soulPreference() {
+  const params = new URLSearchParams(window.location.search);
+  const value = (params.get("soul") ?? params.get("soulSlug") ?? "").trim().toLowerCase();
+  return /^[a-z0-9][a-z0-9-]*$/.test(value) ? value : null;
+}
+
+// VOICE-AGENT-118: Realtime voice for this page load, e.g. ?voice=cedar. Same contract as the
+// persona slug: shape-checked here, validated against REALTIME_VOICES server-side, and an
+// unknown name falls back to the AGENT_VOICE default rather than failing the session. Voice
+// selection only takes effect on a NEW session, so change it before pressing Start.
+function voicePreference() {
+  const params = new URLSearchParams(window.location.search);
+  const value = (params.get("voice") ?? "").trim().toLowerCase();
+  return /^[a-z]+$/.test(value) ? value : null;
+}
+
 function realtimeSessionUrl() {
   const url = new URL(appUrl("session"));
+  const soul = soulPreference();
+  if (soul) {
+    url.searchParams.set("soul", soul);
+  }
+  const voice = voicePreference();
+  if (voice) {
+    url.searchParams.set("voice", voice);
+  }
   const structuredPreference = structuredCardFocusPreference();
   if (structuredPreference !== null) {
     url.searchParams.set("structured_card_focus", structuredPreference ? "1" : "0");
@@ -5573,6 +5600,9 @@ function syncQuestionInputUi() {
 }
 
 async function callTextChat(message, signal) {
+  // VOICE-AGENT-118: /text-chat is a JSON POST, so the persona slug rides in the body (the
+  // voice path puts it on the /session query string instead). Omitted when unset.
+  const soul = soulPreference();
   const response = await fetch(appUrl("text-chat"), {
     method: "POST",
     headers: { "Content-Type": "application/json" },
@@ -5580,6 +5610,7 @@ async function callTextChat(message, signal) {
     body: JSON.stringify({
       message,
       context: retainedContext.slice(-maxContextItems),
+      ...(soul ? { soul } : {}),
     }),
   });
 

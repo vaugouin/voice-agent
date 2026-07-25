@@ -7,7 +7,7 @@ import unicodedata
 import uuid
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any
+from typing import Any, NamedTuple
 from urllib.parse import quote, urlencode
 
 import httpx
@@ -44,29 +44,171 @@ def _read_app_version() -> str:
 APP_VERSION = _read_app_version()
 
 
-def _read_agent_soul() -> str:
-    """The agent's persona — who it is, its tone, its boundaries — single-sourced in the
-    repo-root ``SOUL.md`` (VOICE-AGENT-103).
+# VOICE-AGENT-103 gave the agent ONE persona file (repo-root ``SOUL.md``), read once at
+# import and prepended by both prompt builders. VOICE-AGENT-118 splits that file in two and
+# makes the persona half swappable:
+#   * ``souls/_core.md``  — the NON-NEGOTIABLE core (factual grounding, staying on subject,
+#     the comparison guardrail, grounded recommendations). Injected with EVERY persona.
+#   * the persona layer   — character only. ``SOUL.md`` at the repo root is the ``default``
+#     persona; ``souls/<slug>.md`` are the alternates, selected per request.
+# Splitting them is what makes alternates safe: without it, every new persona file would have
+# to restate the grounding rules (and drift), or silently drop them.
+SOULS_DIR = ROOT.parent / "souls"
+SOUL_CORE_FILE = "_core.md"
+DEFAULT_SOUL_SLUG = "default"
+# Slugs are the ONLY thing a request controls, and they are matched against already-loaded
+# personas — a path is never built from user input.
+SOUL_SLUG_RE = re.compile(r"^[a-z0-9][a-z0-9-]*$")
+DEFAULT_SOUL_BREVITY = "concise"
+# The one dial a persona file may turn: it overrides the per-surface length delta that used to
+# be hardcoded in both builders ("Keep spoken answers concise" / "You reply as concise text").
+# Without it an expansive persona (the VOICE-AGENT-118 barge-in test) could never speak.
+SPOKEN_LENGTH_DIRECTIVES = {
+    "concise": "Keep spoken answers concise.",
+    "expansive": (
+        "Speak at length: develop your answers over several sentences, and expect to be "
+        "interrupted rather than cutting yourself short."
+    ),
+}
+TEXT_LENGTH_DIRECTIVES = {
+    "concise": "You reply as concise text.",
+    "expansive": "You reply as text, and you may run several sentences.",
+}
+# Dropped for an expansive persona, kept verbatim for every other one.
+TEXT_SUBTITLE_BREVITY = (
+    "Keep the response short enough to be readable as subtitles unless the user explicitly "
+    "asks for detail. "
+)
 
-    Before this, the persona was restated inline in BOTH prompt builders (Realtime and
-    ``/text-chat``) and the two copies had already drifted. Reading it once here lets both
-    surfaces share ONE editable definition; the *operational* instructions (tool calls,
-    recovery, disambiguation, id-hiding, per-surface "you speak"/"you write" deltas) stay in
-    code. Markdown headings and HTML comments are stripped and inner whitespace is collapsed,
-    so the file can be human-formatted while the injected text is exactly the persona prose.
-    Falls back to an empty string if the file is missing, so a missing SOUL.md degrades to the
-    operational-only prompt rather than crashing.
+
+class Soul(NamedTuple):
+    """One loaded persona: its slug, its display label, its length dial, its injectable prose."""
+
+    slug: str
+    label: str
+    brevity: str
+    prose: str
+
+
+def _split_soul_file(raw: str) -> tuple[dict[str, str], str]:
+    """Split a soul file into its optional ``---`` front matter and its injectable prose.
+
+    Front matter is flat ``key: value`` lines (no nesting, no lists), parsed here rather than
+    with a YAML dependency — and, crucially, NEVER injected: without this step the ``---``
+    block would land verbatim in the model's instructions. HTML comments and markdown headings
+    are dropped and inner whitespace collapsed, so a file can be human-formatted while the
+    injected text is exactly the prose.
     """
+    meta: dict[str, str] = {}
+    text = raw.lstrip("﻿").lstrip()
+    # Comments FIRST: every soul file opens with an HTML comment explaining itself, so the
+    # front matter is almost never the literal first byte. Looking for `---` before stripping
+    # comments would miss it and inject `name:` / `brevity:` straight into the prompt.
+    text = re.sub(r"<!--.*?-->", " ", text, flags=re.DOTALL).lstrip()
+    if text.startswith("---"):
+        lines = text.splitlines()
+        closing = next((i for i in range(1, len(lines)) if lines[i].strip() == "---"), None)
+        if closing is not None:
+            for line in lines[1:closing]:
+                key, delim, value = line.partition(":")
+                if delim and key.strip():
+                    meta[key.strip().lower()] = value.strip()
+            text = "\n".join(lines[closing + 1:])
+    body = "\n".join(
+        line
+        for line in text.splitlines()
+        # Headings and any leftover rule line are structure for the human reader, not prose.
+        if not line.lstrip().startswith("#") and line.strip() != "---"
+    )
+    return meta, re.sub(r"\s+", " ", body).strip()
+
+
+def _read_soul(path: Path, slug: str) -> Soul | None:
+    """Load one soul file, or ``None`` if it is missing or has no prose (a missing file must
+    degrade, never crash — same contract as ``VERSION``)."""
     try:
-        raw = (ROOT.parent / "SOUL.md").read_text(encoding="utf-8")
+        raw = path.read_text(encoding="utf-8")
     except Exception:
-        return ""
-    raw = re.sub(r"<!--.*?-->", " ", raw, flags=re.DOTALL)
-    body = "\n".join(line for line in raw.splitlines() if not line.lstrip().startswith("#"))
-    return re.sub(r"\s+", " ", body).strip()
+        return None
+    meta, prose = _split_soul_file(raw)
+    if not prose:
+        return None
+    brevity = meta.get("brevity", DEFAULT_SOUL_BREVITY).strip().lower()
+    if brevity not in SPOKEN_LENGTH_DIRECTIVES:
+        brevity = DEFAULT_SOUL_BREVITY
+    return Soul(slug=slug, label=meta.get("name") or slug, brevity=brevity, prose=prose)
 
 
-AGENT_SOUL = _read_agent_soul()
+def _read_agent_souls() -> dict[str, Soul]:
+    """Every persona this build can serve: ``default`` (repo-root ``SOUL.md``) plus each
+    ``souls/<slug>.md``. Loaded once at import, like ``VERSION`` and the persona before it, so
+    selection at request time is a dict lookup and never a filesystem read. ``_core.md`` is
+    skipped here: its leading underscore fails ``SOUL_SLUG_RE``, so it can never be selected
+    as a persona.
+    """
+    souls: dict[str, Soul] = {}
+    default = _read_soul(ROOT.parent / "SOUL.md", DEFAULT_SOUL_SLUG)
+    if default:
+        souls[DEFAULT_SOUL_SLUG] = default
+    try:
+        candidates = sorted(SOULS_DIR.glob("*.md"))
+    except Exception:
+        candidates = []
+    for path in candidates:
+        slug = path.stem.strip().lower()
+        if slug in souls or not SOUL_SLUG_RE.match(slug):
+            continue
+        soul = _read_soul(path, slug)
+        if soul:
+            souls[slug] = soul
+    return souls
+
+
+AGENT_SOUL_CORE_SOUL = _read_soul(SOULS_DIR / SOUL_CORE_FILE, "core")
+AGENT_SOUL_CORE = AGENT_SOUL_CORE_SOUL.prose if AGENT_SOUL_CORE_SOUL else ""
+AGENT_SOULS = _read_agent_souls()
+FALLBACK_SOUL = Soul(DEFAULT_SOUL_SLUG, DEFAULT_SOUL_SLUG, DEFAULT_SOUL_BREVITY, "")
+
+
+def resolve_soul(value: Any = None) -> Soul:
+    """Pick the persona for one request: an explicit slug (``?soul=`` on the voice path, the
+    ``soul`` payload field on the text path), else the ``AGENT_SOUL`` env default, else
+    ``default``. An unknown or malformed slug falls back silently instead of erroring: a bad
+    URL must never cost a session.
+    """
+    for candidate in (value, os.getenv("AGENT_SOUL")):
+        slug = str(candidate or "").strip().lower()
+        if slug and SOUL_SLUG_RE.match(slug) and slug in AGENT_SOULS:
+            return AGENT_SOULS[slug]
+    return AGENT_SOULS.get(DEFAULT_SOUL_SLUG) or FALLBACK_SOUL
+
+
+def request_soul(request: Request) -> Soul:
+    return resolve_soul(request.query_params.get("soul") or request.query_params.get("soul_slug"))
+
+
+def request_voice(request: Request) -> str:
+    """The Realtime voice for one session: ``?voice=<name>`` overriding the ``AGENT_VOICE``
+    env default (VOICE-AGENT-118).
+
+    Deliberately asymmetric with ``agent_voice()``: a bad **env** value is a misconfiguration
+    and still raises, but a bad **URL** value falls back to the configured voice instead of
+    costing the user a session — same contract as the persona slug. Voice and persona are
+    chosen together (a chatterbox in a flat voice is not the same test), so they travel on the
+    same query string.
+    """
+    override = str(request.query_params.get("voice") or "").strip().lower()
+    if override in REALTIME_VOICES:
+        return override
+    return agent_voice()
+
+
+def soul_instructions(soul: Soul) -> str:
+    """What actually reaches the model: the persona (who you are) then the core (what never
+    bends), in that order. The core comes last so it has the final word on any tension with
+    the character above it.
+    """
+    return " ".join(part for part in (soul.prose, AGENT_SOUL_CORE) if part)
 # Startup banner so `docker logs -f voice-agent` shows the running version.
 print(f"[voice-agent] version {APP_VERSION}", flush=True)
 REALTIME_VOICES = {
@@ -303,6 +445,9 @@ class Text2SqlRequest(BaseModel):
 class TextChatRequest(BaseModel):
     message: str
     context: list[dict[str, Any]] = Field(default_factory=list)
+    # VOICE-AGENT-118: persona slug for this turn (see resolve_soul). Optional and
+    # self-healing — an unknown slug falls back to the default rather than failing the turn.
+    soul: str | None = None
 
 
 class ClientLogRequest(BaseModel):
@@ -1125,14 +1270,19 @@ def realtime_session_config(
     voice: str = DEFAULT_REALTIME_VOICE,
     *,
     structured_card_focus: bool = True,
+    soul: Soul | None = None,
 ) -> dict[str, Any]:
     selected_voice = voice if voice in REALTIME_VOICES else DEFAULT_REALTIME_VOICE
     realtime_model = os.getenv("OPENAI_REALTIME_MODEL", DEFAULT_REALTIME_MODEL).strip() or DEFAULT_REALTIME_MODEL
-    # VOICE-AGENT-103: persona comes from SOUL.md (AGENT_SOUL); only the surface delta ("you
-    # speak, keep it concise") and the operational instructions below stay inline.
+    # VOICE-AGENT-103: persona comes from SOUL.md, not from inline prose. VOICE-AGENT-118:
+    # that persona is now one of several (`soul_instructions` = persona + non-negotiable core)
+    # and it owns the length delta that used to be hardcoded here. Only the operational
+    # instructions below stay inline.
+    active_soul = soul or resolve_soul()
     instructions = (
-        AGENT_SOUL
-        + " Keep spoken answers concise. When the user asks a "
+        soul_instructions(active_soul)
+        + " " + SPOKEN_LENGTH_DIRECTIVES[active_soul.brevity]
+        + " When the user asks a "
         "cinema, movie, TV, actor, director, production company, award, "
         "location, ranking, database, reporting, analytics, or text-to-SQL "
         "question, call query_text2sql with the user's spoken request as "
@@ -1336,6 +1486,25 @@ async def index() -> HTMLResponse:
     )
 
 
+@app.get("/souls")
+async def list_souls() -> dict[str, Any]:
+    """Which personas this build can serve, so a test run (or a later in-app picker) does not
+    have to guess the slugs. VOICE-AGENT-118. The prose itself is deliberately not exposed:
+    this is a selector, not a prompt dump.
+    """
+    ordered = sorted(
+        AGENT_SOULS.values(), key=lambda soul: (soul.slug != DEFAULT_SOUL_SLUG, soul.slug)
+    )
+    return {
+        "default": DEFAULT_SOUL_SLUG,
+        "core_loaded": bool(AGENT_SOUL_CORE),
+        "souls": [
+            {"slug": soul.slug, "label": soul.label, "brevity": soul.brevity}
+            for soul in ordered
+        ],
+    }
+
+
 @app.post("/session", response_class=PlainTextResponse)
 async def create_realtime_session(request: Request) -> PlainTextResponse:
     api_key = os.getenv("OPENAI_API_KEY")
@@ -1346,10 +1515,12 @@ async def create_realtime_session(request: Request) -> PlainTextResponse:
     if not sdp.strip():
         raise HTTPException(status_code=400, detail="Missing SDP offer body")
 
-    voice = agent_voice()
+    voice = request_voice(request)
     use_structured_card_focus = structured_card_focus_enabled(request)
     use_spoken_subtitles = spoken_subtitles_enabled(request)
     use_user_transcript_subtitles = user_transcript_subtitles_enabled(request)
+    # VOICE-AGENT-118: same "env default, query-param override" shape as the flags above.
+    active_soul = request_soul(request)
 
     body, boundary = multipart_form_data(
         {
@@ -1358,9 +1529,21 @@ async def create_realtime_session(request: Request) -> PlainTextResponse:
                 realtime_session_config(
                     voice,
                     structured_card_focus=use_structured_card_focus,
+                    soul=active_soul,
                 )
             ),
         }
+    )
+    # Without this line a recorded voice test cannot say WHICH character answered, which makes
+    # the persona comparison uninterpretable after the fact (same lesson as VOICE-AGENT-096).
+    write_client_log(
+        "session_persona",
+        {
+            "source": "voice",
+            "soul": active_soul.slug,
+            "brevity": active_soul.brevity,
+            "voice": voice,
+        },
     )
 
     async with httpx.AsyncClient(timeout=30) as client:
@@ -1766,6 +1949,9 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
     if not message:
         raise HTTPException(status_code=400, detail="Missing message")
 
+    # VOICE-AGENT-118. /text-chat takes a JSON payload and no Request object, so the persona
+    # slug travels in the body here while the voice path puts it on the /session query string.
+    active_soul = resolve_soul(payload.soul)
     model = os.getenv("OPENAI_TEXT_MODEL", "gpt-5.1")
     verbose_detail_request = is_verbose_detail_request(message)
     generic_verbose_detail_request = is_generic_verbose_detail_request(message)
@@ -1859,11 +2045,12 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         if is_selection_turn
         else await execute_text_tool("query_text2sql", initial_text2sql_args)
     )
-    # VOICE-AGENT-103: persona comes from SOUL.md (AGENT_SOUL); only the surface delta ("you
-    # write concise text") and the operational instructions below stay inline.
+    # VOICE-AGENT-103: persona comes from SOUL.md, not from inline prose. VOICE-AGENT-118:
+    # the persona is selected per request (payload `soul`) and owns the length delta; only the
+    # operational instructions below stay inline.
     instructions = (
-        AGENT_SOUL
-        + " You reply as concise text. "
+        soul_instructions(active_soul)
+        + " " + TEXT_LENGTH_DIRECTIVES[active_soul.brevity] + " "
         "The server has already executed query_text2sql for the user's typed "
         "message and provided the result in the input. Base your answer on "
         "that tool result, not on pretraining. If the user asks for details "
@@ -1875,8 +2062,9 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         "to answer in plain text. When wikipedia_content is returned for an "
         "entity, use it as grounding for questions asking for background, "
         "history, biography, plot context, or explanatory details. Do not "
-        "produce audio. Keep the response short enough to be readable as "
-        "subtitles unless the user explicitly asks for detail. IDs are "
+        "produce audio. "
+        + ("" if active_soul.brevity == "expansive" else TEXT_SUBTITLE_BREVITY)
+        + "IDs are "
         "internal tool arguments only: never mention IMDb, Wikidata, TMDb, "
         "TVDB, ID_* fields, or any other database identifiers in user-facing "
         "subtitle text. Use entity names and titles; include the visible year "
@@ -2036,6 +2224,9 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
     write_client_log("user_transcript", {
         "source": "text-chat",
         "transcript": message,
+        # VOICE-AGENT-118: which persona answered this turn (voice logs it once per session
+        # via soul_selected; the text path is stateless, so it is stamped per turn).
+        "soul": active_soul.slug,
         # >0 on a selection turn = the browser carried the candidates (fresh app.js);
         # 0 after a disambiguation offer = candidates lost in transit (stale app.js).
         "carried_candidate_count": carried_candidate_count,
@@ -2221,6 +2412,10 @@ HARNESS_LOG_EVENTS = frozenset({
     "text_chat_cancelled",
     "realtime_text_sent",
     "reco_cards_shown",
+    # VOICE-AGENT-118. Emitted once per Realtime session with the character that answered:
+    # persona slug, its brevity dial, and the Realtime voice. A persona comparison is only
+    # interpretable if each recording says which soul and which voice were in play.
+    "session_persona",
     # VOICE-AGENT-099. Emitted right after the splash releases the page. It carries
     # handoff="animation" | "timeout" | "skipped" | "error": a "timeout" means the handoff
     # animation hung and the page would have stayed locked (body.launchSplashOpen ->

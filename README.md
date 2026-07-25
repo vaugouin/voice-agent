@@ -64,6 +64,7 @@ OPENAI_TRANSCRIPTION_MODEL=gpt-4o-transcribe
 ENABLE_STRUCTURED_CARD_FOCUS=true
 ENABLE_SPOKEN_SUBTITLES=false
 ENABLE_USER_TRANSCRIPT_SUBTITLES=false
+AGENT_SOUL=default
 
 TEXT2SQL_BASE_URL=http://your_host:8000
 TEXT2SQL_API_KEY_NAME=X-API-Key
@@ -129,7 +130,14 @@ The harness is split across the FastAPI backend and the browser client.
 Server-side harness:
 
 - `app/main.py::realtime_session_config()` creates the Realtime session definition: model, instructions, audio input/output settings, turn detection, tools, and `tool_choice`.
-- **Agent persona lives in `SOUL.md`** (repo root). `app/main.py::_read_agent_soul()` loads it once at import into `AGENT_SOUL`, and both prompt builders (the Realtime `realtime_session_config()` and the `/text-chat` builder) prepend it, so the personality (cinema companion/advisor, tone, grounded-recommendation boundary) is defined **once** instead of restated inline in each. Only the *operational* instructions (which tool to call, id-hiding, recovery, disambiguation, and the per-surface "you speak" vs "you write" delta) stay in code. Edit `SOUL.md` to change the character; it takes effect on restart, and you should bump `VERSION` (PATCH).
+- **Agent persona lives in soul files, and is swappable.** Both prompt builders (the Realtime `realtime_session_config()` and the `/text-chat` builder) are prefixed with `soul_instructions(soul)` = **the selected persona, then the non-negotiable core**. Only the *operational* instructions (which tool to call, id-hiding, recovery, disambiguation) stay in code.
+  - `souls/_core.md` — the **core**, injected with **every** persona: factual grounding, staying on the subject on screen, how another film may be cited (comparison only, never as a closing suggestion), and the grounded-recommendation rule (recommend only from the active title's `similar` / `recommendations` lists). Persona files must never restate, soften, or override these.
+  - `SOUL.md` (repo root) — the **`default` persona**: character only.
+  - `souls/<slug>.md` — the alternates. Shipped: `video-store` (video store clerk, warm and opinionated), `scholar` (erudite connector, allowed up to two comparisons), `chatterbox` (deliberately long-winded **test** persona for barge-in and recordings, not a shipping default).
+  - **Selection**, in order: `?soul=<slug>` on the page URL (the browser forwards it to `/session` for voice and in the `/text-chat` payload for text) → the `AGENT_SOUL` env default → `default`. An unknown or malformed slug falls back to the default instead of failing the turn; slugs only ever look up an already-loaded persona, so a path is never built from user input. `GET /souls` lists what this build can serve.
+  - A soul file may carry optional front matter with `name` (label shown by `GET /souls` and in logs) and `brevity` (`concise` by default, or `expansive` — the one dial a persona may turn: it overrides the per-surface length delta, "Keep spoken answers concise" / "You reply as concise text").
+  - Files are loaded **once at import** (like `VERSION`), so any edit takes effect on restart; bump `VERSION` (PATCH) with it. The `Dockerfile` must keep copying `SOUL.md` **and** `souls/` into the image: without them the loaders fall back to an empty string and the agent silently runs on the operational prompt alone.
+  - Which character answered is recorded in the log: `session_persona` once per Realtime session (`soul`, `brevity`, `voice`), and a `soul` field on each `/text-chat` `user_transcript` entry.
 - `app/main.py::detail_tool_definitions()` creates the dedicated entity detail tool schemas from `DETAIL_ENTITY_CONFIG`.
 - `POST /session` receives the browser SDP offer, combines it with the Realtime session config, calls `https://api.openai.com/v1/realtime/calls`, and returns the OpenAI SDP answer.
 - `POST /tool/text2sql` adapts `query_text2sql` tool calls to the upstream text2sql API.
@@ -172,9 +180,11 @@ marin
 cedar
 ```
 
-The voice is configured server-side with the `.env` `AGENT_VOICE` value. The server validates it before inserting it into `audio.output.voice`.
+The voice default is configured server-side with the `.env` `AGENT_VOICE` value. The server validates it before inserting it into `audio.output.voice`.
 
-Important: Realtime voice selection must happen before the session produces audio. Change `AGENT_VOICE`, then start a new session.
+A **`?voice=<name>` URL parameter overrides it for the session** (the browser forwards it to `/session` alongside `?soul=`), so a voice can be tried, or paired with a persona, without editing `.env` or restarting: `/?soul=video-store&voice=cedar`. An unknown or malformed name silently falls back to `AGENT_VOICE` rather than failing the session; an unsupported value in `.env` still raises, because that is a misconfiguration and not a typo in a link.
+
+Important: Realtime voice selection must happen before the session produces audio. Change `AGENT_VOICE` or the `?voice=` parameter, then start a **new** session.
 
 ## Text2SQL Tool Flow
 
