@@ -365,107 +365,14 @@ function delay(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
 
-const FRENCH_MARKERS = new Set([
-  "acteur",
-  "acteurs",
-  "actrice",
-  "actrices",
-  "aimerais",
-  "avec",
-  "ce",
-  "ces",
-  "cet",
-  "cette",
-  "cherche",
-  "combien",
-  "comment",
-  "dans",
-  "de",
-  "des",
-  "dis",
-  "donne",
-  "donnez",
-  "du",
-  "elle",
-  "elles",
-  "est",
-  "fais",
-  "fait",
-  // VOICE-AGENT-125/-112: "film"/"films" removed — identical in EN, and "De Niro films" would
-  // score `de`+`films` = 2 → false "fr". French keeps montre/des/les/quels to compensate.
-  "francais",
-  "francaise",
-  "il",
-  "ils",
-  "je",
-  "la",
-  "le",
-  "les",
-  "liste",
-  "lister",
-  "ma",
-  // VOICE-AGENT-125/-112: "me" removed — English "tell me…" (French uses "moi").
-  "meilleur",
-  "meilleure",
-  "meilleures",
-  "meilleurs",
-  "mes",
-  "moi",
-  "moins",
-  "montre",
-  "montrez",
-  "nous",
-  "par",
-  "peux",
-  // VOICE-AGENT-125/-112: "plus" removed — streaming brands (Disney Plus, Apple TV Plus…).
-  "pour",
-  "pourquoi",
-  "pouvez",
-  "quel",
-  "quelle",
-  "quelles",
-  "quels",
-  "que",
-  "qui",
-  "quoi",
-  "realisateur",
-  "realisatrice",
-  "recherche",
-  "reponds",
-  "sans",
-  "serie",
-  // VOICE-AGENT-125/-112: "series" removed — the English word (folded French "séries"); "serie"
-  // stays (English never writes "serie"), so real French "une série" is still detected.
-  "ses",
-  "sont",
-  "sorti",
-  "sortie",
-  "sorties",
-  "sortis",
-  "sur",
-  "te",
-  "toi",
-  "ton",
-  "tres",
-  "tu",
-  "un",
-  "une",
-  "veux",
-  "voudrais",
-  "vous",
-]);
-const FRENCH_PHRASES = [
-  "donne moi",
-  "dis moi",
-  "est ce que",
-  "en francais",
-  "peux tu",
-  "qu est ce",
-  "quels sont",
-  "quelles sont",
-  "qui est",
-  "reponds en francais",
-];
+// VOICE-AGENT-126: shared vocabulary (language markers, section families, stopwords) comes from
+// lexicons.json, injected as window.__LEXICONS__ by the / route, so this file (voice) and
+// app/main.py (text) read ONE source. Empty fallback keeps the app running if the injection is
+// missing (degraded: en-only detection, no families) rather than throwing at load.
+const LEXICONS = (typeof window !== "undefined" && window.__LEXICONS__ && typeof window.__LEXICONS__ === "object") ? window.__LEXICONS__ : {};
+if (!Array.isArray(LEXICONS.french_markers)) { console.error("VOICE-AGENT-126: window.__LEXICONS__ missing/invalid; language & family detection degraded."); }
+const FRENCH_MARKERS = new Set(LEXICONS.french_markers);
+const FRENCH_PHRASES = LEXICONS.french_phrases;
 
 function normalizeUiLanguage(value) {
   const clean = String(value || "en").trim().toLowerCase().replace("_", "-").split("-", 1)[0];
@@ -500,20 +407,8 @@ function isVerboseDetailRequest(value) {
 // (production / release / reception / writing). Mirrors the server
 // BACKGROUND_DETAIL_TOPIC_WORDS / _PHRASES so the voice path treats "what did critics
 // think", "how was the production", "box office" as verbose-detail requests too.
-const backgroundDetailTopicWords = new Set([
-  // production
-  "production", "productions", "produced", "producing", "filming", "filmed",
-  "shoot", "shooting", "tournage", "produit", "coulisses",
-  // release
-  "release", "released", "premiere", "sortie",
-  // reception
-  "reception", "review", "reviews", "reviewed", "critic", "critics",
-  "critical", "acclaim", "critiques", "accueil", "avis",
-  // writing
-  "writing", "wrote", "screenplay", "screenwriter", "screenwriting",
-  "script", "scripts", "scenario", "scenariste", "ecriture", "ecrit",
-]);
-const backgroundDetailTopicPhrases = ["box office", "behind the scenes", "making of"];
+const backgroundDetailTopicWords = new Set(LEXICONS.background_detail_topic_words);
+const backgroundDetailTopicPhrases = LEXICONS.background_detail_topic_phrases;
 
 function isBackgroundDetailRequest(value) {
   const clean = normalizedIntentText(value);
@@ -541,58 +436,12 @@ function shouldUseVerboseDetail(value) {
 // - Critical response" survives the max-sections cap even when it sits late in the page
 // (fine sections from WIKIPEDIA-CRAWLER-016). Substring-matched (normalized) against both
 // the question and the section titles.
-const BACKGROUND_FAMILY_KEYWORDS = {
-  // VOICE-AGENT-113: "award", "viewership", "ratings" and "audience" were missing, so a
-  // perfectly natural question ("how were the awards and the viewership?") armed NO family at
-  // all and the reorder never ran — leaving Reception - Awards (idx 19) and Reception -
-  // Viewership (idx 20) unreachable on a long article.
-  reception: ["reception", "critic", "critique", "acclaim", "review", "accueil", "box office",
-    "accolade", "award", "viewership", "rating", "audience", "recompense", "distinction"],
-  // VOICE-AGENT-114: the families were the moteur for BOTH the section reorder (-106) AND the
-  // -107 refetch gate, but several English words were missing (only "effets", the FRENCH one,
-  // covered visual effects) so "how were the visual effects done?" armed nothing and no refetch
-  // ran. Music / language / score / soundtrack / VFX added in both tongues.
-  production: ["production", "filming", "filmed", "shoot", "tournage", "genese", "develop",
-    "casting", "effets", "effects", "vfx", "visual effect", "coulisses", "post production",
-    "music", "musique", "score", "soundtrack", "bande originale", "composer", "compositeur",
-    "language", "languages", "langue", "langage", "cinematography", "editing", "montage",
-    "costume", "design", "theme", "thematique"],
-  release: ["release", "released", "sortie", "marketing", "distribution", "premiere", "broadcast",
-    "diffusion", "streaming"],
-  writing: ["writing", "wrote", "screenplay", "screenwrit", "script", "scenario", "ecriture"],
-  // VOICE-AGENT-117: families for PERSON pages. Derived from the real title distribution
-  // (168k EN / 98k FR person pages in T_WC_WIKIPEDIA_PAGE_LANG_SECTION). For persons the value
-  // is the GATE, not the reorder: the answer-bearing sections sit at avg position 2-6 (already
-  // inside the verbose-10 window) and ~90% of person pages have <=10 sections. So these mainly
-  // exist to OPEN the -107 verbose refetch on a person background question ("his early life",
-  // "sa vie privee"), which today armed no family. Keywords are stems matched as substrings, so
-  // "filmograph" covers EN filmography + FR filmographie, and the H2 stems keep matching future
-  // composite "H2 - H3" fine titles. H3-level stems (marriage, education, nominat...) are folded
-  // in now but stay dormant until the WIKIPEDIA-CRAWLER-018 fine backfill reaches persons.
-  person_biography: ["early life", "biograph", "life and career", "background", "education",
-    "childhood", "upbringing", "biographi", "jeunesse", "carriere", "formation", "enfance", "debuts"],
-  person_career: ["career", "filmograph", "discograph", "videograph", "credit", "breakthrough",
-    "theatre", "theater", "doublage", "uvre"],
-  person_personal: ["personal", "private life", "family", "relationship", "marriage", "married",
-    "spouse", "children", "death", "died", "passing", "illness", "divorce", "vie privee",
-    "vie personnelle", "famille", "mariage", "enfants", "mort", "deces"],
-  person_accolades: ["award", "honour", "honor", "accolade", "nominat", "recognition", "distinction",
-    "recompense", "palmares", "prix", "decoration", "hommage"],
-  person_public: ["legacy", "popular culture", "public image", "political", "politics", "activis",
-    "philanthrop", "controvers", "influenc", "artistry", "posterite", "culture populaire", "style",
-    "anecdote", "engagement", "polemique", "theme", "thematique"],
-};
+const BACKGROUND_FAMILY_KEYWORDS = LEXICONS.background_family_keywords;
 
 // VOICE-AGENT-113: words too generic to say anything about which SECTION is wanted. They are
 // either conversational filler or the entity type itself, and would otherwise score against
 // unrelated titles.
-const INTENT_STOPWORDS = new Set([
-  "tell", "about", "give", "know", "want", "would", "could", "please", "more", "much", "many",
-  "what", "which", "when", "where", "were", "them", "they", "this", "that", "there", "then",
-  "especially", "particularly", "movie", "film", "serie", "series", "show", "season", "episode",
-  "dis", "moi", "parle", "quoi", "quel", "quelle", "surtout", "notamment", "plus", "cette",
-  "film", "serie", "saison", "episode", "sur",
-]);
+const INTENT_STOPWORDS = new Set(LEXICONS.intent_stopwords);
 
 function intentTokens(value) {
   const seen = new Set();

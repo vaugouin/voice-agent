@@ -9,6 +9,10 @@
     <link rel="apple-touch-icon" href="./static/icons/voice-agent-1254x1254.png" />
     <link rel="manifest" href="./static/site.webmanifest" />
     <link rel="stylesheet" href="./static/styles.css?v=__APP_VERSION__" />
+    <!-- VOICE-AGENT-126: shared vocabulary (language markers, section families, stopwords) injected
+         by the / route from lexicons.json, so app.js (voice) and main.py (text) read one source.
+         Classic inline script: runs before the deferred app.js module, so LEXICONS is ready. -->
+    <script>window.__LEXICONS__ = __LEXICONS_JSON__;</script>
   </head>
   <body>
     <main>

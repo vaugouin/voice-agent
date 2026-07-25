@@ -44,6 +44,20 @@ def _read_app_version() -> str:
 APP_VERSION = _read_app_version()
 
 
+def _read_lexicons() -> tuple[dict, str]:
+    """VOICE-AGENT-126: single source of the vocabulary shared by the voice (app.js) and
+    text (main.py) paths -- French markers/phrases, section families, intent stopwords,
+    background-topic words. Python reads it here; the browser gets the SAME data via
+    window.__LEXICONS__ injected into index.html by the / route. Returns (parsed, raw text)
+    so the route injects the exact bytes. Fails loud if missing/invalid: a deploy without
+    lexicons.json must not silently lose language detection or deep-dive grounding."""
+    raw = (ROOT / "lexicons.json").read_text(encoding="utf-8")
+    return json.loads(raw), raw
+
+
+LEXICONS, LEXICONS_JSON = _read_lexicons()
+
+
 # VOICE-AGENT-103 gave the agent ONE persona file (repo-root ``SOUL.md``), read once at
 # import and prepended by both prompt builders. VOICE-AGENT-118 splits that file in two and
 # makes the persona half swappable:
@@ -326,125 +340,10 @@ GENERIC_VERBOSE_DETAIL_PATTERNS = (
 # (too many false positives), no cast/actors (that routing is VOICE-AGENT-044). Widen
 # later if recall proves too low. Matched as whole tokens (single words) or substrings
 # (multi-word phrases) against normalized_intent_text (diacritics folded, lowercased).
-BACKGROUND_DETAIL_TOPIC_WORDS = frozenset({
-    # production
-    "production", "productions", "produced", "producing", "filming", "filmed",
-    "shoot", "shooting", "tournage", "produit", "coulisses",
-    # release
-    "release", "released", "premiere", "sortie",
-    # reception
-    "reception", "review", "reviews", "reviewed", "critic", "critics",
-    "critical", "acclaim", "critiques", "accueil", "avis",
-    # writing
-    "writing", "wrote", "screenplay", "screenwriter", "screenwriting",
-    "script", "scripts", "scenario", "scenariste", "ecriture", "ecrit",
-})
-BACKGROUND_DETAIL_TOPIC_PHRASES = (
-    "box office",
-    "behind the scenes",
-    "making of",
-)
-FRENCH_MARKERS = {
-    "acteur",
-    "acteurs",
-    "actrice",
-    "actrices",
-    "aimerais",
-    "avec",
-    "ce",
-    "ces",
-    "cet",
-    "cette",
-    "cherche",
-    "combien",
-    "comment",
-    "dans",
-    "de",
-    "des",
-    "dis",
-    "donne",
-    "donnez",
-    "du",
-    "elle",
-    "elles",
-    "est",
-    "fais",
-    "fait",
-    # VOICE-AGENT-112: "film"/"films" removed (identical in EN ; "De Niro films" would score
-    # de+films = 2 → false "fr"). Mirror of the app.js FRENCH_MARKERS fix — this Python set drives
-    # the /text-chat path (the browser sends no ui_language for text chat; the server computes it).
-    "francais",
-    "francaise",
-    "il",
-    "ils",
-    "je",
-    "la",
-    "le",
-    "les",
-    "liste",
-    "lister",
-    "ma",
-    # VOICE-AGENT-112: "me" removed — English "tell me…" (French uses "moi").
-    "meilleur",
-    "meilleure",
-    "meilleures",
-    "meilleurs",
-    "mes",
-    "moi",
-    "moins",
-    "montre",
-    "montrez",
-    "nous",
-    "par",
-    "peux",
-    # VOICE-AGENT-112: "plus" removed — streaming brands (Disney Plus, Apple TV Plus…).
-    "pour",
-    "pourquoi",
-    "pouvez",
-    "quel",
-    "quelle",
-    "quelles",
-    "quels",
-    "que",
-    "qui",
-    "quoi",
-    "realisateur",
-    "realisatrice",
-    "recherche",
-    "reponds",
-    "sans",
-    "serie",
-    # VOICE-AGENT-112: "series" removed — the English word ; "serie" stays (English never writes it).
-    "ses",
-    "sont",
-    "sorti",
-    "sortie",
-    "sorties",
-    "sortis",
-    "sur",
-    "te",
-    "toi",
-    "ton",
-    "tres",
-    "tu",
-    "un",
-    "une",
-    "veux",
-    "voudrais",
-    "vous",
-}
-FRENCH_PHRASES = (
-    "donne moi",
-    "dis moi",
-    "est ce que",
-    "en francais",
-    "peux tu",
-    "qu est ce",
-    "quels sont",
-    "quelles sont",
-    "qui est",
-    "reponds en francais",
-)
+BACKGROUND_DETAIL_TOPIC_WORDS = frozenset(LEXICONS["background_detail_topic_words"])  # VOICE-AGENT-126: from lexicons.json
+BACKGROUND_DETAIL_TOPIC_PHRASES = tuple(LEXICONS["background_detail_topic_phrases"])  # VOICE-AGENT-126: from lexicons.json
+FRENCH_MARKERS = frozenset(LEXICONS["french_markers"])  # VOICE-AGENT-126: from lexicons.json
+FRENCH_PHRASES = tuple(LEXICONS["french_phrases"])  # VOICE-AGENT-126: from lexicons.json
 WORD_RE = re.compile(r"[a-z']+")
 MAX_TRANSCRIPTION_AUDIO_BYTES = 25 * 1024 * 1024
 TRANSCRIPTION_MIME_EXTENSIONS = {
@@ -1014,53 +913,12 @@ def detail_query_params(args: dict[str, Any], ui_language: str) -> dict[str, Any
 # "Reception - Critical response" survives the max-sections cap even when it sits late in
 # the page (fine sections from WIKIPEDIA-CRAWLER-016). Substring-matched (normalized)
 # against both the question and the section titles. Mirrors the app.js constant.
-BACKGROUND_FAMILY_KEYWORDS = {
-    # VOICE-AGENT-113: "award", "viewership", "rating" and "audience" were missing, so a natural
-    # question ("how were the awards and the viewership?") armed NO family and the reorder never
-    # ran, leaving those sections unreachable on a long article.
-    "reception": ["reception", "critic", "critique", "acclaim", "review", "accueil", "box office",
-                  "accolade", "award", "viewership", "rating", "audience", "recompense", "distinction"],
-    # VOICE-AGENT-114: several English words were missing (only "effets", the French one, covered
-    # visual effects) so "how were the visual effects done?" armed nothing. Music / language /
-    # score / soundtrack / VFX added in both tongues. Mirrors app.js.
-    "production": ["production", "filming", "filmed", "shoot", "tournage", "genese", "develop",
-                   "casting", "effets", "effects", "vfx", "visual effect", "coulisses", "post production",
-                   "music", "musique", "score", "soundtrack", "bande originale", "composer", "compositeur",
-                   "language", "languages", "langue", "langage", "cinematography", "editing", "montage",
-                   "costume", "design", "theme", "thematique"],
-    "release": ["release", "released", "sortie", "marketing", "distribution", "premiere", "broadcast",
-                "diffusion", "streaming"],
-    "writing": ["writing", "wrote", "screenplay", "screenwrit", "script", "scenario", "ecriture"],
-    # VOICE-AGENT-117: PERSON-page families (mirrors app.js). For persons the value is the GATE,
-    # not the reorder (answer sections at avg position 2-6, ~90% of person pages <=10 sections),
-    # so these mainly open the verbose refetch on a person background question. Substring stems;
-    # H3-level stems are dormant until the WIKIPEDIA-CRAWLER-018 fine backfill reaches persons.
-    "person_biography": ["early life", "biograph", "life and career", "background", "education",
-                         "childhood", "upbringing", "biographi", "jeunesse", "carriere", "formation",
-                         "enfance", "debuts"],
-    "person_career": ["career", "filmograph", "discograph", "videograph", "credit", "breakthrough",
-                      "theatre", "theater", "doublage", "uvre"],
-    "person_personal": ["personal", "private life", "family", "relationship", "marriage", "married",
-                        "spouse", "children", "death", "died", "passing", "illness", "divorce",
-                        "vie privee", "vie personnelle", "famille", "mariage", "enfants", "mort", "deces"],
-    "person_accolades": ["award", "honour", "honor", "accolade", "nominat", "recognition", "distinction",
-                         "recompense", "palmares", "prix", "decoration", "hommage"],
-    "person_public": ["legacy", "popular culture", "public image", "political", "politics", "activis",
-                      "philanthrop", "controvers", "influenc", "artistry", "posterite",
-                      "culture populaire", "style", "anecdote", "engagement", "polemique",
-                      "theme", "thematique"],
-}
+BACKGROUND_FAMILY_KEYWORDS = {k: list(v) for k, v in LEXICONS["background_family_keywords"].items()}  # VOICE-AGENT-126: from lexicons.json
 
 
 # VOICE-AGENT-113: words too generic to say anything about which SECTION is wanted -- either
 # conversational filler or the entity type itself.
-INTENT_STOPWORDS = frozenset({
-    "tell", "about", "give", "know", "want", "would", "could", "please", "more", "much", "many",
-    "what", "which", "when", "where", "were", "them", "they", "this", "that", "there", "then",
-    "especially", "particularly", "movie", "film", "serie", "series", "show", "season", "episode",
-    "dis", "moi", "parle", "quoi", "quel", "quelle", "surtout", "notamment", "plus", "cette",
-    "saison", "sur",
-})
+INTENT_STOPWORDS = frozenset(LEXICONS["intent_stopwords"])  # VOICE-AGENT-126: from lexicons.json
 
 
 def _intent_tokens(value: Any) -> list[str]:
@@ -1543,6 +1401,9 @@ async def index() -> HTMLResponse:
     # browser- or proxy-cached index.html keeps pointing at the old app.js after a deploy
     # (only Ctrl+Shift+R would recover it). Note: an already-open SPA tab still won't pick
     # up a new version until it is reloaded — no header fixes "the tab was never reloaded".
+    # VOICE-AGENT-126: hand the browser the SAME shared vocabulary the server uses, so app.js
+    # builds its language/family/stopword lists from one source instead of a hand-kept copy.
+    html = html.replace("__LEXICONS_JSON__", LEXICONS_JSON)
     return HTMLResponse(
         html.replace("__APP_VERSION__", APP_VERSION),
         headers={"Cache-Control": "no-cache, must-revalidate"},
