@@ -370,8 +370,9 @@ FRENCH_MARKERS = {
     "est",
     "fais",
     "fait",
-    "film",
-    "films",
+    # VOICE-AGENT-112: "film"/"films" removed (identical in EN ; "De Niro films" would score
+    # de+films = 2 → false "fr"). Mirror of the app.js FRENCH_MARKERS fix — this Python set drives
+    # the /text-chat path (the browser sends no ui_language for text chat; the server computes it).
     "francais",
     "francaise",
     "il",
@@ -383,7 +384,7 @@ FRENCH_MARKERS = {
     "liste",
     "lister",
     "ma",
-    "me",
+    # VOICE-AGENT-112: "me" removed — English "tell me…" (French uses "moi").
     "meilleur",
     "meilleure",
     "meilleures",
@@ -396,7 +397,7 @@ FRENCH_MARKERS = {
     "nous",
     "par",
     "peux",
-    "plus",
+    # VOICE-AGENT-112: "plus" removed — streaming brands (Disney Plus, Apple TV Plus…).
     "pour",
     "pourquoi",
     "pouvez",
@@ -413,7 +414,7 @@ FRENCH_MARKERS = {
     "reponds",
     "sans",
     "serie",
-    "series",
+    # VOICE-AGENT-112: "series" removed — the English word ; "serie" stays (English never writes it).
     "ses",
     "sont",
     "sorti",
