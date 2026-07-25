@@ -1073,8 +1073,9 @@ Purpose: shows the **portrait of the persona currently answering**, so the chara
 
 Visual:
 
-- **Fixed disc pinned to the window bottom-left** (`position: fixed; left: 22px; bottom: 22px`), on the same baseline as the assistant `#subtitleOverlay`, at `z-index: 1200`.
-- 56px circle (`border-radius: 50%`, `overflow: hidden`), portrait scaled with `object-fit: cover`.
+- **Fixed disc pinned to the window bottom-left**, on the same baseline as the assistant `#subtitleOverlay`, at `z-index: 1200`.
+- **Size and inset come from two custom properties**, `--personaBadgeSize: clamp(56px, 7.5vw, 96px)` and `--personaBadgeInset: 22px`, declared on `:root`. The disc therefore scales with the window: 56px on a phone, ~88px on an iPad, 96px on a desktop. A flat 56px was sized for a phone and read as an afterthought on a 1180px iPad.
+- Circle via `border-radius: 50%` + `overflow: hidden`, portrait scaled with `object-fit: cover`.
 - Background `#f2efe6`, the portraits' own paper tone, so the disc never flashes dark while the image decodes.
 - Fades in and out over 260ms (`opacity` + `translateY`/`scale`); pointer events disabled.
 - It lives **outside `main`**, next to `#subtitleOverlay`: compact results mode hides the app header, and a badge placed inside it would disappear exactly when the conversation happens.
@@ -1106,13 +1107,14 @@ It is deliberately **not** tied to the subtitle setting: `ENABLE_SPOKEN_SUBTITLE
 Caption collision rule:
 
 - `#subtitleOverlay` is centered and capped at `min(860px, 100vw - 32px)`, so the bottom-left corner is only free on a wide window.
-- **The badge never moves. The caption does.** While the badge is visible, `document.body` carries the `personaBadgeVisible` class, and below `1040px` the caption steps up to `bottom: 90px` (22px badge offset + 56px badge + 12px gap). In landscape under 520px tall it steps up to `bottom: 62px` (12 + 40 + 10).
+- **The badge never moves. The caption does.** While the badge is visible, `document.body` carries the `personaBadgeVisible` class, and below `1040px` the caption steps up to `calc(var(--personaBadgeInset) + var(--personaBadgeSize) + 12px)`. The step is **derived from the badge variables**, so resizing the disc can never leave the caption sitting on top of it.
+- In landscape under 520px tall the media query overrides the two variables (`40px` / `12px`); the disc shrinks and the caption's step follows on its own.
 - The caption transitions its `bottom` over 260ms so the step reads as deliberate rather than as a jump.
 - On a window wider than `1040px` nothing moves: the caption keeps its baseline and sits to the right of the badge.
 
 Why this way round (regression fixed 2026-07-25): the first implementation did the opposite, lifting the **badge** above the caption using the caption's measured height (a `ResizeObserver` publishing `--subtitleBandHeight`). On an iPhone a ten-line caption is over 200px tall, so the portrait was thrown into the middle of the screen, floating over the poster. The badge's height is a constant the app controls; the caption's is not. Push the variable element over the fixed one, never the reverse.
 
-Verified in a browser at 1280x900, 932x430 and 393x852, with and without a ten-line caption: the disc stays circular in the bottom-left corner (56px at 22px, 40px at 12px in short landscape) in every case, and never intersects the caption.
+Verified in a browser at 1440x900, 1180x900, 932x430 and 393x852, with and without a ten-line caption: the disc stays circular in the bottom-left corner at every size (96px desktop, 87px iPad, 56px phone, 40px short landscape), and never intersects the caption.
 
 ## History Buttons
 

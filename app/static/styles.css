@@ -15,6 +15,12 @@
   --error: #cf6679;
   --success: #4caf50;
   --border: #404040;
+  /* VOICE-AGENT-121: the persona badge scales with the window. 56px was sized for a phone and
+     read as an afterthought on an iPad (1180px wide): the portrait is the character, it has to
+     hold its place. These two values are the single source of truth for the disc AND for how
+     far the caption steps up over it, so the two can never drift apart. */
+  --personaBadgeSize: clamp(56px, 7.5vw, 96px);
+  --personaBadgeInset: 22px;
 }
 
 * {
@@ -524,11 +530,11 @@ button:disabled {
    as a black hole while the image decodes. */
 .personaBadge {
   position: fixed;
-  left: 22px;
-  bottom: 22px;
+  left: var(--personaBadgeInset);
+  bottom: var(--personaBadgeInset);
   z-index: 1200;
-  width: 56px;
-  height: 56px;
+  width: var(--personaBadgeSize);
+  height: var(--personaBadgeSize);
   border-radius: 50%;
   overflow: hidden;
   background: #f2efe6;
@@ -557,10 +563,11 @@ button:disabled {
    height) and it failed on an iPhone: a ten-line caption threw the portrait into the middle of
    the screen, floating over the content. The badge's own height is a constant we control, the
    caption's is not, so pushing the variable thing over the fixed one is the exact way round.
-   22px badge offset + 56px badge + 12px gap. */
+   The step is derived from the badge variables, so resizing the disc can never leave the
+   caption sitting on top of it. */
 @media (max-width: 1039px) {
   body.personaBadgeVisible .subtitleOverlay {
-    bottom: 90px;
+    bottom: calc(var(--personaBadgeInset) + var(--personaBadgeSize) + 12px);
   }
 }
 
@@ -2093,17 +2100,11 @@ button.detailVisualCard:hover {
   }
 
   /* VOICE-AGENT-121: iPhone landscape (~932x430) has almost no vertical room and the bottom
-     band is already busy. Shrink the badge and tuck it deeper into the corner. */
-  .personaBadge {
-    left: 12px;
-    bottom: 12px;
-    width: 40px;
-    height: 40px;
-  }
-
-  /* 12px offset + 40px badge + 10px gap. */
-  body.personaBadgeVisible .subtitleOverlay {
-    bottom: 62px;
+     band is already busy. Shrink the badge and tuck it deeper into the corner. Overriding the
+     two variables is enough: the disc and the caption's step both follow. */
+  :root {
+    --personaBadgeSize: 40px;
+    --personaBadgeInset: 12px;
   }
 }
 
