@@ -6965,6 +6965,49 @@ function fitDetailToDataChannel(modelOutput, budgetBytes) {
   return { output: stripped, truncated: true, keptSections: 0, fits: withinBudget(stripped), detailDropped: true };
 }
 
+// VOICE-AGENT-119: fit a query_text2sql output to the data-channel budget. fitDetailToDataChannel
+// only knows how to shed `wikipedia_content`; a SEARCH output has none, so a large result list
+// (e.g. 50 Tom Hanks movies) came back fits:false and the caller substituted the minimal
+// "could not be loaded" note -- the model then said "I can't load the movie list" while the cards
+// were on screen (client-20260725.log, a VOICE-AGENT-109 regression). The model enumerates and
+// highlights the list from `visible_results` (compact: index/title/subtitle/id); the full `rows`
+// are much heavier and redundant for that, so shed rows first, then trim visible_results from the
+// tail. When there are no cards (scalar/analytics answer lives in `rows`), trim rows instead so the
+// answer survives.
+function fitSearchOutputToDataChannel(output, budgetBytes) {
+  const withinBudget = (payload) => serializedByteSize(JSON.stringify(payload)) <= budgetBytes;
+  if (withinBudget(output)) {
+    return { output, truncated: false, fits: true };
+  }
+  const visibleResults = Array.isArray(output.visible_results) ? output.visible_results : [];
+  const rows = Array.isArray(output.rows) ? output.rows : [];
+  if (visibleResults.length) {
+    // Cards are on screen: visible_results IS the model's list. Drop the heavy full rows.
+    const withoutRows = { ...output, rows: [], rows_omitted: rows.length };
+    if (withinBudget(withoutRows)) {
+      return { output: withoutRows, truncated: true, fits: true, keptResults: visibleResults.length };
+    }
+    for (let keep = visibleResults.length - 1; keep >= 1; keep -= 1) {
+      const candidate = { ...withoutRows, visible_results: visibleResults.slice(0, keep), visible_results_truncated: true };
+      if (withinBudget(candidate)) {
+        return { output: candidate, truncated: true, fits: true, keptResults: keep };
+      }
+    }
+  } else {
+    // No cards: the answer lives in `rows` (scalar / analytics). Keep as many head rows as fit.
+    for (let keep = rows.length - 1; keep >= 1; keep -= 1) {
+      const candidate = { ...output, rows: rows.slice(0, keep), rows_truncated: true };
+      if (withinBudget(candidate)) {
+        return { output: candidate, truncated: true, fits: true, keptRows: keep };
+      }
+    }
+  }
+  // Even one entry does not fit (should not happen with compact visible_results): send metadata
+  // only, but keep result_count/has_more/diagnostic so the model knows the search succeeded.
+  const stripped = { ...output, rows: [], visible_results: [], visible_results_truncated: true, rows_truncated: true };
+  return { output: stripped, truncated: true, fits: withinBudget(stripped), keptResults: 0 };
+}
+
 async function callText2Sql(args) {
   const uiLanguage = normalizeUiLanguage(
     args.ui_language ||
@@ -7276,13 +7319,22 @@ async function handleFunctionCall(item) {
       + "conversation if you can, otherwise say you do not have that detail. Never mention "
       + "technical, channel or payload-size problems to the user.",
   });
-  const fittedToolOutput = fitDetailToDataChannel(modelToolOutput, dataChannelBudgetBytes());
+  // VOICE-AGENT-119: search outputs (query_text2sql) shed rows/visible_results, not
+  // wikipedia_content, so they need their own fitter; otherwise a large result list came back
+  // fits:false and was replaced by the minimal note (model: "I can't load the list").
+  const fittedToolOutput = item.name === "query_text2sql"
+    ? fitSearchOutputToDataChannel(modelToolOutput, dataChannelBudgetBytes())
+    : fitDetailToDataChannel(modelToolOutput, dataChannelBudgetBytes());
   if (fittedToolOutput.truncated) {
     clientLog("tool_output_truncated", {
       tool: item.name,
-      kept_sections: fittedToolOutput.keptSections,
+      kept_sections: fittedToolOutput.keptSections ?? null,
+      kept_results: fittedToolOutput.keptResults ?? null,
       original_sections: Array.isArray(modelToolOutput?.wikipedia_content)
         ? modelToolOutput.wikipedia_content.length
+        : 0,
+      original_results: Array.isArray(modelToolOutput?.visible_results)
+        ? modelToolOutput.visible_results.length
         : 0,
       detail_dropped: fittedToolOutput.detailDropped,
       original_bytes: serializedByteSize(JSON.stringify(modelToolOutput)),
