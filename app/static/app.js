@@ -7410,6 +7410,12 @@ function handleStructuredCardFocusCall(item, args) {
   const enabled = structuredCardFocusEnabled();
   const focusedResult = visibleResults.find((result) => result.index === requestedIndex) || null;
   const validIndex = Boolean(focusedResult);
+  // VOICE-AGENT-124: a focus_result_card that lands AFTER the search grid is gone (the user
+  // navigated to a detail page, or the disambiguation was resolved by click) is stale, not a
+  // real failure — the model just fired a beat late. Treat "no search results on screen" as a
+  // benign no-op logged at info, and keep the genuine "bad index while results ARE visible" as
+  // the only error (client-20260725.log 19:18:09: focus(7) after a click navigation, ok:false).
+  const stale = enabled && !validIndex && visibleResults.length === 0;
   const output = {
     ok: Boolean(enabled && validIndex),
     enabled,
@@ -7423,6 +7429,9 @@ function handleStructuredCardFocusCall(item, args) {
     scheduleStructuredFocusHighlight(requestedIndex);
   } else if (!enabled) {
     output.error = "Structured card focus is disabled for this session.";
+  } else if (stale) {
+    output.stale = true;
+    output.note = "No search results are on screen anymore (the user has moved on); nothing to focus.";
   } else {
     output.error = "No visible result card exists for that index.";
   }
@@ -7433,9 +7442,10 @@ function handleStructuredCardFocusCall(item, args) {
     requestedIndex,
     enabled,
     ok: output.ok,
+    stale,
     result_count: cardCount,
     visible_result_count: visibleResults.length,
-  }, output.ok ? "info" : "error");
+  }, (output.ok || stale) ? "info" : "error");
   sendFunctionCallOutput(item.call_id, output);
   requestRealtimeResponseAfterToolOutput();
   scheduleToolResponseWatchdog(); // VOICE-AGENT-094: same anti-wedge guarantee.
