@@ -4932,6 +4932,88 @@ function addTitleSpokenCardMatches(matches, paddedText, cardCount) {
   }
 }
 
+// VOICE-AGENT-120: for a same-title name_ambiguity cluster (7 "The Odyssey", 2 "Steve
+// McQueen"…) the title matcher can't tell the cards apart. The model resolves them by
+// DISCRIMINATOR — year + director (movie), known_for / role / country (person) — which it
+// speaks aloud ("the 2016 one directed by Jérôme Salle", "the British director"). Map each
+// candidate to its on-screen card via its detail id, derive distinctive spoken tokens, and
+// feed them into the SAME audio-timed cue machinery as titles/ordinals, so the highlight
+// follows the voice instead of the model's front-loaded focus_result_card burst (which raced
+// ahead — see the removed prompt nudge).
+function disambiguationDiscriminatorEntries() {
+  const pending = pendingDisambiguation;
+  if (!pending || !Array.isArray(pending.candidates) || !pending.candidates.length) {
+    return [];
+  }
+  const indexByDetailId = new Map();
+  resultsContent
+    .querySelectorAll(".search-poster-card[data-result-index][data-result-detail-id]")
+    .forEach((card) => {
+      const idx = Number(card.dataset.resultIndex);
+      if (Number.isInteger(idx)) {
+        indexByDetailId.set(String(card.dataset.resultDetailId), idx);
+      }
+    });
+  if (!indexByDetailId.size) {
+    return [];
+  }
+  // A year shared by several candidates (e.g. two 2026 Odyssey films) can't disambiguate on
+  // its own, so a year token is only used when exactly one candidate carries it. Directors /
+  // known_for / role are candidate-specific and always usable.
+  const yearCounts = new Map();
+  for (const candidate of pending.candidates) {
+    const d = candidate?.discriminator || {};
+    const year = String(d.year || d.birth_year || "").trim();
+    if (year) {
+      yearCounts.set(year, (yearCounts.get(year) || 0) + 1);
+    }
+  }
+  const entries = [];
+  for (const candidate of pending.candidates) {
+    const index = indexByDetailId.get(String(candidate?.id));
+    if (!Number.isInteger(index)) {
+      continue;
+    }
+    const d = candidate?.discriminator || {};
+    const tokens = new Set();
+    const addToken = (value) => {
+      const norm = normalizeSpokenCardText(value);
+      if (norm && norm.length >= 4) {
+        tokens.add(norm);
+        const last = norm.split(" ").filter(Boolean).pop();
+        if (last && last.length >= 4 && last !== norm) {
+          tokens.add(last); // surname / last word, spoken on its own ("directed by Nolan")
+        }
+      }
+    };
+    (Array.isArray(d.directors) ? d.directors : []).forEach(addToken);
+    (Array.isArray(d.known_for) ? d.known_for : []).forEach(addToken);
+    if (d.role) addToken(d.role);
+    if (d.country_of_birth) addToken(d.country_of_birth);
+    const year = String(d.year || d.birth_year || "").trim();
+    if (year && yearCounts.get(year) === 1) {
+      tokens.add(year);
+    }
+    if (tokens.size) {
+      entries.push({ index, tokens: [...tokens] });
+    }
+  }
+  return entries;
+}
+
+function addDisambiguationDiscriminatorMatches(matches, paddedText, cardCount) {
+  for (const { index, tokens } of disambiguationDiscriminatorEntries()) {
+    if (index < 1 || index > cardCount) {
+      continue;
+    }
+    for (const token of tokens) {
+      findInPaddedText(paddedText, token, (position) => {
+        pushSpokenCardMatch(matches, index, position, token.length);
+      });
+    }
+  }
+}
+
 function spokenCardMatchesFromText(text) {
   const cardCount = resultCardCount();
   if (!cardCount) {
@@ -4975,6 +5057,7 @@ function spokenCardMatchesFromText(text) {
   const normalizedText = normalizeSpokenCardText(clean);
   const paddedText = ` ${normalizedText} `;
   addTitleSpokenCardMatches(matches, paddedText, cardCount);
+  addDisambiguationDiscriminatorMatches(matches, paddedText, cardCount);
 
   return matches
     .filter((match) => match.index >= 1 && match.index <= cardCount)
