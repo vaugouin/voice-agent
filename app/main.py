@@ -1411,7 +1411,17 @@ def realtime_session_config(
             "turn, call focus_result_card for each card at the moment you "
             "mention it, so the on-screen highlight follows the card you are "
             "naming; present the list conversationally without spoken position "
-            "numbers."
+            "numbers. "
+            # VOICE-AGENT-120: the model already focuses cards when presenting results and on
+            # selection, but NOT during a name_ambiguity 'which one?' question (measured
+            # 2026-07-25). Make that case explicit: the candidates ARE visible cards, so focus
+            # each as it is named while asking the user to choose.
+            "This applies equally when you ask the user to choose among several "
+            "same-title candidates (a disambiguation question): each candidate is "
+            "one of the visible result cards, so as you name each candidate by its "
+            "year, director, cast, or role, call focus_result_card for that "
+            "candidate's index at that moment, so the matching card lights up while "
+            "you list the options."
         )
         tools.append(focus_result_card_tool_definition())
     return {
