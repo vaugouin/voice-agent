@@ -391,8 +391,8 @@ const FRENCH_MARKERS = new Set([
   "est",
   "fais",
   "fait",
-  "film",
-  "films",
+  // VOICE-AGENT-125/-112: "film"/"films" removed — identical in EN, and "De Niro films" would
+  // score `de`+`films` = 2 → false "fr". French keeps montre/des/les/quels to compensate.
   "francais",
   "francaise",
   "il",
@@ -404,7 +404,7 @@ const FRENCH_MARKERS = new Set([
   "liste",
   "lister",
   "ma",
-  "me",
+  // VOICE-AGENT-125/-112: "me" removed — English "tell me…" (French uses "moi").
   "meilleur",
   "meilleure",
   "meilleures",
@@ -417,7 +417,7 @@ const FRENCH_MARKERS = new Set([
   "nous",
   "par",
   "peux",
-  "plus",
+  // VOICE-AGENT-125/-112: "plus" removed — streaming brands (Disney Plus, Apple TV Plus…).
   "pour",
   "pourquoi",
   "pouvez",
@@ -434,7 +434,8 @@ const FRENCH_MARKERS = new Set([
   "reponds",
   "sans",
   "serie",
-  "series",
+  // VOICE-AGENT-125/-112: "series" removed — the English word (folded French "séries"); "serie"
+  // stays (English never writes "serie"), so real French "une série" is still detected.
   "ses",
   "sont",
   "sorti",
