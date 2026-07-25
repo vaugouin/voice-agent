@@ -139,6 +139,18 @@ let spokenAudioHighlightCues = [];
 let spokenAudioHighlightCueKeys = new Set();
 let spokenAudioHighlightPlaying = false;
 let spokenAudioHighlightStartedAt = 0;
+// VOICE-AGENT-124: the Realtime model front-loads its focus_result_card calls (all cards in a
+// ~20 ms burst at the start of a response) instead of pacing them to its speech, so applying
+// each immediately made the highlight flash through every card up front. We defer a lone focus
+// briefly and, if a second call arrives within the burst window, treat the response as a
+// front-loaded enumeration and stop applying focus calls directly — the audio-timed cue path
+// (title + discriminator) then drives the highlight in sync with the voice. Reset each turn.
+let lastStructuredFocusAt = 0;
+let structuredFocusBurstActive = false;
+let pendingStructuredFocusIndex = null;
+let pendingStructuredFocusTimer = null;
+const STRUCTURED_FOCUS_BURST_WINDOW_MS = 800;
+const STRUCTURED_FOCUS_APPLY_DELAY_MS = 250;
 let structuredCardFocusActive = false;
 let spokenSubtitlesActive = false;
 let userTranscriptSubtitlesActive = false;
@@ -5107,6 +5119,15 @@ function resetSpokenAudioHighlightState({ clearHighlight = true } = {}) {
   spokenAudioHighlightCueKeys = new Set();
   spokenAudioHighlightPlaying = false;
   spokenAudioHighlightStartedAt = 0;
+  // VOICE-AGENT-124: a new highlight context (new turn / response / barge-in) starts fresh, so
+  // the next focus_result_card is judged on its own again (a lone selection applies immediately).
+  structuredFocusBurstActive = false;
+  lastStructuredFocusAt = 0;
+  pendingStructuredFocusIndex = null;
+  if (pendingStructuredFocusTimer) {
+    clearTimeout(pendingStructuredFocusTimer);
+    pendingStructuredFocusTimer = null;
+  }
   if (clearHighlight) {
     clearActiveSpokenCard();
   }
@@ -7241,6 +7262,40 @@ function requestRealtimeResponseAfterToolOutput() {
   pendingToolResponseRequest = true;
 }
 
+// VOICE-AGENT-124: apply a focus_result_card highlight only when it is an ISOLATED call
+// (selection, "focus card 3"); suppress a front-loaded BURST (enumeration) and let the
+// audio-timed cue path own the highlight so it follows the voice instead of flashing up front.
+function scheduleStructuredFocusHighlight(index) {
+  const now = Date.now();
+  const gap = now - lastStructuredFocusAt;
+  lastStructuredFocusAt = now;
+  if (gap < STRUCTURED_FOCUS_BURST_WINDOW_MS) {
+    // A second focus arrived on the heels of the first: this is a burst. Cancel the first call's
+    // pending single-apply and hand the whole response to the audio-timed path.
+    structuredFocusBurstActive = true;
+    if (pendingStructuredFocusTimer) {
+      clearTimeout(pendingStructuredFocusTimer);
+      pendingStructuredFocusTimer = null;
+    }
+    return;
+  }
+  if (structuredFocusBurstActive) {
+    return; // already in burst mode for this response; audio path drives the highlight
+  }
+  // Possibly a lone call. Defer briefly; a successor within the window flips us to burst mode
+  // (handled above) and cancels this apply.
+  if (pendingStructuredFocusTimer) {
+    clearTimeout(pendingStructuredFocusTimer);
+  }
+  pendingStructuredFocusIndex = index;
+  pendingStructuredFocusTimer = window.setTimeout(() => {
+    pendingStructuredFocusTimer = null;
+    if (!structuredFocusBurstActive) {
+      setActiveSpokenCard(pendingStructuredFocusIndex);
+    }
+  }, STRUCTURED_FOCUS_APPLY_DELAY_MS);
+}
+
 function handleStructuredCardFocusCall(item, args) {
   const requestedIndex = Number(args.index);
   const cardCount = resultCardCount();
@@ -7258,7 +7313,7 @@ function handleStructuredCardFocusCall(item, args) {
   };
 
   if (enabled && validIndex) {
-    setActiveSpokenCard(requestedIndex);
+    scheduleStructuredFocusHighlight(requestedIndex);
   } else if (!enabled) {
     output.error = "Structured card focus is disabled for this session.";
   } else {
