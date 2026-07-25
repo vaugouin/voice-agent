@@ -2638,7 +2638,11 @@ function cardSpecFromRecord(record) {
 
   if (record.ID_MOVIE || type === "movie") {
     const title = record.MOVIE_TITLE || record.CONTENT_TITLE || record.TITLE || `Movie ${record.ID_MOVIE || ""}`;
-    const year = yearFromDate(record.DAT_RELEASE);
+    // VOICE-AGENT-125: in a mixed movie+serie UNION the movie release date comes back as
+    // DAT_FIRST_AIR (the union aliases m.DAT_RELEASE AS DAT_FIRST_AIR to share the serie
+    // column), so a movie row from a mixed result has no DAT_RELEASE — fall back to it so the
+    // year subtitle isn't blank. Homogeneous movie rows keep DAT_RELEASE and are unchanged.
+    const year = yearFromDate(record.DAT_RELEASE || record.DAT_FIRST_AIR);
     const meta = [year, record.RUNTIME ? `${record.RUNTIME} min` : ""];
     return withRecordDetail({
       title,
