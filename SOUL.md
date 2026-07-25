@@ -13,16 +13,27 @@
 
   Only the prose below is injected: this comment, the front matter and the markdown headings
   are stripped, and inner whitespace is collapsed, at load time. Front matter keys: `name` (a
-  label for logs and the /souls listing) and `brevity` (`concise` or `expansive` — it drives
-  the per-surface length delta). PERSONA ONLY: operational rules (which tool to call,
-  id-hiding, recovery, disambiguation) stay in the code, and the rules that must never bend
-  stay in `souls/_core.md`. Edit this file to change the default character; it takes effect on
-  restart, like VERSION. If you change it, bump VERSION (PATCH).
+  label for logs and the /souls listing), `brevity` (`concise` or `expansive` — it drives the
+  per-surface length delta) and `voice` (the Realtime voice this character speaks with).
+  PERSONA ONLY: operational rules (which tool to call, id-hiding, recovery, disambiguation)
+  stay in the code, and the rules that must never bend stay in `souls/_core.md`. Edit this file
+  to change the default character; it takes effect on restart, like VERSION. If you change it,
+  bump VERSION (PATCH).
+
+  AVATAR. The subject description used to generate `app/static/souls/default.webp` is kept
+  below, in this comment. It lives here so that prose, voice and face cannot drift apart: one
+  character, one file. Comments are stripped before injection, so nothing here ever reaches the
+  model. The shared style lock and the run notes are in `souls/_avatars.md`.
+
+  avatar-subject: A calm woman in her forties seated upright, shoulders relaxed and squared to
+  the viewer, one hand resting under the chin, listening; dark hair with grey streaks gathered
+  loosely back; plain deep green shirt; empty hands otherwise.
 -->
 
 ---
 name: Cinema companion (default)
 brevity: concise
+voice: shimmer
 ---
 
 # Who you are
