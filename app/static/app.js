@@ -5404,7 +5404,6 @@ function splitSubtitleText(text) {
 const personaBadgeFadeOutDelayMs = 1000;
 let activePersona = null;
 let personaBadgeHideTimer = null;
-let personaBadgeSubtitleObserver = null;
 
 async function loadActivePersona() {
   if (!personaBadge || !personaBadgeImage) {
@@ -5437,31 +5436,6 @@ async function loadActivePersona() {
   }
 }
 
-// The caption is centred and capped at 860px, so on a narrow window it would sit under the
-// badge. Publishing its measured height lets the stylesheet lift the badge above it instead of
-// guessing a fixed offset for a band that grows with the number of caption lines.
-function syncSubtitleBandMetrics() {
-  if (!personaBadge || !subtitleOverlay) {
-    return;
-  }
-  const visible = !subtitleOverlay.hidden && Boolean(subtitleOverlay.textContent);
-  personaBadge.classList.toggle("hasSubtitle", visible);
-  if (visible) {
-    const height = Math.round(subtitleOverlay.getBoundingClientRect().height);
-    if (height > 0) {
-      document.documentElement.style.setProperty("--subtitleBandHeight", `${height}px`);
-    }
-  }
-}
-
-function watchSubtitleBand() {
-  if (!subtitleOverlay || personaBadgeSubtitleObserver || typeof ResizeObserver === "undefined") {
-    return;
-  }
-  personaBadgeSubtitleObserver = new ResizeObserver(syncSubtitleBandMetrics);
-  personaBadgeSubtitleObserver.observe(subtitleOverlay);
-}
-
 function showPersonaBadge() {
   if (!personaBadge || !activePersona) {
     return;
@@ -5470,7 +5444,10 @@ function showPersonaBadge() {
     clearTimeout(personaBadgeHideTimer);
     personaBadgeHideTimer = null;
   }
-  syncSubtitleBandMetrics();
+  // The badge owns the bottom-left corner; on a narrow window the stylesheet steps the caption
+  // up over it. One class, no measurement: the badge's height is a constant, the caption's is
+  // not (see the styles.css note on the iPhone regression).
+  document.body.classList.add("personaBadgeVisible");
   personaBadge.hidden = false;
   // Next frame, so the opacity/transform transition runs from the hidden state instead of
   // being skipped by the same-tick style recalculation.
@@ -5491,6 +5468,8 @@ function hidePersonaBadge({ immediate = false } = {}) {
   }
   const finish = () => {
     personaBadge.classList.remove("isVisible");
+    // Released with the fade, so the caption comes back down in step with the portrait.
+    document.body.classList.remove("personaBadgeVisible");
     // Keep the node around for the fade, then take it out of the layout.
     window.setTimeout(() => {
       if (!personaBadge.classList.contains("isVisible")) {
@@ -5526,12 +5505,10 @@ function showNextSubtitle() {
     if (!activeAudioResponseId) {
       hidePersonaBadge();
     }
-    syncSubtitleBandMetrics();
     return;
   }
   subtitleOverlay.textContent = text;
   subtitleOverlay.hidden = false;
-  syncSubtitleBandMetrics();
   const spokenCardIndex = spokenCardIndexFromText(text);
   if (spokenCardIndex) {
     applyFallbackSpokenCard(spokenCardIndex);
@@ -5795,7 +5772,6 @@ function clearSubtitleOutput() {
   // VOICE-AGENT-121: a stop or a new conversation must take the portrait down at once, not
   // after the courtesy delay, otherwise it lingers over an empty screen.
   hidePersonaBadge({ immediate: true });
-  syncSubtitleBandMetrics();
 }
 
 function isCurrentTextChatRequest(generation, abortController) {
@@ -9079,7 +9055,6 @@ window.addEventListener("unhandledrejection", (event) => {
 
 // VOICE-AGENT-121: resolve the active persona once per page load and preload its portrait, so
 // the badge is ready before the first word instead of decoding an image mid-answer.
-watchSubtitleBand();
 void loadActivePersona();
 
 // On cold load, play the launch title before handing off to the sample showcase.

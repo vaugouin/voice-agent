@@ -1106,11 +1106,13 @@ It is deliberately **not** tied to the subtitle setting: `ENABLE_SPOKEN_SUBTITLE
 Caption collision rule:
 
 - `#subtitleOverlay` is centered and capped at `min(860px, 100vw - 32px)`, so the bottom-left corner is only free on a wide window.
-- While a caption is visible, `syncSubtitleBandMetrics()` adds the `hasSubtitle` class and publishes the caption's measured height as the CSS variable `--subtitleBandHeight` (kept current by a `ResizeObserver`, since the band grows with the number of lines).
-- Below `1040px`, `.personaBadge.hasSubtitle` climbs to `calc(22px + var(--subtitleBandHeight) + 10px)`, above the caption instead of under it.
-- In landscape under 520px tall (iPhone landscape, ~932x430) the badge shrinks to 40px at `left/bottom: 12px`, and its lifted position uses the same measured height. The caption keeps its full width and is never pushed up.
+- **The badge never moves. The caption does.** While the badge is visible, `document.body` carries the `personaBadgeVisible` class, and below `1040px` the caption steps up to `bottom: 90px` (22px badge offset + 56px badge + 12px gap). In landscape under 520px tall it steps up to `bottom: 62px` (12 + 40 + 10).
+- The caption transitions its `bottom` over 260ms so the step reads as deliberate rather than as a jump.
+- On a window wider than `1040px` nothing moves: the caption keeps its baseline and sits to the right of the badge.
 
-Verified in a browser at 1280x900, 932x430 and 390x844: the disc is circular and in the bottom-left corner in all three, and it never intersects a two-line caption.
+Why this way round (regression fixed 2026-07-25): the first implementation did the opposite, lifting the **badge** above the caption using the caption's measured height (a `ResizeObserver` publishing `--subtitleBandHeight`). On an iPhone a ten-line caption is over 200px tall, so the portrait was thrown into the middle of the screen, floating over the poster. The badge's height is a constant the app controls; the caption's is not. Push the variable element over the fixed one, never the reverse.
+
+Verified in a browser at 1280x900, 932x430 and 393x852, with and without a ten-line caption: the disc stays circular in the bottom-left corner (56px at 22px, 40px at 12px in short landscape) in every case, and never intersects the caption.
 
 ## History Buttons
 

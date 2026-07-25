@@ -512,6 +512,9 @@ button:disabled {
   overflow-wrap: break-word;
   transform: translateX(-50%);
   pointer-events: none;
+  /* VOICE-AGENT-121: the caption steps up while the persona badge holds the bottom-left
+     corner, so the move reads as deliberate rather than as a jump. */
+  transition: bottom 260ms ease;
 }
 
 /* VOICE-AGENT-121: the persona portrait, bottom-left, on the same baseline as the caption.
@@ -549,11 +552,15 @@ button:disabled {
 }
 
 /* The caption is centred and capped at 860px, so the bottom-left corner is only free on a wide
-   window. Below that the two would overlap, so the badge climbs above the caption band, whose
-   measured height the script publishes as --subtitleBandHeight. */
+   window. Below that the two collide, and it is the CAPTION that moves, never the badge.
+   First attempt did the opposite (the badge climbed above the caption, using its measured
+   height) and it failed on an iPhone: a ten-line caption threw the portrait into the middle of
+   the screen, floating over the content. The badge's own height is a constant we control, the
+   caption's is not, so pushing the variable thing over the fixed one is the exact way round.
+   22px badge offset + 56px badge + 12px gap. */
 @media (max-width: 1039px) {
-  .personaBadge.hasSubtitle {
-    bottom: calc(22px + var(--subtitleBandHeight, 64px) + 10px);
+  body.personaBadgeVisible .subtitleOverlay {
+    bottom: 90px;
   }
 }
 
@@ -2086,8 +2093,7 @@ button.detailVisualCard:hover {
   }
 
   /* VOICE-AGENT-121: iPhone landscape (~932x430) has almost no vertical room and the bottom
-     band is already busy. Shrink the badge and tuck it into the corner so the caption keeps
-     its full width and is never pushed up. */
+     band is already busy. Shrink the badge and tuck it deeper into the corner. */
   .personaBadge {
     left: 12px;
     bottom: 12px;
@@ -2095,8 +2101,9 @@ button.detailVisualCard:hover {
     height: 40px;
   }
 
-  .personaBadge.hasSubtitle {
-    bottom: calc(12px + var(--subtitleBandHeight, 48px) + 8px);
+  /* 12px offset + 40px badge + 10px gap. */
+  body.personaBadgeVisible .subtitleOverlay {
+    bottom: 62px;
   }
 }
 
