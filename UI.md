@@ -1065,6 +1065,53 @@ Voice-mode enablement:
 - `/session` returns `X-User-Transcript-Subtitles`; the browser stores the value in `userTranscriptSubtitlesActive`.
 - New conversation and subtitle cleanup hide the lane and clear its active timer.
 
+## Persona Badge
+
+Elements: `#personaBadge`, `#personaBadgeImage`
+
+Purpose: shows the **portrait of the persona currently answering**, so the character the agent is playing is visible on screen instead of living only in the prompt (VOICE-AGENT-121). A persona switch is otherwise invisible, including on a screen recording.
+
+Visual:
+
+- **Fixed disc pinned to the window bottom-left** (`position: fixed; left: 22px; bottom: 22px`), on the same baseline as the assistant `#subtitleOverlay`, at `z-index: 1200`.
+- 56px circle (`border-radius: 50%`, `overflow: hidden`), portrait scaled with `object-fit: cover`.
+- Background `#f2efe6`, the portraits' own paper tone, so the disc never flashes dark while the image decodes.
+- Fades in and out over 260ms (`opacity` + `translateY`/`scale`); pointer events disabled.
+- It lives **outside `main`**, next to `#subtitleOverlay`: compact results mode hides the app header, and a badge placed inside it would disappear exactly when the conversation happens.
+- Decorative: `aria-hidden="true"` and an empty `alt`. It appears and disappears every turn, and the answer is already announced by the `aria-live` overlays.
+
+Default state:
+
+- Hidden, opacity 0, no `isVisible` class.
+- `#personaBadgeImage` has no `src` until the active persona resolves.
+
+Which persona is shown:
+
+- On page load, `loadActivePersona()` fetches `GET /souls` **once** and picks `?soul=<slug>` when present, otherwise the response's `default` field, which is the **server-resolved** persona (`AGENT_SOUL`), not the literal `default` slug.
+- Only that one portrait is fetched (`static/souls/<slug>.webp`, 33 to 42 KB), never the four.
+- A persona with no `avatar`, an unreachable `/souls`, or a failed fetch leaves the badge permanently hidden. It is decorative and must never cost a session.
+
+Visibility rules:
+
+| Trigger | Effect |
+|---|---|
+| `output_audio_buffer.started` | Badge fades in. |
+| `output_audio_buffer.stopped` | Badge fades out after a 1000ms hold, so a two-part answer does not blink it. |
+| Typed answer rendered (`showPersonaBadge()` before `showSubtitleText`) | Badge fades in; the typed path has no audio to hang it on. |
+| Assistant subtitle queue drains | Badge fades out, **only when no Realtime audio is playing** (`activeAudioResponseId` null); on the voice path the audio events own it. |
+| `clearSubtitleOutput()` (Stop, New conversation) | Badge hides immediately, without the courtesy delay. |
+
+It is deliberately **not** tied to the subtitle setting: `ENABLE_SPOKEN_SUBTITLES` defaults to false, so binding the badge to captions would leave it invisible in normal voice use.
+
+Caption collision rule:
+
+- `#subtitleOverlay` is centered and capped at `min(860px, 100vw - 32px)`, so the bottom-left corner is only free on a wide window.
+- While a caption is visible, `syncSubtitleBandMetrics()` adds the `hasSubtitle` class and publishes the caption's measured height as the CSS variable `--subtitleBandHeight` (kept current by a `ResizeObserver`, since the band grows with the number of lines).
+- Below `1040px`, `.personaBadge.hasSubtitle` climbs to `calc(22px + var(--subtitleBandHeight) + 10px)`, above the caption instead of under it.
+- In landscape under 520px tall (iPhone landscape, ~932x430) the badge shrinks to 40px at `left/bottom: 12px`, and its lifted position uses the same measured height. The caption keeps its full width and is never pushed up.
+
+Verified in a browser at 1280x900, 932x430 and 390x844: the disc is circular and in the bottom-left corner in all three, and it never intersects a two-line caption.
+
 ## History Buttons
 
 Elements:

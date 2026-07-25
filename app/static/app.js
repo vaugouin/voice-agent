@@ -36,6 +36,8 @@ const loadMoreButton = document.querySelector("#loadMoreButton");
 const resultsEnd = document.querySelector("#resultsEnd");
 const subtitleOverlay = document.querySelector("#subtitleOverlay");
 const userSubtitleOverlay = document.querySelector("#userSubtitleOverlay");
+const personaBadge = document.querySelector("#personaBadge");
+const personaBadgeImage = document.querySelector("#personaBadgeImage");
 const queryDetailsDock = document.createElement("div");
 queryDetailsDock.id = "queryDetailsDock";
 queryDetailsDock.className = "queryDetailsDock";
@@ -5391,6 +5393,121 @@ function splitSubtitleText(text) {
   return chunks;
 }
 
+// ---------------------------------------------------------------------------------------
+// VOICE-AGENT-121: persona badge. The character only existed in the prompt; nothing on screen
+// said who was talking, so a persona switch was invisible (including on camera). The portrait
+// is bound to the ASSISTANT'S AUDIO, not to the captions: spoken subtitles default to off
+// (ENABLE_SPOKEN_SUBTITLES=false), so tying the badge to them would leave it invisible in
+// normal use. Everything here is decorative and fails silently: a missing portrait, an
+// unreachable /souls, a persona with no avatar must never cost a session.
+// ---------------------------------------------------------------------------------------
+const personaBadgeFadeOutDelayMs = 1000;
+let activePersona = null;
+let personaBadgeHideTimer = null;
+let personaBadgeSubtitleObserver = null;
+
+async function loadActivePersona() {
+  if (!personaBadge || !personaBadgeImage) {
+    return;
+  }
+  try {
+    const response = await fetch(appUrl("souls"));
+    if (!response.ok) {
+      return;
+    }
+    const body = await response.json();
+    const souls = Array.isArray(body.souls) ? body.souls : [];
+    // Without ?soul= the active persona is the server's AGENT_SOUL, which the browser cannot
+    // guess: `body.default` carries the RESOLVED slug, not the literal "default"
+    // (VOICE-AGENT-118). Deducing "no parameter, therefore default" would show the wrong face
+    // on any deployment that sets AGENT_SOUL.
+    const wanted = soulPreference() || body.default;
+    const match =
+      souls.find((soul) => soul.slug === wanted) ||
+      souls.find((soul) => soul.slug === body.default);
+    if (!match || !match.avatar) {
+      return;
+    }
+    activePersona = match;
+    // Only the active portrait is fetched, never the four.
+    personaBadgeImage.src = appUrl(match.avatar);
+    clientLog("persona_badge_ready", { soul: match.slug, voice: match.voice || "" });
+  } catch (error) {
+    log("persona badge unavailable", error.message);
+  }
+}
+
+// The caption is centred and capped at 860px, so on a narrow window it would sit under the
+// badge. Publishing its measured height lets the stylesheet lift the badge above it instead of
+// guessing a fixed offset for a band that grows with the number of caption lines.
+function syncSubtitleBandMetrics() {
+  if (!personaBadge || !subtitleOverlay) {
+    return;
+  }
+  const visible = !subtitleOverlay.hidden && Boolean(subtitleOverlay.textContent);
+  personaBadge.classList.toggle("hasSubtitle", visible);
+  if (visible) {
+    const height = Math.round(subtitleOverlay.getBoundingClientRect().height);
+    if (height > 0) {
+      document.documentElement.style.setProperty("--subtitleBandHeight", `${height}px`);
+    }
+  }
+}
+
+function watchSubtitleBand() {
+  if (!subtitleOverlay || personaBadgeSubtitleObserver || typeof ResizeObserver === "undefined") {
+    return;
+  }
+  personaBadgeSubtitleObserver = new ResizeObserver(syncSubtitleBandMetrics);
+  personaBadgeSubtitleObserver.observe(subtitleOverlay);
+}
+
+function showPersonaBadge() {
+  if (!personaBadge || !activePersona) {
+    return;
+  }
+  if (personaBadgeHideTimer) {
+    clearTimeout(personaBadgeHideTimer);
+    personaBadgeHideTimer = null;
+  }
+  syncSubtitleBandMetrics();
+  personaBadge.hidden = false;
+  // Next frame, so the opacity/transform transition runs from the hidden state instead of
+  // being skipped by the same-tick style recalculation.
+  window.requestAnimationFrame(() => {
+    if (!personaBadge.hidden) {
+      personaBadge.classList.add("isVisible");
+    }
+  });
+}
+
+function hidePersonaBadge({ immediate = false } = {}) {
+  if (!personaBadge) {
+    return;
+  }
+  if (personaBadgeHideTimer) {
+    clearTimeout(personaBadgeHideTimer);
+    personaBadgeHideTimer = null;
+  }
+  const finish = () => {
+    personaBadge.classList.remove("isVisible");
+    // Keep the node around for the fade, then take it out of the layout.
+    window.setTimeout(() => {
+      if (!personaBadge.classList.contains("isVisible")) {
+        personaBadge.hidden = true;
+      }
+    }, 300);
+  };
+  if (immediate) {
+    finish();
+    return;
+  }
+  personaBadgeHideTimer = window.setTimeout(() => {
+    personaBadgeHideTimer = null;
+    finish();
+  }, personaBadgeFadeOutDelayMs);
+}
+
 function showNextSubtitle() {
   if (!subtitleOverlay) {
     return;
@@ -5404,10 +5521,17 @@ function showNextSubtitle() {
     subtitleOverlay.hidden = true;
     subtitleOverlay.textContent = "";
     clearActiveSpokenCard();
+    // VOICE-AGENT-121: the typed answer finished rendering. On the voice path the audio events
+    // own the badge, so only release it when nothing is playing.
+    if (!activeAudioResponseId) {
+      hidePersonaBadge();
+    }
+    syncSubtitleBandMetrics();
     return;
   }
   subtitleOverlay.textContent = text;
   subtitleOverlay.hidden = false;
+  syncSubtitleBandMetrics();
   const spokenCardIndex = spokenCardIndexFromText(text);
   if (spokenCardIndex) {
     applyFallbackSpokenCard(spokenCardIndex);
@@ -5668,6 +5792,10 @@ function clearSubtitleOutput() {
     subtitleOverlay.textContent = "";
   }
   clearActiveSpokenCard();
+  // VOICE-AGENT-121: a stop or a new conversation must take the portrait down at once, not
+  // after the courtesy delay, otherwise it lingers over an empty screen.
+  hidePersonaBadge({ immediate: true });
+  syncSubtitleBandMetrics();
 }
 
 function isCurrentTextChatRequest(generation, abortController) {
@@ -5879,6 +6007,9 @@ async function sendTextChatMessage(text, { source = "typed" } = {}) {
     const responseText = sanitizeAssistantFeedbackText(output.text || "");
     if (responseText) {
       addRetainedContext({ type: "assistant", text: responseText });
+      // VOICE-AGENT-121: typed answers have no audio to hang the badge on, so it follows the
+      // caption instead, from the first chunk to the moment the queue drains.
+      showPersonaBadge();
       showSubtitleText(responseText);
     }
     setStatus("Text response", "live");
@@ -7677,6 +7808,8 @@ async function handleServerEvent(event) {
     activeAudioResponseId = event.response_id || activeResponseId;
     startSpokenAudioHighlightPlayback();
     startRealtimeSpokenSubtitlePlayback();
+    // VOICE-AGENT-121: the character shows itself exactly while it speaks.
+    showPersonaBadge();
     syncMicrophone("audio playback started");
   }
 
@@ -7686,6 +7819,8 @@ async function handleServerEvent(event) {
     }
     resetSpokenAudioHighlightState();
     stopRealtimeSpokenSubtitlePlayback();
+    // Held for a beat after the last word, so a two-part answer does not blink the portrait.
+    hidePersonaBadge();
     syncMicrophone("audio playback stopped");
   }
 
@@ -8941,6 +9076,11 @@ window.addEventListener("error", (event) => {
 window.addEventListener("unhandledrejection", (event) => {
   clientLog("unhandled_rejection", { reason: String(event.reason) }, "error");
 });
+
+// VOICE-AGENT-121: resolve the active persona once per page load and preload its portrait, so
+// the badge is ready before the first word instead of decoding an image mid-answer.
+watchSubtitleBand();
+void loadActivePersona();
 
 // On cold load, play the launch title before handing off to the sample showcase.
 runLaunchSplash().catch((error) => {

@@ -113,6 +113,14 @@
       </section>
     </main>
     <div id="subtitleOverlay" class="subtitleOverlay" aria-live="polite" hidden></div>
+    <!-- VOICE-AGENT-121: the active persona's portrait, shown while the agent speaks. It sits
+         OUTSIDE <main> like the subtitle overlay above, because the compact results mode hides
+         the app header and would take the badge with it, exactly when the conversation happens.
+         Decorative and aria-hidden on purpose: it appears and disappears at every turn, and the
+         answer itself is already announced by the aria-live overlays. -->
+    <div id="personaBadge" class="personaBadge" hidden aria-hidden="true">
+      <img id="personaBadgeImage" alt="" decoding="async" />
+    </div>
     <div id="appMenuBackdrop" class="appMenuBackdrop" hidden></div>
     <aside id="appMenuDrawer" class="appMenuDrawer" aria-labelledby="appMenuTitle" aria-modal="true" role="dialog" tabindex="-1" hidden>
       <div class="appMenuHeader">

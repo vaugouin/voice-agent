@@ -514,6 +514,49 @@ button:disabled {
   pointer-events: none;
 }
 
+/* VOICE-AGENT-121: the persona portrait, bottom-left, on the same baseline as the caption.
+   Sized at 56px because that is what the portraits were composed for: at that scale the
+   dominant colour, the silhouette and the held object identify the character, not the face
+   (see souls/_avatars.md). The disc carries the portraits' own paper tone so it never flashes
+   as a black hole while the image decodes. */
+.personaBadge {
+  position: fixed;
+  left: 22px;
+  bottom: 22px;
+  z-index: 1200;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  overflow: hidden;
+  background: #f2efe6;
+  box-shadow: 0 14px 34px rgb(0 0 0 / 42%);
+  opacity: 0;
+  transform: translateY(8px) scale(0.94);
+  transition: opacity 260ms ease, transform 260ms ease;
+  pointer-events: none;
+}
+
+.personaBadge.isVisible {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+}
+
+.personaBadge img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* The caption is centred and capped at 860px, so the bottom-left corner is only free on a wide
+   window. Below that the two would overlap, so the badge climbs above the caption band, whose
+   measured height the script publishes as --subtitleBandHeight. */
+@media (max-width: 1039px) {
+  .personaBadge.hasSubtitle {
+    bottom: calc(22px + var(--subtitleBandHeight, 64px) + 10px);
+  }
+}
+
 .userSubtitleOverlay {
   /* VOICE-AGENT-079: float pinned to the window top (mirrors .subtitleOverlay at the
      bottom) so the spoken-question transcript stays on screen even when the page is
@@ -2040,6 +2083,20 @@ button.detailVisualCard:hover {
 
   .launchSplashName {
     font-size: 2.65rem;
+  }
+
+  /* VOICE-AGENT-121: iPhone landscape (~932x430) has almost no vertical room and the bottom
+     band is already busy. Shrink the badge and tuck it into the corner so the caption keeps
+     its full width and is never pushed up. */
+  .personaBadge {
+    left: 12px;
+    bottom: 12px;
+    width: 40px;
+    height: 40px;
+  }
+
+  .personaBadge.hasSubtitle {
+    bottom: calc(12px + var(--subtitleBandHeight, 48px) + 8px);
   }
 }
 
