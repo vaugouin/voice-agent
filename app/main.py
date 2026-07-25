@@ -2529,6 +2529,10 @@ HARNESS_LOG_EVENTS = frozenset({
     # disambiguation highlight impossible to diagnose from a log.
     "structured_card_focus",
     "structured_card_focus_session",
+    # VOICE-AGENT-120: the same-title disambiguation highlight is driven client-side on the
+    # audio-transcript timeline (no tool call), so this is the only trace that it fired — one
+    # entry per candidate card as its discriminator (year/director/known_for) is spoken.
+    "disambiguation_highlight",
 })
 
 

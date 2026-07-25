@@ -4756,7 +4756,7 @@ function usefulSpokenTitleKey(key) {
   return key.split(" ").some((part) => part.length >= 3);
 }
 
-function pushSpokenCardMatch(matches, index, position, keyLength = 0) {
+function pushSpokenCardMatch(matches, index, position, keyLength = 0, meta = null) {
   if (!Number.isInteger(index) || index < 1 || position < 0) {
     return;
   }
@@ -4766,9 +4766,12 @@ function pushSpokenCardMatch(matches, index, position, keyLength = 0) {
   if (existing) {
     existing.position = Math.min(existing.position, position);
     existing.keyLength = Math.max(existing.keyLength, keyLength);
+    if (meta && !existing.source) {
+      Object.assign(existing, meta);
+    }
     return;
   }
-  matches.push({ index, position, keyLength });
+  matches.push({ index, position, keyLength, ...(meta || {}) });
 }
 
 function spokenCardTitleKeys(card) {
@@ -5008,7 +5011,7 @@ function addDisambiguationDiscriminatorMatches(matches, paddedText, cardCount) {
     }
     for (const token of tokens) {
       findInPaddedText(paddedText, token, (position) => {
-        pushSpokenCardMatch(matches, index, position, token.length);
+        pushSpokenCardMatch(matches, index, position, token.length, { source: "disambiguation", token });
       });
     }
   }
@@ -5139,6 +5142,16 @@ function enqueueSpokenAudioHighlightCues(text) {
       index: match.index,
       position: match.position,
     });
+    // VOICE-AGENT-120: trace the disambiguation highlight. The highlight itself is a client-only
+    // DOM change (no tool call), so without this the log can't confirm it fired. Logged once per
+    // new cue (the cue-key dedup guarantees no spam), with the discriminator token that matched.
+    if (match.source === "disambiguation") {
+      clientLog("disambiguation_highlight", {
+        index: match.index,
+        token: match.token || "",
+        entity: pendingDisambiguation?.entity || "",
+      });
+    }
   }
   spokenAudioHighlightCues.sort((a, b) => a.position - b.position || a.index - b.index);
   scheduleNextSpokenAudioHighlightCue();
