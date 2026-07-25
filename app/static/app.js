@@ -2832,10 +2832,16 @@ function detailRequestFromRecord(record) {
     return null;
   }
   if (record.ID_MOVIE || type === "movie") {
-    return record.ID_MOVIE ? { toolName: "get_movie_detail", id: record.ID_MOVIE } : null;
+    // VOICE-AGENT-125: a mixed movie+serie search is a UNION that aliases both ids to a generic
+    // ID_CONTENT (with CONTENT_TYPE), so ID_MOVIE is absent on those rows. Fall back to
+    // ID_CONTENT, but ONLY when CONTENT_TYPE says "movie" — the same integer can be a movie id
+    // OR a serie id, so the id is only meaningful paired with its type.
+    const id = record.ID_MOVIE ?? (type === "movie" ? record.ID_CONTENT : undefined);
+    return id !== null && id !== undefined && id !== "" ? { toolName: "get_movie_detail", id } : null;
   }
   if (record.ID_SERIE || type === "serie") {
-    return record.ID_SERIE ? { toolName: "get_series_detail", id: record.ID_SERIE } : null;
+    const id = record.ID_SERIE ?? (type === "serie" ? record.ID_CONTENT : undefined);
+    return id !== null && id !== undefined && id !== "" ? { toolName: "get_series_detail", id } : null;
   }
   if (record.ID_PERSON) {
     return { toolName: "get_person_detail", id: record.ID_PERSON };
