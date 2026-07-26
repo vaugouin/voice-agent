@@ -139,7 +139,7 @@ Closing hides the drawer and backdrop, removes `body.appMenuOpen`, sets `#appMen
 
 Keyboard behavior:
 
-- `?` (from anywhere except while typing in an input/textarea, and not during the launch splash) opens the App Menu directly on the **About** screen via `openAboutScreen()` (VOICE-AGENT-080). It is ignored when Ctrl/Cmd/Alt is held, and `preventDefault()` stops the browser quick-find. `Escape` closes it — symmetric open/close.
+- `?` opens the App Menu directly on the **About** screen via `openAboutScreen()` (VOICE-AGENT-080). It is ignored when Ctrl/Cmd/Alt is held, and `preventDefault()` stops the browser quick-find. `Escape` closes it — symmetric open/close. Since VOICE-AGENT-138 it shares the single `keyboardOwnedElsewhere()` guard with the other shortcuts (ignored while typing, during the launch splash, and behind the video modal), so it no longer diverges from them; a fullscreen image does not block it, and never blocked it.
 - `Tab` and `Shift+Tab` stay inside the open drawer.
 - `Escape` closes the drawer before it can reach the fullscreen image viewer handler.
 - The drawer has `role="dialog"`, `aria-modal="true"`, and `aria-labelledby="appMenuTitle"`.
@@ -564,7 +564,7 @@ Sequence:
 
 Releasing the page (VOICE-AGENT-099): `body.launchSplashOpen` puts `overflow: hidden` on `<body>`, and `hideLaunchSplash()` is the only thing that removes it, so a splash that fails to finish locks the page's vertical scrolling for the whole session — while horizontal rails and clicks keep working (`.launchSplash.isLeaving` is `pointer-events: none`, so the splash looks gone but keeps its lock). `completeLaunchSplash()` therefore calls `hideLaunchSplash()` from a `finally`, and races the handoff against `launchSplashHandoffTimeoutMs` (`launchSplashHandoffMs + 1500`, ~3.4× the nominal duration). The two guards cover different failures: `finally` survives a throw, the race survives a **hang** — which is the real risk, since a throw is already absorbed (`finishAnimation` does `.catch(() => {})` and the fly-title has its own `finally`). The `launch_splash_dismissed` log event reports `handoff`: `"animation"` (normal), `"timeout"` (the animation hung — the page would have stayed locked before this fix), `"skipped"`, or `"error"`.
 
-The same lock family applies to `body.imageViewerOpen`, whose only release path was the Escape key — absent on touch devices. Wiping the results content destroys a fullscreen portrait viewer and would strand the lock, so every wipe goes through `clearResultsContent()`, which re-derives the class from the DOM (`.personPortraitViewer.isFullscreen`) and cannot let it outlive its viewer. `body.appMenuOpen` is added/removed synchronously and needs no such guard.
+The same lock family applies to `body.imageViewerOpen`, whose only keyboard release paths are `Escape` and, since VOICE-AGENT-138, `Backspace` — both absent on touch devices, where the release is a tap on the image. Wiping the results content destroys a fullscreen portrait viewer and would strand the lock, so every wipe goes through `clearResultsContent()`, which re-derives the class from the DOM (`.personPortraitViewer.isFullscreen`) and cannot let it outlive its viewer. `body.appMenuOpen` is added/removed synchronously and needs no such guard.
 
 Skip behavior:
 
@@ -1254,6 +1254,8 @@ Default behavior:
 - Fullscreen mode adds `.isFullscreen`.
 - `body.imageViewerOpen` disables page scrolling.
 - Pressing `Escape` closes fullscreen image viewing.
+- Pressing `Backspace` also closes it (VOICE-AGENT-138): with an image fullscreen, "back" means leaving the image, not stepping through the result history buried underneath it. `Shift+Backspace` behaves the same way here.
+- **The single-key shortcuts stay live while an image is fullscreen** (VOICE-AGENT-138). The viewer is `position: fixed; inset: 0; z-index: 1000` over an opaque backdrop, so it covers the whole `.controls` bar: the buttons are unreachable by pointer, and blocking the keys as well left no way at all to mute the mic or stop a running session, while the subtitles (`z-index: 1200`) kept showing the conversation going on. `M`, `T`, `L` and `N` therefore keep working, and the shortcut toast (`z-index: 1300`) renders above the viewer so the feedback is visible. `triggerControl()` needs no change: it only checks `hidden`/`disabled`, and the controls are covered, not hidden.
 
 ### Detail Media Navigation
 
@@ -1295,17 +1297,21 @@ Single-key shortcuts (VOICE-AGENT-087) drive the main controls from a physical k
 | `M` | Microphone toggle | In a session: mute / unmute. Idle: starts / sends idle dictation (same as clicking the mic button). |
 | `L` | Look toggle | Toggles the Look state. |
 | `N` | New conversation | Clears the UI and retained context (only while the New conversation button is visible). |
-| `⌫` Backspace | History back | Steps back through the result history (browser-style). |
-| `⇧⌫` Shift+Backspace | History forward | Steps forward through the result history. |
+| `⌫` Backspace | History back | Steps back through the result history (browser-style). With an image fullscreen it closes the viewer instead (VOICE-AGENT-138). |
+| `⇧⌫` Shift+Backspace | History forward | Steps forward through the result history. Also closes a fullscreen image viewer. |
 | `Enter` | Submit question | Sends the typed question (existing behavior; badged for discoverability). |
 | `?` | About | Opens the About screen (existing behavior). |
 | `Esc` | Close | Closes the menu, image viewer, video modal, or splash (existing behavior). |
 
-Guards (a keypress is ignored when any hold):
+Guards (a keypress is ignored when any hold). Since VOICE-AGENT-138 the first three live in **one** predicate, `keyboardOwnedElsewhere(event)`, shared by both `keydown` listeners (the `Escape`/`?` one and the single-key one) so they can no longer drift apart:
 
-- The focus is a text field (`INPUT`, `TEXTAREA`, or `contentEditable`), so typing is never intercepted — including Backspace inside the question box.
-- The launch splash is active, the burger menu is open, or a modal overlay owns the screen (`body.imageViewerOpen` or a `.videoModalOverlay`). `Esc` still closes these.
+- The focus is a text field (`INPUT`, `TEXTAREA`, or `contentEditable`), so typing is never intercepted — including Backspace inside the question box. **Note:** `submitQuestion()` does not blur the field, so after sending a typed question the focus stays there and a single-key shortcut still types a letter into the box until the user clicks elsewhere.
+- The launch splash is active.
+- A `.videoModalOverlay` is open: the YouTube iframe holds the focus and swallows keys anyway, so the app does not act behind it.
+- The burger menu is open (single-key shortcuts only): it is a real modal with a focus trap and its own `Tab`/`Escape` handler. `?` is not blocked by it.
 - `Ctrl`, `Meta`, or `Alt` is held (those combinations belong to the OS/browser). `Shift` is honored only for `Shift+Backspace`.
+
+**Not a guard: a fullscreen image.** `body.imageViewerOpen` used to sit in the blocked list; it was removed by VOICE-AGENT-138 because the viewer owns the screen, not the keyboard, and it hides the very controls the shortcuts replace. See *Detail Media Fullscreen* above.
 
 Visual affordances:
 

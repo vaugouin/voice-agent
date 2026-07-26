@@ -3022,19 +3022,23 @@ function toggleFullscreenImageViewer(viewer) {
 }
 
 // VOICE-AGENT-099: `body.imageViewerOpen` puts `overflow: hidden` on <body>, and it is only
-// released by closing the viewer — whose sole caller is the Escape key handler, a key a touch
-// device does not have. Wiping the results content destroys any fullscreen portrait viewer
-// along with it and STRANDS the lock: the page then never scrolls again for the whole
+// released by closing the viewer — whose callers are the Escape and Backspace key handlers
+// (VOICE-AGENT-138 added the second), keys a touch device does not have. Wiping the results
+// content destroys any fullscreen portrait viewer along with it and STRANDS the lock: the page then never scrolls again for the whole
 // session. That matches the iPad/iPhone report exactly (vertical scrolling dead on a film
 // detail, while its horizontal rails and every click kept working — the lock only blocks page
 // scrolling). Every content wipe goes through here, so the lock is re-derived from the DOM
 // and can never outlive the viewer that owns it.
 function clearResultsContent() {
   resultsContent.replaceChildren();
-  document.body.classList.toggle(
-    "imageViewerOpen",
-    Boolean(document.querySelector(".personPortraitViewer.isFullscreen"))
-  );
+  document.body.classList.toggle("imageViewerOpen", isFullscreenImageViewerOpen());
+}
+
+// VOICE-AGENT-138: single reading of "an image currently owns the screen", used by the
+// results wipe above and by the Backspace shortcut (which closes the viewer instead of
+// navigating the page hidden underneath it).
+function isFullscreenImageViewerOpen() {
+  return Boolean(document.querySelector(".personPortraitViewer.isFullscreen"));
 }
 
 function closeFullscreenImageViewer() {
@@ -8769,6 +8773,30 @@ updateAppMenuToggles();
 loadMoreButton.addEventListener("click", () => loadNextPage({ isAuto: false }));
 window.addEventListener("scroll", maybeLoadNextPage, { passive: true });
 window.addEventListener("resize", maybeLoadNextPage, { passive: true });
+// VOICE-AGENT-138: ONE predicate for "the keyboard is not ours right now", shared by BOTH
+// keydown listeners below (Escape + "?" here, the single-key controls further down). They
+// used to carry different guard lists, so with an image fullscreen "?" opened the About page
+// while "M" did nothing — same keyboard, same instant, two behaviours.
+// A fullscreen image viewer is deliberately NOT in this list: it owns the SCREEN, not the
+// keyboard. It is `position: fixed; inset: 0; z-index: 1000` over an opaque backdrop, so it
+// also covers the whole `.controls` bar — blocking the keys on top of that left no way at all
+// to mute the mic or stop a running session (the subtitles at z-index 1200 stay visible, so
+// the conversation visibly goes on). Escape still closes it, and the shortcut toast
+// (z-index 1300) renders above it, so the feedback is visible where it matters.
+function isTypingTarget(target) {
+  return (
+    target instanceof HTMLElement &&
+    (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
+  );
+}
+function keyboardOwnedElsewhere(event) {
+  return (
+    isTypingTarget(event.target) ||
+    isLaunchSplashActive() ||
+    // The YouTube iframe has focus and swallows keys anyway; don't act behind it.
+    Boolean(document.querySelector(".videoModalOverlay"))
+  );
+}
 window.addEventListener("keydown", (event) => {
   if (event.key === "Escape") {
     if (isLaunchSplashActive()) {
@@ -8783,14 +8811,11 @@ window.addEventListener("keydown", (event) => {
     closeFullscreenImageViewer();
     return;
   }
-  // VOICE-AGENT-080: "?" opens the About page (credits/attribution). Ignored while typing
-  // in the question box (or any input) and during the launch splash; preventDefault stops
+  // VOICE-AGENT-080: "?" opens the About page (credits/attribution). preventDefault stops
   // Firefox's quick-find from hijacking the key. Esc already closes the menu (symmetric).
+  // VOICE-AGENT-138: guarded by the shared predicate instead of its own inline copy.
   if (event.key === "?" && !event.ctrlKey && !event.metaKey && !event.altKey) {
-    const target = event.target;
-    const isTyping = target instanceof HTMLElement &&
-      (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable);
-    if (isTyping || isLaunchSplashActive()) {
+    if (keyboardOwnedElsewhere(event)) {
       return;
     }
     event.preventDefault();
@@ -8830,14 +8855,11 @@ function showToast(label, icon = "") {
 // VOICE-AGENT-087: single-key shortcuts for the main controls. Each key maps to the
 // existing button and reuses its click handler, so all disabled/hidden guards and
 // state updates stay in one place; a shortcut is a no-op when its button is hidden
-// or disabled. Ignored while typing, during the launch splash, and while the burger
-// menu is open, and it never fires with Ctrl/Meta/Alt held (those are OS/browser).
-function isTypingTarget(target) {
-  return (
-    target instanceof HTMLElement &&
-    (target.tagName === "INPUT" || target.tagName === "TEXTAREA" || target.isContentEditable)
-  );
-}
+// or disabled. Ignored while typing, during the launch splash, behind the video modal
+// and while the burger menu is open, and it never fires with Ctrl/Meta/Alt held (those
+// are OS/browser). A fullscreen image no longer blocks anything (VOICE-AGENT-138):
+// `triggerControl` only checks `hidden`/`disabled`, and the controls are merely COVERED
+// by the viewer, so the buttons still respond.
 function triggerControl(button) {
   if (button && !button.hidden && !button.disabled) {
     button.click();
@@ -8849,19 +8871,23 @@ window.addEventListener("keydown", (event) => {
   if (event.ctrlKey || event.metaKey || event.altKey) {
     return;
   }
-  if (isTypingTarget(event.target) || isLaunchSplashActive()) {
+  if (keyboardOwnedElsewhere(event)) {
     return;
   }
+  // The burger drawer is a real modal with a focus trap and its own Tab/Escape handler.
   if (appMenuDrawer && !appMenuDrawer.hidden) {
-    return;
-  }
-  // Don't hijack keys while a modal overlay owns the screen (Escape closes those).
-  if (document.body.classList.contains("imageViewerOpen") || document.querySelector(".videoModalOverlay")) {
     return;
   }
 
   // Backspace / Shift+Backspace = history back / forward (browser-style navigation).
   if (event.key === "Backspace") {
+    // VOICE-AGENT-138: with an image fullscreen, "back" means leaving the image, not
+    // navigating the page buried underneath it. Same one-step-back gesture as Escape.
+    if (isFullscreenImageViewerOpen()) {
+      event.preventDefault();
+      closeFullscreenImageViewer();
+      return;
+    }
     const target = event.shiftKey ? historyForwardButton : historyBackButton;
     if (triggerControl(target)) {
       event.preventDefault();
