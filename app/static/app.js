@@ -2054,6 +2054,37 @@ function formatCount(value) {
   return new Intl.NumberFormat("en-US").format(Math.round(number));
 }
 
+// VOICE-AGENT-139. Compact vote count for tight labels: 43360 -> "43k", 1450 -> "1.4k",
+// 850 -> "850". Empty for missing / non-positive, so the caller drops the whole mention.
+function formatVotesCompact(value) {
+  const number = Number(value);
+  if (!Number.isFinite(number) || number <= 0) {
+    return "";
+  }
+  if (number < 1000) {
+    return String(Math.round(number));
+  }
+  const thousands = number / 1000;
+  return thousands < 10 ? `${thousands.toFixed(1)}k` : `${Math.round(thousands)}k`;
+}
+
+// VOICE-AGENT-139. IMDb rating of an episode, with its vote count when known: "7.9 (14k)".
+// Returns "" when there is no rating, which is the correct answer for an episode that has
+// not aired yet: the caller then shows nothing at all, never a "0" or a dash.
+// Deliberately reads IMDB_RATING only, never falling back to IMDB_RATING_WEIGHTED: the
+// bayesian pull toward the global mean would turn a 9.3 backed by 43000 voters into a 7.x
+// and flatten exactly the signal worth showing. Deliberately ignores the TMDb VOTE_AVERAGE
+// too: the two sources are not comparable (dozens of TMDb voters against tens of thousands
+// on IMDb) and must never be blended into one figure.
+function formatImdbRating(record) {
+  const rating = formatRating(record && record.IMDB_RATING);
+  if (!rating) {
+    return "";
+  }
+  const votes = formatVotesCompact(record && record.IMDB_VOTES);
+  return votes ? `${rating} (${votes})` : rating;
+}
+
 // TMDb EPISODE_TYPE prettified ("mid_season" -> "Mid Season"), but blank for the
 // unremarkable "standard" so the tile only appears for notable episodes (premiere,
 // finale, mid-season). VOICE-AGENT-091.
@@ -2857,12 +2888,22 @@ function episodeRailItems(items, idSerie, seasonNumber) {
       const episodeLabel = Number.isFinite(episodeNumber) ? `Episode ${episodeNumber}` : "Episode";
       const title = firstValue(item.TITLE, episodeLabel);
       const airDate = firstValue(formatDate(item.DAT_AIR), item.AIR_YEAR);
+      // VOICE-AGENT-139: the IMDb rating joins the subtitle, and only when it exists.
+      // uniqueNonEmpty() drops the empty string, so an episode that has not aired shows
+      // "Episode 6 / July 26, 2026" with nothing where the rating would be. That hole is
+      // the point: the record is already there, the verdict is not.
+      const imdbRating = formatImdbRating(item);
       return {
         ...item,
         ID_SERIE: item.ID_SERIE || idSerie,
         SEASON_NUMBER: item.SEASON_NUMBER ?? seasonNumber,
         EPISODE_TITLE: title,
-        EPISODE_SUBTITLE: uniqueNonEmpty([episodeLabel, airDate, formatRuntime(item.RUNTIME)]).join(" / "),
+        EPISODE_SUBTITLE: uniqueNonEmpty([
+          episodeLabel,
+          airDate,
+          formatRuntime(item.RUNTIME),
+          imdbRating ? `IMDb ${imdbRating}` : "",
+        ]).join(" / "),
       };
     });
 }
@@ -3931,8 +3972,13 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     appendMetric(metrics, "Episode", episodeNumber);
     appendMetric(metrics, "Aired", firstValue(formatDate(record.DAT_AIR), record.AIR_YEAR));
     appendMetric(metrics, "Duration", formatRuntime(record.RUNTIME));
-    appendMetric(metrics, "Rating", formatRating(record.VOTE_AVERAGE));
-    appendMetric(metrics, "Votes", formatCount(record.VOTE_COUNT));         // VOICE-AGENT-091
+    // VOICE-AGENT-139: two rating sources on the same panel, so both are labelled by
+    // source. An unlabelled "Rating" next to an IMDb figure would read as one blended
+    // verdict, when a TMDb episode score rests on dozens of voters and the IMDb one on
+    // tens of thousands. The IMDb tile disappears entirely when there is no rating.
+    appendMetric(metrics, "IMDb", formatImdbRating(record));
+    appendMetric(metrics, "TMDb", formatRating(record.VOTE_AVERAGE));
+    appendMetric(metrics, "TMDb votes", formatCount(record.VOTE_COUNT));    // VOICE-AGENT-091
     appendMetric(metrics, "Type", prettyEpisodeType(record.EPISODE_TYPE));  // premiere/finale/mid-season only
     if (metrics.children.length) {
       body.append(metrics);
