@@ -3972,13 +3972,15 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     appendMetric(metrics, "Episode", episodeNumber);
     appendMetric(metrics, "Aired", firstValue(formatDate(record.DAT_AIR), record.AIR_YEAR));
     appendMetric(metrics, "Duration", formatRuntime(record.RUNTIME));
-    // VOICE-AGENT-139: two rating sources on the same panel, so both are labelled by
-    // source. An unlabelled "Rating" next to an IMDb figure would read as one blended
-    // verdict, when a TMDb episode score rests on dozens of voters and the IMDb one on
-    // tens of thousands. The IMDb tile disappears entirely when there is no rating.
+    // VOICE-AGENT-139: IMDb only, like every other sheet in the app. Movies, series,
+    // people, collections all display IMDb and nothing else, so surfacing a TMDb score
+    // here made the episode the one odd sheet out. It also actively misled: three voters
+    // gave the latest episode a TMDb 1.0, which next to an absent IMDb rating reads as a
+    // massacred episode rather than an unrated one. The tile disappears entirely when
+    // there is no rating, which is the honest rendering of an episode nobody has judged
+    // yet. (Replaces the labelled TMDb / TMDb votes pair, and the VOICE-AGENT-091 votes
+    // tile it came from: the vote count now rides inside the IMDb value, "7.8 (15k)".)
     appendMetric(metrics, "IMDb", formatImdbRating(record));
-    appendMetric(metrics, "TMDb", formatRating(record.VOTE_AVERAGE));
-    appendMetric(metrics, "TMDb votes", formatCount(record.VOTE_COUNT));    // VOICE-AGENT-091
     appendMetric(metrics, "Type", prettyEpisodeType(record.EPISODE_TYPE));  // premiere/finale/mid-season only
     if (metrics.children.length) {
       body.append(metrics);
@@ -4003,7 +4005,13 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     const castCredits = dedupePersonCastCredits(record.cast);
     appendMetric(metrics, "Aired", firstValue(formatDate(record.DAT_AIR), record.AIR_YEAR));
     appendMetric(metrics, "Episodes", record.EPISODE_COUNT);
-    appendMetric(metrics, "Rating", formatRating(record.VOTE_AVERAGE));
+    // VOICE-AGENT-139: the TMDb season score is gone for the same reason as the episode
+    // one, IMDb is the only rating this app shows. A season carries no IMDb rating of its
+    // own (IMDb rates titles and episodes, never seasons), so this tile stays empty until
+    // the rolled-up average of the season's episodes lands on the read-model. Showing
+    // nothing is the correct intermediate state: better an absent figure than the only
+    // TMDb score left in the whole interface.
+    appendMetric(metrics, "IMDb", formatImdbRating(record));
     if (metrics.children.length) {
       body.append(metrics);
     }
