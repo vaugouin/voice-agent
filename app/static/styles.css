@@ -1279,6 +1279,33 @@ button.detailVisualCard.isSpokenActive:hover {
   background: rgb(3 218 198 / 8%);
 }
 
+/* VOICE-AGENT-140: the entry you are currently on, inside a rail of its siblings (a film's
+   collection, a series' seasons). Deliberately quieter than .isSpokenActive, which is the
+   agent pointing at something and owns the loud treatment: this one is passive orientation,
+   it must read at a glance without competing when both happen to be on screen at once. No
+   dimming of the others either, they stay perfectly clickable. */
+.detailVisualCard.isCurrentEntry {
+  position: relative;
+  border-color: var(--text-secondary);
+}
+
+.detailVisualCard.isCurrentEntry::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border: 2px solid var(--text-secondary);
+  border-radius: inherit;
+  opacity: 0.75;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* When the agent speaks about the very card you are on, the agent wins: drop the passive
+   marker so the two rings never stack into a muddy double border. */
+.detailVisualCard.isCurrentEntry.isSpokenActive::before {
+  display: none;
+}
+
 .search-poster-card-link {
   border: 0;
   border-radius: 0;

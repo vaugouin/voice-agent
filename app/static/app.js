@@ -3397,6 +3397,16 @@ function buildDetailVisualCard(item, kind = "poster") {
   const request = detailRequestFromRecord(item);
   const card = document.createElement(request ? "button" : "div");
   card.className = "detailVisualCard";
+  // VOICE-AGENT-140: the API already flagged the entry you are currently looking at
+  // (IS_CURRENT on a collection's members, on a series' seasons), but the front ignored it,
+  // so a rail showed every sibling with nothing to say which one is the page you are on.
+  // Harmless for a film collection, where posters differ; confusing for seasons of one
+  // show, whose posters are often identical bar the number. MySQL returns the boolean as
+  // 1/0, hence the loose truthiness check rather than === true.
+  if (item && (item.IS_CURRENT === true || item.IS_CURRENT === 1)) {
+    card.classList.add("isCurrentEntry");
+    card.setAttribute("aria-current", "true");
+  }
   if (request) {
     card.type = "button";
     card.setAttribute("aria-label", `Open ${title}`);
@@ -4027,6 +4037,17 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
       body.append(metrics);
     }
     appendVisualRail(body, "Series", record.series ? [record.series] : [], { kind: "poster" });
+    // VOICE-AGENT-140: the sibling seasons, the pendant of the collection rail on a film.
+    // Placed between Series and Episodes so the page reads as a descent: the show, its
+    // seasons, this season's episodes. Reuses the "seasons" collection name, so it inherits
+    // the same card shaping and infinite paging as the rail on the series sheet, and the
+    // card you are currently on carries the .isCurrentEntry marker.
+    appendVisualRail(
+      body,
+      "Seasons",
+      seasonRailItems(record.seasons, record.ID_SERIE),
+      { kind: "poster", collectionName: "seasons" }
+    );
     appendVisualRail(
       body,
       "Episodes",
