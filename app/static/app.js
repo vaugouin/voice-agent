@@ -2082,7 +2082,18 @@ function formatImdbRating(record) {
     return "";
   }
   const votes = formatVotesCompact(record && record.IMDB_VOTES);
-  return votes ? `${rating} (${votes})` : rating;
+  if (votes) {
+    return `${rating} (${votes})`;
+  }
+  // A season carries no vote count of its own: its rating is the mean of its episodes, so
+  // the honest denominator is how many episodes back it, not a sum of votes that would
+  // count the same viewers once per episode. The parenthetical also quietly says the figure
+  // is derived, which matters because IMDb never rates seasons.
+  const ratedEpisodes = Number(record && record.IMDB_RATED_EPISODES);
+  if (Number.isFinite(ratedEpisodes) && ratedEpisodes > 0) {
+    return `${rating} (${ratedEpisodes} ep.)`;
+  }
+  return rating;
 }
 
 // TMDb EPISODE_TYPE prettified ("mid_season" -> "Mid Season"), but blank for the
