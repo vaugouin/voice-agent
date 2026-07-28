@@ -4008,6 +4008,17 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     }
     appendVisualRail(body, "Series", record.series ? [record.series] : [], { kind: "poster" });
     appendVisualRail(body, "Season", record.season ? [{ ...record.season, ID_SERIE: record.ID_SERIE }] : [], { kind: "poster" });
+    // VOICE-AGENT-141: the sibling episodes of this season, mirroring the seasons rail a
+    // season sheet got in -140. Placed right after Season so the page keeps reading as a
+    // descent: the show, its season, that season's episodes, then this episode's own
+    // content (cast, crew, stills). The .isCurrentEntry marker comes for free from
+    // buildDetailVisualCard, which honours IS_CURRENT for any rail.
+    appendVisualRail(
+      body,
+      "Episodes",
+      episodeRailItems(record.episodes, record.ID_SERIE, record.SEASON_NUMBER),
+      { kind: "poster", collectionName: "episodes" }
+    );
     if (!appendVisualRail(body, "Cast", castCredits, { kind: "profile", collectionName: "cast" })) {
       appendList(body, "Cast", namesFrom(castCredits, "PERSON_NAME", Infinity));
     }
