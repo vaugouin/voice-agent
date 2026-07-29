@@ -5880,6 +5880,47 @@ function submitQuestion() {
   });
 }
 
+// VOICE-AGENT-142. On /text-chat the server pre-fires a query_text2sql for EVERY typed
+// message, and that search is what paints the grid. When it came back diagnosed as a failure,
+// the render wiped the sheet the user was reading and replaced it with nothing: measured
+// 2026-07-29 on "How does this season compare to the first two?" (no_sql) and "Is there
+// another show set in the same world?" (entity_unresolved), both of which blanked a season
+// sheet while the voice kept talking about that same season.
+//
+// `empty_result` and `ok` are deliberately NOT in this set, and the distinction is the whole
+// point. `empty_result` means the SQL ran and matched nothing: that is a true answer to the
+// user's question ("no film matches") and it must keep its right to repaint, otherwise the
+// screen would silently keep showing the previous title while the caption says nothing was
+// found. Only a search that never managed to REPRESENT the question loses that right.
+const SEARCH_FAILURE_REASONS = new Set([
+  "no_sql",
+  "sql_error",
+  "entity_unresolved",
+  "ambiguous",
+  "transient",
+  "unknown",
+]);
+
+function searchDiagnosticReason(toolOutput) {
+  const diagnostic = toolOutput && typeof toolOutput.diagnostic === "object" && toolOutput.diagnostic
+    ? toolOutput.diagnostic
+    : {};
+  return String(diagnostic.reason || "").trim();
+}
+
+function searchFailedWithNothingToShow(toolOutput) {
+  const reason = searchDiagnosticReason(toolOutput);
+  if (!SEARCH_FAILURE_REASONS.has(reason)) {
+    return false;
+  }
+  // Nothing on screen yet (cold start, showcase still up): there is no sheet to protect, and
+  // silence would leave the user with no visible acknowledgement at all. Render as before.
+  if (resultsPanel.hidden) {
+    return false;
+  }
+  return Number(toolOutput.result_count || 0) <= 0;
+}
+
 async function sendTextChatMessage(text, { source = "typed" } = {}) {
   if (!text) {
     return;
@@ -5921,9 +5962,20 @@ async function sendTextChatMessage(text, { source = "typed" } = {}) {
       const toolArgs = toolResult.args || {};
       const toolOutput = toolResult.output || {};
       if (toolResult.name === "query_text2sql") {
-        await renderText2SqlResult(toolOutput, toolArgs);
-        if (!isCurrentTextChatRequest(requestGeneration, requestAbortController)) {
-          return;
+        // VOICE-AGENT-142: a search that failed does not get to repaint. The model still
+        // receives the output and its diagnostic below, so grounding and recovery are
+        // untouched: what is withheld is a painting, not a fact.
+        if (searchFailedWithNothingToShow(toolOutput)) {
+          clientLog("forced_search_render_skipped", {
+            forced: toolResult.forced === true,
+            reason: searchDiagnosticReason(toolOutput),
+            result_count: Number(toolOutput.result_count || 0),
+          });
+        } else {
+          await renderText2SqlResult(toolOutput, toolArgs);
+          if (!isCurrentTextChatRequest(requestGeneration, requestAbortController)) {
+            return;
+          }
         }
         addRetainedContext({
           type: "tool",

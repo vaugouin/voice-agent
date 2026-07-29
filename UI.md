@@ -679,6 +679,15 @@ Repeated render stability:
 - Detail signatures include the detail tool/entity, stable entity key, language, error/empty state, and render-relevant detail data excluding non-rendered `wikipedia_content`.
 - Loading a different search/detail, appending a pagination page, opening a different record, or starting a new conversation resets or updates the signature normally.
 
+Failed typed search, no repaint (VOICE-AGENT-142):
+
+- On the typed path (`/text-chat`) the server pre-executes one `query_text2sql` per message, and that search drives the render.
+- When its `diagnostic.reason` is a failure (`no_sql`, `sql_error`, `entity_unresolved`, `ambiguous`, `transient`, `unknown`) and it returned no rows, `renderText2SqlResult()` is **not** called: `#resultsContent` keeps whatever it was showing (a season sheet, an entity detail, a previous result page) and the answer arrives through the subtitle caption only.
+- `ok` and `empty_result` render normally. `empty_result` is a real answer to a real query ("no film matches") and must be shown; a failure never represented the question, so it has nothing to show.
+- The guard does not apply while `#resultsPanel` is `hidden`: on a cold start there is no view to preserve, so the failure renders its answer block as before.
+- Each skip emits a `forced_search_render_skipped` log entry (`reason`, `result_count`, `forced`), so a log harvest can tell a deliberately preserved screen from one that failed to update.
+- Voice path unchanged: there the model chooses when to search, and a failed search still renders.
+
 ### Text2SQL Answer Block
 
 Created by `renderText2SqlResult()` for search output.

@@ -9,6 +9,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, NamedTuple
 from urllib.parse import quote, urlencode
+from zoneinfo import ZoneInfo
 
 import httpx
 from dotenv import load_dotenv
@@ -1181,6 +1182,65 @@ GROUNDED_ABSENCE_INSTRUCTIONS = (
     "plot, production, or reception data does not exist."
 )
 
+# VOICE-AGENT-143. Neither prompt carried a date, so the agent had no clock: on 2026-07-29 it
+# answered "what was the last episode that aired?" with episode 5 and filed episodes 6 to 8
+# under "future air dates" — three days after episode 6 went out, and two turns after the app
+# itself had displayed that date on screen. Pretraining cannot supply this: the database is
+# fed nightly, so the rows most worth talking about are exactly the ones whose dates sit
+# within days of now, which is precisely where a clockless reading fails.
+#
+# Note the asymmetry with the SQL side: the API needs no notion of today (MySQL has CURDATE(),
+# and "recently" is generated as an ORDER BY rather than a date filter). It is the AGENT that
+# needs it, to read an air date and to pick the tense of the verb.
+#
+# The zone is explicit rather than UTC because "did it air last night" is asked in a local
+# day, not in UTC. Recomputed per request (per session on the voice path), never frozen into
+# a module constant — a constant would be correct for one day and wrong every day after.
+AGENT_TIMEZONE_NAME = (os.getenv("AGENT_TIMEZONE") or "Europe/Paris").strip() or "Europe/Paris"
+
+_WEEKDAY_NAMES = ("Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday")
+
+
+def agent_now() -> tuple[datetime, str]:
+    """Current time in the configured zone, plus the zone name to state in the prompt.
+
+    Falls back to UTC when the zone cannot be loaded (unknown name, or a slim image whose
+    tzdata is missing). A date a couple of hours off is still incomparably better than no
+    date at all, so this must never raise into a session or a turn.
+    """
+    try:
+        zone = ZoneInfo(AGENT_TIMEZONE_NAME)
+    except Exception:
+        return datetime.now(timezone.utc), "UTC"
+    return datetime.now(zone), AGENT_TIMEZONE_NAME
+
+
+def current_date_line() -> str:
+    """One dated sentence, short enough to sit next to the data the model is reading."""
+    now, zone_name = agent_now()
+    # Weekday from a fixed tuple, not strftime("%A"): %A follows the process locale, so a
+    # container started with a French locale would inject a French weekday into an English
+    # prompt.
+    return (
+        f"Today's date is {_WEEKDAY_NAMES[now.weekday()]} {now.strftime('%Y-%m-%d')} "
+        f"({zone_name})."
+    )
+
+
+def current_date_instructions() -> str:
+    return (
+        current_date_line()
+        + " Compare every date you read against it before you speak. This database is "
+        "refreshed every night and holds records more recent than anything in your "
+        "training, so never date a record from your own memory. A release, broadcast, or "
+        "death date on or before today has already happened: speak of it in the past. A "
+        "later date has not happened yet: speak of it in the future. Never describe a "
+        "title or an episode as upcoming, unreleased, still to come, or not yet aired "
+        "when its date is today or earlier, and never read a missing rating on such a "
+        "record as proof that it has not come out. This applies to dates you find in the "
+        "tool results and to dates quoted earlier in this conversation alike."
+    )
+
 
 def realtime_session_config(
     voice: str = DEFAULT_REALTIME_VOICE,
@@ -1225,6 +1285,9 @@ def realtime_session_config(
         + " " + RESULT_COUNT_INSTRUCTIONS
         + " " + DISAMBIGUATION_INSTRUCTIONS
         + " " + GROUNDED_ABSENCE_INSTRUCTIONS
+        # VOICE-AGENT-143: the date is resolved here, at session creation, so a session that
+        # spans midnight keeps the date it opened with. Acceptable: a session lasts minutes.
+        + " " + current_date_instructions()
     )
     tools = [
         {
@@ -1960,8 +2023,16 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
                 )
             context_lines.append(" ".join(detail_bits).strip())
 
+    # VOICE-AGENT-143: the date also travels in the INPUT, not only in the instructions.
+    # Measured 2026-07-29 on the exact turn that motivated the ticket: with the date only in
+    # the instructions (last of ~4500 words of operational prose) the model still answered
+    # "episode 5" and filed an episode broadcast three days earlier under "still to come".
+    # It never compared the dates because the clock was nowhere near the facts. Sitting at
+    # the head of the input, one line above the conversation and the tool result it reasons
+    # over, it is read at the moment the dates are.
     input_text = (
-        "Recent conversation context:\n"
+        current_date_line()
+        + "\n\nRecent conversation context:\n"
         + ("\n".join(context_lines) if context_lines else "(none)")
         + "\n\nUser message:\n"
         + message
@@ -2020,6 +2091,8 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         + " " + DISAMBIGUATION_INSTRUCTIONS
         + " " + DISAMBIGUATION_TEXT_ADDENDUM
         + " " + GROUNDED_ABSENCE_INSTRUCTIONS
+        # VOICE-AGENT-143: recomputed on every typed turn, so the text path is always exact.
+        + " " + current_date_instructions()
     )
     request_base = {
         "model": model,
@@ -2395,6 +2468,11 @@ HARNESS_LOG_EVENTS = frozenset({
     # audio-transcript timeline (no tool call), so this is the only trace that it fired — one
     # entry per candidate card as its discriminator (year/director/known_for) is spoken.
     "disambiguation_highlight",
+    # VOICE-AGENT-142: a typed turn whose search failed and was therefore NOT allowed to
+    # repaint the screen. Without it in the whitelist, the log shows the failed tool call but
+    # not the render decision taken from it, and a screen that "did not follow the
+    # conversation" is indistinguishable from a screen that was deliberately left alone.
+    "forced_search_render_skipped",
 })
 
 
