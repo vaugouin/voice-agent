@@ -7092,6 +7092,7 @@ function compactDetailForModel(output, fallbackEntity, { verbose = false } = {})
     // an episode sheet is exactly where the air dates are. Dropping it here would have made
     // the rule reach every payload except the one that motivated it.
     today: output.today || "",
+    date_status: output.date_status || null,  // VOICE-AGENT-149 second pass, same reason
     error: output.error || "",
     entity: output.entity || fallbackEntity || "",
     id_name: output.id_name || "",
@@ -7637,6 +7638,10 @@ async function handleFunctionCall(item) {
       }
     : {
         today: output.today || "",  // VOICE-AGENT-149, same reason as above
+        // VOICE-AGENT-149 second pass: the past/today/future verdict computed server-side
+        // for this record's dates. The model is told to trust it rather than compare dates
+        // itself, so it has to survive this whitelist like `today` does.
+        date_status: output.date_status || null,
         error: output.error || "",
         entity: output.entity || DETAIL_TOOL_ENTITIES[item.name],
         id_name: output.id_name || "",

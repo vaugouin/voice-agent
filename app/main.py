@@ -5,7 +5,7 @@ import os
 import re
 import unicodedata
 import uuid
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, NamedTuple
 from urllib.parse import quote, urlencode
@@ -1299,8 +1299,69 @@ DATE_PRECEDENCE_RULE = (
     "do not have one. A date equal to today is happening today, so say it comes out today or "
     "airs today rather than calling it the last one that already aired. Resolve this silently: "
     "never say aloud that a date is in the future compared with today, or otherwise narrate the "
-    "contradiction. State the correct fact instead."
+    "contradiction. State the correct fact instead. "
+    # VOICE-AGENT-149, second pass. Telling the model to compare dates is not enough: on
+    # 2026-08-03 it read Anora's DAT_RELEASE of 2024-10-14, had today's date in the same
+    # payload, and still answered "its release date is later than today, so I can't treat it
+    # as already released", dropping a correct row from the answer. The comparison is
+    # therefore done in code and handed over as a verdict, so the only thing left to the
+    # model is reading a word.
+    "Every row and record carries `_date_status`, computed by the application against today's "
+    "date: `past` means it has already happened, `today` means it happens today, `future` means "
+    "it has not happened yet. That field is authoritative. Never work out the comparison "
+    "yourself and never override it with what you believe about a title: if `_date_status` says "
+    "`past`, the record is out and you speak of it in the past, even if you remember it as "
+    "recent or forthcoming. When a record carries no `_date_status`, say nothing about whether "
+    "it has happened."
 )
+
+# VOICE-AGENT-149. The date columns worth a verdict, per entity. Deliberately a named list and
+# not "every DAT_ column": DAT_CREAT is a bookkeeping timestamp, and annotating it would spend
+# payload budget to tell the model that a database row was created in the past.
+_DATE_STATUS_COLUMNS = (
+    "DAT_RELEASE",     # movie
+    "DAT_FIRST_AIR",   # serie start
+    "DAT_LAST_AIR",    # serie end, so a running show can be told from a finished one
+    "DAT_AIR",         # episode
+    "DEATHDAY",        # person, the one date whose tense is never neutral
+)
+
+
+def _date_status(value: Any, today: date) -> str | None:
+    """`past`, `today` or `future` for one date value, or None when it is not a date.
+
+    Accepts what the API actually returns: a date, a datetime, or an ISO-ish string. Anything
+    unparseable returns None rather than a guess, because a wrong verdict here is worse than
+    no verdict: the prompt tells the model to stay silent when the field is absent.
+    """
+    if value in (None, ""):
+        return None
+    if isinstance(value, datetime):
+        parsed = value.date()
+    elif isinstance(value, date):
+        parsed = value
+    else:
+        try:
+            parsed = date.fromisoformat(str(value)[:10])
+        except ValueError:
+            return None
+    if parsed < today:
+        return "past"
+    if parsed == today:
+        return "today"
+    return "future"
+
+
+def _date_status_map(record: Any, today: date) -> dict[str, str]:
+    """The verdicts for one record, keyed by the column they were computed from."""
+    if not isinstance(record, dict):
+        return {}
+    out = {}
+    for column in _DATE_STATUS_COLUMNS:
+        status = _date_status(record.get(column), today)
+        if status:
+            out[column] = status
+    return out
 
 
 def current_date_instructions() -> str:
@@ -2384,11 +2445,38 @@ def _with_date_guardrail(payload: dict[str, Any]) -> dict[str, Any]:
     path is deliberately untouched: it already carries the same line at the head of its
     input and would otherwise say it twice.
 
+    Second pass, same ticket: the dated line was necessary and not sufficient. On 2026-08-03
+    the model read Anora's DAT_RELEASE of 2024-10-14, had today's date one line above it in
+    the same payload, and still answered "its release date is later than today, so I can't
+    treat it as already released", dropping a correct row from its answer. Asking a model to
+    compare dates loses against what it believes about a title, so the comparison moved into
+    code and it is handed a verdict instead of an arithmetic problem.
+
+    The verdict rides on the row WRAPPER, beside `data` and never inside it: those row dicts
+    are the same objects the browser renders cards from, so a key added inside `data` would
+    surface as a column in a rendered table.
+
     Recomputed per call rather than cached: a container that has been up for days must not
     answer with the date it started on.
     """
-    if isinstance(payload, dict):
-        payload["today"] = current_date_guardrail()
+    if not isinstance(payload, dict):
+        return payload
+    payload["today"] = current_date_guardrail()
+    today = agent_now()[0].date()
+
+    rows = payload.get("rows")
+    if isinstance(rows, list):
+        for row in rows:
+            if isinstance(row, dict):
+                statuses = _date_status_map(row.get("data"), today)
+                if statuses:
+                    row["_date_status"] = statuses
+
+    detail = payload.get("detail")
+    if isinstance(detail, dict):
+        statuses = _date_status_map(detail, today)
+        if statuses:
+            payload["date_status"] = statuses
     return payload
 
 
