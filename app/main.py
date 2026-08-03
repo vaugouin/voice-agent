@@ -259,6 +259,51 @@ DEFAULT_REALTIME_VOICE = "ash"
 DEFAULT_REALTIME_MODEL = "gpt-realtime-2"
 DEFAULT_TRANSCRIPTION_MODEL = "gpt-4o-transcribe"
 
+# VOICE-AGENT-102. The session used to pin transcription to English. Speaking French to a
+# transcriber locked on "en" does not degrade gracefully: it returns a fluent, plausible,
+# wrong English-shaped sentence ("Le Ciel qui appartient a la Britannia" for "les films qui
+# appartiennent a la Criterion Collection", measured 2026-08-02). Empty means auto-detect,
+# which is the default because a demo mixes languages inside one session and must not need a
+# gesture between two turns. The variable stays as the way back: if auto-detection turns out
+# to mangle short English turns, pin it to "en" without touching code or shipping a build.
+REALTIME_TRANSCRIPTION_LANGUAGE = (os.getenv("REALTIME_TRANSCRIPTION_LANGUAGE") or "").strip()
+
+# VOICE-AGENT-128. A generic language model hears "back surface" for "box office" and "the
+# titan song list" for "Sight and Sound": 4 turns lost out of 12 in one rehearsal, and twice
+# the agent then INVENTED a proper noun from the garbage and queried it (VOICE-AGENT-150).
+# The transcription `prompt` field is the documented place to bias the decoder toward the
+# vocabulary it is about to hear. The lists live in lexicons.json (VOICE-AGENT-126), never
+# here, so a shoot's proper nouns can be updated without a code change.
+ASR_PROMPT_INTRO = tuple(LEXICONS["asr_prompt_intro"])
+ASR_DOMAIN_TERMS = tuple(LEXICONS["asr_domain_terms"])
+ASR_PROPER_NOUNS = tuple(LEXICONS["asr_proper_nouns"])
+
+
+def transcription_prompt() -> str:
+    """Domain bias handed to the speech-to-text step (VOICE-AGENT-128).
+
+    Two framing sentences, one per language, then the vocabulary. The bilingual framing is
+    not decoration: VOICE-AGENT-102 removed the language lock, so this prompt is now the only
+    remaining bias in the transcription step, and an English-only one would quietly re-impose
+    what the other ticket just removed.
+    """
+    return " ".join(ASR_PROMPT_INTRO) + " " + ", ".join(ASR_DOMAIN_TERMS + ASR_PROPER_NOUNS) + "."
+
+
+def realtime_transcription_config() -> dict[str, Any]:
+    """The `audio.input.transcription` block of the Realtime session.
+
+    `language` is omitted entirely when REALTIME_TRANSCRIPTION_LANGUAGE is empty: the API
+    treats an absent key as auto-detect, and sending an empty string is not the same thing.
+    """
+    config: dict[str, Any] = {
+        "model": DEFAULT_TRANSCRIPTION_MODEL,
+        "prompt": transcription_prompt(),
+    }
+    if REALTIME_TRANSCRIPTION_LANGUAGE:
+        config["language"] = REALTIME_TRANSCRIPTION_LANGUAGE
+    return config
+
 
 def _log_soul_startup() -> None:
     """Second startup line: which character this container actually answers as (VOICE-AGENT-118).
@@ -1227,6 +1272,37 @@ def current_date_line() -> str:
     )
 
 
+# VOICE-AGENT-149. VOICE-AGENT-143 gave the agent a clock and it works: on 2026-08-02 the
+# model read an air date, compared it to today, and SAID the comparison out loud ("its air
+# date is August 9, 2026, which is in the future compared with today") while presenting that
+# episode as the last one aired. What was missing is not the clock, it is what to do when the
+# clock and a tool row disagree: a row labelled "last aired episode" outranked the model's own
+# arithmetic. The same day, the same build made the mirror error on a film, calling Anora
+# "still in the future" two years after its release, which is the proof that this is an absent
+# rule rather than a bias in one direction.
+#
+# Three things this text has to do, and the third is the one that is easy to forget: forbid
+# the observed phrasing. An agent that narrates the contradiction instead of resolving it tells
+# the viewer the app knows it is wrong and is speaking anyway, worse on camera than a plain
+# mistake.
+#
+# The same-day convention is deliberate (decided with Philippe, 2026-08-03): a date equal to
+# today counts as scheduled for today, not as already happened. HBO airs on Sunday evening US
+# time, which is Monday morning in Europe/Paris, so an episode dated today has usually NOT been
+# seen by anyone when the question is asked in the morning. "Airs today" is the answer that
+# cannot be wrong either way.
+DATE_PRECEDENCE_RULE = (
+    "When a date disagrees with what a row is called, the date wins. A date later than today "
+    "has not happened, whatever the row that carries it is labelled, including a row returned "
+    "as the latest, last, or most recent one. Never present such a record as released, aired, "
+    "or broadcast: name the most recent record whose date is strictly before today, or say you "
+    "do not have one. A date equal to today is happening today, so say it comes out today or "
+    "airs today rather than calling it the last one that already aired. Resolve this silently: "
+    "never say aloud that a date is in the future compared with today, or otherwise narrate the "
+    "contradiction. State the correct fact instead."
+)
+
+
 def current_date_instructions() -> str:
     return (
         current_date_line()
@@ -1238,8 +1314,20 @@ def current_date_instructions() -> str:
         "title or an episode as upcoming, unreleased, still to come, or not yet aired "
         "when its date is today or earlier, and never read a missing rating on such a "
         "record as proof that it has not come out. This applies to dates you find in the "
-        "tool results and to dates quoted earlier in this conversation alike."
+        "tool results and to dates quoted earlier in this conversation alike. "
+        + DATE_PRECEDENCE_RULE
     )
+
+
+def current_date_guardrail() -> str:
+    """The dated line plus the precedence rule, short enough to travel WITH a tool result.
+
+    VOICE-AGENT-143 established the lesson this reuses: a rule about dates has to sit next to
+    the dates. In the instructions it is the tail of ~4500 words of operational prose, read at
+    session creation, several turns before the row it should have governed. Riding on the tool
+    payload, it is read at the moment the model reads the air date.
+    """
+    return current_date_line() + " " + DATE_PRECEDENCE_RULE
 
 
 def realtime_session_config(
@@ -1355,10 +1443,10 @@ def realtime_session_config(
                 # turns — each a phantom turn that fires a real query_text2sql. near_field is the
                 # profile for a mic held close to the face (phone/tablet in hand).
                 "noise_reduction": {"type": "near_field"},
-                "transcription": {
-                    "model": "gpt-4o-transcribe",
-                    "language": "en",
-                },
+                # VOICE-AGENT-102 (no language lock by default) + VOICE-AGENT-128 (domain
+                # bias). Built together on purpose: the two tickets pull on the same lever,
+                # and the prompt is what keeps accuracy up once the language pin is gone.
+                "transcription": realtime_transcription_config(),
                 "turn_detection": {
                     "type": "server_vad",
                     "threshold": 0.5,
@@ -1601,7 +1689,10 @@ async def transcribe_audio(request: Request) -> dict[str, Any]:
             response = await client.post(
                 "https://api.openai.com/v1/audio/transcriptions",
                 headers={"Authorization": f"Bearer {api_key}"},
-                data={"model": model},
+                # VOICE-AGENT-128: the dictation upload gets the same domain bias as the
+                # Realtime session. It never carried a language pin, so it needs nothing
+                # from VOICE-AGENT-102, only the vocabulary.
+                data={"model": model, "prompt": transcription_prompt()},
                 files={"file": (f"dictation.{extension}", audio_bytes, media_type)},
             )
         except httpx.HTTPError as exc:
@@ -2284,9 +2375,26 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
     }
 
 
+def _with_date_guardrail(payload: dict[str, Any]) -> dict[str, Any]:
+    """Attach the dated precedence rule to a tool payload (VOICE-AGENT-149).
+
+    Applied on the HTTP tool endpoints, which is the VOICE path: the browser posts the
+    result straight back into the Realtime conversation as a function_call_output, so this
+    line lands in the same message as the air dates the model is about to read. The text
+    path is deliberately untouched: it already carries the same line at the head of its
+    input and would otherwise say it twice.
+
+    Recomputed per call rather than cached: a container that has been up for days must not
+    answer with the date it started on.
+    """
+    if isinstance(payload, dict):
+        payload["today"] = current_date_guardrail()
+    return payload
+
+
 @app.post("/tool/text2sql")
 async def query_text2sql(payload: Text2SqlRequest) -> dict[str, Any]:
-    return await query_text2sql_data(payload)
+    return _with_date_guardrail(await query_text2sql_data(payload))
 
 
 @app.get("/tool/detail/{entity}/{entity_id}")
@@ -2298,7 +2406,7 @@ async def get_entity_detail(
     page: int = 1,
     rows_per_page: int | None = None,
 ) -> dict[str, Any]:
-    return await get_entity_detail_data(
+    return _with_date_guardrail(await get_entity_detail_data(
         entity,
         {
             "id": entity_id,
@@ -2307,7 +2415,7 @@ async def get_entity_detail(
             "page": page,
             "rows_per_page": rows_per_page,
         },
-    )
+    ))
 
 
 @app.get("/tool/detail/season/{id_serie}/{season_number}")
@@ -2319,7 +2427,7 @@ async def get_season_detail(
     page: int = 1,
     rows_per_page: int | None = None,
 ) -> dict[str, Any]:
-    return await get_entity_detail_data(
+    return _with_date_guardrail(await get_entity_detail_data(
         "season",
         {
             "id_serie": id_serie,
@@ -2329,7 +2437,7 @@ async def get_season_detail(
             "page": page,
             "rows_per_page": rows_per_page,
         },
-    )
+    ))
 
 
 @app.get("/tool/detail/episode/{id_serie}/{season_number}/{episode_number}")
@@ -2342,7 +2450,7 @@ async def get_episode_detail(
     page: int = 1,
     rows_per_page: int | None = None,
 ) -> dict[str, Any]:
-    return await get_entity_detail_data(
+    return _with_date_guardrail(await get_entity_detail_data(
         "episode",
         {
             "id_serie": id_serie,
@@ -2353,7 +2461,7 @@ async def get_episode_detail(
             "page": page,
             "rows_per_page": rows_per_page,
         },
-    )
+    ))
 
 
 @app.get("/tool/samples")

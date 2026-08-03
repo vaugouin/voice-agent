@@ -7088,6 +7088,10 @@ function compactDetailForModel(output, fallbackEntity, { verbose = false } = {})
   }
   const { wikipedia_content: _wikipediaContent, ...compactDetail } = detail;
   return {
+    // VOICE-AGENT-149: a second whitelist on the same path, and the one that matters most.
+    // an episode sheet is exactly where the air dates are. Dropping it here would have made
+    // the rule reach every payload except the one that motivated it.
+    today: output.today || "",
     error: output.error || "",
     entity: output.entity || fallbackEntity || "",
     id_name: output.id_name || "",
@@ -7538,6 +7542,12 @@ async function handleFunctionCall(item) {
   awaitingToolResponse = true;
   const toolOutput = item.name === "query_text2sql"
     ? {
+        // VOICE-AGENT-149: today's date plus the precedence rule, forwarded from the tool
+        // response. This object is a WHITELIST, not a copy: a field the server adds and
+        // this list omits never reaches the model. That is the whole reason the rule lives
+        // here and not only in the session instructions: it has to arrive in the same
+        // message as the air dates the model is about to read aloud.
+        today: output.today || "",
         answer: output.answer || "",
         error: output.error || "",
         result_count: output.result_count ?? null,
@@ -7556,6 +7566,7 @@ async function handleFunctionCall(item) {
         name_ambiguity: output.name_ambiguity || null,
       }
     : {
+        today: output.today || "",  // VOICE-AGENT-149, same reason as above
         error: output.error || "",
         entity: output.entity || DETAIL_TOOL_ENTITIES[item.name],
         id_name: output.id_name || "",
@@ -7593,6 +7604,10 @@ async function handleFunctionCall(item) {
   // had it saying "the series detail tool response was too large to load fully in this channel"
   // to the user; an end user has no use for our transport limits.
   const minimalToolOutput = () => ({
+    // VOICE-AGENT-149: kept even in the last-resort payload. This is the case where the
+    // model answers from the conversation rather than from the record, which is precisely
+    // when a date quoted three turns ago gets read back without a clock beside it.
+    today: modelToolOutput?.today || "",
     entity: modelToolOutput?.entity || "",
     id: modelToolOutput?.id || "",
     partial: true,

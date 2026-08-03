@@ -66,6 +66,7 @@ ENABLE_SPOKEN_SUBTITLES=false
 ENABLE_USER_TRANSCRIPT_SUBTITLES=false
 AGENT_SOUL=default
 AGENT_TIMEZONE=Europe/Paris
+REALTIME_TRANSCRIPTION_LANGUAGE=
 
 TEXT2SQL_BASE_URL=http://your_host:8000
 TEXT2SQL_API_KEY_NAME=X-API-Key
@@ -145,6 +146,8 @@ Server-side harness:
   - `current_date_instructions()` is appended to both prompt builders (Realtime and `/text-chat`): the date, the zone, and the rule — a date on or before today has happened, speak of it in the past; a later date has not.
   - `current_date_line()` is also prepended to the `/text-chat` **input**, one line above the conversation context and the tool result. This second placement is not redundant: with the date only in the instructions (last of several thousand words of operational prose) the model was measured still answering "episode 5" and filing an episode broadcast three days earlier under "still to come". It never compared the dates because the clock was nowhere near the facts. Put at the head of the input, it is read at the moment the dates are.
   - Both are recomputed per request (per session on the voice path), so the date never goes stale. The zone comes from `AGENT_TIMEZONE` (default `Europe/Paris`), stated explicitly in the prompt because "did it air last night" is asked in a local day, not in UTC; an unknown zone falls back to UTC rather than failing the turn.
+  - Both also carry a **precedence rule** (`DATE_PRECEDENCE_RULE`): when a date and a row label disagree, the date wins. A row returned as the *latest* or *last* one but dated after today has not happened, so the agent names the most recent record dated strictly before today, or says it has none. A record dated **today** is described as coming out or airing today, never as the last one that already aired: HBO airs on Sunday evening US time, which is Monday morning in Paris, so an episode dated today has usually not been seen when the question is asked. The rule also forbids saying the contradiction out loud ("its air date is August 9, which is in the future compared with today"), which the agent was measured doing while presenting that same episode as aired: narrating the conflict tells the user the app knows it is wrong and is answering anyway.
+  - On the **voice** path the same dated line travels **with the tool result**, as a `today` field added by the `/tool/text2sql` and `/tool/detail/...` endpoints and forwarded by `app/static/app.js` into the `function_call_output`. Those client-side objects are whitelists, not copies, so a field the server adds and the whitelist omits never reaches the model. There are four of them to keep in sync: the search shape, the detail shape, `compactDetailForModel()`, and `minimalToolOutput()`.
   - Note the asymmetry with the SQL side: the upstream API needs no notion of today (MySQL has `CURDATE()`, and "recently" is generated as an `ORDER BY`, not a date filter). This is the agent's clock, not the query's.
 - `app/main.py::detail_tool_definitions()` creates the dedicated entity detail tool schemas from `DETAIL_ENTITY_CONFIG`.
 - `POST /session` receives the browser SDP offer, combines it with the Realtime session config, calls `https://api.openai.com/v1/realtime/calls`, and returns the OpenAI SDP answer.
@@ -167,7 +170,9 @@ The server creates a session with:
 
 - model: `OPENAI_REALTIME_MODEL`, default `gpt-realtime-2`
 - voice: selected server-side by `AGENT_VOICE` (currently `shimmer`; falls back to `ash` if unset)
-- input transcription: `gpt-4o-transcribe`
+- input transcription: `gpt-4o-transcribe`, **language auto-detected** and biased with a domain lexicon
+  - The session no longer pins the spoken language. Set `REALTIME_TRANSCRIPTION_LANGUAGE=en` (or any language code) to pin it again; leave it empty, the default, for auto-detection. Pinning is not neutral when the wrong language is spoken: a transcriber locked on English does not degrade, it returns a fluent and wrong English-shaped sentence, so a bilingual demo needs the empty value.
+  - The `prompt` field carries a short cinema vocabulary (`asr_prompt_intro`, `asr_domain_terms`, `asr_proper_nouns` in [app/lexicons.json](app/lexicons.json)). Without it the transcriber hears "back surface" for "box office" and "the titan song list" for "Sight and Sound". Edit `asr_proper_nouns` before a demo or a shoot to add the names that will actually be spoken; keep the list short, since an over-long prompt makes the transcriber hallucinate the terms it was primed with. The same lexicon is sent with the `/transcribe` dictation upload.
 - input noise reduction: `near_field` (server-side, applied before turn detection/transcription; suppresses room noise and the assistant's own echo that the browser `echoCancellation` was letting through as phantom user turns)
 - turn detection: server VAD
 - tools: `query_text2sql` plus dedicated detail tools for movies, series, seasons, episodes, persons, companies, networks, collections, topics, lists, movements, technicals, genres, groups, deaths, awards, nominations, and locations
