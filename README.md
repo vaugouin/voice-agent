@@ -123,6 +123,19 @@ field: session  JSON Realtime session config as text
 8. The browser sets the SDP answer as the remote description.
 9. Realtime events and tool calls are exchanged over the `oai-events` data channel.
 
+### Holding line: the app says it is working before a long wait
+
+A background question used to leave **16 to 24 seconds of total silence**. Two causes stacked: the verbose payload has to arrive before the model can say anything, and the forced verbose re-fetch cancels the server's auto-response (so the model answers from fresh grounding rather than stale context), which removed the one thing that was covering its own loading time. A silence that long does not read as waiting, it reads as a crash, and the answer that eventually arrives lands as a surprise rather than a relief.
+
+The browser now arms a short spoken line when a wait starts, and cancels it if the wait ends first:
+
+- **900 ms** after the forced verbose re-fetch, since the auto-response has just been cancelled and nothing else will speak.
+- **2500 ms** into any ordinary tool call, since the model often speaks its own filler in the first second. The line checks for an active response before speaking and stays quiet if one exists, so the two never overlap.
+
+It is an **out-of-band response** (`conversation: "none"` on `response.create`): spoken but never written into the conversation, so the model cannot later read it back as an answer it already gave. Its instructions cap it at one short sentence in the user's language, with no data in it. Logged as `holding_line` (or `holding_line_skipped`) in `logs/client.log`, which is how you measure whether a turn was covered.
+
+Because a holding line may still be speaking when the grounding is ready, the follow-up `response.create` goes through the deferring helper (fire now if the slot is free, otherwise on `response.done`) instead of being sent blind and rejected.
+
 ## Agent Harness
 
 This app is an agent harness: it keeps a conversational model session alive, lets the model choose tools, executes those tools outside the model, feeds tool outputs back into the same conversation, and preserves compact context across WebRTC reconnects.

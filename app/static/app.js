@@ -7386,6 +7386,62 @@ function requestRealtimeResponseAfterToolOutput() {
   pendingToolResponseRequest = true;
 }
 
+// VOICE-AGENT-111. A background question left 16 to 24 seconds of TOTAL silence. Two causes
+// stack: the verbose payload has to be fetched before the model can speak, and the forced
+// re-fetch of VOICE-AGENT-107 cancels the server's auto-response to stop the model answering
+// from stale context. That auto-response was the only thing covering its own loading time.
+//
+// Philippe's words for what the silence does to a listener: "j'ai cru que l'agent etait plante
+// et j'etais surpris d'entendre parler l'app apres si longtemps". Past a threshold a late
+// answer is no longer an answer, it is a resurrection: the visitor has already filed the app
+// as broken. In a single-take video the silence is in the published file.
+//
+// The line is an OUT-OF-BAND response (conversation: "none"): spoken, but never written into
+// the conversation. The model therefore cannot read it back as an answer it already gave, and
+// the grounded answer that follows is built from the same context it would have had.
+const HOLDING_LINE_INSTRUCTIONS =
+  "Say one short sentence, at most eight words, telling the user you are looking this up right "
+  + "now. Speak in the language the user is speaking. Do not answer the question, do not name "
+  + "or describe any data, do not apologize, do not ask anything, and say nothing else.";
+// Two delays, two situations. After the forced re-fetch we have just cancelled the auto-response
+// and know nothing else will speak, so the line comes early. During an ordinary tool call the
+// model often speaks its own filler within the first second, so we wait longer and stay silent
+// if it did.
+const HOLDING_LINE_DELAY_MS = 900;
+const TOOL_HOLDING_LINE_DELAY_MS = 2500;
+
+function speakHoldingLine(reason) {
+  // Never talk over the model. If anything is streaming, the wait is already covered, and a
+  // second voice on top of the first is worse than the silence this exists to fill.
+  if (activeResponseId || activeAudioResponseId) {
+    clientLog("holding_line_skipped", { reason, reason_skipped: "response already active" });
+    return;
+  }
+  const sent = sendEvent({
+    type: "response.create",
+    response: {
+      conversation: "none",
+      metadata: { purpose: "holding_line", reason },
+      output_modalities: ["audio"],
+      instructions: HOLDING_LINE_INSTRUCTIONS,
+    },
+  });
+  clientLog("holding_line", { reason, sent: Boolean(sent) });
+}
+
+// Scheduled, never immediate: it must not race the response.cancel sent just before it (the
+// API rejects a create while the cancelled response is still winding down), and a fetch that
+// comes back in half a second should stay quiet rather than announce itself.
+function scheduleHoldingLine(reason, delayMs) {
+  return window.setTimeout(() => speakHoldingLine(reason), delayMs);
+}
+
+function cancelHoldingLine(timer) {
+  if (timer) {
+    window.clearTimeout(timer);
+  }
+}
+
 // VOICE-AGENT-124: apply a focus_result_card highlight only when it is an ISOLATED call
 // (selection, "focus card 3"); suppress a front-loaded BURST (enumeration) and let the
 // audio-timed cue path own the highlight so it follows the voice instead of flashing up front.
@@ -7505,6 +7561,15 @@ async function handleFunctionCall(item) {
     setLoadingEntityDetail(item.name, args);
   }
   let output;
+  // VOICE-AGENT-111: the model usually speaks its own filler while a tool runs, but not
+  // always: the measured table has an 11-second turn WITH a filler and four 16-to-24-second
+  // ones without. This is the net for the second kind, and it costs nothing on a fast call
+  // (the timer is cleared before it fires) or on a turn the model is already covering (the
+  // line checks for an active response before speaking).
+  const holdingLineTimer = scheduleHoldingLine(
+    item.name === "query_text2sql" ? "tool_search" : "tool_detail",
+    TOOL_HOLDING_LINE_DELAY_MS,
+  );
   try {
     output = item.name === "query_text2sql"
       ? await callText2Sql(args)
@@ -7536,6 +7601,11 @@ async function handleFunctionCall(item) {
     } else {
       renderEntityDetailOutput(output, args);
     }
+  } finally {
+    // VOICE-AGENT-111: the call is over either way, so the line must not fire behind the
+    // answer. Cleared here rather than after the send, because a rendering error must not
+    // leave a timer that speaks into the next turn.
+    cancelHoldingLine(holdingLineTimer);
   }
 
   toolCallsInFlight = Math.max(0, toolCallsInFlight - 1);
@@ -7693,11 +7763,17 @@ async function maybeForceVerboseActiveEntityRefetch(transcript) {
   if (!entity) return;
   const args = { ...(currentDetailState.args || {}) };
   forcedVerboseRefetchInFlight = true;
+  let holdingLineTimer = null;
   try {
     // Pre-empt the server's auto-response so we answer from the fresh verbose detail
     // rather than the model's stale-context reply.
     sendEvent({ type: "response.cancel" });
+    // VOICE-AGENT-111: and immediately arm the line that covers the wait the cancel just
+    // uncovered. This is THE path the 16-to-24-second silences were measured on.
+    holdingLineTimer = scheduleHoldingLine("verbose_refetch", HOLDING_LINE_DELAY_MS);
     const output = await callEntityDetail(toolName, args);
+    cancelHoldingLine(holdingLineTimer);
+    holdingLineTimer = null;
     const verboseDetail = compactDetailForModel(output, entity, { verbose: true });
     const prefix = `[Grounding: verbose Wikipedia detail for the ${entity} already on screen. Use these `
       + `sections to answer the user's background question (production, release, reception, `
@@ -7715,7 +7791,11 @@ async function maybeForceVerboseActiveEntityRefetch(transcript) {
       type: "conversation.item.create",
       item: { type: "message", role: "user", content: [{ type: "input_text", text: contextText }] },
     });
-    sendEvent({ type: "response.create" });
+    // VOICE-AGENT-111: was a bare response.create, which was safe only because the cancel
+    // above guaranteed a free slot. The holding line can now be mid-sentence, so go through
+    // the deferring helper: it fires immediately when nothing is active and waits for the
+    // response.done otherwise, instead of being rejected and losing the grounded answer.
+    requestRealtimeResponseAfterToolOutput();
     clientLog("forced_verbose_refetch", {
       tool: toolName,
       id: args.id ?? args.wikidata_id ?? null,
@@ -7735,8 +7815,9 @@ async function maybeForceVerboseActiveEntityRefetch(transcript) {
       channel_effective_max: dataChannelMaxMessageSize(),
     }, "error");
     // Do not strand the turn: let the model answer normally.
-    sendEvent({ type: "response.create" });
+    requestRealtimeResponseAfterToolOutput();
   } finally {
+    cancelHoldingLine(holdingLineTimer);
     forcedVerboseRefetchInFlight = false;
   }
 }
