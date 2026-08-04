@@ -282,10 +282,15 @@ ASR_PROPER_NOUNS = tuple(LEXICONS["asr_proper_nouns"])
 def transcription_prompt() -> str:
     """Domain bias handed to the speech-to-text step (VOICE-AGENT-128).
 
-    Two framing sentences, one per language, then the vocabulary. The bilingual framing is
-    not decoration: VOICE-AGENT-102 removed the language lock, so this prompt is now the only
-    remaining bias in the transcription step, and an English-only one would quietly re-impose
-    what the other ticket just removed.
+    A short framing, then the vocabulary. The framing used to carry a French sentence, so
+    that removing the language lock (VOICE-AGENT-102) would not be undone by an English-only
+    prompt. Measured on the 2026-08-04 recording session, that reasoning was wrong in a way
+    worth remembering: a prompt is a text SAMPLE, not an instruction, so a French sample made
+    a French output plausible for English audio and the transcriber started TRANSLATING.
+    "Ok, show me the movies in the Criterion Collection" came back as "Ok, montre-moi les
+    films de la collection Criterion", twice. The framing is now language-neutral and says so
+    in as many words; the proper nouns do the domain work by themselves, being spelled the
+    same in both languages.
     """
     return " ".join(ASR_PROMPT_INTRO) + " " + ", ".join(ASR_DOMAIN_TERMS + ASR_PROPER_NOUNS) + "."
 
@@ -2022,22 +2027,26 @@ async def get_entity_detail_data(entity: str, args: dict[str, Any]) -> dict[str,
 
 
 async def execute_text_tool(tool_name: str, args: dict[str, Any]) -> dict[str, Any]:
+    # VOICE-AGENT-149: the verdicts, not the dated line. This path already prepends the line
+    # to its input, but it needs `_date_status` for the same reason the voice path does: the
+    # model reading a 2024 release date against what it believes about the title is a
+    # property of the model, not of the transport.
     if tool_name == "query_text2sql":
-        return await query_text2sql_data(
+        return _with_date_status(await query_text2sql_data(
             Text2SqlRequest(
                 query=str(args.get("query") or ""),
                 ui_language=args.get("ui_language") or None,
                 page=int(args.get("page") or 1),
                 question_hashed=args.get("question_hashed") or None,
             )
-        )
+        ))
 
     entity = DETAIL_TOOL_BY_NAME.get(tool_name)
     if not entity:
         return {"error": f"Unsupported tool: {tool_name}"}
 
     try:
-        return await get_entity_detail_data(entity, args)
+        return _with_date_status(await get_entity_detail_data(entity, args))
     except HTTPException as exc:
         if exc.status_code == 400:
             return {"error": str(exc.detail)}
@@ -2462,6 +2471,21 @@ def _with_date_guardrail(payload: dict[str, Any]) -> dict[str, Any]:
     if not isinstance(payload, dict):
         return payload
     payload["today"] = current_date_guardrail()
+    return _with_date_status(payload)
+
+
+def _with_date_status(payload: dict[str, Any]) -> dict[str, Any]:
+    """The per-record verdicts alone, without the dated line (VOICE-AGENT-149).
+
+    Split out for the TEXT path, which already carries the dated line at the head of its
+    input and would say it twice, but must still get the verdicts: the precedence rule now
+    tells the model that every record carries `_date_status` and to stay silent about timing
+    when it does not. Shipping that sentence on a path where the field is absent would make
+    the prompt lie, and a prompt that lies about its own payload is a trap for whoever reads
+    it next, model or human.
+    """
+    if not isinstance(payload, dict):
+        return payload
     today = agent_now()[0].date()
 
     rows = payload.get("rows")
@@ -2652,6 +2676,14 @@ HARNESS_LOG_EVENTS = frozenset({
     "tool_output_truncated",
     "tool_output_send_error",
     "tool_output_send_fallback_error",
+    # VOICE-AGENT-111: the holding line spoken while a slow call runs, and its counterpart
+    # when it stayed silent because the model was already speaking. Missing from this list
+    # they were dropped at write time, so two recorded sessions showed zero occurrences and
+    # the feature looked like it had never run. That is the SAME trap this file already
+    # documents for -107 four entries above: an event that is not whitelisted is not absent,
+    # it is invisible, and the two cannot be told apart from a log.
+    "holding_line",
+    "holding_line_skipped",
     # Spoken-card highlight diagnostics. `structured_card_focus_session` (emitted once at
     # session start) says whether the structured-focus mode is active for the session;
     # `structured_card_focus` is emitted each time the model calls focus_result_card. Without
