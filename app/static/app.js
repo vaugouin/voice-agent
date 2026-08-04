@@ -4086,6 +4086,17 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     if (originalTitle && originalTitle.toLowerCase() !== shownTitleKey) {
       appendMetric(metrics, "Original title", originalTitle);
     }
+    // VOICE-AGENT-153: the Criterion spine number, when the film has one. It is the
+    // collection's own editorial numbering, printed on the case, and the app already sorts
+    // Criterion results by it. Showing it on the sheet turns "this is the order they sit on
+    // the shelf" from a claim into something the viewer can read for himself.
+    // The guard is not decorative: the column is 0, never NULL, for a film outside the
+    // collection (Fight Club: ID_CRITERION = 0, ID_CRITERION_SPINE = 0), and appendMetric
+    // only skips empty strings, so it would happily render a tile reading "Spine #0".
+    const criterionSpine = Number(record.ID_CRITERION_SPINE) || 0;
+    if (criterionSpine > 0) {
+      appendMetric(metrics, "Criterion", `Spine #${criterionSpine}`);
+    }
     if (metrics.children.length) {
       body.append(metrics);
     }
