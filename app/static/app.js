@@ -7104,6 +7104,10 @@ function compactDetailForModel(output, fallbackEntity, { verbose = false } = {})
     // the rule reach every payload except the one that motivated it.
     today: output.today || "",
     date_status: output.date_status || null,  // VOICE-AGENT-149 second pass, same reason
+    // VOICE-AGENT-155: the per-episode verdict. Whitelisted here for the same reason as
+    // date_status above — and it matters more on this path, because it is computed precisely
+    // so it can outlive a `detail` block that the fitting below may have to drop.
+    episode_air_status: output.episode_air_status || null,
     error: output.error || "",
     entity: output.entity || fallbackEntity || "",
     id_name: output.id_name || "",
@@ -7157,6 +7161,66 @@ function serializedByteSize(value) {
   return new TextEncoder().encode(value).length;
 }
 
+// VOICE-AGENT-154. Measured on House of the Dragon (2026-08-06): a series sheet is 259 KB, of
+// which posters (95 KB), Wikipedia prose (86 KB) and backdrops (34 KB) are 83 %. What a
+// question actually needs is tiny by comparison — the season list is 2.8 KB, and on a season
+// sheet the eight episodes with their air dates and ratings are 4.1 KB. So the lists are shed
+// by weight, not all at once.
+const DETAIL_MEDIA_LISTS = [
+  "posters", "backdrops", "stills", "logos", "profiles", "videos", "wikipedia_images",
+];
+// Never shed: small, and they are what episode and season questions are made of.
+const DETAIL_KEEP_LISTS = ["episodes", "seasons"];
+const DETAIL_SHED_STEPS = [
+  { label: "media", drop: DETAIL_MEDIA_LISTS },
+  {
+    label: "media+caps",
+    drop: DETAIL_MEDIA_LISTS,
+    cap: { cast: 12, crew: 8, topics: 6, similar: 12, recommendations: 12, lists: 8, movements: 6 },
+  },
+  // VOICE-AGENT-148: `similar` and `recommendations` are what the front has just drawn as
+  // cards, so a model that cannot see them ends up denying what is on screen. They are also
+  // small (2.8 and 4.4 KB on House of the Dragon). This step buys their survival with the
+  // credit and topic lists, which the cards do not show.
+  {
+    label: "recos",
+    drop: [...DETAIL_MEDIA_LISTS, "cast", "crew", "topics", "lists", "movements"],
+    cap: { similar: 8, recommendations: 8 },
+  },
+  {
+    label: "essentials",
+    drop: [...DETAIL_MEDIA_LISTS, "cast", "crew", "topics", "lists", "movements", "similar", "recommendations"],
+  },
+];
+
+// Returns a lighter `detail`, or null when this step would change nothing (so the caller does
+// not pay to re-measure an identical payload).
+function shedDetailLists(detail, shed) {
+  if (!detail || typeof detail !== "object" || Array.isArray(detail)) {
+    return null;
+  }
+  const out = {};
+  let changed = false;
+  for (const [key, value] of Object.entries(detail)) {
+    if (!Array.isArray(value) || DETAIL_KEEP_LISTS.includes(key)) {
+      out[key] = value;
+      continue;
+    }
+    if (shed.drop && shed.drop.includes(key)) {
+      changed = true;
+      continue;
+    }
+    const cap = shed.cap && shed.cap[key];
+    if (cap && value.length > cap) {
+      out[key] = value.slice(0, cap);
+      changed = true;
+      continue;
+    }
+    out[key] = value;
+  }
+  return changed ? out : null;
+}
+
 // Shrink a model payload until it fits `budgetBytes`. Sections are dropped from the TAIL
 // first because VOICE-AGENT-106 has already moved the sections the question is about to the
 // front, so the tail is by construction the least useful content.
@@ -7164,7 +7228,29 @@ function fitDetailToDataChannel(modelOutput, budgetBytes) {
   const withinBudget = (payload) => serializedByteSize(JSON.stringify(payload)) <= budgetBytes;
   const sections = Array.isArray(modelOutput?.wikipedia_content) ? modelOutput.wikipedia_content : null;
   if (!sections || !sections.length) {
-    return { output: modelOutput, truncated: false, keptSections: 0, fits: withinBudget(modelOutput) };
+    if (withinBudget(modelOutput)) {
+      return { output: modelOutput, truncated: false, keptSections: 0, fits: withinBudget(modelOutput) };
+    }
+    // VOICE-AGENT-154: an oversized sheet with no Wikipedia prose used to return fits:false,
+    // and the caller then substituted the "could not be loaded" stub — so episode questions
+    // would have kept failing on every series without a Wikipedia page. The lists are the
+    // only lever here, so use it.
+    for (const shed of DETAIL_SHED_STEPS) {
+      const trimmed = shedDetailLists(modelOutput.detail, shed);
+      if (!trimmed) {
+        continue;
+      }
+      const candidate = { ...modelOutput, detail: trimmed, detail_trimmed: shed.label };
+      if (withinBudget(candidate)) {
+        return { output: candidate, truncated: true, keptSections: 0, fits: true };
+      }
+    }
+    const { detail: _oversizedDetail, ...withoutDetail } = modelOutput;
+    const stripped = { ...withoutDetail, detail_omitted: true };
+    return {
+      output: stripped, truncated: true, keptSections: 0,
+      fits: withinBudget(stripped), detailDropped: true,
+    };
   }
   if (withinBudget(modelOutput)) {
     return { output: modelOutput, truncated: false, keptSections: sections.length, fits: true };
@@ -7205,10 +7291,24 @@ function fitDetailToDataChannel(modelOutput, budgetBytes) {
   if (withDetail) {
     return withDetail;
   }
-  // Prose over metadata. What actually blows the budget on a big series is the `detail` block
-  // (cast, crew, 8 seasons, 73 episodes) — and that is NOT what a background question is about.
-  // Drop it and give the Wikipedia sections the whole budget, rather than returning an empty
-  // payload that carries neither.
+  // VOICE-AGENT-154: between "everything" and "nothing" there was no middle, and the whole
+  // detail block went over the side as one piece. Measured on House of the Dragon, that was
+  // throwing away the answer to keep the wrapping: of a 259 KB series sheet, 224 KB is
+  // posters, backdrops and image lists, while the season list is 2.8 KB and, on a season
+  // sheet, the eight episodes are 4.1 KB. So shed by weight, heaviest and least answerable
+  // first, and stop at the first size that fits.
+  for (const shed of DETAIL_SHED_STEPS) {
+    const trimmed = shedDetailLists(modelOutput.detail, shed);
+    if (!trimmed) {
+      continue;
+    }
+    const partial = tryFit({ ...modelOutput, detail: trimmed, detail_trimmed: shed.label }, false);
+    if (partial) {
+      return partial;
+    }
+  }
+  // Prose over metadata. Last resort only: nothing above fitted, so the sections get the whole
+  // budget rather than returning a payload that carries neither.
   const { detail: _droppedDetail, ...withoutDetail } = modelOutput;
   const leaner = tryFit({ ...withoutDetail, detail_omitted: true }, true);
   if (leaner) {

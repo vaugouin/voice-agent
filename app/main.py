@@ -490,7 +490,9 @@ DETAIL_ENTITY_CONFIG = {
             "and last air dates, season and episode counts, ratings, status, "
             "Wikidata/IMDb IDs, cast, crew, genre codes, companies, networks, "
             "production countries, spoken languages, topics, lists, collections, "
-            "movements, awards, nominations, posters, and backdrops."
+            "movements, awards, nominations, posters, and backdrops. It lists the "
+            "SEASONS but NOT the individual episodes: for anything about a specific "
+            "episode, call get_season_detail."
         ),
     },
     "season": {
@@ -501,10 +503,20 @@ DETAIL_ENTITY_CONFIG = {
             {"name": "id_serie", "id_name": "ID_SERIE", "type": "integer"},
             {"name": "season_number", "id_name": "SEASON_NUMBER", "type": "integer"},
         ],
+        # VOICE-AGENT-154: this description is the fix. The tool always returned the full
+        # episode list, but said only "parent series, cast, crew, posters, backdrops" — so on
+        # 2026-08-06 the model read it, saw nothing about episodes, and declined three
+        # questions in a row whose answer was one call away. A tool nobody knows how to use
+        # is a tool that does not exist.
         "description": (
-            "Get all fields for a TV series season by ID_SERIE and SEASON_NUMBER, "
-            "including its parent series, cast, crew, posters, backdrops, and "
-            "Wikipedia detail when available. Season 0 represents specials."
+            "Get one season of a TV series by ID_SERIE and SEASON_NUMBER. Returns the "
+            "FULL EPISODE LIST for that season: every episode's number, title, overview, "
+            "air date (DAT_AIR), runtime and rating, plus the season's own air date and "
+            "episode count, its parent series, cast, crew, posters and Wikipedia detail. "
+            "This is the tool to call for any episode-level question, such as which "
+            "episode aired most recently, when a season starts or ends, how many "
+            "episodes are left, or how the episodes compare to each other. Season 0 "
+            "represents specials."
         ),
     },
     "episode": {
@@ -517,9 +529,12 @@ DETAIL_ENTITY_CONFIG = {
             {"name": "episode_number", "id_name": "EPISODE_NUMBER", "type": "integer"},
         ],
         "description": (
-            "Get all fields for a TV series episode by ID_SERIE, SEASON_NUMBER, "
-            "and EPISODE_NUMBER, including its parent season and series, cast, "
-            "crew, still images, and Wikipedia detail when available."
+            "Get one episode of a TV series by ID_SERIE, SEASON_NUMBER and "
+            "EPISODE_NUMBER, including its title, overview, air date (DAT_AIR), "
+            "runtime and rating, its parent season and series, cast, crew, still "
+            "images, and Wikipedia detail when available. Use it when the user names "
+            "one episode; to browse or compare the episodes of a season, call "
+            "get_season_detail instead, which returns them all in one call."
         ),
     },
     "person": {
@@ -1367,6 +1382,70 @@ def _date_status_map(record: Any, today: date) -> dict[str, str]:
         if status:
             out[column] = status
     return out
+
+
+def _episode_air_summary(detail: Any, today: date) -> dict[str, Any] | None:
+    """Which episodes have aired, decided in code (VOICE-AGENT-155).
+
+    Same lesson as VOICE-AGENT-149, one level deeper: `_date_status` only ever looked at the
+    TOP of a payload, so a season sheet carried a verdict for its own DAT_AIR and none for the
+    eight episodes underneath it. Asking the model to compare eight dates to today is the
+    arithmetic that ticket already proved it loses.
+
+    The verdict rides on the payload, never inside the episode records: those dicts are what
+    the browser renders episode cards from, and a key added inside would surface on screen.
+
+    It also disarms the placeholder trap. An unaired episode arrives titled "Episode 8" with
+    VOTE_AVERAGE 1.0 — a rating nobody gave it. Left unflagged, that is a 1-out-of-10 the
+    model would happily read aloud for an episode that does not exist yet.
+    """
+    episodes = detail.get("episodes") if isinstance(detail, dict) else None
+    if not isinstance(episodes, list) or not episodes:
+        return None
+
+    def brief(ep: dict[str, Any]) -> dict[str, Any]:
+        return {
+            "EPISODE_NUMBER": ep.get("EPISODE_NUMBER"),
+            "TITLE": ep.get("TITLE"),
+            "DAT_AIR": str(ep.get("DAT_AIR") or "")[:10],
+        }
+
+    aired: list[dict[str, Any]] = []
+    upcoming: list[dict[str, Any]] = []
+    for episode in episodes:
+        if not isinstance(episode, dict):
+            continue
+        status = _date_status(episode.get("DAT_AIR"), today)
+        if status == "future":
+            upcoming.append(episode)
+        elif status:
+            aired.append(episode)
+
+    if not aired and not upcoming:
+        return None
+
+    def air_key(ep: dict[str, Any]) -> str:
+        return str(ep.get("DAT_AIR") or "")[:10]
+
+    summary: dict[str, Any] = {
+        "as_of": today.isoformat(),
+        "episodes_listed": len(episodes),
+        "aired_count": len(aired),
+        "upcoming_count": len(upcoming),
+    }
+    if aired:
+        summary["last_aired"] = brief(max(aired, key=air_key))
+    if upcoming:
+        summary["next_airing"] = brief(min(upcoming, key=air_key))
+        summary["season_last_air_date"] = max(air_key(e) for e in upcoming)
+        summary["upcoming_warning"] = (
+            "The episodes counted in upcoming_count have NOT aired yet. Their titles and "
+            "ratings are placeholders the database fills in advance, never a real title or "
+            "a real score: do not quote them, and never present such an episode as broadcast."
+        )
+    elif aired:
+        summary["season_last_air_date"] = max(air_key(e) for e in aired)
+    return summary
 
 
 def current_date_instructions() -> str:
@@ -2501,6 +2580,11 @@ def _with_date_status(payload: dict[str, Any]) -> dict[str, Any]:
         statuses = _date_status_map(detail, today)
         if statuses:
             payload["date_status"] = statuses
+        # VOICE-AGENT-155: the same verdict for the episodes nested under a season sheet.
+        # Top level, so it survives the compaction that may drop `detail` entirely.
+        episode_summary = _episode_air_summary(detail, today)
+        if episode_summary:
+            payload["episode_air_status"] = episode_summary
     return payload
 
 
