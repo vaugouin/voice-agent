@@ -2559,7 +2559,11 @@ function cardSpecFromRecord(record) {
       subtitle: episodeLabel,
       imageUrl: tmdbImage(record.STILL_PATH, "w342"),
       meta: [episodeLabel, formatDate(record.DAT_AIR), formatRuntime(record.RUNTIME)],
-      rating: record.VOTE_AVERAGE,
+      // VOICE-AGENT-139 finished here. The detail panel moved to IMDb back then, the CARD
+      // did not, so an episode rail was the last place in the interface still showing a TMDb
+      // score. FASTAPI-TEXT2SQL-194 removes the field from the API entirely, which would have
+      // left these cards with no rating at all.
+      rating: record.IMDB_RATING,
       overview: record.OVERVIEW || "",
     });
   }
@@ -2572,7 +2576,10 @@ function cardSpecFromRecord(record) {
       subtitle: firstValue(formatDate(record.DAT_AIR), record.AIR_YEAR),
       imageUrl: tmdbImage(record.POSTER_PATH, "w342"),
       meta: [record.EPISODE_COUNT ? `${record.EPISODE_COUNT} episodes` : "", formatDate(record.DAT_AIR)],
-      rating: record.VOTE_AVERAGE,
+      // Same leftover as the episode card above. A season now carries its own IMDb figure,
+      // rolled up from its episodes (season 3 of House of the Dragon: 8.29 on 7 rated
+      // episodes), so the tile that -139 had to leave empty can finally be filled.
+      rating: record.IMDB_RATING,
       overview: record.OVERVIEW || "",
     });
   }
