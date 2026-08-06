@@ -1119,6 +1119,11 @@ RECOVERY_INSTRUCTIONS = (
     "wrong entity: re-query with the offending condition relaxed (for example drop a "
     "filter the user did not explicitly ask for) OR with a corrected, broader reading of "
     "an entity (for example a more general award, title, or category). "
+    # VOICE-AGENT-150, second pass: recovery made it worse twice on 2026-08-06 by padding
+    # the question further each time. Shortest path first, and it is the cheapest to try.
+    "Before anything else, if what you sent was not the user's exact words, retry with "
+    "their question VERBATIM: padding a question is itself a common cause of an empty "
+    "result, and shortening back is the first recovery to attempt, never widening again. "
     "If reason is entity_unresolved, an entity listed in diagnostic.unresolved_entities "
     "was not recognized: re-query using an alternate spelling or a more common name. "
     "If reason is ambiguous or no_sql, split the request into smaller sub-questions and "
@@ -1332,7 +1337,22 @@ DATE_PRECEDENCE_RULE = (
     "yourself and never override it with what you believe about a title: if `_date_status` says "
     "`past`, the record is out and you speak of it in the past, even if you remember it as "
     "recent or forthcoming. When a record carries no `_date_status`, say nothing about whether "
-    "it has happened."
+    "it has happened. "
+    # VOICE-AGENT-155, second pass, and the sentence above is exactly what broke it. On
+    # 2026-08-06 the season payload carried `episode_air_status` with `last_aired` spelled
+    # out, the model read it — it named episode 7 and its date correctly — and then hedged
+    # three times: "without an episode-level date status, I can't confirm it as already
+    # aired". It was obeying "say nothing when a record carries no `_date_status`", since the
+    # verdict deliberately rides on the payload rather than inside the episode records. The
+    # rule and the payload disagreed, and the rule won. Naming the field closes that gap.
+    "A season sheet carries `episode_air_status` instead of a per-episode field, computed by "
+    "the application against today's date and just as authoritative: `last_aired` is the most "
+    "recent episode that HAS already aired, `next_airing` is the next one that has NOT aired "
+    "yet, `season_last_air_date` is the date the season ends, and `aired_count` and "
+    "`upcoming_count` say how many fall on each side. Answer episode timing questions straight "
+    "from it, in the past tense for `last_aired` and the future tense for `next_airing`. Never "
+    "say that per-episode status is missing and never hedge about it: every episode outside "
+    "`upcoming_count` has aired."
 )
 
 # VOICE-AGENT-149. The date columns worth a verdict, per entity. Deliberately a named list and
@@ -1433,6 +1453,13 @@ def _episode_air_summary(detail: Any, today: date) -> dict[str, Any] | None:
         "aired_count": len(aired),
         "upcoming_count": len(upcoming),
     }
+    # VOICE-AGENT-155 second pass: the block said what had NOT aired and left what HAD aired
+    # implicit, so the model hedged on the half that was certain. State both.
+    summary["verdict"] = (
+        "Computed in code against as_of. last_aired HAS already aired: speak of it in the "
+        "past. next_airing has NOT aired: speak of it in the future. Do not recompute this "
+        "and do not hedge about missing per-episode status."
+    )
     if aired:
         summary["last_aired"] = brief(max(aired, key=air_key))
     if upcoming:
@@ -1528,14 +1555,32 @@ def realtime_session_config(
             "name": "query_text2sql",
             "description": (
                 "Forward a natural-language user question to the local "
-                "FastAPI/FastMCP text2sql app and return its answer."
+                "FastAPI/FastMCP text2sql app and return its answer. Pass the question "
+                "through unchanged: this tool resolves entities from the user's own "
+                "wording, so rewriting it makes results worse, not better."
             ),
             "parameters": {
                 "type": "object",
                 "properties": {
+                    # VOICE-AGENT-150, second pass. Measured against the production API on
+                    # 2026-08-06, during the video #4 rehearsal: "What is everyone watching
+                    # right now on HBO?" returns 50 rows. The model padded it into "... Show
+                    # currently popular or trending HBO shows and movies." on the FIRST call,
+                    # before any recovery, and that returns 0. The added word "movies" makes
+                    # the API switch from a plain series query to a movie+series UNION whose
+                    # projection has no POPULARITY column, while the ORDER BY still sorts on
+                    # it (tracked API-side as FASTAPI-TEXT2SQL-193). Two rewrites, two empty
+                    # results, 47 seconds of dead air and an on-camera "no matches came back",
+                    # for a question that worked exactly as spoken.
                     "query": {
                         "type": "string",
-                        "description": "The user's spoken question as text.",
+                        "description": (
+                            "The user's question, VERBATIM. Send exactly what they said. Do "
+                            "not expand it, do not add synonyms, platform names, or "
+                            "clarifying clauses, and do not merge it with your own "
+                            "restatement: entity resolution runs on the user's words, and "
+                            "padding the question breaks it."
+                        ),
                     },
                     "ui_language": {
                         "type": "string",
