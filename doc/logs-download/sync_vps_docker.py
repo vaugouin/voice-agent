@@ -42,8 +42,15 @@ Exclude rules (from the config file and/or --exclude):
 Credentials live in a `.env` file beside this script (see .env.example) and are
 loaded automatically. Real environment variables override .env; CLI flags
 override both. Recognised keys: VPS_HOST, VPS_PORT, VPS_USER, VPS_REMOTE,
-VPS_LOCAL, VPS_EXTRA_ROOTS, VPS_KEY_FILE, VPS_SSH_PASSWORD. The .env is
+VPS_LOCAL, VPS_EXTRA_ROOTS, VPS_KEY_FILE, VPS_KEY_PASSPHRASE,
+VPS_SSH_PASSWORD. The .env is
 git/docker-ignored.
+
+VPS_KEY_FILE accepts three path forms, all resolved by resolve_path():
+`~/.ssh/id_ed25519` (portable, preferred), `%USERPROFILE%\.ssh\id_ed25519` /
+`$HOME/...` (environment variables), and a RELATIVE path, which is anchored to
+the .env's own folder — never to the shell's current directory, so the same
+.env works whichever folder the script is launched from.
 
 Usage (PowerShell):
   pip install paramiko
@@ -210,6 +217,28 @@ def load_dotenv(path: str | None) -> None:
             if len(val) >= 2 and val[0] == val[-1] and val[0] in ("'", '"'):
                 val = val[1:-1]
             os.environ.setdefault(key, val)
+
+
+def resolve_path(path: str | None, base: str) -> str | None:
+    """Expand ~ and %VARS%/$VARS in *path*, then anchor a relative one to *base*.
+
+    Paramiko opens ``key_filename`` verbatim: it expands nothing, so a value like
+    ``%USERPROFILE%\\.ssh\\id_ed25519`` or ``~/.ssh/id_ed25519`` would be taken as a
+    literal filename and auth would fail with a misleading "authentication failed".
+
+    A *relative* value resolves against this script's config folder (the .env's own
+    directory), NOT the shell's current directory — otherwise the same .env would
+    work when launched from the script folder and break from anywhere else, which
+    is exactly how this script is normally run (``python doc\\...\\sync_vps_docker.py``
+    from the repo root). Every other default here is anchored the same way
+    (_SCRIPT_DIR), so this keeps one rule for the whole file.
+    """
+    if not path:
+        return path
+    expanded = os.path.expanduser(os.path.expandvars(path))
+    if not os.path.isabs(expanded):
+        expanded = os.path.join(base, expanded)
+    return os.path.normpath(expanded)
 
 
 def load_excludes(path: str | None, cli_entries: list[str]) -> list[str]:
@@ -391,6 +420,17 @@ def connect(args) -> paramiko.SSHClient:
                   auth_timeout=CONNECT_TIMEOUT)
     if args.key_file:
         kwargs["key_filename"] = args.key_file
+        # An encrypted private key needs its passphrase passed explicitly: paramiko
+        # never prompts on its own, it raises PasswordRequiredException. Take it from
+        # the environment for unattended runs; otherwise we prompt below, on the
+        # exception, so the passphrase can stay out of the .env entirely.
+        passphrase = args.key_passphrase or os.environ.get("VPS_KEY_PASSPHRASE")
+        if passphrase:
+            kwargs["passphrase"] = passphrase
+        # Offer only the key we were given: without this, paramiko also tries every
+        # other key it finds and the failure message names the wrong one.
+        kwargs["look_for_keys"] = False
+        kwargs["allow_agent"] = False
     else:
         password = args.password or os.environ.get("VPS_SSH_PASSWORD")
         if not password:
@@ -399,7 +439,15 @@ def connect(args) -> paramiko.SSHClient:
         kwargs["look_for_keys"] = False
         kwargs["allow_agent"] = False
 
-    client.connect(**kwargs)
+    try:
+        client.connect(**kwargs)
+    except paramiko.PasswordRequiredException:
+        # Encrypted key and no VPS_KEY_PASSPHRASE: ask, rather than fail with a
+        # message that says nothing about what is missing.
+        if not args.key_file:
+            raise
+        kwargs["passphrase"] = getpass(f"Passphrase for {args.key_file}: ")
+        client.connect(**kwargs)
     return client
 
 
@@ -516,8 +564,11 @@ def main() -> int:
     p.add_argument("--remote", default=env("VPS_REMOTE", "/home/debian/docker"), help="Remote root dir")
     p.add_argument("--local", default=env("VPS_LOCAL", None), help="Local mirror root dir")
     p.add_argument("--password", help="SSH password (prefer VPS_SSH_PASSWORD in .env or --key-file)")
+    p.add_argument("--key-passphrase", default=env("VPS_KEY_PASSPHRASE", None),
+                   help="Passphrase for an encrypted --key-file (else prompted)")
     p.add_argument("--key-file", default=env("VPS_KEY_FILE", None),
-                   help="Path to a private key file for auth")
+                   help="Private key file for auth. Accepts ~, %%VARS%%/$VARS, or a "
+                        "path relative to the .env's folder")
     p.add_argument("--exclude-file", default=DEFAULT_EXCLUDE_FILE,
                    help="Config file of paths/names to exclude (default: sync_exclude.conf)")
     p.add_argument("--log-dir", default=env("VPS_LOG_DIR", DEFAULT_LOG_DIR),
@@ -543,6 +594,19 @@ def main() -> int:
     if missing:
         print(f"ERROR: missing required config: {', '.join(missing)}.\n"
               f"       Set it in {env_file} (copy from .env.example) or pass it on the CLI.",
+              file=sys.stderr)
+        return 2
+
+    # The key path may be written with ~, %USERPROFILE%/$HOME, or relative to the
+    # .env — paramiko understands none of those, so normalise before connecting.
+    # Checking the file here matters: an unreadable key surfaces from paramiko as a
+    # plain "authentication failed", which points at the wrong thing entirely.
+    config_dir = os.path.dirname(os.path.abspath(env_file)) or _SCRIPT_DIR
+    args.key_file = resolve_path(args.key_file, config_dir)
+    if args.key_file and not os.path.isfile(args.key_file):
+        print(f"ERROR: private key not found: {args.key_file}\n"
+              f"       VPS_KEY_FILE / --key-file accepts ~, %VARS%, or a path relative\n"
+              f"       to {config_dir}. Leave it empty to authenticate by password.",
               file=sys.stderr)
         return 2
 
@@ -627,9 +691,12 @@ def main() -> int:
         if session is not None:
             session.close()
 
-    elapsed = time.time() - started
+    finished = time.time()
+    elapsed = finished - started
     print("-" * 70)
     print(f"Done in {elapsed:.1f}s")
+    print(f"  started:      {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(started))}")
+    print(f"  finished:     {time.strftime('%Y-%m-%d %H:%M:%S', time.localtime(finished))}")
     print(f"  new:          {stats.copied_new}")
     print(f"  updated:      {stats.copied_newer}")
     print(f"  up-to-date:   {stats.skipped}")
