@@ -2758,6 +2758,63 @@ async def get_samples(ui_language: str = "en", set: str = "sample") -> dict[str,
     }
 
 
+@app.get("/tool/health")
+async def get_health() -> dict[str, Any]:
+    """Which voice-agent is this, and which text2sql is it talking to (VOICE-AGENT-166).
+
+    Blue/Green flips are decided by ``TEXT2SQL_BASE_URL`` in the host env file, which is
+    not in git, so nothing in the repository says which colour a running container reaches.
+    The version was already discoverable, buried in the ``upstream`` block of a
+    ``/tool/text2sql`` answer, but reading it that way costs a full pipeline run and, on a
+    cache miss, LLM tokens. This asks the upstream's own health probe instead
+    (FASTAPI-TEXT2SQL-203), which costs nothing and touches no cache.
+
+    Deliberately NOT reported: the upstream URL and its port. The colour follows the parity
+    of the patch number, so ``api_version`` already answers the question, and a port only
+    describes an internal topology. ``api_configured`` says whether the variable was set at
+    all or whether the code default took over, which is the other half of a misconfiguration.
+
+    Unauthenticated like every other ``/tool/*`` proxy. A version number adds nothing to
+    what those already return.
+
+    Returns:
+        dict: this app's version, plus the upstream's version, readiness and reachability.
+    """
+    result: dict[str, Any] = {
+        "app_version": APP_VERSION,
+        "api_configured": bool(os.getenv("TEXT2SQL_BASE_URL")),
+        "api_reachable": False,
+        "api_version": None,
+        "api_ready": None,
+    }
+    try:
+        async with httpx.AsyncClient(timeout=10) as client:
+            response = await client.get(f"{text2sql_base_url()}/", headers=text2sql_headers())
+    except httpx.HTTPError as exc:
+        # Never 502 here: a health probe that fails to answer tells the caller nothing.
+        # An unreachable upstream is a result, not an error.
+        result["error"] = str(exc)
+        return result
+
+    if response.status_code >= 400:
+        result["error"] = f"upstream returned {response.status_code}"
+        return result
+
+    result["api_reachable"] = True
+    try:
+        body = response.json()
+    except ValueError:
+        result["error"] = "upstream health probe did not return JSON"
+        return result
+
+    if isinstance(body, dict):
+        # api_version is absent on an instance older than FASTAPI-TEXT2SQL-203; leaving the
+        # key null says "this upstream cannot tell me" rather than inventing a version.
+        result["api_version"] = body.get("api_version")
+        result["api_ready"] = body.get("bktrees_ready")
+    return result
+
+
 # Only events relevant to harness engineering are persisted to client.log: tool
 # calls (+ their diagnostic), spoken/typed queries, and their outcomes. All UI and
 # transport telemetry (focus, visibility, WebRTC/ICE, keepalive, mic, wake-lock,

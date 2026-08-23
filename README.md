@@ -168,6 +168,10 @@ Server-side harness:
 - `POST /session` receives the browser SDP offer, combines it with the Realtime session config, calls `https://api.openai.com/v1/realtime/calls`, and returns the OpenAI SDP answer.
 - `POST /tool/text2sql` adapts `query_text2sql` tool calls to the upstream text2sql API.
 - `GET /tool/detail/{entity}/{id}?ui_language=...` adapts dedicated detail tool calls to the upstream entity detail API.
+- `GET /tool/health` reports which voice-agent this is and which text2sql it reaches: `app_version`, `api_configured`, `api_reachable`, `api_version`, `api_ready`. It asks the upstream's own `GET /` probe, so it spends no LLM token and touches no cache (VOICE-AGENT-166 / FASTAPI-TEXT2SQL-203).
+  - **Why it exists.** The Blue/Green choice lives in `TEXT2SQL_BASE_URL` in the host env file, which is not in git, so nothing in the repository says which colour a running container reaches. The version was already discoverable in the `upstream` block of a `/tool/text2sql` answer, but reading it that way runs the whole pipeline and, on a cache miss, spends tokens. Worse, `--env-file` is read by Docker at `docker run`: a `docker restart` relaunches with the old value baked into the container config, so a flip must **recreate** the container (`restart.sh` does), and this endpoint is how you check that it took.
+  - `api_version` comes back `null` against an upstream older than FASTAPI-TEXT2SQL-203, which does not expose it on `GET /`. Null means "this upstream cannot tell me", never "no version".
+  - The upstream URL and port are deliberately absent: the colour follows the parity of the patch number, so `api_version` already answers the question, and a port only describes an internal topology.
 
 Browser-side harness:
 
