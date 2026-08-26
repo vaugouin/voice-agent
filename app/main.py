@@ -1985,9 +1985,31 @@ def build_text2sql_request_json(
         "rows_per_page": rows_per_page,
         "retrieve_from_cache": True,
         "store_to_cache": True,
-        "complex_question_processing": False,
+        # Active par defaut depuis le 2026-08-26. Le drapeau autorise l'API a reprendre une
+        # requete UNE fois, avec un modele plus fort, quand elle a rendu zero ligne ET qu'un des
+        # trois signaux de FASTAPI-TEXT2SQL-156 dit que la question n'a pas ete comprise :
+        # placeholder survivant, repli brut, ou aucune entite extraite. Il ne coute donc rien sur
+        # une requete qui aboutit, et l'API mesure desormais ce qu'il coute quand il part
+        # (complex_question_processing_time, -204 et -205).
+        #
+        # Il etait a False tant que les resolveurs ne pouvaient pas echouer : sans seuil ils
+        # acceptaient toujours leur plus proche voisin, donc le signal du repli brut ne se levait
+        # jamais et la reprise n'aurait servi qu'aux questions sans entite. Les seuils de -206 lui
+        # rendent son office.
+        "complex_question_processing": complex_question_processing_enabled(),
     }
     return {key: value for key, value in request_json.items() if value is not None}
+
+
+def complex_question_processing_enabled() -> bool:
+    """Autoriser l'API a reprendre une question incomprise avec le modele fort.
+
+    Pilotable sans reconstruire l'image, mais rappel du piege maison : Docker lit `--env-file`
+    au `docker run`, pas au demarrage du processus, donc changer la valeur demande de recreer
+    le conteneur et pas seulement de le redemarrer.
+    """
+    raw = (os.getenv("TEXT2SQL_COMPLEX_QUESTION", "1") or "").strip().lower()
+    return raw in {"1", "true", "yes", "on"}
 
 
 def reusable_text2sql_question_hash(upstream_body: Any, *, has_more: bool) -> str | None:
@@ -2783,6 +2805,10 @@ async def get_health() -> dict[str, Any]:
     result: dict[str, Any] = {
         "app_version": APP_VERSION,
         "api_configured": bool(os.getenv("TEXT2SQL_BASE_URL")),
+        # Verifiable de l'exterieur, comme api_version : le drapeau se lit dans l'environnement,
+        # que Docker fige au `docker run`, donc un simple redemarrage ne suffit pas a le changer
+        # et cette sonde est le seul moyen de savoir ce que le conteneur applique vraiment.
+        "complex_question_processing": complex_question_processing_enabled(),
         "api_reachable": False,
         "api_version": None,
         "api_ready": None,
