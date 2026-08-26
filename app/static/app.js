@@ -3021,6 +3021,40 @@ function dedupeCrewCredits(items) {
   }));
 }
 
+// VOICE-AGENT-168. The fourth corner of a grid that was missing one. Two axes exist already:
+// group a TITLE's credits by person (dedupePersonCastCredits / dedupePersonCrewCredits, used on
+// movie and serie pages), and group a PERSON's credits by title, which existed for crew only
+// (dedupeCrewCredits). Cast never got it, so Tim Curry's seven voices in Dinosaurs filled the
+// Series rail with seven identical posters while tmdb-front, doing the same job in PHP, has
+// always shown one line with the seven characters after it.
+//
+// Same shape as dedupeCrewCredits, the character labels replacing the job labels. First
+// occurrence keeps its Map position, so the API's ordering (popularity, then billing) survives.
+function dedupeContentCastCredits(items) {
+  const grouped = new Map();
+  for (const item of Array.isArray(items) ? items : []) {
+    if (!item || typeof item !== "object" || !visualTitle(item)) {
+      continue;
+    }
+    const key = contentCreditKey(item);
+    const current = grouped.get(key);
+    if (!current) {
+      grouped.set(key, { item: { ...item }, roles: castCreditLabels(item) });
+      continue;
+    }
+    current.roles = uniqueNonEmpty([...current.roles, ...castCreditLabels(item)]);
+    // A repeated credit can be the one carrying the artwork; keep the first non-empty.
+    if (!current.item.POSTER_PATH && item.POSTER_PATH) {
+      current.item.POSTER_PATH = item.POSTER_PATH;
+    }
+  }
+
+  return Array.from(grouped.values()).map(({ item, roles }) => ({
+    ...item,
+    CAST_CHARACTER: roles.join(", ") || item.CAST_CHARACTER,
+  }));
+}
+
 function personCreditKey(item) {
   return firstValue(
     item.ID_PERSON ? `person:${item.ID_PERSON}` : "",
@@ -4212,22 +4246,29 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     const knownForActing = String(record.KNOWN_FOR_DEPARTMENT || "").toLowerCase() === "acting";
     const movieCrewCredits = dedupeCrewCredits(record.movie_crew);
     const seriesCrewCredits = dedupeCrewCredits(record.series_crew);
+    // VOICE-AGENT-168: one card per title, characters joined, on BOTH rails. Series is where it
+    // shows worst (a recurring voice role repeats per character), but a film casting the same
+    // actor twice had the same duplicate.
+    const movieCastCredits = dedupeContentCastCredits(record.movie_cast);
+    const seriesCastCredits = dedupeContentCastCredits(record.series_cast);
     const displayedMovies = knownForActing
-      ? appendVisualRail(body, "Movies", record.movie_cast, { kind: "poster", collectionName: "movie_cast" })
+      ? appendVisualRail(body, "Movies", movieCastCredits, { kind: "poster", collectionName: "movie_cast" })
       : appendVisualRail(body, "Directed or crewed", movieCrewCredits, { kind: "poster", collectionName: "movie_crew" });
     if (knownForActing) {
       appendVisualRail(body, "Directed or crewed", movieCrewCredits, { kind: "poster", collectionName: "movie_crew" });
     } else {
-      appendVisualRail(body, "Movies", record.movie_cast, { kind: "poster", collectionName: "movie_cast" });
+      appendVisualRail(body, "Movies", movieCastCredits, { kind: "poster", collectionName: "movie_cast" });
     }
-    appendVisualRail(body, "Series", record.series_cast, { kind: "poster", collectionName: "series_cast" });
+    appendVisualRail(body, "Series", seriesCastCredits, { kind: "poster", collectionName: "series_cast" });
     appendVisualRail(body, "Series crew", seriesCrewCredits, { kind: "poster", collectionName: "series_crew" });
     appendMixedVisualSections(body, record);
     if (!displayedMovies) {
       appendList(
         body,
         knownForActing ? "Known movies" : "Known crew credits",
-        namesFrom(knownForActing ? record.movie_cast : movieCrewCredits, "MOVIE_TITLE", Infinity)
+        // Deduped too (VOICE-AGENT-168): this text fallback listed the same title twice for the
+        // same reason the rail showed the same poster twice.
+        namesFrom(knownForActing ? movieCastCredits : movieCrewCredits, "MOVIE_TITLE", Infinity)
       );
     }
   } else {
