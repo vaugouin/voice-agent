@@ -397,6 +397,44 @@ function normalizedIntentText(value) {
   return foldLanguageText(value).replace(/[^a-z0-9]+/g, " ").trim();
 }
 
+// VOICE-AGENT-167: the transcriber, handed silence, returns its OWN bias prompt as the
+// transcription. Measured on client-20260826.log (video #5 rehearsal): two user turns whose
+// text is byte-identical to transcription_prompt(), one of which cut the assistant off
+// mid-word and, because the list contains "screenplay" and "screenwriter" (both
+// background_detail_topic_words), fired a forced_verbose_refetch that sent the answer off on
+// a tangent. This is the shadow of VOICE-AGENT-128: the bias text works, and on silence the
+// decoder finds it more probable than nothing at all.
+//
+// Detected from the SAME lists that build the prompt (lexicons.json, VOICE-AGENT-126), never
+// from a copy, so a shoot's vocabulary change cannot leave the guard behind. Two narrow rules,
+// both requiring five vocabulary terms so no real sentence can trip them: an echo of the
+// prompt string (whole or truncated), and the comma-separated list shape a person does not
+// speak.
+const ASR_VOCABULARY = [...(LEXICONS.asr_domain_terms || []), ...(LEXICONS.asr_proper_nouns || [])];
+const ASR_VOCABULARY_KEYS = new Set(ASR_VOCABULARY.map((term) => normalizedIntentText(term)).filter(Boolean));
+const ASR_PROMPT_ECHO_TEXT = normalizedIntentText(
+  [...(LEXICONS.asr_prompt_intro || []), ...ASR_VOCABULARY].join(" "),
+);
+const ASR_ECHO_MIN_TERMS = 5;
+
+function isAsrPromptEcho(value) {
+  const normalized = normalizedIntentText(value);
+  if (!normalized || ASR_VOCABULARY_KEYS.size === 0) return false;
+
+  const segments = String(value)
+    .split(",")
+    .map((part) => normalizedIntentText(part))
+    .filter(Boolean);
+  const known = segments.filter((part) => ASR_VOCABULARY_KEYS.has(part)).length;
+
+  // Rule 1: the prompt itself, whole or cut short by the decoder.
+  if (known >= ASR_ECHO_MIN_TERMS && ASR_PROMPT_ECHO_TEXT.includes(normalized)) return true;
+  // Rule 2: the list shape. Five or more comma-separated parts, nearly all of them vocabulary.
+  if (segments.length >= ASR_ECHO_MIN_TERMS && known >= Math.ceil(segments.length * 0.8)) return true;
+
+  return false;
+}
+
 function isVerboseDetailRequest(value) {
   const clean = normalizedIntentText(value);
   return verboseDetailTriggerPhrases.some((phrase) => clean.includes(phrase));
@@ -7978,7 +8016,19 @@ async function handleServerEvent(event) {
 
   if (event.type === "conversation.item.input_audio_transcription.completed") {
     const transcript = event.transcript || inputTranscripts.get(event.item_id) || "";
-    if (transcript.trim()) {
+    // VOICE-AGENT-167: drop the transcriber's own bias prompt before it becomes a user turn.
+    // Discarded here rather than downstream: this is where lastUserTranscript, the retained
+    // context and the verbose refetch all start, and a phantom that reaches any of them has
+    // already derailed the conversation.
+    const asrPromptEcho = transcript.trim() ? isAsrPromptEcho(transcript) : false;
+    if (asrPromptEcho) {
+      clientLog("user_transcript_discarded", {
+        item_id: event.item_id,
+        reason: "asr_prompt_echo",
+        transcript: transcript.trim().slice(0, 200),
+      });
+    }
+    if (transcript.trim() && !asrPromptEcho) {
       lastUserTranscript = transcript.trim();
       activeUiLanguage = detectUiLanguageFromText(lastUserTranscript);
       addRetainedContext({ type: "user", text: lastUserTranscript });

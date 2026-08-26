@@ -295,6 +295,44 @@ def transcription_prompt() -> str:
     return " ".join(ASR_PROMPT_INTRO) + " " + ", ".join(ASR_DOMAIN_TERMS + ASR_PROPER_NOUNS) + "."
 
 
+# VOICE-AGENT-167. Handed silence, the transcriber returns the prompt above as its
+# transcription. Observed twice on the video #5 rehearsal (client-20260826.log), byte-identical
+# to transcription_prompt(). The Realtime path is guarded in app.js; this is the same guard for
+# the dictation upload, which carries the same prompt and so has the same failure.
+_ASR_ECHO_MIN_TERMS = 5
+
+
+def _asr_echo_key(value: str) -> str:
+    """Fold to the comparison form used on both sides: lowercase, alphanumerics, single spaces."""
+    return re.sub(r"[^a-z0-9]+", " ", str(value or "").lower()).strip()
+
+
+ASR_VOCABULARY_KEYS = frozenset(
+    key for key in (_asr_echo_key(t) for t in ASR_DOMAIN_TERMS + ASR_PROPER_NOUNS) if key
+)
+ASR_PROMPT_ECHO_TEXT = _asr_echo_key(transcription_prompt())
+
+
+def is_asr_prompt_echo(value: str) -> bool:
+    """True when a transcription is the bias prompt coming back rather than speech.
+
+    Two narrow rules, both needing five vocabulary terms so no real sentence trips them: an
+    echo of the prompt string (whole or cut short by the decoder), and the comma-separated
+    list shape a person does not speak. Mirrors ``isAsrPromptEcho`` in app.js; both read the
+    lists from lexicons.json (VOICE-AGENT-126), never a copy.
+    """
+    normalized = _asr_echo_key(value)
+    if not normalized or not ASR_VOCABULARY_KEYS:
+        return False
+    segments = [seg for seg in (_asr_echo_key(part) for part in str(value).split(",")) if seg]
+    known = sum(1 for seg in segments if seg in ASR_VOCABULARY_KEYS)
+    if known >= _ASR_ECHO_MIN_TERMS and normalized in ASR_PROMPT_ECHO_TEXT:
+        return True
+    if len(segments) >= _ASR_ECHO_MIN_TERMS and known >= -(-len(segments) * 8 // 10):
+        return True
+    return False
+
+
 def realtime_transcription_config() -> dict[str, Any]:
     """The `audio.input.transcription` block of the Realtime session.
 
@@ -1897,10 +1935,19 @@ async def transcribe_audio(request: Request) -> dict[str, Any]:
     if response.status_code >= 400:
         raise HTTPException(status_code=response.status_code, detail=upstream_body)
 
+    text = upstream_body.get("text", "") if isinstance(upstream_body, dict) else ""
+    # VOICE-AGENT-167: the prompt coming back instead of speech. Returned as empty text, which
+    # the caller already handles as "nothing was said", plus a flag so a silent drop stays
+    # visible in a harvest.
+    prompt_echo = is_asr_prompt_echo(text)
+    if prompt_echo:
+        text = ""
+
     return {
         "configured": True,
         "model": model,
-        "text": upstream_body.get("text", "") if isinstance(upstream_body, dict) else "",
+        "text": text,
+        "prompt_echo_discarded": prompt_echo,
         "upstream_id": upstream_body.get("id", "") if isinstance(upstream_body, dict) else "",
     }
 
@@ -2851,6 +2898,11 @@ HARNESS_LOG_EVENTS = frozenset({
     "tool_call_success",
     "tool_call_error",
     "user_transcript",
+    # VOICE-AGENT-167: a transcript refused before it became a user turn, because it was the
+    # transcriber echoing its own bias prompt on silence. Whitelisted deliberately: a guard
+    # whose firing is invisible cannot be told apart from a guard that never fires, and this
+    # one has to be watched for false positives on real speech.
+    "user_transcript_discarded",
     "assistant_transcript",
     "text_chat_sent",
     "text_chat_success",
