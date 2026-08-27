@@ -182,12 +182,13 @@ let autoPagesLoaded = 0;
 let pageHistory = [];
 let pageHistoryIndex = -1;
 let restoringHistory = false;
-// VOICE-AGENT-082: remember the backdrop-slideshow frame per page (like the scroll offset).
-// activeBackdropViewer exposes the on-screen viewer's live index for save-time; the pending
-// index is set from a history entry just before its page is re-rendered and consumed by the
-// next buildBackdropSwipeViewer.
-let activeBackdropViewer = null;
-let pendingBackdropSlideshowIndex = null;
+// VOICE-AGENT-082, widened by VOICE-AGENT-169: remember the slideshow frame AND whether the
+// slideshow was running, per page (like the scroll offset) and per kind of viewer, because a
+// movie page carries two of them (poster + backdrop). activeSlideshowViewers holds the
+// on-screen viewers' live state for save-time, keyed by kind; pendingSlideshowState is set from
+// a history entry just before its page is re-rendered and read by the viewers being rebuilt.
+let activeSlideshowViewers = new Map();
+let pendingSlideshowState = null;
 let currentPageViewSignature = "";
 const maxAutoPages = 4;
 const TMDB_FRONT_BASE_URL = "https://www.vaugouin.com/tmdb";
@@ -1258,10 +1259,15 @@ async function goHistory(direction) {
   pageHistoryIndex = nextIndex;
   updateHistoryButtons();
   const entry = pageHistory[pageHistoryIndex];
-  // VOICE-AGENT-082: hand the saved backdrop frame to the next buildBackdropSwipeViewer.
-  pendingBackdropSlideshowIndex = typeof entry.slideshowIndex === "number" ? entry.slideshowIndex : null;
+  // VOICE-AGENT-169: hand the saved frame + running state to the viewers about to be rebuilt.
+  // It stays readable for the whole of renderHistoryEntry because a detail page renders TWICE
+  // (once from the clicked record, once from the fetched detail): a read-once handoff was
+  // consumed by the partial first render and the real one fell back to frame 1.
+  pendingSlideshowState = entry.slideshowState && typeof entry.slideshowState === "object"
+    ? entry.slideshowState
+    : null;
   await renderHistoryEntry(entry);
-  pendingBackdropSlideshowIndex = null; // clear if the restored page had no backdrop to consume it
+  pendingSlideshowState = null; // clear if the restored page had no viewer to read it
   restoreScrollPosition(entry);
 }
 
@@ -1282,20 +1288,36 @@ function saveCurrentScrollPosition() {
   const entry = pageHistory[pageHistoryIndex];
   if (entry) {
     entry.scrollY = window.scrollY || document.documentElement.scrollTop || 0;
-    // VOICE-AGENT-082: also remember the current backdrop-slideshow frame, if this page has one.
-    entry.slideshowIndex = activeBackdropViewer ? activeBackdropViewer.getIndex() : undefined;
+    // VOICE-AGENT-169: also remember every on-screen viewer's frame and running state.
+    entry.slideshowState = captureSlideshowState();
   }
 }
 
-// VOICE-AGENT-082: read (and clear) the pending backdrop frame set from a restored history
-// entry, clamped to the images actually available on the re-rendered page.
-function consumePendingBackdropIndex(count) {
-  const pending = pendingBackdropSlideshowIndex;
-  pendingBackdropSlideshowIndex = null;
-  if (typeof pending !== "number" || !Number.isFinite(pending) || count <= 0) {
-    return 0;
+// VOICE-AGENT-169: snapshot every on-screen viewer, keyed by kind ("portrait", "poster",
+// "backdrop"). Returns undefined when the page has no viewer, so an entry stays clean.
+function captureSlideshowState() {
+  const state = {};
+  activeSlideshowViewers.forEach((viewer, kind) => {
+    const viewerState = viewer && typeof viewer.getState === "function" ? viewer.getState() : null;
+    if (viewerState) {
+      state[kind] = viewerState;
+    }
+  });
+  return Object.keys(state).length ? state : undefined;
+}
+
+// VOICE-AGENT-169: read the pending frame + running state for one kind of viewer, clamped to the
+// images actually available on the re-rendered page. Read-only on purpose (see goHistory).
+// `running: null` means "nothing was saved", which is what lets the caller apply its own
+// auto-start default instead of forcing the slideshow off.
+function readPendingSlideshowState(kind, count) {
+  const pending = pendingSlideshowState ? pendingSlideshowState[kind] : null;
+  if (!pending || count <= 0) {
+    return { index: 0, running: null };
   }
-  return Math.min(Math.max(0, Math.floor(pending)), count - 1);
+  const raw = Number(pending.index);
+  const index = Number.isFinite(raw) ? Math.min(Math.max(0, Math.floor(raw)), count - 1) : 0;
+  return { index, running: pending.running === true };
 }
 
 function restoreScrollPosition(entry) {
@@ -1373,9 +1395,9 @@ function reusableText2SqlQuestionHash(output, upstream, args, rows, rowsPerPage)
 function resetDetailState() {
   currentDetailState = null;
   loadingDetailCollections = new Set();
-  // VOICE-AGENT-082: the on-screen backdrop viewer is about to be torn down; a page without
-  // one leaves this null so save-time reads no stale index.
-  activeBackdropViewer = null;
+  // VOICE-AGENT-169: the on-screen viewers are about to be torn down; a page without any
+  // leaves this empty so save-time reads no stale frame.
+  activeSlideshowViewers = new Map();
 }
 
 function baseDetailArgs(args = {}) {
@@ -3179,222 +3201,64 @@ function closeFullscreenImageViewer() {
   document.body.classList.remove("imageViewerOpen");
 }
 
-function buildPersonPortraitViewer(record) {
+const SLIDESHOW_INTERVAL_MS = 2600;
+
+// VOICE-AGENT-169: one swipe viewer behind the portraits, the posters and the backdrops. The
+// three used to be near-identical copies that had each drifted to a different subset of the
+// controls (the arrows on portraits only, the slideshow on backdrops only), the same incomplete
+// symmetry that produced VOICE-AGENT-168. Built once and switched by options, so a control added
+// here appears on all three.
+function buildSwipeImageViewer(record, {
+  kind,
+  images,
+  altText,
+  viewerClass = "personPortraitViewer",
+  counterClass = "personPortraitCounter",
+  autoStart = false,
+}) {
   const viewer = document.createElement("div");
-  viewer.className = "personPortraitViewer";
-  const images = personPortraitImages(record);
-  let index = 0;
+  viewer.className = viewerClass;
+
+  if (!images.length) {
+    const fallback = document.createElement("div");
+    fallback.className = "posterFallback";
+    fallback.textContent = titleForRecord(record);
+    viewer.append(fallback);
+    return viewer;
+  }
+
+  // VOICE-AGENT-169: restore the frame and the running state saved for this kind of viewer on
+  // this page; `running: null` means nothing was saved, so this viewer's own default applies.
+  const saved = readPendingSlideshowState(kind, images.length);
+  let index = saved.index;
   let pointerStartX = null;
   let swiped = false;
+  let slideshowTimer = null;
 
   const img = document.createElement("img");
-  setImageText(img, titleForRecord(record));
+  setImageText(img, altText);
   viewer.append(img);
 
   const counter = document.createElement("div");
-  counter.className = "personPortraitCounter";
+  counter.className = counterClass;
 
   const previous = document.createElement("button");
   previous.className = "portraitNav portraitNavPrev";
   previous.type = "button";
-  previous.setAttribute("aria-label", "Previous portrait");
+  previous.setAttribute("aria-label", "Previous image");
   previous.textContent = "‹";
 
   const next = document.createElement("button");
   next.className = "portraitNav portraitNavNext";
   next.type = "button";
-  next.setAttribute("aria-label", "Next portrait");
+  next.setAttribute("aria-label", "Next image");
   next.textContent = "›";
-
-  const update = () => {
-    img.src = images[index] || "";
-    counter.textContent = `${index + 1} / ${images.length}`;
-  };
-  const show = (direction) => {
-    if (images.length < 2) {
-      return;
-    }
-    index = (index + direction + images.length) % images.length;
-    update();
-  };
-
-  previous.addEventListener("click", (event) => {
-    event.stopPropagation();
-    show(-1);
-  });
-  next.addEventListener("click", (event) => {
-    event.stopPropagation();
-    show(1);
-  });
-
-  img.addEventListener("click", () => {
-    if (swiped) {
-      swiped = false;
-      return;
-    }
-    toggleFullscreenImageViewer(viewer);
-  });
-
-  viewer.addEventListener("pointerdown", (event) => {
-    pointerStartX = event.clientX;
-    swiped = false;
-  });
-  viewer.addEventListener("pointerup", (event) => {
-    if (pointerStartX === null) {
-      return;
-    }
-    const deltaX = event.clientX - pointerStartX;
-    pointerStartX = null;
-    if (Math.abs(deltaX) >= 40) {
-      swiped = true;
-      show(deltaX < 0 ? 1 : -1);
-    }
-  });
-  viewer.addEventListener("pointercancel", () => {
-    pointerStartX = null;
-  });
-
-  if (images.length > 1) {
-    viewer.append(counter);
-  }
-  if (images.length) {
-    update();
-  } else {
-    const fallback = document.createElement("div");
-    fallback.className = "posterFallback";
-    fallback.textContent = titleForRecord(record);
-    viewer.replaceChildren(fallback);
-  }
-
-  return viewer;
-}
-
-function buildSingleImageViewer(record, src) {
-  const viewer = document.createElement("div");
-  viewer.className = "personPortraitViewer";
-  const img = document.createElement("img");
-  img.src = src;
-  setImageText(img, titleForRecord(record));
-  img.addEventListener("click", () => {
-    toggleFullscreenImageViewer(viewer);
-  });
-  viewer.append(img);
-  return viewer;
-}
-
-function movieOrSeriePosterImages(record) {
-  const posters = (Array.isArray(record.posters) ? record.posters : [])
-    .map((item) => imageUrl(item?.IMAGE_PATH, "w500"))
-    .filter(Boolean);
-  const fallback = imageUrl(record.POSTER_PATH, "w500");
-  return uniqueNonEmpty([...posters, fallback]);
-}
-
-function buildPosterSwipeViewer(record) {
-  const viewer = document.createElement("div");
-  viewer.className = "personPortraitViewer";
-  const images = movieOrSeriePosterImages(record);
-  let index = 0;
-  let pointerStartX = null;
-  let swiped = false;
-
-  const img = document.createElement("img");
-  setImageText(img, titleForRecord(record));
-  viewer.append(img);
-
-  const counter = document.createElement("div");
-  counter.className = "personPortraitCounter";
-
-  const update = () => {
-    img.src = images[index] || "";
-    counter.textContent = `${index + 1} / ${images.length}`;
-  };
-  const show = (direction) => {
-    if (images.length < 2) {
-      return;
-    }
-    index = (index + direction + images.length) % images.length;
-    update();
-  };
-
-  img.addEventListener("click", () => {
-    if (swiped) {
-      swiped = false;
-      return;
-    }
-    toggleFullscreenImageViewer(viewer);
-  });
-
-  viewer.addEventListener("pointerdown", (event) => {
-    pointerStartX = event.clientX;
-    swiped = false;
-  });
-  viewer.addEventListener("pointerup", (event) => {
-    if (pointerStartX === null) {
-      return;
-    }
-    const deltaX = event.clientX - pointerStartX;
-    pointerStartX = null;
-    if (Math.abs(deltaX) >= 40) {
-      swiped = true;
-      show(deltaX < 0 ? 1 : -1);
-    }
-  });
-  viewer.addEventListener("pointercancel", () => {
-    pointerStartX = null;
-  });
-
-  if (images.length > 1) {
-    viewer.append(counter);
-  }
-  if (images.length) {
-    update();
-  } else {
-    const fallback = document.createElement("div");
-    fallback.className = "posterFallback";
-    fallback.textContent = titleForRecord(record);
-    viewer.replaceChildren(fallback);
-  }
-
-  return viewer;
-}
-
-function movieOrSerieBackdropImages(record) {
-  const backdrops = (Array.isArray(record.backdrops) ? record.backdrops : [])
-    .map((item) => imageUrl(item?.IMAGE_PATH, "w1280"))
-    .filter(Boolean);
-  const fallback = imageUrl(record.BACKDROP_PATH, "w1280");
-  return uniqueNonEmpty([...backdrops, fallback]);
-}
-
-function buildBackdropSwipeViewer(record) {
-  const images = movieOrSerieBackdropImages(record);
-  if (!images.length) {
-    return null;
-  }
-
-  const viewer = document.createElement("div");
-  viewer.className = "personPortraitViewer backdropViewer";
-  // VOICE-AGENT-082: start on the frame saved when this page was last left (0 otherwise),
-  // and expose the live index so save-time can capture where the slideshow currently is.
-  let index = consumePendingBackdropIndex(images.length);
-  let pointerStartX = null;
-  let swiped = false;
-  let slideshowTimer = null;
-  activeBackdropViewer = { getIndex: () => index };
-
-  const img = document.createElement("img");
-  setImageText(img, `${titleForRecord(record)} backdrop`);
-  viewer.append(img);
-
-  const counter = document.createElement("div");
-  counter.className = "personPortraitCounter backdropCounter";
 
   const slideshowButton = document.createElement("button");
   slideshowButton.className = "slideshowToggle";
   slideshowButton.type = "button";
-  slideshowButton.textContent = "\u25b6";
-  slideshowButton.setAttribute("aria-label", "Start backdrop slideshow");
+  slideshowButton.textContent = "▶";
+  slideshowButton.setAttribute("aria-label", "Start slideshow");
   slideshowButton.setAttribute("aria-pressed", "false");
 
   const update = () => {
@@ -3420,13 +3284,36 @@ function buildBackdropSwipeViewer(record) {
           return;
         }
         show(1);
-      }, 2600);
+      }, SLIDESHOW_INTERVAL_MS);
     }
     const isRunning = Boolean(slideshowTimer);
-    slideshowButton.textContent = isRunning ? "\u25a0" : "\u25b6";
-    slideshowButton.setAttribute("aria-label", `${isRunning ? "Stop" : "Start"} backdrop slideshow`);
+    slideshowButton.textContent = isRunning ? "■" : "▶";
+    slideshowButton.setAttribute("aria-label", `${isRunning ? "Stop" : "Start"} slideshow`);
     slideshowButton.setAttribute("aria-pressed", isRunning ? "true" : "false");
   };
+  // VOICE-AGENT-169: a deliberate move by the user wins over the automatic one. An arrow or a
+  // swipe stops the slideshow instead of being overwritten by it 2.6 seconds later.
+  const showByHand = (direction) => {
+    setSlideshowRunning(false);
+    show(direction);
+  };
+
+  activeSlideshowViewers.set(kind, {
+    getState: () => ({ index, running: Boolean(slideshowTimer) }),
+  });
+
+  previous.addEventListener("click", (event) => {
+    event.stopPropagation();
+    showByHand(-1);
+  });
+  next.addEventListener("click", (event) => {
+    event.stopPropagation();
+    showByHand(1);
+  });
+  slideshowButton.addEventListener("click", (event) => {
+    event.stopPropagation();
+    setSlideshowRunning(!slideshowTimer);
+  });
 
   img.addEventListener("click", () => {
     if (swiped) {
@@ -3447,28 +3334,92 @@ function buildBackdropSwipeViewer(record) {
     pointerStartX = null;
     if (Math.abs(deltaX) >= 40) {
       swiped = true;
-      show(deltaX < 0 ? 1 : -1);
+      showByHand(deltaX < 0 ? 1 : -1);
     }
   });
   viewer.addEventListener("pointercancel", () => {
     pointerStartX = null;
   });
-  slideshowButton.addEventListener("click", (event) => {
-    event.stopPropagation();
-    setSlideshowRunning(!slideshowTimer);
-  });
 
   update();
   if (images.length > 1) {
-    viewer.append(counter, slideshowButton);
-    // Auto-play the backdrop slideshow as soon as a movie/serie page is shown,
-    // unless the user prefers reduced motion. The interval self-stops when the
-    // viewer leaves the DOM (isConnected check) or when the button is toggled.
-    if (!prefersReducedMotion()) {
-      setSlideshowRunning(true);
-    }
+    viewer.append(counter, previous, next, slideshowButton);
+    // A restored state wins over the auto-start default in both directions: a slideshow the user
+    // had stopped stays stopped, one they had running resumes. Reduced motion suppresses the
+    // default only, never a state the user set by hand.
+    const shouldRun = saved.running === null
+      ? (autoStart && !prefersReducedMotion())
+      : saved.running;
+    setSlideshowRunning(shouldRun);
   }
+
   return viewer;
+}
+
+function buildPersonPortraitViewer(record) {
+  // VOICE-AGENT-169: portraits auto-play on arrival, like the backdrops of a movie page.
+  return buildSwipeImageViewer(record, {
+    kind: "portrait",
+    images: personPortraitImages(record),
+    altText: titleForRecord(record),
+    autoStart: true,
+  });
+}
+
+function buildSingleImageViewer(record, src) {
+  const viewer = document.createElement("div");
+  viewer.className = "personPortraitViewer";
+  const img = document.createElement("img");
+  img.src = src;
+  setImageText(img, titleForRecord(record));
+  img.addEventListener("click", () => {
+    toggleFullscreenImageViewer(viewer);
+  });
+  viewer.append(img);
+  return viewer;
+}
+
+function movieOrSeriePosterImages(record) {
+  const posters = (Array.isArray(record.posters) ? record.posters : [])
+    .map((item) => imageUrl(item?.IMAGE_PATH, "w500"))
+    .filter(Boolean);
+  const fallback = imageUrl(record.POSTER_PATH, "w500");
+  return uniqueNonEmpty([...posters, fallback]);
+}
+
+function buildPosterSwipeViewer(record) {
+  // VOICE-AGENT-169: posters get the button and the arrows but NO auto-start (decision
+  // 2026-08-27). A movie page would otherwise open with two slideshows running side by side.
+  return buildSwipeImageViewer(record, {
+    kind: "poster",
+    images: movieOrSeriePosterImages(record),
+    altText: titleForRecord(record),
+    autoStart: false,
+  });
+}
+
+function movieOrSerieBackdropImages(record) {
+  const backdrops = (Array.isArray(record.backdrops) ? record.backdrops : [])
+    .map((item) => imageUrl(item?.IMAGE_PATH, "w1280"))
+    .filter(Boolean);
+  const fallback = imageUrl(record.BACKDROP_PATH, "w1280");
+  return uniqueNonEmpty([...backdrops, fallback]);
+}
+
+function buildBackdropSwipeViewer(record) {
+  const images = movieOrSerieBackdropImages(record);
+  if (!images.length) {
+    // The caller appends nothing rather than an empty frame.
+    return null;
+  }
+  return buildSwipeImageViewer(record, {
+    kind: "backdrop",
+    images,
+    altText: `${titleForRecord(record)} backdrop`,
+    viewerClass: "personPortraitViewer backdropViewer",
+    counterClass: "personPortraitCounter backdropCounter",
+    autoStart: true,
+  });
 }
 
 function buildDetailVisualCard(item, kind = "poster") {

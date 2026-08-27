@@ -1268,21 +1268,59 @@ Default behavior:
 
 ### Detail Media Navigation
 
-For multi-image viewers:
+Portraits, posters and backdrops are all built by **one** function, `buildSwipeImageViewer()`, with
+three thin wrappers (`buildPersonPortraitViewer`, `buildPosterSwipeViewer`,
+`buildBackdropSwipeViewer`) that supply the images, the alt text, the CSS classes and the
+auto-start default. Before VOICE-AGENT-169 they were three near-identical copies that had each
+drifted to a different subset of the controls; a control added to the shared builder now appears on
+all three.
 
-- Previous and next buttons are rendered as `.portraitNav` controls.
+For multi-image viewers (more than one image; a single image shows no control at all):
+
+- Previous and next buttons are rendered as `.portraitNav` controls, **on all three viewers**
+  (VOICE-AGENT-169; before that they existed on person portraits only).
 - A `.personPortraitCounter` displays current image position.
-- Swiping/clicking navigation changes the active image.
+- Swiping or clicking navigation changes the active image.
+- Manual navigation, arrow or swipe, **stops a running slideshow**: a deliberate move by the user is
+  not overwritten by the automatic one 2.6 s later.
 
-### Backdrop Slideshow
+### Slideshow
 
-For backdrop viewers with slideshow support:
+`.slideshowToggle` appears in the top-right of **every** multi-image viewer (VOICE-AGENT-169;
+backdrops only before that). It is one button, not two: it shows ▶ when stopped and ■ while running,
+and carries `aria-pressed` plus a `Start`/`Stop slideshow` label. The control remains visible in
+normal and fullscreen modes. The interval (`SLIDESHOW_INTERVAL_MS`, 2600 ms) self-stops when the
+viewer leaves the DOM (`viewer.isConnected`) or when the button is toggled.
 
-- `.slideshowToggle` appears in the top-right of the viewer.
-- It starts or stops a slideshow across available backdrops.
-- The control remains visible in normal and fullscreen modes.
-- The slideshow **auto-starts** when the movie/serie detail page is rendered (more than one backdrop), so the button shows the running (■) state on arrival. Under `prefers-reduced-motion: reduce` it does not auto-start and stays paused (▶). The interval self-stops when the viewer leaves the DOM (`viewer.isConnected`) or when the button is toggled.
-- The current backdrop frame is **remembered per page** in its history entry (`entry.slideshowIndex`, alongside the scroll offset) and **restored** on Back/Forward: returning to a movie/serie page rebuilds the slideshow starting on the frame that was showing when you left, not frame 1 (VOICE-AGENT-082). `activeBackdropViewer.getIndex()` reads the live index at save-time; `consumePendingBackdropIndex()` clamps the restored index to the images still available. Fresh navigation starts at frame 1.
+**Auto-start differs by viewer, on purpose:**
+
+| Viewer | Arrows | Toggle | Auto-start |
+|---|---|---|---|
+| Person portraits | yes | yes | **yes** |
+| Movie/serie backdrops | yes | yes | **yes** |
+| Movie/serie posters | yes | yes | **no** |
+
+Posters stay manual because a movie page carries both a poster viewer and a backdrop viewer, and
+opening it with two slideshows running side by side is noise, not a feature (decision 2026-08-27).
+Under `prefers-reduced-motion: reduce` no viewer auto-starts and the button stays on ▶.
+
+**Frame and running state are remembered per page and per viewer** in the history entry
+(`entry.slideshowState`, alongside the scroll offset) and restored on Back/Forward: returning to a
+page rebuilds each viewer on the frame that was showing when you left, not frame 1, and a slideshow
+that was running **resumes** (VOICE-AGENT-082, widened by VOICE-AGENT-169). The state is keyed by
+viewer kind (`portrait` / `poster` / `backdrop`) because a movie page has two viewers;
+`captureSlideshowState()` snapshots every on-screen viewer at save-time and
+`readPendingSlideshowState()` clamps a restored index to the images still available.
+
+Two rules worth knowing, both learned from bugs:
+
+- The pending state is read **non-destructively** and stays readable for the whole of
+  `renderHistoryEntry()`. A detail page renders **twice** (once from the clicked record, once from
+  the fetched detail), and the previous read-once handoff was consumed by the partial first render,
+  so the real one silently fell back to frame 1.
+- A **restored** state wins over the auto-start default in both directions: a slideshow the user had
+  stopped stays stopped, one they had running resumes. Reduced motion suppresses the *default* only,
+  never a state the user set by hand.
 
 ## Voice Selection
 

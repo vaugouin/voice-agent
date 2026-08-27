@@ -1611,6 +1611,16 @@ button.search-poster-card-link {
   right: 18px;
 }
 
+/* VOICE-AGENT-169: the arrows are on every viewer now, including fullscreen, so they take the
+   same 18px inset as the counter and the slideshow toggle. */
+.personPortraitViewer.isFullscreen .portraitNavPrev {
+  left: 18px;
+}
+
+.personPortraitViewer.isFullscreen .portraitNavNext {
+  right: 18px;
+}
+
 .singleDetailBody {
   min-width: 0;
   display: grid;
