@@ -1141,6 +1141,21 @@ def compact_detail_for_model(
     }
 
 
+def compact_search_for_model(output: dict[str, Any]) -> dict[str, Any]:
+    """Drop the duplicated upstream payload before a query_text2sql result enters the
+    model input. `upstream.result` repeats `rows` verbatim, and upstream's answer/error/
+    sql_query/diagnostic are already surfaced at the top level by query_text2sql_data —
+    sending both nearly doubled every search turn's context cost, which across the
+    6-iteration recovery loop could exhaust the model's context window
+    (context_length_exceeded). `upstream` still travels untouched in tool_outputs for the
+    browser, which reads fields from it (justification, total_processing_time) that never
+    made it to the top level.
+    """
+    if not isinstance(output, dict) or "upstream" not in output:
+        return output
+    return {key: value for key, value in output.items() if key != "upstream"}
+
+
 # Bounded, grounded recovery guidance shared by the Realtime and /text-chat
 # prompts. Every query_text2sql result carries a `diagnostic` (reason +
 # unresolved_entities); this invites the agent to re-query on recoverable failures
@@ -2454,6 +2469,11 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         "tools": text_tool_definitions(),
         "tool_choice": "auto",
         "store": False,
+        # Safety net: default truncation is "disabled", which is exactly the
+        # context_length_exceeded 400 this ticket fixed. "auto" drops the oldest input
+        # items to fit instead of failing the turn outright if compaction upstream is
+        # ever insufficient (e.g. many recovery-loop iterations in one turn).
+        "truncation": "auto",
     }
     input_items: list[Any] = [
         {
@@ -2467,7 +2487,7 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
             "role": "user",
             "content": (
                 "query_text2sql tool output for the user message:\n"
-                + json.dumps(initial_text2sql_output)
+                + json.dumps(compact_search_for_model(initial_text2sql_output))
             ),
         })
         tool_outputs.append({
@@ -2570,11 +2590,14 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
                     "output": output,
                     "verbose": bool(verbose_detail_request and DETAIL_TOOL_BY_NAME.get(tool_name)),
                 })
-                model_output = (
-                    compact_detail_for_model(output, verbose=verbose_detail_request, intent_text=message)
-                    if DETAIL_TOOL_BY_NAME.get(tool_name)
-                    else output
-                )
+                if DETAIL_TOOL_BY_NAME.get(tool_name):
+                    model_output = compact_detail_for_model(
+                        output, verbose=verbose_detail_request, intent_text=message
+                    )
+                elif tool_name == "query_text2sql":
+                    model_output = compact_search_for_model(output)
+                else:
+                    model_output = output
                 input_items.append({
                     "type": "function_call_output",
                     "call_id": call.get("call_id"),
