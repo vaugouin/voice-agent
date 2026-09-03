@@ -3155,12 +3155,12 @@ function visualImage(item, kind = "poster") {
   return imageUrl(item.PROFILE_PATH || item.POSTER_PATH || item.STILL_PATH || item.IMAGE_PATH || item.LOGO_PATH || item.WIKIPEDIA_IMAGE_PATH, size);
 }
 
+// VOICE-AGENT-175: raw TMDb paths now, not pre-built URLs, see movieOrSeriePosterImages above.
 function personPortraitImages(record) {
   const portraits = (Array.isArray(record.portraits) ? record.portraits : [])
-    .map((item) => imageUrl(item?.IMAGE_PATH, "h632"))
+    .map((item) => item?.IMAGE_PATH)
     .filter(Boolean);
-  const fallback = imageUrl(record.PROFILE_PATH, "h632");
-  return uniqueNonEmpty([...portraits, fallback]);
+  return uniqueNonEmpty([...portraits, record.PROFILE_PATH]);
 }
 
 function toggleFullscreenImageViewer(viewer) {
@@ -3202,6 +3202,35 @@ function closeFullscreenImageViewer() {
 }
 
 const SLIDESHOW_INTERVAL_MS = 2600;
+
+// VOICE-AGENT-175: TMDb only serves pictures at a handful of pre-rendered widths (its
+// /configuration endpoint's poster_sizes / backdrop_sizes / profile_sizes), fixed at build
+// time until now (w500 posters, h632 portraits, w1280 backdrops) regardless of how large the
+// picture is actually displayed. On an iPad or a desktop the fullscreen viewer can render far
+// bigger than that, so a small source just sits there upscaled and soft. Each entry's second
+// value is that rung's pixel size along the picture's own long edge (height for the
+// portrait-shaped kinds, width for the landscape-shaped ones), so every kind compares on the
+// same footing against the box it will actually fill.
+const TMDB_SIZE_LADDER = {
+  poster: [["w92", 138], ["w154", 231], ["w185", 278], ["w342", 513], ["w500", 750], ["w780", 1170]],
+  portrait: [["h632", 632]],
+  backdrop: [["w300", 300], ["w780", 780], ["w1280", 1280]],
+  still: [["w300", 300], ["w780", 780], ["w1280", 1280]],
+};
+const TMDB_DEFAULT_SIZE = { poster: "w500", portrait: "h632", backdrop: "w1280", still: "w780" };
+
+// Smallest TMDb rung whose long edge still covers the box, in device pixels: never smaller
+// than the box needs, but not "original" just because the screen is large. `boxWidthPx` /
+// `boxHeightPx` are the CSS pixel box the picture is about to render into; using the larger of
+// the two as the target is a safe upper bound for object-fit:contain (the rendered picture's
+// long edge can never exceed it), even when the box and the picture don't share an orientation.
+function tmdbSizeForBox(kind, boxWidthPx, boxHeightPx) {
+  const ladder = TMDB_SIZE_LADDER[kind] || TMDB_SIZE_LADDER.poster;
+  const dpr = window.devicePixelRatio || 1;
+  const target = Math.max(boxWidthPx || 0, boxHeightPx || 0) * dpr;
+  const fit = ladder.find(([, longEdge]) => longEdge >= target);
+  return fit ? fit[0] : "original";
+}
 
 // VOICE-AGENT-169: one swipe viewer behind the portraits, the posters and the backdrops. The
 // three used to be near-identical copies that had each drifted to a different subset of the
@@ -3261,8 +3290,14 @@ function buildSwipeImageViewer(record, {
   slideshowButton.setAttribute("aria-label", "Start slideshow");
   slideshowButton.setAttribute("aria-pressed", "false");
 
+  // VOICE-AGENT-175: `images` holds raw TMDb paths, not pre-built URLs. The size is picked
+  // fresh each render, fullscreen (viewport-sized) getting a sharper rung than the card.
   const update = () => {
-    img.src = images[index] || "";
+    const isFullscreen = viewer.classList.contains("isFullscreen");
+    const size = isFullscreen
+      ? tmdbSizeForBox(kind, window.innerWidth - 36, window.innerHeight - 36)
+      : (TMDB_DEFAULT_SIZE[kind] || TMDB_DEFAULT_SIZE.poster);
+    img.src = imageUrl(images[index], size) || "";
     counter.textContent = `${index + 1} / ${images.length}`;
   };
   const show = (direction) => {
@@ -3321,6 +3356,8 @@ function buildSwipeImageViewer(record, {
       return;
     }
     toggleFullscreenImageViewer(viewer);
+    // VOICE-AGENT-175: the class just flipped, re-run at the (now current) box's resolution.
+    update();
   });
   viewer.addEventListener("pointerdown", (event) => {
     pointerStartX = event.clientX;
@@ -3366,25 +3403,36 @@ function buildPersonPortraitViewer(record) {
   });
 }
 
-function buildSingleImageViewer(record, src) {
+// VOICE-AGENT-175: takes the raw TMDb path (not a pre-built URL) plus its kind, so the picture
+// can be re-fetched at a sharper rung when the viewer goes fullscreen, same as the swipe viewers.
+function buildSingleImageViewer(record, path, kind = "poster") {
   const viewer = document.createElement("div");
   viewer.className = "personPortraitViewer";
   const img = document.createElement("img");
-  img.src = src;
+  const render = () => {
+    const isFullscreen = viewer.classList.contains("isFullscreen");
+    const size = isFullscreen
+      ? tmdbSizeForBox(kind, window.innerWidth - 36, window.innerHeight - 36)
+      : (TMDB_DEFAULT_SIZE[kind] || TMDB_DEFAULT_SIZE.poster);
+    img.src = imageUrl(path, size) || "";
+  };
+  render();
   setImageText(img, titleForRecord(record));
   img.addEventListener("click", () => {
     toggleFullscreenImageViewer(viewer);
+    render();
   });
   viewer.append(img);
   return viewer;
 }
 
+// VOICE-AGENT-175: raw TMDb paths now, not pre-built URLs; buildSwipeImageViewer picks the
+// size per render (card vs fullscreen).
 function movieOrSeriePosterImages(record) {
   const posters = (Array.isArray(record.posters) ? record.posters : [])
-    .map((item) => imageUrl(item?.IMAGE_PATH, "w500"))
+    .map((item) => item?.IMAGE_PATH)
     .filter(Boolean);
-  const fallback = imageUrl(record.POSTER_PATH, "w500");
-  return uniqueNonEmpty([...posters, fallback]);
+  return uniqueNonEmpty([...posters, record.POSTER_PATH]);
 }
 
 function buildPosterSwipeViewer(record) {
@@ -3400,10 +3448,9 @@ function buildPosterSwipeViewer(record) {
 
 function movieOrSerieBackdropImages(record) {
   const backdrops = (Array.isArray(record.backdrops) ? record.backdrops : [])
-    .map((item) => imageUrl(item?.IMAGE_PATH, "w1280"))
+    .map((item) => item?.IMAGE_PATH)
     .filter(Boolean);
-  const fallback = imageUrl(record.BACKDROP_PATH, "w1280");
-  return uniqueNonEmpty([...backdrops, fallback]);
+  return uniqueNonEmpty([...backdrops, record.BACKDROP_PATH]);
 }
 
 function buildBackdropSwipeViewer(record) {
@@ -3970,9 +4017,9 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
   if (record.ID_PERSON) {
     media.append(buildPersonPortraitViewer(record));
   } else if (record.ID_EPISODE) {
-    const still = imageUrl(record.STILL_PATH || record.WIKIPEDIA_IMAGE_PATH, "w780");
+    const still = record.STILL_PATH || record.WIKIPEDIA_IMAGE_PATH;
     if (still) {
-      media.append(buildSingleImageViewer(record, still));
+      media.append(buildSingleImageViewer(record, still, "still"));
     } else {
       const fallback = document.createElement("div");
       fallback.className = "posterFallback";
@@ -3986,12 +4033,12 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
       media.append(backdropViewer);
     }
   } else {
-    const poster = imageUrl(record.POSTER_PATH || record.PROFILE_PATH || record.LOGO_PATH || record.WIKIPEDIA_IMAGE_PATH, "w500");
+    const poster = record.POSTER_PATH || record.PROFILE_PATH || record.LOGO_PATH || record.WIKIPEDIA_IMAGE_PATH;
     const synthetic = (record.ID_COMPANY || record.ID_NETWORK)
       ? { itemClass: record.ID_NETWORK ? "network" : "company", id: record.ID_NETWORK || record.ID_COMPANY }
       : null;
     if (poster) {
-      const viewer = buildSingleImageViewer(record, poster);
+      const viewer = buildSingleImageViewer(record, poster, "poster");
       applySyntheticLogo(viewer, viewer.querySelector("img"), titleForRecord(record), synthetic);
       media.append(viewer);
     } else {
