@@ -1584,19 +1584,28 @@ button.search-poster-card-link {
   position: fixed;
   inset: 0;
   z-index: 1000;
-  display: grid;
-  place-items: center;
-  padding: 18px;
   background: rgb(0 0 0 / 94%);
   cursor: zoom-out;
   touch-action: pan-y;
 }
 
 .personPortraitViewer.isFullscreen img {
-  width: auto;
-  height: auto;
-  max-width: 100%;
-  max-height: 100%;
+  /* VOICE-AGENT-174: was width/height:auto + max-width/max-height:100%, which sizes the img
+     at its own intrinsic pixels (the source is fetched at TMDb's w500/w780), capped only if
+     it overflows, so on a wide viewport a small source just sits centered, short of the edges.
+     A `display:grid;place-items:center` parent with width/height:100% on the img looks like
+     the fix, but Chromium hits a circular percentage-height case on the implicit auto row:
+     the row falls back to sizing from the image's OWN aspect ratio instead of the available
+     space, so the img overflows the viewport and gets clipped by the base rule's
+     overflow:hidden (measured: a 2:3 poster computed to 988x1482 in a 988x1330 box, 152px
+     over). Absolute-positioning the img directly against this fixed, viewport-sized parent
+     sidesteps the grid track sizing entirely: `inset` and the calc()s below are already fully
+     definite from the parent's own box, no dependency on content. object-fit:contain then
+     letterboxes only where the picture's real aspect ratio demands it. */
+  position: absolute;
+  inset: 18px;
+  width: calc(100% - 36px);
+  height: calc(100% - 36px);
   aspect-ratio: auto;
   object-fit: contain;
 }
