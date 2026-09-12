@@ -109,6 +109,7 @@ Pipeline stages:
 
 - This app is built and run as a Docker container via the repo's root `Dockerfile`. The image is based on `python:3.13-slim`, installs `requirements.txt`, copies the `app` package, creates `/app/logs`, and `EXPOSE`s port `3000`.
 - The container starts with `uvicorn app.main:app --host 0.0.0.0 --port 3000` (the same port used for local browser verification at `http://127.0.0.1:3000/`).
+- **Config precedence (VOICE-AGENT-176):** `load_dotenv()` in `app/main.py` never overwrites a variable already present in the process, so anything set before import wins over `.env`: `python -m app` (`app/__main__.py`, the local launcher with `--no-subtitles`, `--env KEY=VALUE`, `--show-config`) and `docker run -e KEY=VALUE` (beats `--env-file`). The launcher records the keys it overrode in `VOICE_AGENT_CLI_OVERRIDES`, read only by the third startup banner line (`_log_subtitle_startup`). Do not switch to `load_dotenv(override=True)`: it would silently disable both mechanisms. Per-session URL overrides (`?spokenSubtitles=`, `?userTranscriptSubtitles=`, `?soul=`, `?voice=`) sit above all of that for one session.
 - Pass secrets (e.g. the OpenAI API key, text2SQL API config) at runtime via env vars / an env file; do not bake them into the image.
 
 ## Backlog (Nestor second-brain)

@@ -91,6 +91,22 @@ Edit `.env`, then run:
 uvicorn app.main:app --host 127.0.0.1 --port 3000
 ```
 
+or, to override `.env` keys for this run only (VOICE-AGENT-176), use the launcher:
+
+```powershell
+python -m app                                   # same host and port as above
+python -m app --no-subtitles                    # both native subtitle lanes off, whatever .env says
+python -m app --spoken-subtitles off --user-subtitles on
+python -m app --env AGENT_SOUL=scholar          # any .env key, repeatable
+python -m app --no-subtitles --show-config      # print the resolved flags and exit
+.\run.ps1 -NoSubtitles                          # same, logging to uvicorn.log
+```
+
+Precedence, highest first: command line, process environment, `.env`, code default. The
+launcher sets the variables before `app.main` is imported, and `load_dotenv()` never
+overwrites a variable that already exists. The third startup line
+(`[voice-agent] subtitles default: ...`) prints what was resolved and where it came from.
+
 Open:
 
 ```text
@@ -430,6 +446,14 @@ When active, `response.output_audio_transcript.delta` and `response.audio_transc
 
 `ENABLE_USER_TRANSCRIPT_SUBTITLES` controls whether completed Realtime voice input transcripts appear in the native top user subtitle lane. It defaults to `false`. The browser forwards `user_transcript_subtitles=0` or `1` to `/session` when the page URL contains `?userTranscriptSubtitles=0`, `?userTranscriptSubtitles=1`, `?user_transcript_subtitles=0`, or `?user_transcript_subtitles=1`. The server returns the resolved value as `X-User-Transcript-Subtitles`, and the browser only feeds `conversation.item.input_audio_transcription.completed` text to `#userSubtitleOverlay` when that header is `1`.
 
+Three ways to turn the native lanes off when the video will carry its own burned-in subtitles (VOICE-AGENT-176), from the narrowest to the widest:
+
+1. **One session, any server**: open `/?spokenSubtitles=0&userTranscriptSubtitles=0` (or flip the two App Menu toggles, which write the same parameters). This is the only lever that works against the production server without a redeploy, and the one to use when filming an iPad or iPhone, since the microphone requires the HTTPS origin.
+2. **One local run**: `python -m app --no-subtitles` (or `.\run.ps1 -NoSubtitles`), which beats `.env` for every session of that run. See *Local Setup*.
+3. **One container**: `docker run -e ENABLE_SPOKEN_SUBTITLES=false -e ENABLE_USER_TRANSCRIPT_SUBTITLES=false --env-file ... voice-agent:latest`; a `-e` value takes precedence over the same key in `--env-file`, so the file stays untouched. See *Docker Build and Run*.
+
+The startup banner prints the resolved default and its source: `[voice-agent] subtitles default: assistant off (from command line), user transcript off (from command line); ...`.
+
 ## App Menu
 
 The burger button in the control row opens a right-side drawer. It is keyboard accessible, traps focus while open, closes from the close button, backdrop, or `Escape`, and restores focus to the burger button or the element that opened it.
@@ -709,6 +733,22 @@ docker run -d \
   voice-agent:latest
 ```
 
+To override a `.env` key for one container without editing the file, add `-e KEY=VALUE` before the image name; Docker gives `-e` precedence over `--env-file`. For a recording session with no native subtitles (VOICE-AGENT-176):
+
+```bash
+docker run -d \
+  --name voice-agent \
+  --restart unless-stopped \
+  --network reverseproxy \
+  --env-file /home/debian/docker/voice-agent/.env \
+  -e ENABLE_SPOKEN_SUBTITLES=false \
+  -e ENABLE_USER_TRANSCRIPT_SUBTITLES=false \
+  -v /home/debian/docker/voice-agent/logs:/app/logs \
+  voice-agent:latest
+```
+
+Check the third line of `docker logs voice-agent`: `[voice-agent] subtitles default: assistant off (from env), ...` (inside the container the `-e` value is plain environment, so the source reads `env`). Recreate the container without the `-e` flags to return to the `.env` defaults.
+
 The host-mounted logs folder keeps browser diagnostics outside the container:
 
 ```text
@@ -830,8 +870,16 @@ The client mutes the microphone while the assistant is speaking or while tool ou
 Syntax checks:
 
 ```powershell
-python -m py_compile .\app\main.py
+python -m py_compile .\app\main.py .\app\__main__.py
 node --check .\app\static\app.js
+```
+
+Launcher check (no server started):
+
+```powershell
+python -m app --no-subtitles --show-config
+# ENABLE_SPOKEN_SUBTITLES=false  (command line)
+# ENABLE_USER_TRANSCRIPT_SUBTITLES=false  (command line)
 ```
 
 Local smoke test:

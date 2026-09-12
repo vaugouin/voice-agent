@@ -858,6 +858,36 @@ def env_bool(name: str, default: bool) -> bool:
     return default if parsed is None else parsed
 
 
+def _log_subtitle_startup() -> None:
+    """Third startup line: the server-side default of the two native subtitle lanes and
+    where each came from (VOICE-AGENT-176). The launcher `python -m app` lists the keys it
+    overrode in ``VOICE_AGENT_CLI_OVERRIDES``; anything else is `.env`/environment or the
+    code default. A per-session URL override (`?spokenSubtitles=`, `?userTranscriptSubtitles=`)
+    still beats this default, which is why the line says "default" and not "state".
+    """
+    cli_keys = {k for k in os.getenv("VOICE_AGENT_CLI_OVERRIDES", "").split(",") if k}
+
+    def lane(name: str) -> str:
+        value = "on" if env_bool(name, False) else "off"
+        if name in cli_keys:
+            source = "command line"
+        elif parse_bool(os.getenv(name)) is not None:
+            source = "env"
+        else:
+            source = "built-in default"
+        return f"{value} (from {source})"
+
+    print(
+        f"[voice-agent] subtitles default: assistant {lane('ENABLE_SPOKEN_SUBTITLES')}, "
+        f"user transcript {lane('ENABLE_USER_TRANSCRIPT_SUBTITLES')}; "
+        "?spokenSubtitles= / ?userTranscriptSubtitles= override per session",
+        flush=True,
+    )
+
+
+_log_subtitle_startup()
+
+
 def structured_card_focus_enabled(request: Request) -> bool:
     if not env_bool("ENABLE_STRUCTURED_CARD_FOCUS", True):
         return False

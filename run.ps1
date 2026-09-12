@@ -1,3 +1,10 @@
+param(
+    [switch]$NoSubtitles,      # both native subtitle lanes off, whatever .env says (VOICE-AGENT-176)
+    [string]$BindHost = "127.0.0.1",
+    [int]$Port = 3000
+)
 $ErrorActionPreference = "Stop"
 Set-Location $PSScriptRoot
-python -m uvicorn app.main:app --host 127.0.0.1 --port 3000 *> "$PSScriptRoot\uvicorn.log"
+$flags = @("--host", $BindHost, "--port", $Port)
+if ($NoSubtitles) { $flags += "--no-subtitles" }
+python -m app @flags *> "$PSScriptRoot\uvicorn.log"
