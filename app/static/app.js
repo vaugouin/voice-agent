@@ -2716,6 +2716,11 @@ function cardSpecFromRecord(record) {
     record.DEATH_NAME ||
     record.AWARD_NAME ||
     record.NOMINATION_NAME ||
+    // Locations carried ITEM_LABEL while they were read from T_WC_T2S_ITEM. API 1.1.19
+    // (FASTAPI-TEXT2SQL-247) gave them their own table and the column became LOCATION_NAME,
+    // so this chain stopped naming them: the card spec fell through to null and every place
+    // rendered as a raw field dump ("Id Location 4, Location Name Los Angeles, ...").
+    record.LOCATION_NAME ||
     record.ITEM_LABEL ||
     "";
 
@@ -2733,6 +2738,7 @@ function cardSpecFromRecord(record) {
         record.DEATH_TYPE,
         record.AWARD_TYPE,
         record.NOMINATION_TYPE,
+        record.LOCATION_TYPE ? prettyLabel(record.LOCATION_TYPE) : "",
       ],
       rating: record.IMDB_RATING,
       overview: record.OVERVIEW || record.DESCRIPTION || "",
