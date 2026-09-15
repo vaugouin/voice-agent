@@ -1000,6 +1000,9 @@ function detailArgsSignature(args = {}) {
       "ID_DEATH",
       "ID_AWARD",
       "ID_NOMINATION",
+      "ID_LOCATION",
+      // Legacy tolerance only: locations keyed on ID_WIKIDATA before API 1.1.19. Kept last so
+      // it can never outrank a real entity id in the signature.
       "ID_WIKIDATA",
     ]),
     id_serie: firstDetailArgValue(args, ["id_serie", "ID_SERIE"]),
@@ -2845,8 +2848,12 @@ function detailRequestFromRecord(record) {
   if (record.ID_NOMINATION) {
     return { toolName: "get_nomination_detail", id: record.ID_NOMINATION };
   }
-  if (record.ID_WIKIDATA) {
-    return { toolName: "get_location_detail", id: record.ID_WIKIDATA };
+  // Locations key on ID_LOCATION since API 1.1.19 (FASTAPI-TEXT2SQL-247). This used to fall
+  // back to any record carrying ID_WIKIDATA, which is wrong twice over: thirteen other tables
+  // carry that column, so a non-location row reaching here was opened as a location, and the
+  // Q-id it sent is now rejected by the route with a 422.
+  if (record.ID_LOCATION) {
+    return { toolName: "get_location_detail", id: record.ID_LOCATION };
   }
   return null;
 }
@@ -3553,12 +3560,20 @@ function buildDetailVisualCard(item, kind = "poster") {
   return card;
 }
 
-function findDetailRailSection(collectionName, state = currentDetailState) {
+// One upstream collection can feed SEVERAL rails (a location splits `movies` into filmed-here
+// and set-here on LOCATION_ROLE), so the lookup returns every section, not the first match.
+function findDetailRailSections(collectionName, state = currentDetailState) {
   if (!state?.container?.isConnected || !collectionName) {
-    return null;
+    return [];
   }
   return Array.from(state.container.querySelectorAll(".detailVisualSection[data-detail-collection]"))
-    .find((section) => section.dataset.detailCollection === collectionName) || null;
+    .filter((section) => section.dataset.detailCollection === collectionName);
+}
+
+// The role an association row carries. Only locations use it today (LOCATION_ROLE, 'filming'
+// or 'narrative'); everything else returns "" and takes the unsplit path.
+function detailItemRole(item) {
+  return String(item?.LOCATION_ROLE || "").trim().toLowerCase();
 }
 
 function detailRailAutoLoadThreshold(rail) {
@@ -3607,18 +3622,28 @@ function scheduleDetailRailAutoLoadCheck(rail, { allowErrorRetry = false } = {})
   });
 }
 
-function updateDetailRailHeader(collectionName) {
-  const section = findDetailRailSection(collectionName);
-  if (!section) {
-    return;
-  }
+// "N of M" only means something on a rail that holds the whole collection. A role rail holds
+// half of it while `total` counts both halves, and the API exposes no per-role total, so it
+// reports what it actually shows rather than a number that would always look short.
+function detailRailCountText(meta, role, railCardCount) {
+  return role ? String(railCardCount) : `${meta.loaded} of ${meta.total}`;
+}
 
+function updateDetailRailHeader(collectionName) {
+  findDetailRailSections(collectionName).forEach((section) => {
+    updateDetailRailHeaderSection(section, collectionName);
+  });
+}
+
+function updateDetailRailHeaderSection(section, collectionName) {
   const meta = detailCollectionPagination(collectionName);
   const titleBlock = section.querySelector(".detailRailTitleBlock");
   if (!titleBlock) {
     return;
   }
 
+  const role = section.dataset.detailRole || "";
+  const railCardCount = section.querySelectorAll(".detailVisualCard").length;
   let count = titleBlock.querySelector(".detailRailCount");
   if (meta && meta.total > 0) {
     if (!count) {
@@ -3626,7 +3651,7 @@ function updateDetailRailHeader(collectionName) {
       count.className = "detailRailCount";
       titleBlock.append(count);
     }
-    count.textContent = `${meta.loaded} of ${meta.total}`;
+    count.textContent = detailRailCountText(meta, role, railCardCount);
   } else if (count) {
     count.remove();
   }
@@ -3647,29 +3672,41 @@ function updateDetailRailHeader(collectionName) {
 }
 
 function appendDetailRailItems(collectionName, items) {
-  const section = findDetailRailSection(collectionName);
-  const rail = section?.querySelector(".detailVisualRail[data-detail-collection]");
-  if (!rail) {
+  const sections = findDetailRailSections(collectionName);
+  if (!sections.length) {
     return false;
   }
 
-  const kind = rail.dataset.detailRailKind || "poster";
   const displayItems = detailRailDisplayItems(collectionName, items, currentDetailState?.detail);
   const clean = (Array.isArray(displayItems) ? displayItems : [])
     .filter((item) => item && typeof item === "object" && visualTitle(item));
-  if (!clean.length) {
-    return true;
-  }
 
-  const scrollLeft = rail.scrollLeft;
-  const fragment = document.createDocumentFragment();
-  clean.forEach((item) => {
-    fragment.append(buildDetailVisualCard(item, kind));
+  let handled = false;
+  sections.forEach((section) => {
+    const rail = section.querySelector(".detailVisualRail[data-detail-collection]");
+    if (!rail) {
+      return;
+    }
+    // The rail exists, so the page is accounted for even when this half of it is empty;
+    // returning false here would make the caller re-render the whole detail.
+    handled = true;
+    const role = rail.dataset.detailRole || "";
+    const mine = role ? clean.filter((item) => detailItemRole(item) === role) : clean;
+    if (!mine.length) {
+      return;
+    }
+
+    const kind = rail.dataset.detailRailKind || "poster";
+    const scrollLeft = rail.scrollLeft;
+    const fragment = document.createDocumentFragment();
+    mine.forEach((item) => {
+      fragment.append(buildDetailVisualCard(item, kind));
+    });
+    rail.append(fragment);
+    rail.scrollLeft = scrollLeft;
+    rail.dispatchEvent(new CustomEvent("detailRailUpdated"));
   });
-  rail.append(fragment);
-  rail.scrollLeft = scrollLeft;
-  rail.dispatchEvent(new CustomEvent("detailRailUpdated"));
-  return true;
+  return handled;
 }
 
 function detailRailDisplayItems(collectionName, items, detail = currentDetailState?.detail) {
@@ -3688,10 +3725,13 @@ function detailRailDisplayItems(collectionName, items, detail = currentDetailSta
   return items;
 }
 
-function appendVisualRail(parent, title, items, { kind = "poster", collectionName = "" } = {}) {
+function appendVisualRail(parent, title, items, { kind = "poster", collectionName = "", role = "", allowEmpty = false } = {}) {
   const clean = (Array.isArray(items) ? items : [])
     .filter((item) => item && typeof item === "object" && visualTitle(item));
-  if (!clean.length) {
+  // `allowEmpty` keeps a role rail on screen when its half of the first page came back empty
+  // but later pages can still fill it. Without it the rail would not exist and the rows would
+  // have nowhere to land.
+  if (!clean.length && !allowEmpty) {
     return false;
   }
 
@@ -3700,6 +3740,9 @@ function appendVisualRail(parent, title, items, { kind = "poster", collectionNam
   if (collectionName) {
     section.dataset.detailCollection = collectionName;
     section.dataset.detailRailTitle = title;
+  }
+  if (role) {
+    section.dataset.detailRole = role;
   }
   const header = document.createElement("div");
   header.className = "detailRailHeader";
@@ -3710,7 +3753,7 @@ function appendVisualRail(parent, title, items, { kind = "poster", collectionNam
   if (meta && meta.total > 0) {
     const count = document.createElement("div");
     count.className = "detailRailCount";
-    count.textContent = `${meta.loaded} of ${meta.total}`;
+    count.textContent = detailRailCountText(meta, role, clean.length);
     titleBlock.append(count);
   }
   const loadError = collectionName ? currentDetailState?.collectionErrors?.[collectionName] : "";
@@ -3743,6 +3786,9 @@ function appendVisualRail(parent, title, items, { kind = "poster", collectionNam
   rail.dataset.detailRailKind = kind;
   if (collectionName) {
     rail.dataset.detailCollection = collectionName;
+  }
+  if (role) {
+    rail.dataset.detailRole = role;
   }
   clean.forEach((item) => {
     rail.append(buildDetailVisualCard(item, kind));
@@ -3959,9 +4005,14 @@ function logRecoCardsShown(record) {
   });
 }
 
-function appendMixedVisualSections(parent, record) {
-  appendVisualRail(parent, "Movies", record.movies, { kind: "poster", collectionName: "movies" });
-  appendVisualRail(parent, "Series", record.series, { kind: "poster", collectionName: "series" });
+function appendMixedVisualSections(parent, record, { skip = [] } = {}) {
+  const skipped = new Set(skip);
+  if (!skipped.has("movies")) {
+    appendVisualRail(parent, "Movies", record.movies, { kind: "poster", collectionName: "movies" });
+  }
+  if (!skipped.has("series")) {
+    appendVisualRail(parent, "Series", record.series, { kind: "poster", collectionName: "series" });
+  }
   appendVisualRail(parent, "People", record.persons, { kind: "profile", collectionName: "persons" });
   appendVisualRail(parent, "Awards", record.awards, { kind: "poster", collectionName: "awards" });
   appendVisualRail(parent, "Nominations", record.nominations, { kind: "poster", collectionName: "nominations" });
@@ -3974,6 +4025,37 @@ function appendMixedVisualSections(parent, record) {
   appendVisualRail(parent, "Deaths", record.deaths, { kind: "profile", collectionName: "deaths" });
   appendVisualRail(parent, "Companies", record.companies, { kind: "logo", collectionName: "companies" });
   appendVisualRail(parent, "Networks", record.networks, { kind: "logo", collectionName: "networks" });
+}
+
+// A place is the same place whether a film was shot there or set there, so the distinction is
+// not on the location but on the association row (LOCATION_ROLE). Rendering one mixed rail
+// would drop the only thing that separates "filmed in Paris" from "set in Paris", which is the
+// question people actually ask. One rail per role, same wording as the tmdb-front page.
+function appendLocationRoleRails(parent, record) {
+  const rails = [
+    ["movies", "filming", "Movies filmed here"],
+    ["movies", "narrative", "Movies set here"],
+    ["series", "filming", "TV shows filmed here"],
+    ["series", "narrative", "TV shows set here"],
+  ];
+  rails.forEach(([collectionName, role, title]) => {
+    const items = locationRoleItems(record[collectionName], role);
+    appendVisualRail(parent, title, items, {
+      kind: "poster",
+      collectionName,
+      role,
+      allowEmpty: detailCollectionHasUnloadedPages(collectionName),
+    });
+  });
+}
+
+function locationRoleItems(items, role) {
+  return (Array.isArray(items) ? items : []).filter((item) => detailItemRole(item) === role);
+}
+
+function detailCollectionHasUnloadedPages(collectionName) {
+  const meta = detailCollectionPagination(collectionName);
+  return Boolean(meta && meta.total > meta.loaded);
 }
 
 function titleForRecord(record) {
@@ -4273,7 +4355,7 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     // Shared branch for company / network / collection / topic / list / location / movement /
     // technical / genre / group / death / award / nomination. Every tile is skip-empty, so each
     // entity surfaces only the fields its own table carries (VOICE-AGENT-092).
-    appendMetric(metrics, "Type", firstValue(record.COLLECTION_TYPE, record.TOPIC_TYPE, record.LIST_TYPE, record.MOVEMENT_TYPE, record.TECHNICAL_TYPE ? prettyLabel(record.TECHNICAL_TYPE) : "", record.GROUP_TYPE, record.DEATH_TYPE, record.AWARD_TYPE, record.NOMINATION_TYPE, record.INSTANCE_OF));
+    appendMetric(metrics, "Type", firstValue(record.COLLECTION_TYPE, record.TOPIC_TYPE, record.LIST_TYPE, record.MOVEMENT_TYPE, record.TECHNICAL_TYPE ? prettyLabel(record.TECHNICAL_TYPE) : "", record.GROUP_TYPE, record.DEATH_TYPE, record.AWARD_TYPE, record.NOMINATION_TYPE, record.LOCATION_TYPE ? prettyLabel(record.LOCATION_TYPE) : "", record.INSTANCE_OF));
     appendMetric(metrics, "Movies", record.MOVIE_COUNT);
     appendMetric(metrics, "Series", record.SERIE_COUNT);
     appendMetric(metrics, "Persons", record.PERSON_COUNT);
@@ -4295,7 +4377,14 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     if (record.APPLIES_TO_SERIE) { appliesTo.push("Series"); }
     appendChipStrip(body, "Applies to", appliesTo);
     appendChipStrip(body, "Also known as", splitList(record.ALIASES ?? record.ALSO_KNOWN_AS, 10));
-    appendMixedVisualSections(body, record);
+    if (record.ID_LOCATION) {
+      // Locations own their movies/series rails (one per LOCATION_ROLE), so the shared builder
+      // must not draw the mixed pair on top of them.
+      appendLocationRoleRails(body, record);
+      appendMixedVisualSections(body, record, { skip: ["movies", "series"] });
+    } else {
+      appendMixedVisualSections(body, record);
+    }
     if (!record.movies?.length && !record.series?.length && !record.persons?.length) {
       appendList(body, "Movies", namesFrom(record.movies, "MOVIE_TITLE", Infinity));
       appendList(body, "Series", namesFrom(record.series, "SERIE_TITLE", Infinity));
@@ -7514,7 +7603,8 @@ async function callEntityDetail(toolName, args) {
     args.ID_GROUP ||
     args.ID_DEATH ||
     args.ID_AWARD ||
-    args.ID_NOMINATION;
+    args.ID_NOMINATION ||
+    args.ID_LOCATION;
   if (!entity || (!detailPath && !id)) {
     throw new Error(`Missing id for ${toolName}`);
   }

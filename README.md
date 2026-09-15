@@ -292,7 +292,7 @@ text-to-SQL processing instead of surfacing as an error.
 Authentication is configured by:
 
 ```text
-TEXT2SQL_BASE_URL=http://www.vaugouin.com:8186
+TEXT2SQL_BASE_URL=http://www.vaugouin.com:8187
 TEXT2SQL_API_KEY_NAME=X-API-Key
 TEXT2SQL_API_KEY_VALUE=...
 ```
@@ -388,7 +388,7 @@ The local adapter forwards to the text2sql API detail endpoints documented in `C
 | `get_death_detail` | `GET /deaths/{id}?ui_language=...` | `ID_DEATH` |
 | `get_award_detail` | `GET /awards/{id}?ui_language=...` | `ID_AWARD` |
 | `get_nomination_detail` | `GET /nominations/{id}?ui_language=...` | `ID_NOMINATION` |
-| `get_location_detail` | `GET /locations/{wikidata_id}?ui_language=...` | `ID_WIKIDATA`, for example `Q90` |
+| `get_location_detail` | `GET /locations/{id}?ui_language=...` | `ID_LOCATION`, for example `1` |
 
 The adapter normalizes `ui_language` to `en` or `fr` and forwards it to detail endpoints. For Realtime audio, typed Realtime turns, `/text-chat`, and idle dictation, the app detects French from the user's latest transcript or typed message and sends `fr`; unsupported languages and English send `en`. Localized detail responses are collapsed under canonical field names such as `MOVIE_TITLE`, `LIST_NAME`, `DESCRIPTION`, and `ITEM_LABEL`; separate `*_FR` fields are not expected from detail calls. For example, if the user asks for a movie plot, the model should first identify the movie with `query_text2sql` if needed, then call `get_movie_detail` with the returned `ID_MOVIE`, and answer from the returned `PLOT` field. Series pages expose season summaries that open `get_season_detail` with `ID_SERIE` and `SEASON_NUMBER`; season pages render the returned `episodes` summaries, and selecting one opens `get_episode_detail` with its three-part key. If the user asks about a technical format such as `Technicolor`, the model should identify it with `query_text2sql` if needed, then call `get_technical_detail` with the returned `ID_TECHNICAL`. Movie detail responses can also include a `technicals` collection with technical entries such as sound systems and film formats. Technical detail responses can include associated `movies` and same-type `siblings`. Movie and series detail responses can include `posters` and `backdrops` image collections.
 
@@ -490,7 +490,7 @@ Search result answer panels include an icon-only query-details toggle on the rig
 Click-through behavior:
 
 - Cards for records with a supported entity ID open the matching in-app detail page instead of navigating away.
-- Supported click-through records include movies, series, seasons, episodes, people, companies, networks, collections, topics, lists, movements, technicals, genres, groups, deaths, awards, nominations, and Wikidata-backed locations.
+- Supported click-through records include movies, series, seasons, episodes, people, companies, networks, collections, topics, lists, movements, technicals, genres, groups, deaths, awards, nominations, and locations (keyed on `ID_LOCATION` since API 1.1.19).
 - The detail view uses the same local `GET /tool/detail/{entity}/{id}?ui_language=...` adapter as Realtime detail tool calls, then renders the returned record content in the results panel.
 - Entity detail tool outputs keep compact `wikipedia_content` available to the model for grounding background, history, biography, plot-context, and explanatory answers, but the UI does not render Wikipedia content sections on detail pages.
 - Normal detail answers stay concise. When the user explicitly asks "tell me more", "in detail", "the full story", or a similar verbose follow-up, the app treats that single turn as a verbose detail request: it relaxes the model-facing `wikipedia_content` caps for the relevant detail tool output and instructs the model to give a longer paraphrased answer grounded in the returned Wikipedia sections. The raw Wikipedia sections are still not rendered as UI content and should not be read verbatim.
@@ -534,6 +534,7 @@ Detail page header behavior:
 - Movie and series detail pages use the `/movies/{id}` and `/series/{id}` `backdrops` arrays to show a wide swipeable backdrop viewer below the poster, with `BACKDROP_PATH` as a fallback. Clicking a backdrop toggles fullscreen zoom. Sliding horizontally moves to the previous or next backdrop. A top-right play button starts a slideshow across all available backdrops and changes to a stop button while the slideshow is running; the control remains visible in normal and fullscreen modes.
 - Clicking the main portrait, poster, logo, or Wikipedia image on any entity detail page expands the current image to a full-screen viewer. Clicking the full-screen image or pressing `Escape` returns it to the normal detail-page position.
 - Collection, topic, list, movement, technical, group, death, award, nomination, company, network, and location detail pages show available type/count/rating metrics in the top metric area. Technical detail pages use the localized `DESCRIPTION` value as their display title, show `TECHNICAL_TYPE` as the type metric, and render associated movies plus same-type sibling technicals as clickable rails.
+- Location detail pages show `LOCATION_TYPE` (city, country, region, island, structure, nature, fiction) as their type metric and split their works into four rails by `LOCATION_ROLE` — **Movies filmed here**, **Movies set here**, **TV shows filmed here**, **TV shows set here** — because a place being shot in and a place a story is set in are two different facts about the same place. A role rail's header counts the cards it shows rather than the collection total, which mixes both roles.
 - Genre detail pages (`get_genre_detail` → `GET /genres/{id}`) use the localized `GENRE_NAME` as their title and render the genre's best-rated member `movies` and `series` as clickable rails. Genres currently have no own image or Wikidata/Wikipedia block (the `T_WC_TMDB_GENRE` table has no `ID_WIKIDATA` yet), so the detail poster falls back to the genre name.
 
 ## Retained Context

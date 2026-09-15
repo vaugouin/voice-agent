@@ -729,13 +729,19 @@ DETAIL_ENTITY_CONFIG = {
     "location": {
         "tool_name": "get_location_detail",
         "path": "locations",
-        "id_name": "ID_WIKIDATA",
-        "id_param": "wikidata_id",
-        "id_type": "string",
+        # API 1.1.19 (FASTAPI-TEXT2SQL-247) moved locations onto their own read-model and the
+        # route from /locations/{ID_WIKIDATA} to /locations/{ID_LOCATION}. A Q-id now gets a
+        # 422 from upstream, so `id_type: integer` is what rejects it here with a clear 400.
+        "id_name": "ID_LOCATION",
+        "id_param": "id",
+        "id_type": "integer",
         "description": (
-            "Get all fields for a location by Wikidata ID, such as Q90 for "
-            "Paris, plus movies and TV series where it is a narrative location "
-            "(P840) or filming location (P915)."
+            "Get all fields for a location by ID_LOCATION, plus the movies and TV series "
+            "linked to it. Every related row carries LOCATION_ROLE, either 'filming' (it "
+            "was shot there) or 'narrative' (the story happens there). These are different "
+            "facts about the same place: answer the one that was asked and never merge the "
+            "two counts or the two lists. LOCATION_TYPE says what kind of place it is (city, "
+            "country, region, island, structure, nature, fiction)."
         ),
     },
 }
@@ -1606,8 +1612,9 @@ def realtime_session_config(
         "location, ranking, database, reporting, analytics, or text-to-SQL "
         "question, call query_text2sql with the user's spoken request as "
         "plain text. When the user asks for details about a specific returned "
-        "entity, call the dedicated detail tool with that entity ID, or "
-        "wikidata_id for locations. Seasons use ID_SERIE plus SEASON_NUMBER; "
+        "entity, call the dedicated detail tool with that entity ID "
+        "(ID_LOCATION for locations, never the Wikidata Q-id). "
+        "Seasons use ID_SERIE plus SEASON_NUMBER; "
         "episodes use ID_SERIE, SEASON_NUMBER, and EPISODE_NUMBER. For example, "
         "for a movie plot, call get_movie_detail with ID_MOVIE. Pass "
         "ui_language to search and detail tools, using fr for French "
@@ -2466,7 +2473,8 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         "message and provided the result in the input. Base your answer on "
         "that tool result, not on pretraining. If the user asks for details "
         "about a specific returned entity, call the dedicated detail tool with "
-        "that entity ID, or wikidata_id for locations. Seasons use ID_SERIE plus "
+        "that entity ID (ID_LOCATION for locations, never the Wikidata Q-id). "
+        "Seasons use ID_SERIE plus "
         "SEASON_NUMBER; episodes use ID_SERIE, SEASON_NUMBER, and EPISODE_NUMBER. "
         "Pass ui_language to search and detail tools, using fr for French "
         "questions and en otherwise. Use returned tool data "
