@@ -51,13 +51,20 @@
             <kbd class="keyHint" aria-hidden="true">M</kbd>
           </div>
           <div class="lookButtonSlot">
-            <button id="lookToggleButton" class="iconButton lookToggleButton isClosed" type="button" aria-label="Look Off" title="Look Off" aria-pressed="false">
+            <!-- VOICE-AGENT-158: an action button, not a toggle. It has no state to show, so it
+                 carries no cross and no aria-pressed; one click opens the source menu below,
+                 whose items are built in app.js from LOOK_MENU_ITEMS so a third source costs a
+                 line rather than a rewrite. The id, the name Look and the log event keep their
+                 spelling deliberately: only the behavior changed. -->
+            <button id="lookToggleButton" class="iconButton lookToggleButton" type="button" aria-label="Look" title="Look" aria-haspopup="true" aria-expanded="false" aria-controls="lookMenu">
               <span class="lookStateIcon" aria-hidden="true">
                 <span class="lookStateEye">&#x1F441;&#xFE0F;</span>
-                <span class="lookStateCross">&#x274C;</span>
               </span>
             </button>
             <kbd class="keyHint" aria-hidden="true">L</kbd>
+            <div id="lookMenu" class="lookMenu" role="menu" aria-labelledby="lookToggleButton" hidden></div>
+            <input id="lookCameraInput" class="srOnly lookFileInput" type="file" accept="image/*" capture="environment" tabindex="-1" aria-hidden="true">
+            <input id="lookLibraryInput" class="srOnly lookFileInput" type="file" accept="image/*" tabindex="-1" aria-hidden="true">
           </div>
           <button id="historyBackButton" class="iconButton" type="button" aria-label="Back" title="Back" disabled>
             <svg aria-hidden="true" viewBox="0 0 24 24">
@@ -92,6 +99,18 @@
             <kbd class="keyHint" aria-hidden="true">N</kbd>
           </button>
         </div>
+        <!-- VOICE-AGENT-158: the attached photo, shown as a chip under the control row the way a
+             chatbot shows an attachment. It is the answer to "the image stays visible": the
+             thumbnail is what the whole conversation is about until it is removed, and the
+             reference behind it is what later turns reuse instead of re-sending the bytes. -->
+        <div id="lookAttachment" class="lookAttachment" hidden>
+          <button id="lookAttachmentThumbButton" class="lookAttachmentThumbButton" type="button" aria-label="View the attached photo" title="View the attached photo">
+            <img id="lookAttachmentThumb" class="lookAttachmentThumb" alt="Attached photo" decoding="async" />
+          </button>
+          <span id="lookAttachmentLabel" class="lookAttachmentLabel"></span>
+          <button id="lookAttachmentRemoveButton" class="lookAttachmentRemoveButton" type="button" aria-label="Remove the attached photo" title="Remove the attached photo">&#x2715;</button>
+        </div>
+
         <div class="status">
           <span id="statusDot" class="dot"></span>
           <span id="statusText">Idle</span>
@@ -124,6 +143,23 @@
          answer itself is already announced by the aria-live overlays. -->
     <div id="personaBadge" class="personaBadge" hidden aria-hidden="true">
       <img id="personaBadgeImage" alt="" decoding="async" />
+    </div>
+    <!-- VOICE-AGENT-158: the confirmation step. Nothing is sent until "Use this photo" is
+         pressed, and what is shown here is the RESIZED image that will actually be deposited, not
+         the original file, so the preview cannot flatter what the vision model receives. Outside
+         <main> like the other overlays, for the same reason: the compact results mode hides the
+         header and would take a child of the panel with it. -->
+    <div id="lookPreviewOverlay" class="lookPreviewOverlay" role="dialog" aria-modal="true" aria-labelledby="lookPreviewTitle" hidden>
+      <div class="lookPreviewFrame">
+        <h2 id="lookPreviewTitle" class="srOnly">Confirm the photo</h2>
+        <img id="lookPreviewImage" class="lookPreviewImage" alt="Photo about to be sent" decoding="async" />
+        <p id="lookPreviewNote" class="lookPreviewNote" aria-live="polite"></p>
+        <div class="lookPreviewActions">
+          <button id="lookPreviewUseButton" class="lookPreviewUse" type="button">Use this photo</button>
+          <button id="lookPreviewRetakeButton" class="lookPreviewRetake" type="button">Retake</button>
+          <button id="lookPreviewCancelButton" class="lookPreviewCancel" type="button">Cancel</button>
+        </div>
+      </div>
     </div>
     <div id="appMenuBackdrop" class="appMenuBackdrop" hidden></div>
     <aside id="appMenuDrawer" class="appMenuDrawer" aria-labelledby="appMenuTitle" aria-modal="true" role="dialog" tabindex="-1" hidden>

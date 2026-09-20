@@ -299,8 +299,7 @@ button {
   font-size: 1.35rem;
 }
 
-.microphoneStateCross,
-.lookStateCross {
+.microphoneStateCross {
   grid-area: 1 / 1;
   display: none;
   font-size: 1.1rem;
@@ -308,13 +307,11 @@ button {
   filter: drop-shadow(0 1px 2px rgb(0 0 0 / 70%));
 }
 
-.microphoneToggleButton.isClosed .microphoneStateEar,
-.lookToggleButton.isClosed .lookStateEye {
+.microphoneToggleButton.isClosed .microphoneStateEar {
   opacity: 0.58;
 }
 
-.microphoneToggleButton.isClosed .microphoneStateCross,
-.lookToggleButton.isClosed .lookStateCross {
+.microphoneToggleButton.isClosed .microphoneStateCross {
   display: block;
 }
 
@@ -2374,5 +2371,225 @@ button.detailVisualCard:hover {
   .menuToggle input,
   .menuToggle input::before {
     transition: none;
+  }
+}
+
+/* VOICE-AGENT-158: Look — the source menu, the confirmation overlay and the attached photo.
+   The button itself keeps the 52px green icon-control style it already had; what is new here is
+   everything that opens out of it. Note the absence of any "closed" state: the control is an
+   action, so there is nothing for CSS to reflect. */
+
+.lookMenu {
+  position: absolute;
+  top: calc(100% + 8px);
+  left: 0;
+  z-index: 1250;
+  display: grid;
+  gap: 6px;
+  min-width: 232px;
+  padding: 8px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #15191f;
+  box-shadow: 0 14px 34px rgb(0 0 0 / 45%);
+}
+
+.lookMenu[hidden] {
+  display: none;
+}
+
+.lookMenuItem {
+  width: 100%;
+  min-width: 0;
+  min-height: 44px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  background: #1b2028;
+  font-weight: 600;
+  text-align: left;
+}
+
+.lookMenuItem:hover {
+  background: #232a34;
+}
+
+.lookMenuItemIcon {
+  font-size: 1.15rem;
+  line-height: 1;
+}
+
+.lookMenuItemLabel {
+  font-size: 0.95rem;
+}
+
+/* The file inputs are real inputs the system picker needs, never shown. `.srOnly` already takes
+   them out of the flow; this only makes sure a focus ring can never draw over the control row. */
+.lookFileInput {
+  pointer-events: none;
+}
+
+/* The attachment chip. It sits between the control row and the status row, and it is the one
+   place the conversation says which photo it is about. */
+.lookAttachment {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px 6px 6px;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  background: #1b2028;
+  justify-self: start;
+}
+
+.lookAttachment[hidden] {
+  display: none;
+}
+
+.lookAttachmentThumbButton {
+  min-width: 0;
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border-radius: 8px;
+  overflow: hidden;
+  background: #000000;
+}
+
+.lookAttachmentThumb {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.lookAttachmentLabel {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.lookAttachmentRemoveButton {
+  min-width: 32px;
+  width: 32px;
+  min-height: 32px;
+  height: 32px;
+  padding: 0;
+  border-radius: 999px;
+  color: var(--text-primary);
+  background: #2d2d2d;
+  font-size: 0.85rem;
+}
+
+/* The chip survives compact results mode, unlike the header and the status row: what the answer
+   on screen was built from is exactly the thing not to hide once a result is showing. */
+.panel.resultsMode .lookAttachment {
+  padding: 4px 8px 4px 4px;
+}
+
+.panel.resultsMode .lookAttachmentThumbButton {
+  width: 36px;
+  height: 36px;
+}
+
+/* The confirmation. Same overlay geometry as the video modal, so a phone in landscape behaves the
+   way it already does there. */
+.lookPreviewOverlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1320;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 20px;
+  background: rgb(0 0 0 / 82%);
+}
+
+.lookPreviewOverlay[hidden] {
+  display: none;
+}
+
+.lookPreviewFrame {
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  width: min(560px, 100%);
+  max-height: 100%;
+  padding: 16px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: #15191f;
+  box-shadow: 0 18px 44px rgb(0 0 0 / 55%);
+  overflow-y: auto;
+}
+
+.lookPreviewImage {
+  display: block;
+  max-width: 100%;
+  /* Bounded in vh, not in px: the point of the preview is to see the credits block on a poster,
+     and on a phone in landscape a fixed height would leave nothing for the buttons. */
+  max-height: 52vh;
+  border-radius: 8px;
+  background: #000000;
+  object-fit: contain;
+}
+
+.lookPreviewNote {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  text-align: center;
+}
+
+.lookPreviewActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+}
+
+.lookPreviewUse {
+  background: #0f6b5f;
+}
+
+.lookPreviewRetake,
+.lookPreviewCancel {
+  color: var(--text-primary);
+  background: #2d2d2d;
+}
+
+body.lookPreviewOpen {
+  overflow: hidden;
+}
+
+/* The full-size view of the attached photo. It reuses `.videoModalOverlay` for the backdrop and
+   the close button, and only replaces the 16:9 frame the video needs with a photo's own shape. */
+.lookImageOverlayImage {
+  max-width: min(960px, 100%);
+  max-height: 88vh;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
+/* A phone in landscape is 430px tall: the confirmation has to give the image what is left after
+   the buttons, and the buttons must stay on one row. */
+@media (orientation: landscape) and (max-height: 520px) {
+  .lookPreviewFrame {
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .lookPreviewImage {
+    max-height: 46vh;
+  }
+
+  .lookPreviewActions button {
+    min-height: 38px;
+    padding: 0 12px;
   }
 }

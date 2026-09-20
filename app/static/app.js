@@ -2,6 +2,20 @@ const startButton = document.querySelector("#startButton");
 const stopButton = document.querySelector("#stopButton");
 const microphoneToggleButton = document.querySelector("#microphoneToggleButton");
 const lookToggleButton = document.querySelector("#lookToggleButton");
+const lookMenu = document.querySelector("#lookMenu");
+const lookCameraInput = document.querySelector("#lookCameraInput");
+const lookLibraryInput = document.querySelector("#lookLibraryInput");
+const lookPreviewOverlay = document.querySelector("#lookPreviewOverlay");
+const lookPreviewImage = document.querySelector("#lookPreviewImage");
+const lookPreviewNote = document.querySelector("#lookPreviewNote");
+const lookPreviewUseButton = document.querySelector("#lookPreviewUseButton");
+const lookPreviewRetakeButton = document.querySelector("#lookPreviewRetakeButton");
+const lookPreviewCancelButton = document.querySelector("#lookPreviewCancelButton");
+const lookAttachment = document.querySelector("#lookAttachment");
+const lookAttachmentThumb = document.querySelector("#lookAttachmentThumb");
+const lookAttachmentThumbButton = document.querySelector("#lookAttachmentThumbButton");
+const lookAttachmentLabel = document.querySelector("#lookAttachmentLabel");
+const lookAttachmentRemoveButton = document.querySelector("#lookAttachmentRemoveButton");
 const panel = document.querySelector(".panel");
 const appTitle = document.querySelector(".appHeader h1");
 const historyBackButton = document.querySelector("#historyBackButton");
@@ -300,7 +314,17 @@ let microphoneEnableTimer = null;
 let reconnectTimer = null;
 let manuallyStopped = false;
 let userMicrophoneOpen = true;
-let userLookOpen = false;
+// VOICE-AGENT-158. The Look button has no state of its own any more (it used to carry
+// `userLookOpen`, which nothing else in the app ever read). What has state is the photo:
+// `lookAttachedImage` holds the one image the conversation is currently about, as
+// { imageRef, objectUrl, source, bytes, width, height, purgeAfter } — a reference and a local
+// preview, never the bytes we sent. `lookPendingCapture` holds a capture that is still on the
+// preview overlay and has not been deposited.
+let lookAttachedImage = null;
+let lookPendingCapture = null;
+let lookMenuOpen = false;
+let lookCaptureGeneration = 0;
+let lookCameraAvailable = true;
 let connectionGeneration = 0;
 let reconnectAttempts = 0;
 let reconnectInProgress = false;
@@ -1614,14 +1638,6 @@ function updateMicrophoneToggle() {
   microphoneToggleButton.setAttribute("aria-pressed", String(microphoneOpen));
   microphoneToggleButton.setAttribute("aria-label", label);
   microphoneToggleButton.title = label;
-}
-
-function updateLookToggle() {
-  lookToggleButton.classList.toggle("isClosed", !userLookOpen);
-  lookToggleButton.setAttribute("aria-pressed", String(userLookOpen));
-  const label = userLookOpen ? "Look On" : "Look Off";
-  lookToggleButton.setAttribute("aria-label", label);
-  lookToggleButton.title = label;
 }
 
 function getPeerConnectionConstructor() {
@@ -5971,7 +5987,7 @@ function syncQuestionInputUi() {
   window.setTimeout(updateSessionButtons, 0);
 }
 
-async function callTextChat(message, signal) {
+async function callTextChat(message, signal, { imageRef = "" } = {}) {
   // VOICE-AGENT-118: /text-chat is a JSON POST, so the persona slug rides in the body (the
   // voice path puts it on the /session query string instead). Omitted when unset.
   const soul = soulPreference();
@@ -5983,6 +5999,10 @@ async function callTextChat(message, signal) {
       message,
       context: retainedContext.slice(-maxContextItems),
       ...(soul ? { soul } : {}),
+      // VOICE-AGENT-158: a filename, never bytes. It is what makes a second question about the
+      // same photo free — the API recognizes the fingerprint and skips the reading — and what
+      // keeps the request JSON, so one endpoint serves a text question and a picture question.
+      ...(imageRef ? { image_ref: imageRef } : {}),
     }),
   });
 
@@ -6111,8 +6131,12 @@ function searchFailedWithNothingToShow(toolOutput) {
   return Number(toolOutput.result_count || 0) <= 0;
 }
 
-async function sendTextChatMessage(text, { source = "typed" } = {}) {
-  if (!text) {
+async function sendTextChatMessage(text, { source = "typed", imageRef = "" } = {}) {
+  // VOICE-AGENT-158: the second half of this guard is the picture turn. An image with no words is
+  // the nominal Look question, so an empty message is only nothing to send when there is no photo
+  // behind it either.
+  const attachedImageRef = imageRef || activeLookImageRef();
+  if (!text && !attachedImageRef) {
     return;
   }
 
@@ -6137,14 +6161,24 @@ async function sendTextChatMessage(text, { source = "typed" } = {}) {
   submitQuestionButton.hidden = true;
   resizeQuestionInput();
   updateSessionButtons();
-  lastUserTranscript = text;
+  // VOICE-AGENT-158: on a picture turn the words may be empty, and the transcript is what the
+  // subtitle lane and the retained context show. A bracketed description keeps the conversation
+  // readable without pretending the user typed anything.
+  const transcript = text || "📷 Photo";
+  lastUserTranscript = transcript;
   activeUiLanguage = detectUiLanguageFromText(text);
-  addRetainedContext({ type: "user", text });
-  setStatus("Thinking in text", "live");
-  clientLog("text_chat_sent", { length: text.length, source });
+  addRetainedContext({ type: "user", text: transcript });
+  setStatus(attachedImageRef ? "Reading the photo" : "Thinking in text", "live");
+  clientLog("text_chat_sent", {
+    length: text.length,
+    source,
+    ...(attachedImageRef ? { image_ref: attachedImageRef } : {}),
+  });
 
   try {
-    const output = await callTextChat(text, requestAbortController.signal);
+    const output = await callTextChat(text, requestAbortController.signal, {
+      imageRef: attachedImageRef,
+    });
     if (!isCurrentTextChatRequest(requestGeneration, requestAbortController)) {
       return;
     }
@@ -6197,6 +6231,9 @@ async function sendTextChatMessage(text, { source = "typed" } = {}) {
       source,
       length: responseText.length,
       tool_count: Array.isArray(output.tool_outputs) ? output.tool_outputs.length : 0,
+      // VOICE-AGENT-158: echoed by the server, so a harvest can pair the answer with the photo it
+      // was built from without re-reading the turn's request.
+      ...(output.image_ref ? { image_ref: output.image_ref } : {}),
     });
   } catch (error) {
     if (requestAbortController.signal.aborted || error.name === "AbortError") {
@@ -6222,11 +6259,16 @@ async function sendTextChatMessage(text, { source = "typed" } = {}) {
 
 async function sendTextMessage() {
   const text = questionInput.value.trim();
-  if (!text) {
+  if (!text && !activeLookImageRef()) {
     return;
   }
 
-  if (canSendTypedRealtimeTurn()) {
+  // VOICE-AGENT-158: a question about the attached photo goes through /text-chat even during a
+  // Realtime session. The image must not travel on the data channel (VOICE-AGENT-109 owns that
+  // size limit) and the Realtime model is deliberately never shown the picture, so the text path
+  // is the only one that can answer it today. Asking it stops the audio session, which is the
+  // known limit VOICE-AGENT-180 exists to lift.
+  if (canSendTypedRealtimeTurn() && !activeLookImageRef()) {
     questionInput.value = "";
     submitQuestionButton.hidden = true;
     resizeQuestionInput();
@@ -7209,11 +7251,494 @@ function toggleMicrophone() {
   log("microphone switch", userMicrophoneOpen ? "open" : "closed");
 }
 
+// ---------------------------------------------------------------------------------------------
+// VOICE-AGENT-158 — Look: a photo becomes a question
+//
+// The whole path in one place, in order: a click opens the source menu, a source opens a file
+// input, the file is decoded and resized here in the browser, the preview asks for confirmation,
+// the confirmed bytes are deposited on the API through /tool/vision-upload, and the reference that
+// comes back rides the ordinary /text-chat turn as `image_ref`.
+//
+// Three things this deliberately does NOT do:
+//   - No getUserMedia and no viewfinder in the page. `capture="environment"` hands the job to the
+//     system camera, which already has the permission prompt, the flash, the focus and the retake;
+//     a refusal there lands as "no file chosen" and cannot touch a running audio session, which is
+//     the acceptance criterion for the permission case.
+//   - No image on the WebRTC data channel, ever. Its maximum message size is the subject of
+//     VOICE-AGENT-109, and the bytes travel over HTTP instead. This file's voice path is
+//     VOICE-AGENT-180 and is not wired here.
+//   - No bytes kept after the deposit. What survives the turn is an object URL for the local
+//     thumbnail and a filename; the API owns the image for thirty days under a name of its own
+//     (FASTAPI-TEXT2SQL-275).
+// ---------------------------------------------------------------------------------------------
+
+// The resize is what decides the latency of a picture turn, not the model. 1024 px on the long
+// side is also what the cost was calculated against: at detail "high" the API bills about
+// ceil(1024/32)² patches, and a 4000 px phone photo would multiply that for indices no sharper.
+// q0.8 keeps a poster's credits block readable, which is the single most discriminating clue.
+const LOOK_MAX_EDGE_PX = 1024;
+const LOOK_JPEG_QUALITY = 0.8;
+// The browser converts to JPEG on the way out whatever came in, which is also how an iPhone HEIC
+// becomes something the API accepts: it refuses HEIC by decision (FASTAPI-TEXT2SQL-279) rather
+// than carry an image decoder, so the conversion belongs here, where the photo still is.
+const LOOK_UPLOAD_MIME = "image/jpeg";
+
+// Arbitrage 4 of VOICE-AGENT-179: two entries now, photo library and camera, and a structure that
+// takes a third without a rewrite. Hence a list the menu is built from, not two hardcoded buttons.
+const LOOK_MENU_ITEMS = [
+  { id: "camera", label: "Take a photo", icon: "📷", source: "camera", requiresCamera: true },
+  { id: "library", label: "Choose from library", icon: "🖼️", source: "library" },
+];
+
+function lookFileInputFor(source) {
+  return source === "camera" ? lookCameraInput : lookLibraryInput;
+}
+
+// A desktop with no camera should not offer to take a photo. `enumerateDevices()` reports the
+// KINDS of devices without any permission (only the labels are gated), so this needs no prompt.
+// It fails open on purpose: a browser that will not answer gets the entry enabled, because a
+// pointless file picker is a smaller failure than a control that is missing for no visible reason.
+async function probeLookCameraAvailability() {
+  try {
+    if (!navigator.mediaDevices?.enumerateDevices) {
+      return;
+    }
+    const devices = await navigator.mediaDevices.enumerateDevices();
+    lookCameraAvailable = devices.some((device) => device.kind === "videoinput");
+  } catch {
+    lookCameraAvailable = true;
+  }
+}
+
+function buildLookMenu() {
+  lookMenu.replaceChildren();
+  for (const item of LOOK_MENU_ITEMS) {
+    if (item.requiresCamera && !lookCameraAvailable) {
+      continue;
+    }
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "lookMenuItem";
+    button.dataset.lookSource = item.source;
+    button.setAttribute("role", "menuitem");
+    const icon = document.createElement("span");
+    icon.className = "lookMenuItemIcon";
+    icon.setAttribute("aria-hidden", "true");
+    icon.textContent = item.icon;
+    const label = document.createElement("span");
+    label.className = "lookMenuItemLabel";
+    label.textContent = item.label;
+    button.append(icon, label);
+    button.addEventListener("click", () => {
+      closeLookMenu();
+      pickLookImage(item.source);
+    });
+    lookMenu.append(button);
+  }
+}
+
+function openLookMenu() {
+  buildLookMenu();
+  lookMenu.hidden = false;
+  lookMenuOpen = true;
+  lookToggleButton.setAttribute("aria-expanded", "true");
+  const first = lookMenu.querySelector(".lookMenuItem");
+  if (first) {
+    first.focus();
+  }
+}
+
+function closeLookMenu({ restoreFocus = false } = {}) {
+  if (!lookMenuOpen) {
+    return;
+  }
+  lookMenu.hidden = true;
+  lookMenuOpen = false;
+  lookToggleButton.setAttribute("aria-expanded", "false");
+  if (restoreFocus) {
+    lookToggleButton.focus();
+  }
+}
+
 function toggleLook() {
-  userLookOpen = !userLookOpen;
-  updateLookToggle();
-  log("look switch", userLookOpen ? "open" : "closed");
-  clientLog("look_toggle", { enabled: userLookOpen });
+  if (lookMenuOpen) {
+    closeLookMenu({ restoreFocus: true });
+    return;
+  }
+  openLookMenu();
+}
+
+// The same input element is reused for a retake, so its value is cleared first: picking the same
+// file twice fires no `change` event otherwise, and a retake of the identical photo would hang.
+function pickLookImage(source) {
+  const input = lookFileInputFor(source);
+  if (!input) {
+    return;
+  }
+  input.dataset.lookSource = source;
+  input.value = "";
+  input.click();
+}
+
+function lookSourceOf(input) {
+  return input?.dataset?.lookSource === "camera" ? "camera" : "library";
+}
+
+async function decodeImageFile(file) {
+  if (window.createImageBitmap) {
+    try {
+      return await window.createImageBitmap(file);
+    } catch {
+      // Falls through to the <img> path: Safari has historically been the one to decode a format
+      // through <img> that createImageBitmap refused.
+    }
+  }
+  const objectUrl = URL.createObjectURL(file);
+  try {
+    return await new Promise((resolve, reject) => {
+      const image = new Image();
+      image.onload = () => resolve(image);
+      image.onerror = () => reject(new Error("The browser could not read this image"));
+      image.decoding = "async";
+      image.src = objectUrl;
+    });
+  } finally {
+    URL.revokeObjectURL(objectUrl);
+  }
+}
+
+function lookScaledSize(width, height) {
+  const longest = Math.max(width, height);
+  if (!longest || longest <= LOOK_MAX_EDGE_PX) {
+    return { width: Math.max(1, width), height: Math.max(1, height), scaled: false };
+  }
+  const ratio = LOOK_MAX_EDGE_PX / longest;
+  return {
+    width: Math.max(1, Math.round(width * ratio)),
+    height: Math.max(1, Math.round(height * ratio)),
+    scaled: true,
+  };
+}
+
+async function prepareLookImage(file) {
+  const bitmap = await decodeImageFile(file);
+  const sourceWidth = bitmap.width || bitmap.naturalWidth || 0;
+  const sourceHeight = bitmap.height || bitmap.naturalHeight || 0;
+  if (!sourceWidth || !sourceHeight) {
+    throw new Error("The browser could not read this image");
+  }
+  const size = lookScaledSize(sourceWidth, sourceHeight);
+  const canvas = document.createElement("canvas");
+  canvas.width = size.width;
+  canvas.height = size.height;
+  const context = canvas.getContext("2d");
+  if (!context) {
+    throw new Error("This browser cannot prepare the photo");
+  }
+  context.drawImage(bitmap, 0, 0, size.width, size.height);
+  if (typeof bitmap.close === "function") {
+    bitmap.close();
+  }
+  const blob = await new Promise((resolve) => {
+    canvas.toBlob(resolve, LOOK_UPLOAD_MIME, LOOK_JPEG_QUALITY);
+  });
+  if (!blob) {
+    throw new Error("This browser could not encode the photo");
+  }
+  return {
+    blob,
+    width: size.width,
+    height: size.height,
+    sourceWidth,
+    sourceHeight,
+    sourceBytes: file.size || 0,
+  };
+}
+
+async function handleLookFileSelected(input) {
+  const file = input?.files?.[0];
+  const source = lookSourceOf(input);
+  if (!file) {
+    // A cancelled picker, or a camera permission the user refused at the system prompt. Nothing to
+    // report and, by construction, nothing to undo: no session was touched to get here.
+    return;
+  }
+  const generation = ++lookCaptureGeneration;
+  const startedAt = performance.now();
+  setStatus("Preparing the photo", "live");
+  try {
+    const prepared = await prepareLookImage(file);
+    if (generation !== lookCaptureGeneration) {
+      return;
+    }
+    const resizeMs = Math.round(performance.now() - startedAt);
+    discardLookPendingCapture();
+    lookPendingCapture = {
+      ...prepared,
+      source,
+      resizeMs,
+      objectUrl: URL.createObjectURL(prepared.blob),
+    };
+    openLookPreview();
+  } catch (error) {
+    if (generation !== lookCaptureGeneration) {
+      return;
+    }
+    const message = String(error?.message || error || "The photo could not be prepared");
+    setStatus("Photo error", "error");
+    showSubtitleText(message);
+    log("look capture error", message);
+    clientLog("look_capture_error", { source, stage: "prepare", error: message, bytes: file.size || 0 }, "error");
+  } finally {
+    if (input) {
+      input.value = "";
+    }
+  }
+}
+
+function openLookPreview() {
+  if (!lookPendingCapture) {
+    return;
+  }
+  lookPreviewImage.src = lookPendingCapture.objectUrl;
+  lookPreviewNote.textContent = lookPreviewSummary(lookPendingCapture);
+  lookPreviewOverlay.hidden = false;
+  document.body.classList.add("lookPreviewOpen");
+  lookPreviewUseButton.focus();
+  setStatus("Confirm the photo", "live");
+}
+
+function lookPreviewSummary(capture) {
+  const dimensions = `${capture.width}×${capture.height}`;
+  const kb = Math.max(1, Math.round((capture.blob?.size || 0) / 1024));
+  const resized = capture.sourceWidth > capture.width || capture.sourceHeight > capture.height
+    ? ` (resized from ${capture.sourceWidth}×${capture.sourceHeight})`
+    : "";
+  return `${dimensions}, ${kb} KB${resized}`;
+}
+
+function closeLookPreview({ restoreFocus = true } = {}) {
+  lookPreviewOverlay.hidden = true;
+  lookPreviewImage.removeAttribute("src");
+  lookPreviewNote.textContent = "";
+  document.body.classList.remove("lookPreviewOpen");
+  if (restoreFocus) {
+    lookToggleButton.focus();
+  }
+}
+
+function isLookPreviewOpen() {
+  return !lookPreviewOverlay.hidden;
+}
+
+function discardLookPendingCapture() {
+  if (lookPendingCapture?.objectUrl) {
+    URL.revokeObjectURL(lookPendingCapture.objectUrl);
+  }
+  lookPendingCapture = null;
+}
+
+function cancelLookPreview() {
+  const source = lookPendingCapture?.source || "library";
+  lookCaptureGeneration += 1;
+  discardLookPendingCapture();
+  closeLookPreview();
+  setStatus(sessionRunning ? "Listening" : "Idle", sessionRunning ? "live" : "idle");
+  clientLog("look_capture", { source, outcome: "cancelled" });
+}
+
+function retakeLookPreview() {
+  const source = lookPendingCapture?.source || "library";
+  lookCaptureGeneration += 1;
+  discardLookPendingCapture();
+  closeLookPreview({ restoreFocus: false });
+  pickLookImage(source);
+}
+
+async function depositLookImage(blob, signal) {
+  const response = await fetch(appUrl("tool/vision-upload"), {
+    method: "POST",
+    headers: { "Content-Type": blob.type || LOOK_UPLOAD_MIME },
+    body: blob,
+    signal,
+  });
+  const rawBody = await response.text();
+  let body;
+  try {
+    body = JSON.parse(rawBody);
+  } catch {
+    body = { detail: rawBody };
+  }
+  if (!response.ok) {
+    throw new Error(lookUploadErrorMessage(response.status, body));
+  }
+  if (!body?.image_ref) {
+    throw new Error("The photo was accepted but came back without a reference");
+  }
+  return body;
+}
+
+// The upstream statuses are meaningful and the proxy passes them through, so they are turned into
+// something the user can act on rather than a status code. 415 is the one that will actually
+// happen: a picker can still hand over a format the canvas re-encode could not normalize.
+function lookUploadErrorMessage(status, body) {
+  const detail = typeof body?.detail === "string" ? body.detail : "";
+  if (status === 415) {
+    return detail || "That image format is not accepted. JPEG, PNG and WEBP are.";
+  }
+  if (status === 413) {
+    return detail || "That photo is too large to send.";
+  }
+  return detail || `The photo could not be sent (${status})`;
+}
+
+// The attached photo, as the chip under the control row. The label is short on purpose: the
+// thumbnail says what it is, and the rest of the row is already crowded.
+function renderLookAttachment() {
+  if (!lookAttachedImage) {
+    lookAttachment.hidden = true;
+    lookAttachmentThumb.removeAttribute("src");
+    lookAttachmentLabel.textContent = "";
+    return;
+  }
+  lookAttachmentThumb.src = lookAttachedImage.objectUrl;
+  lookAttachmentLabel.textContent = lookAttachedImage.source === "camera" ? "Photo" : "Picture";
+  lookAttachment.hidden = false;
+}
+
+// Called on New conversation and whenever the user removes the chip. The object URL is the only
+// thing the browser still holds of the image, so revoking it IS releasing the capture; the copy
+// the API keeps is its own, under its own name, for thirty days.
+function releaseLookAttachment(reason = "released") {
+  if (!lookAttachedImage) {
+    return;
+  }
+  const { source, imageRef } = lookAttachedImage;
+  if (lookAttachedImage.objectUrl) {
+    URL.revokeObjectURL(lookAttachedImage.objectUrl);
+  }
+  lookAttachedImage = null;
+  renderLookAttachment();
+  log("look image released", reason);
+  clientLog("look_capture", { source, outcome: "released", reason, image_ref: imageRef });
+}
+
+function activeLookImageRef() {
+  return lookAttachedImage?.imageRef || "";
+}
+
+// "Use this photo": deposit, then ask. The words are optional — an image alone is the nominal
+// question ("what is this?"), and /text-chat accepts a turn with an image_ref and no message.
+async function confirmLookCapture() {
+  const capture = lookPendingCapture;
+  if (!capture) {
+    return;
+  }
+  const generation = lookCaptureGeneration;
+  lookPreviewUseButton.disabled = true;
+  lookPreviewRetakeButton.disabled = true;
+  lookPreviewNote.textContent = "Sending the photo…";
+  setStatus("Sending the photo", "live");
+  const startedAt = performance.now();
+  try {
+    const deposit = await depositLookImage(capture.blob);
+    if (generation !== lookCaptureGeneration) {
+      return;
+    }
+    const uploadMs = Math.round(performance.now() - startedAt);
+    releaseLookAttachment("replaced by a new photo");
+    lookAttachedImage = {
+      imageRef: deposit.image_ref,
+      objectUrl: capture.objectUrl,
+      source: capture.source,
+      bytes: capture.blob.size,
+      width: capture.width,
+      height: capture.height,
+      purgeAfter: deposit.purge_after || "",
+    };
+    // The object URL now belongs to the attachment, so the pending capture must not revoke it.
+    if (lookPendingCapture) {
+      lookPendingCapture.objectUrl = null;
+    }
+    discardLookPendingCapture();
+    renderLookAttachment();
+    closeLookPreview({ restoreFocus: false });
+    // The picture turn runs on the text path, which stops the audio transport. Said out loud
+    // rather than done silently: VOICE-AGENT-180 is the ticket that makes a photo during a spoken
+    // session possible, and until it lands this is the honest trade.
+    const sessionWasRunning = sessionRunning;
+    if (sessionWasRunning) {
+      showSubtitleText("Voice session paused to look at the photo.");
+    }
+    clientLog("look_capture", {
+      session_stopped: sessionWasRunning,
+      source: capture.source,
+      outcome: "sent",
+      image_ref: deposit.image_ref,
+      bytes: capture.blob.size,
+      width: capture.width,
+      height: capture.height,
+      source_bytes: capture.sourceBytes,
+      source_width: capture.sourceWidth,
+      source_height: capture.sourceHeight,
+      resize_ms: capture.resizeMs,
+      upload_ms: uploadMs,
+    });
+    await sendTextChatMessage(questionInput.value.trim(), {
+      source: "look",
+      imageRef: deposit.image_ref,
+    });
+  } catch (error) {
+    if (generation !== lookCaptureGeneration) {
+      return;
+    }
+    const message = String(error?.message || error || "The photo could not be sent");
+    lookPreviewNote.textContent = message;
+    setStatus("Photo error", "error");
+    log("look upload error", message);
+    clientLog("look_capture_error", {
+      source: capture.source,
+      stage: "upload",
+      error: message,
+      bytes: capture.blob.size,
+    }, "error");
+  } finally {
+    lookPreviewUseButton.disabled = false;
+    lookPreviewRetakeButton.disabled = false;
+  }
+}
+
+// The full-size view of the attached photo, reusing the image viewer overlay the detail cards use
+// (VOICE-AGENT-174): the thumbnail has to stay reachable so the user can check what the answer was
+// built from.
+function openLookAttachmentViewer() {
+  if (!lookAttachedImage) {
+    return;
+  }
+  const overlay = document.createElement("div");
+  overlay.className = "videoModalOverlay lookImageOverlay";
+  const image = document.createElement("img");
+  image.className = "lookImageOverlayImage";
+  image.src = lookAttachedImage.objectUrl;
+  image.alt = "The photo attached to this conversation";
+  image.decoding = "async";
+  const closeButton = document.createElement("button");
+  closeButton.type = "button";
+  closeButton.className = "videoModalClose";
+  closeButton.setAttribute("aria-label", "Close the photo");
+  closeButton.textContent = "✕";
+  const close = () => {
+    overlay.remove();
+    document.removeEventListener("keydown", onKey);
+    lookAttachmentThumbButton.focus();
+  };
+  const onKey = (event) => { if (event.key === "Escape") close(); };
+  overlay.addEventListener("click", (event) => { if (event.target === overlay) close(); });
+  closeButton.addEventListener("click", close);
+  document.addEventListener("keydown", onKey);
+  overlay.append(image, closeButton);
+  document.body.append(overlay);
+  closeButton.focus();
 }
 
 function compactWikipediaContent(detail, { verbose = false } = {}) {
@@ -9187,6 +9712,16 @@ function startNewConversation() {
   pendingRealtimeTextTurns = [];
   cancelIdleDictation("new conversation");
   cancelAssistantOutput("new conversation");
+  // VOICE-AGENT-158: the photo belongs to a conversation, so it does not survive one. The full
+  // reset path is the one that drops it; `clearConversationUi()` deliberately does not, because
+  // it also runs on a reconnect, where the attachment is exactly what has to be kept.
+  lookCaptureGeneration += 1;
+  closeLookMenu();
+  discardLookPendingCapture();
+  if (isLookPreviewOpen()) {
+    closeLookPreview({ restoreFocus: false });
+  }
+  releaseLookAttachment("new conversation");
   clearReconnectTimer();
   releaseWakeLock("new conversation");
   cleanupConnection();
@@ -9240,6 +9775,35 @@ startButton.addEventListener("click", () => {
 stopButton.addEventListener("click", stop);
 microphoneToggleButton.addEventListener("click", toggleMicrophone);
 lookToggleButton.addEventListener("click", toggleLook);
+// VOICE-AGENT-158: the Look wiring. The two file inputs share one handler and are told apart by
+// the source recorded on them when they were opened, so a third entry in LOOK_MENU_ITEMS needs
+// nothing here beyond its own input.
+lookCameraInput.addEventListener("change", () => { handleLookFileSelected(lookCameraInput); });
+lookLibraryInput.addEventListener("change", () => { handleLookFileSelected(lookLibraryInput); });
+lookPreviewUseButton.addEventListener("click", () => { confirmLookCapture(); });
+lookPreviewRetakeButton.addEventListener("click", retakeLookPreview);
+lookPreviewCancelButton.addEventListener("click", cancelLookPreview);
+lookPreviewOverlay.addEventListener("click", (event) => {
+  if (event.target === lookPreviewOverlay) {
+    cancelLookPreview();
+  }
+});
+lookAttachmentThumbButton.addEventListener("click", openLookAttachmentViewer);
+lookAttachmentRemoveButton.addEventListener("click", () => {
+  releaseLookAttachment("removed by the user");
+});
+// A menu that closes on the next click anywhere else, like the burger drawer's backdrop but
+// without one: this popup is small and must not dim the app behind it.
+document.addEventListener("click", (event) => {
+  if (!lookMenuOpen) {
+    return;
+  }
+  if (lookMenu.contains(event.target) || lookToggleButton.contains(event.target)) {
+    return;
+  }
+  closeLookMenu();
+});
+probeLookCameraAvailability();
 historyBackButton.addEventListener("click", () => {
   goHistory(-1).catch((error) => {
     log("history back error", error.message);
@@ -9269,7 +9833,7 @@ questionInput.addEventListener("keydown", (event) => {
 });
 submitQuestionButton.addEventListener("click", submitQuestion);
 syncQuestionInputUi();
-updateLookToggle();
+renderLookAttachment();
 setSessionRunning(false);
 updateHistoryButtons();
 newConversationButton.addEventListener("click", startNewConversation);
@@ -9347,7 +9911,12 @@ function keyboardOwnedElsewhere(event) {
     isTypingTarget(event.target) ||
     isLaunchSplashActive() ||
     // The YouTube iframe has focus and swallows keys anyway; don't act behind it.
-    Boolean(document.querySelector(".videoModalOverlay"))
+    Boolean(document.querySelector(".videoModalOverlay")) ||
+    // VOICE-AGENT-158: the photo confirmation is a real modal with three buttons and one
+    // question to answer. Letting "t" start a session or "n" reset the conversation from behind
+    // it would act on an app the user cannot see, which is the same reason the burger drawer
+    // handles its own keys.
+    isLookPreviewOpen()
   );
 }
 window.addEventListener("keydown", (event) => {
@@ -9359,6 +9928,18 @@ window.addEventListener("keydown", (event) => {
     }
     if (appMenuDrawer && !appMenuDrawer.hidden) {
       closeAppMenu();
+      return;
+    }
+    // VOICE-AGENT-158: innermost first. Escape on the confirmation means "not this photo", and it
+    // must not fall through to the viewer behind it.
+    if (isLookPreviewOpen()) {
+      event.preventDefault();
+      cancelLookPreview();
+      return;
+    }
+    if (lookMenuOpen) {
+      event.preventDefault();
+      closeLookMenu({ restoreFocus: true });
       return;
     }
     closeFullscreenImageViewer();
@@ -9479,10 +10060,11 @@ window.addEventListener("keydown", (event) => {
       break;
     }
     case "l":
+      // VOICE-AGENT-158: no more "Look on / Look off" — there is no state to report. The key
+      // opens the source menu, which is what the click does, and the toast says so.
       if (triggerControl(lookToggleButton)) {
         event.preventDefault();
-        const open = lookToggleButton.getAttribute("aria-pressed") === "true";
-        showToast(open ? "Look on" : "Look off", open ? "👁️" : "🙈");
+        showToast(lookMenuOpen ? "Look" : "Look closed", "👁️");
       }
       break;
     case "n":

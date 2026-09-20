@@ -16,6 +16,7 @@ The app serves a minimal web UI on port `3000`. The browser creates an `RTCPeerC
 - Compact result-display mode that hides the app title and agent status while search results or entity pages are visible, leaving a one-row control header above the results panel.
 - Edge-to-edge iOS landscape layout for short viewports, including `viewport-fit=cover`, so the result UI uses the full available screen height without an outer app margin.
 - Text question input beside Start/Stop for mixed voice/text turns. `Enter` submits and `Shift+Enter` inserts a new line.
+- Picture questions through the Look button: take a photo or choose one from the library, confirm it, and ask about it. The photo is resized in the browser, deposited on the text2SQL API, and read there by a vision model that names what it points at with the clues that support it; the answer comes from the catalogue, never from a guess.
 - Back and Forward buttons beside the text input for navigating previously displayed result and detail pages.
 - PNG app icon configured for browser tabs, web app metadata, and iPhone Add to Home Screen.
 - Server-side Realtime voice selection through `AGENT_VOICE`.
@@ -297,6 +298,29 @@ TEXT2SQL_API_KEY_NAME=X-API-Key
 TEXT2SQL_API_KEY_VALUE=...
 ```
 
+### Picture Search
+
+A typed turn that carries a photo adds one string to the same request:
+
+```json
+{
+  "question": "who directed this?",
+  "image_ref": "20260920-161652_vision_1.1.19_50d22f896b5cea8d12332946e6a50f85.jpg",
+  "ui_language": "en",
+  "page": 1
+}
+```
+
+The bytes went up separately, on `POST /uploads/vision`, proxied by this app as `POST /tool/vision-upload`. Because the picture has its own deposit route, the search request stays JSON and one endpoint serves both modes; pagination of a result born from a photo is an ordinary paginated request.
+
+The response is the usual shape plus three fields, surfaced at the top level of the tool output so both the browser and the model read them:
+
+- `image_ref`, the photo this answer was built from, echoed back.
+- `vision_evidence`, what the model read in the picture and why it proposes what it proposes: the hints (kind of picture, title text, credits block, faces, era and genre cues), the ranked candidates each with its `evidence` strings and `confidence`, the selected one, `dominant`, `about_image`, `authoritative_empty`, and `composed_question`, the question the pipeline actually answered.
+- `error_code`, one of `image_ref_invalid`, `image_gone`, `image_missing`, `vision_failed`, all of which arrive with HTTP 200. This app turns each into a plain sentence (`image_error`) and hands the model that sentence instead of the code, so a purged photo reads as "send it again with the eye button" rather than as a defect report.
+
+`image_ref` is not exposed in the tool schema: only the server sets it, on the forced first search of a picture turn. A recovery re-query therefore works from the composed question rather than paying for a second reading of the same image.
+
 ### Same-Name Disambiguation (VOICE-AGENT-093)
 
 When the user names **one** entity but several in the database share that exact
@@ -560,7 +584,7 @@ Current implementation note: `loadRetainedContext()` exists, and context is save
 
 ## Text Input
 
-The UI includes a multiline question box beside the microphone controls. The microphone start control uses a layered `👄` and `❌` visual, the audio stop control is shown as `👄`, and the adjacent green microphone toggle shows `👂🏻` when input is open or `👂🏻` with `❌` when input is closed. The next green toggle is the Look control; it starts as `Look Off` with `👁️` plus `❌`, and switches to `Look On` with `👁️` when clicked. A round white submit button with a black up arrow appears immediately to the right of the question box whenever it contains non-whitespace text; clicking it submits the same way as pressing `Enter`.
+The UI includes a multiline question box beside the microphone controls. The microphone start control uses a layered `👄` and `❌` visual, the audio stop control is shown as `👄`, and the adjacent green microphone toggle shows `👂🏻` when input is open or `👂🏻` with `❌` when input is closed. The next green control is Look, shown as `👁️`; it is an action button, not a toggle, and a click opens the photo source menu described below. A round white submit button with a black up arrow appears immediately to the right of the question box whenever it contains non-whitespace text; clicking it submits the same way as pressing `Enter`.
 
 When the Start or Stop control is shown, its session button uses the green active-control background.
 
@@ -573,6 +597,26 @@ When no Realtime session is running and the text box is empty, the microphone to
 The Start button remains visible while idle dictation is recording, so the user can still switch into the Realtime voice path from the same control row.
 
 Pressing `Enter` after Start has begun a Realtime session sends the typed message through that Realtime path, regardless of whether the microphone toggle is open or closed. If the data channel is still opening, typed turns are queued until it is ready and then submitted before a spoken response is requested. If an earlier spoken answer is active, it is interrupted before the new turn is sent. The turn uses `OPENAI_REALTIME_MODEL`, may use the same tools as spoken turns, and plays the new answer through Realtime audio output. When no Realtime session is running, pressing `Enter` sends text to the server-side `/text-chat` endpoint. Press `Shift+Enter` to add a new line without submitting.
+
+## Picture Questions
+
+The green eye control, `Look`, sends a photo as a question. It is an action button: a click opens a small menu with two entries, `Take a photo` and `Choose from library`. On a phone, the first hands the job to the system camera, so the permission prompt, the flash and the retake are the ones the user already knows; refusing the permission does nothing to the app and never interrupts a running session. On a computer with no camera, the first entry is not shown.
+
+The photo is then prepared in the browser before it goes anywhere: decoded, drawn to a canvas at 1024px on its long side, and encoded as JPEG at quality 0.8. That resize is what decides the latency of a picture question, and it is also what turns an iPhone HEIC into a format the API accepts. A confirmation overlay shows the resized image with its dimensions and weight, and offers `Use this photo`, `Retake` and `Cancel`. Nothing leaves the browser until the photo is confirmed.
+
+On confirmation the bytes are posted to `/tool/vision-upload`, which adds the API key and forwards them to the text2SQL API's `POST /uploads/vision`. That endpoint files the image under a name of its own and returns an `image_ref`, a bare filename. The question then goes to `/text-chat` as usual, with the reference beside it, and the API's vision pre-stage reads the image, turns it into a question in words, and answers it with the ordinary pipeline. The picture never travels on the WebRTC data channel.
+
+Three shapes of question, all handled upstream:
+
+- **A photo on its own** is a question: the catalogue entry for what it shows opens. The question box may be left empty.
+- **A photo with a question about what it shows** (`who directed this?`) is answered as that question, not flattened into an entry card.
+- **A photo with a question about the picture itself** (`what is written on this poster?`) is answered from the pixels, with no catalogue search. A picture with nothing of cinema in it says so and searches nothing.
+
+The confirmed photo stays attached to the conversation as a thumbnail chip under the control row. Clicking it shows the photo full size; the `✕` removes it; `New conversation` releases it. Every later turn sends the same reference, and the bytes are never sent twice: the API recognises the photo by the fingerprint of its bytes, so a second question about it costs no vision call at all. The API keeps the image for thirty days so a question can be replayed from its log; past that, the reference stops designating anything and the app says so rather than breaking.
+
+The browser holds no bytes after the deposit, and none are ever written to `logs/`. What the log records is the reference, the source (`camera` or `library`), the sizes before and after the resize, and the resize and upload times, under the `look_capture` event.
+
+Today a picture question always takes the text path, so asking one during a spoken session stops the audio transport and says so.
 
 ## App Icon
 
@@ -662,7 +706,8 @@ dictation_started
 dictation_transcribe_sent
 dictation_transcribed
 dictation_error
-look_toggle
+look_capture
+look_capture_error
 realtime_text_sent
 realtime_text_error
 realtime_text_queued
@@ -893,3 +938,15 @@ Local smoke test:
 6. Confirm spoken answers and result cards.
 7. Type a multiline question with `Shift+Enter`, then press `Enter` to submit.
 8. With no Realtime session running and an empty text box, click the microphone toggle, ask a short question, and confirm the transcript is answered through text mode.
+9. Click the eye button, choose a source, pick a poster, and confirm it. The entry for that title should open, and the photo should stay as a chip under the control row.
+10. Type a follow-up about the same photo (`who wrote the music for this?`) and confirm it is answered without a second reading of the image.
+
+Picture path without a browser (the API must be reachable):
+
+```powershell
+# deposit, then ask; the reference is a bare filename
+curl.exe -s -X POST -H "Content-Type: image/jpeg" --data-binary "@poster.jpg" http://127.0.0.1:3000/tool/vision-upload
+curl.exe -s -X POST -H "Content-Type: application/json" -d "{\"message\":\"\",\"image_ref\":\"<the image_ref>\"}" http://127.0.0.1:3000/text-chat
+```
+
+Then read the turn in `logs/client-YYYYMMDD.log`: `look_capture` carries the resize and upload times, and the `tool_call_success` entry beside it carries `vision_model_used` and `vision_identification_processing_time`. Both drop to `false` and `0.0` on a second question about the same photo, which is what proves the recognition cache was hit.

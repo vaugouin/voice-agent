@@ -435,6 +435,11 @@ FRENCH_MARKERS = frozenset(LEXICONS["french_markers"])  # VOICE-AGENT-126: from 
 FRENCH_PHRASES = tuple(LEXICONS["french_phrases"])  # VOICE-AGENT-126: from lexicons.json
 WORD_RE = re.compile(r"[a-z']+")
 MAX_TRANSCRIPTION_AUDIO_BYTES = 25 * 1024 * 1024
+# VOICE-AGENT-158. Mirrors the upstream MAX_UPLOAD_IMAGE_BYTES default (FASTAPI-TEXT2SQL-275):
+# refusing here saves a 25 MB round trip only to collect the API's 413. The browser resizes to
+# ~1024 px / JPEG q0.8 before depositing, so a real capture lands three orders of magnitude
+# below this; the ceiling exists for a file picked straight out of a photo library.
+MAX_VISION_IMAGE_BYTES = 25 * 1024 * 1024
 TRANSCRIPTION_MIME_EXTENSIONS = {
     "audio/mp3": "mp3",
     "audio/mpeg": "mp3",
@@ -486,6 +491,10 @@ class Text2SqlRequest(BaseModel):
     ui_language: str | None = None
     page: int = 1
     question_hashed: str | None = None
+    # VOICE-AGENT-158: the bare filename returned by POST /uploads/vision, never bytes. The
+    # picture-based search is the same endpoint with one more string field, which is why a
+    # search request stays JSON and there is nothing to branch on here.
+    image_ref: str | None = None
 
 
 class TextChatRequest(BaseModel):
@@ -494,6 +503,9 @@ class TextChatRequest(BaseModel):
     # VOICE-AGENT-118: persona slug for this turn (see resolve_soul). Optional and
     # self-healing — an unknown slug falls back to the default rather than failing the turn.
     soul: str | None = None
+    # VOICE-AGENT-158: the image this typed turn asks about, as the reference the browser got
+    # back from /tool/vision-upload. A turn may legitimately carry an image and NO message.
+    image_ref: str | None = None
 
 
 class ClientLogRequest(BaseModel):
@@ -758,6 +770,19 @@ def text2sql_headers() -> dict[str, str]:
     if api_key_value:
         headers[api_key_name] = api_key_value
     return headers
+
+
+def text2sql_auth_headers() -> dict[str, str]:
+    """The API key alone, with no Content-Type (VOICE-AGENT-158).
+
+    `text2sql_headers()` hardcodes `application/json`, which is right for the six JSON
+    endpoints and wrong for the one binary endpoint: `POST /uploads/vision` takes raw image
+    bytes and reads the format from the magic number, so the caller has to be free to declare
+    `image/jpeg` instead.
+    """
+    api_key_name = os.getenv("TEXT2SQL_API_KEY_NAME", "X-API-Key")
+    api_key_value = os.getenv("TEXT2SQL_API_KEY_VALUE")
+    return {api_key_name: api_key_value} if api_key_value else {}
 
 
 def text2sql_base_url() -> str:
@@ -1177,6 +1202,71 @@ def compact_detail_for_model(
     }
 
 
+VISION_EVIDENCE_MAX_CANDIDATES = 8
+VISION_EVIDENCE_MAX_TEXT = 600
+
+
+def _vision_log_fields(output: Any) -> dict[str, Any]:
+    """The picture half of a query_text2sql log entry, or nothing at all (VOICE-AGENT-158).
+
+    Returns an empty dict on a text turn so the shape of every existing entry is untouched, and
+    a log harvest can tell a picture turn from a text one by the presence of the keys rather than
+    by a null. Counts and flags only, never the evidence prose and never any bytes.
+    """
+    if not isinstance(output, dict):
+        return {}
+    image_ref = str(output.get("image_ref") or "")
+    if not image_ref:
+        return {}
+    evidence = output.get("vision_evidence")
+    evidence = evidence if isinstance(evidence, dict) else {}
+    candidates = evidence.get("candidates")
+    upstream = output.get("upstream")
+    upstream = upstream if isinstance(upstream, dict) else {}
+    return {
+        "image_ref": image_ref,
+        "error_code": str(output.get("error_code") or ""),
+        "vision_candidate_count": len(candidates) if isinstance(candidates, list) else 0,
+        "vision_dominant": evidence.get("dominant"),
+        "vision_about_image": evidence.get("about_image"),
+        "vision_cached": evidence.get("cached"),
+        "vision_composed_question": str(evidence.get("composed_question") or ""),
+        # The API's own wall clock for the sixth task, and the flag that says whether it ran at
+        # all: both stay 0 / false on a recognition-cache hit, which is what proves a second
+        # question about the same photo cost nothing.
+        "vision_model_used": upstream.get("vision_model_used"),
+        "vision_identification_processing_time": upstream.get(
+            "vision_identification_processing_time"
+        ),
+    }
+
+
+def compact_vision_evidence(evidence: Any) -> dict[str, Any] | None:
+    """Bound what the vision block costs before it enters the model input (VOICE-AGENT-158).
+
+    `vision_evidence` is the honest part of a picture turn — the hints read in the image and the
+    `evidence` strings behind each candidate — so it travels to the model rather than being
+    dropped. But it is model-authored free text sitting in a loop that can run six iterations,
+    which is exactly the shape that produced context_length_exceeded before
+    compact_search_for_model existed. Two bounds, both generous: the ranked candidate list is
+    cut past the point where a ranking still means anything, and a credits block transcribed off
+    a poster cannot grow without limit. `None` (no image on this turn) passes straight through.
+    """
+    if not isinstance(evidence, dict):
+        return None
+    compact = dict(evidence)
+    hints = compact.get("hints")
+    if isinstance(hints, dict):
+        compact["hints"] = {
+            key: (value[:VISION_EVIDENCE_MAX_TEXT] if isinstance(value, str) else value)
+            for key, value in hints.items()
+        }
+    candidates = compact.get("candidates")
+    if isinstance(candidates, list):
+        compact["candidates"] = candidates[:VISION_EVIDENCE_MAX_CANDIDATES]
+    return compact
+
+
 def compact_search_for_model(output: dict[str, Any]) -> dict[str, Any]:
     """Drop the duplicated upstream payload before a query_text2sql result enters the
     model input. `upstream.result` repeats `rows` verbatim, and upstream's answer/error/
@@ -1189,7 +1279,19 @@ def compact_search_for_model(output: dict[str, Any]) -> dict[str, Any]:
     """
     if not isinstance(output, dict) or "upstream" not in output:
         return output
-    return {key: value for key, value in output.items() if key != "upstream"}
+    compact = {key: value for key, value in output.items() if key != "upstream"}
+    # VOICE-AGENT-158: on an image failure the model is shown the sentence and not the machinery.
+    # The raw `error` names the reference ("image_ref does not match the upload naming convention:
+    # 'not-a-real-ref.jpg'") and `error_code` names the code, and with both in front of it the
+    # model quoted them at the user however the prompt was worded. Removing them is what actually
+    # settles it; the browser still receives the originals, which travel outside this function.
+    image_error = compact.get("image_error")
+    if isinstance(image_error, dict) and image_error.get("message"):
+        compact["error"] = image_error["message"]
+        compact.pop("error_code", None)
+        compact.pop("image_error", None)
+        compact["image_unavailable"] = True
+    return compact
 
 
 # Bounded, grounded recovery guidance shared by the Realtime and /text-chat
@@ -1339,6 +1441,83 @@ GROUNDED_ABSENCE_INSTRUCTIONS = (
     "wikipedia_content. Only state that something is absent after that detail fetch has "
     "returned and genuinely lacks it. Never conclude from the search result alone that "
     "plot, production, or reception data does not exist."
+)
+
+# VOICE-AGENT-158. Sent only on a turn that carries an image. The API has already done the
+# reading and the resolving: its vision pre-stage turns the picture into a question in words,
+# composes it deterministically, and answers it with the ordinary pipeline. What the model must
+# not do is take the picture back into its own hands — it never saw it, and the one thing it
+# knows about it is a `vision_evidence` block written by another model. Hence three rules that
+# all say the same thing in different situations: report the reading, do not extend it.
+VISION_TURN_INSTRUCTIONS = (
+    "This turn carries a photo the user sent. You did not see the image: a vision model read "
+    "it server-side, and everything known about it is in the query_text2sql result's "
+    "vision_evidence field — hints (what kind of picture it is, any title text, a credits "
+    "block, faces, era and genre cues), ranked candidates each with the evidence that supports "
+    "it, the selected candidate, and composed_question, which is the question the database "
+    "actually answered. Base your answer on that block and on the rows returned beside it, "
+    "never on what you would guess a poster of this description shows. "
+    "Say what was read, briefly and in plain words, so the user can tell why this title came "
+    "back: one short clause of evidence is enough ('the credits block names Ridley Scott'). "
+    "Never present a title the catalogue did not return. If vision_evidence.candidates is "
+    "empty, or the result has no rows and no selected candidate, say plainly that you could not "
+    "identify it and report what was read in the image — a plausible guess is the one answer "
+    "this feature must never give. If several candidates are close (dominant is false), present "
+    "them as a choice with what distinguishes them, exactly as for a same-name cluster, instead "
+    "of picking one silently. If about_image is true the question was about the picture itself "
+    "and is answered from the pixels: answer from the hints and do not go looking for a title. "
+    "If authoritative_empty is true the image has nothing of cinema in it: say so, and do not "
+    "search. "
+    "The photo stays attached for the rest of the conversation, so a follow-up about the entity "
+    "you just identified is answered from that entity with the detail tools, without any new "
+    "reading of the image."
+)
+
+# VOICE-AGENT-158. The four picture failures arrive as HTTP 200 with an ordinary response body
+# (FASTAPI-TEXT2SQL-114), so nothing upstream turns them into an error the user can read. They
+# are not equivalent and must not collapse into one apology: a purged image is the user's cue to
+# send the photo again, a provider failure is a retry, and the two are a month apart in cause.
+# VOICE-AGENT-158. The four image failures, each as the sentence the user should read. Written
+# here rather than left to the model on purpose: asked merely not to mention `image_ref_invalid`,
+# it printed the code and the filename anyway, twice, because the raw `error` string sits right
+# beside the instruction and reads like the answer. A fixed sentence is not a prompt to follow, it
+# is a value to relay, and it also keeps the four cases distinct — a purged photo, a mount problem,
+# a bad reference and a provider failure ask for four different things from the user.
+VISION_ERROR_MESSAGES = {
+    "image_gone": (
+        "That photo is no longer on the server: pictures are kept for thirty days and this one is "
+        "past that. Send it again with the eye button and I will read it."
+    ),
+    "image_missing": (
+        "That photo could not be found on the server, although it should still be there. That is "
+        "on my side, not yours. Sending it again with the eye button is the quickest way round it."
+    ),
+    "image_ref_invalid": (
+        "I lost track of that photo. Send it again with the eye button and ask your question."
+    ),
+    "vision_failed": (
+        "I could not read that photo this time. It is worth trying again."
+    ),
+}
+
+
+def vision_error_notice(error_code: Any) -> dict[str, str] | None:
+    """The user-facing sentence for an image failure, or None (VOICE-AGENT-158).
+
+    The four codes arrive with HTTP 200 and an ordinary response body, so nothing before this
+    point turns them into something a user can act on.
+    """
+    code = str(error_code or "").strip()
+    message = VISION_ERROR_MESSAGES.get(code)
+    return {"code": code, "message": message} if message else None
+
+
+VISION_ERROR_INSTRUCTIONS = (
+    "If the input says the photo could not be used, your whole answer is the sentence it gives "
+    "you, word for word and nothing added: it already says what happened and what to do. Never "
+    "print an error code, a filename or an image reference — those are internal tool values, like "
+    "the ID_* fields, and quoted back they read as a defect report instead of an answer. Never "
+    "answer a picture question from your own knowledge when the photo could not be read."
 )
 
 # VOICE-AGENT-143. Neither prompt carried a date, so the agent had no clock: on 2026-07-29 it
@@ -2076,9 +2255,19 @@ def build_text2sql_request_json(
     ui_language: str,
     rows_per_page: int,
 ) -> dict[str, Any]:
+    image_ref = payload.image_ref or None
     request_json = {
-        "question": payload.query,
+        # An image-only turn has no words at all, and the API documents that case: a request may
+        # carry only an `image_ref`. Sending `"question": ""` beside it would be a question the
+        # vision pre-stage then has to decide is empty, so the key is dropped instead. Without an
+        # image the query is passed through untouched, empty or not, as it always was.
+        "question": (payload.query or None) if image_ref else payload.query,
         "question_hashed": payload.question_hashed or None,
+        # VOICE-AGENT-158: present only on a picture turn, and then the API runs its vision
+        # pre-stage, composes the question in words and answers it with the ordinary pipeline
+        # (FASTAPI-TEXT2SQL-114). Dropped by the comprehension below when None, so a text-only
+        # request goes out byte-for-byte as it did before.
+        "image_ref": (payload.image_ref or None),
         "ui_language": ui_language,
         "page": payload.page,
         "rows_per_page": rows_per_page,
@@ -2215,6 +2404,24 @@ async def query_text2sql_data(payload: Text2SqlRequest) -> dict[str, Any]:
         "name_ambiguity": (
             upstream_body.get("name_ambiguity") if isinstance(upstream_body, dict) else None
         ),
+        # VOICE-AGENT-158. Surfaced top-level for the same reason as name_ambiguity above: the
+        # model input is built by compact_search_for_model(), which drops `upstream` wholesale,
+        # so anything the model must reason over has to live outside it. `vision_evidence` is
+        # what lets the answer say WHY a title was proposed instead of dropping it out of
+        # nowhere, and `error_code` carries the four picture-specific failures (image_ref_invalid,
+        # image_gone, image_missing, vision_failed) which all arrive as HTTP 200.
+        "image_ref": (
+            (upstream_body.get("image_ref") or "") if isinstance(upstream_body, dict) else ""
+        ),
+        "vision_evidence": compact_vision_evidence(
+            upstream_body.get("vision_evidence") if isinstance(upstream_body, dict) else None
+        ),
+        "error_code": (
+            str(upstream_body.get("error_code") or "") if isinstance(upstream_body, dict) else ""
+        ),
+        "image_error": vision_error_notice(
+            upstream_body.get("error_code") if isinstance(upstream_body, dict) else None
+        ),
         "upstream": upstream_body,
     }
 
@@ -2283,6 +2490,12 @@ async def execute_text_tool(tool_name: str, args: dict[str, Any]) -> dict[str, A
                 ui_language=args.get("ui_language") or None,
                 page=int(args.get("page") or 1),
                 question_hashed=args.get("question_hashed") or None,
+                # VOICE-AGENT-158: set only by the server on the forced first call of a picture
+                # turn. `image_ref` is deliberately absent from text_tool_definitions(), so the
+                # model cannot put an image back on a recovery re-query: a second read of the
+                # same photo costs about four cents and the API has already turned it into
+                # words, which is what recovery should be working from.
+                image_ref=args.get("image_ref") or None,
             )
         ))
 
@@ -2356,7 +2569,11 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         raise HTTPException(status_code=500, detail="OPENAI_API_KEY is not set")
 
     message = payload.message.strip()
-    if not message:
+    # VOICE-AGENT-158: a picture is a question. A turn carrying an image_ref and no words is the
+    # nominal case of the Look button ("what is this?"), so the empty-message refusal now applies
+    # only when there is nothing at all to answer.
+    image_ref = (payload.image_ref or "").strip()
+    if not message and not image_ref:
         raise HTTPException(status_code=400, detail="Missing message")
 
     # VOICE-AGENT-118. /text-chat takes a JSON payload and no Request object, so the persona
@@ -2441,13 +2658,18 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         + "\n\nRecent conversation context:\n"
         + ("\n".join(context_lines) if context_lines else "(none)")
         + "\n\nUser message:\n"
-        + message
+        # VOICE-AGENT-158: the words are optional on a picture turn, so say what was sent rather
+        # than leaving an empty heading the model has to interpret. The bracket text is a
+        # description of the turn, not a question to answer: the question was composed by the
+        # vision pre-stage and is reported in vision_evidence.composed_question.
+        + (message if message else "[no words: the user sent a photo and nothing else]")
     )
     ui_language = detect_ui_language_from_text(message)
     initial_text2sql_args = {
         "query": message,
         "ui_language": ui_language,
         "page": 1,
+        **({"image_ref": image_ref} if image_ref else {}),
     }
     # VOICE-AGENT-095: on a disambiguation SELECTION turn (an earlier turn offered
     # name_ambiguity candidates the browser still carries), do NOT pre-force
@@ -2457,7 +2679,12 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
     # candidates and call the detail tool itself; if the message is actually a new
     # unrelated question it still has query_text2sql as an auto tool. This finally does
     # the "don't re-force" deferred in VOICE-AGENT-093.
-    is_selection_turn = carried_candidate_count > 0
+    #
+    # VOICE-AGENT-158: an image overrides that skip. A photo is never a selection among the
+    # candidates of the previous turn, it is a new question whose words do not exist yet — they
+    # are composed by the API's vision pre-stage from the picture itself. Skipping the forced call
+    # here would leave the turn with no search at all and an image nobody read.
+    is_selection_turn = carried_candidate_count > 0 and not image_ref
     initial_text2sql_output = (
         None
         if is_selection_turn
@@ -2501,6 +2728,15 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         # VOICE-AGENT-143: recomputed on every typed turn, so the text path is always exact.
         + " " + current_date_instructions()
     )
+    if image_ref:
+        # VOICE-AGENT-158: only on a picture turn. A text-only turn's prompt is unchanged, so
+        # the image feature costs it nothing — neither tokens nor a rule to read past.
+        instructions += " " + VISION_TURN_INSTRUCTIONS + " " + VISION_ERROR_INSTRUCTIONS
+    image_error = (
+        initial_text2sql_output.get("image_error")
+        if isinstance(initial_text2sql_output, dict)
+        else None
+    )
     request_base = {
         "model": model,
         "instructions": instructions,
@@ -2534,6 +2770,18 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
             "output": initial_text2sql_output,
             "forced": True,
         })
+        if isinstance(image_error, dict) and image_error.get("message"):
+            # VOICE-AGENT-158: last item in the input, right where the answer gets written, and
+            # phrased as a value to copy rather than a rule to obey. The tool result above already
+            # carries the same sentence in place of its raw error.
+            input_items.append({
+                "role": "user",
+                "content": (
+                    "The photo could not be used on this turn. Your entire answer is this "
+                    "sentence, copied exactly, with nothing added and nothing named beyond it:\n"
+                    + image_error["message"]
+                ),
+            })
     else:
         # VOICE-AGENT-095: selection turn — no forced query. Tell the model the carried
         # candidates are its source and it must fetch the resolved detail (or run
@@ -2662,6 +2910,10 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         # VOICE-AGENT-095: True when the forced query_text2sql was skipped so it could
         # not blank the screen; the model then fetches the resolved detail itself.
         "forced_query_skipped": is_selection_turn,
+        # VOICE-AGENT-158: the name of the photo this turn asked about, never its bytes. This is
+        # what makes a picture question replayable from the log alone, the whole point of the API
+        # keeping the image under a name of its own (FASTAPI-TEXT2SQL-275).
+        "image_ref": image_ref,
     })
     for o in tool_outputs:
         name = str(o.get("name") or "")
@@ -2678,6 +2930,10 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
                 # Surface whether the same-name flag fired, so a disambiguation turn is
                 # visible in the log (VOICE-AGENT-093 / FASTAPI-TEXT2SQL-157).
                 "name_ambiguity_count": (na.get("count") if isinstance(na, dict) else None),
+                # VOICE-AGENT-158: what the picture turn cost and what it produced. `error_code`
+                # matters most — the four image failures come back as HTTP 200, so without it a
+                # purged photo is indistinguishable in the log from a photo nobody recognized.
+                **_vision_log_fields(out),
             })
         elif DETAIL_TOOL_BY_NAME.get(name):
             write_client_log("tool_call_success", {
@@ -2695,6 +2951,9 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         "message": message,
         "text": output_text,
         "tool_outputs": tool_outputs,
+        # VOICE-AGENT-158: echoed so the browser can confirm which photo this answer was built
+        # from before it keeps holding the reference for the next turn.
+        "image_ref": image_ref,
         "upstream_id": upstream_body.get("id") if isinstance(upstream_body, dict) else "",
     }
 
@@ -2766,6 +3025,74 @@ def _with_date_status(payload: dict[str, Any]) -> dict[str, Any]:
 @app.post("/tool/text2sql")
 async def query_text2sql(payload: Text2SqlRequest) -> dict[str, Any]:
     return _with_date_guardrail(await query_text2sql_data(payload))
+
+
+@app.post("/tool/vision-upload")
+async def upload_vision_image(request: Request) -> dict[str, Any]:
+    """Deposit a photo on the API and return the reference that names it (VOICE-AGENT-158).
+
+    A proxy, twin of the seven others, and it exists for one reason the browser cannot work
+    around: `TEXT2SQL_API_KEY_VALUE` lives on this server and must not reach the page. The body
+    is the image itself, raw bytes, exactly as `POST /uploads/vision` wants it
+    (FASTAPI-TEXT2SQL-275) — no multipart, no base64, which is also why this route reads
+    `request.body()` the way `/transcribe` does instead of taking a Pydantic model.
+
+    Nothing is stored here. The image is not written to this container's disk and never enters
+    `logs/`: what comes back is a filename, and the filename is the only thing the browser, the
+    turn's log entry and every later turn of the conversation ever hold.
+    """
+    image_bytes = await request.body()
+    if not image_bytes:
+        raise HTTPException(status_code=400, detail="Missing image body")
+    if len(image_bytes) > MAX_VISION_IMAGE_BYTES:
+        raise HTTPException(status_code=413, detail="Image upload is too large")
+
+    content_type = request.headers.get("content-type", "image/jpeg")
+    media_type = content_type.split(";", 1)[0].strip().lower() or "image/jpeg"
+    upload_url = f"{text2sql_base_url()}/uploads/vision"
+
+    # 60s, like /transcribe and unlike the 30s of the JSON tools: this is a body upload over
+    # whatever link a phone happens to have, and the one case worth not failing is a poster
+    # photographed outdoors.
+    async with httpx.AsyncClient(timeout=60) as client:
+        try:
+            response = await client.post(
+                upload_url,
+                content=image_bytes,
+                headers={**text2sql_auth_headers(), "Content-Type": media_type},
+            )
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    upstream_content_type = response.headers.get("content-type", "")
+    if "application/json" in upstream_content_type:
+        upstream_body: Any = response.json()
+    else:
+        upstream_body = response.text
+
+    if response.status_code >= 400:
+        # The upstream statuses are all meaningful to the user (415 names the three accepted
+        # formats, 413 the ceiling), so they are passed through rather than flattened into 502.
+        # Only a transport failure above becomes one.
+        raise HTTPException(status_code=response.status_code, detail=upstream_body)
+
+    image_ref = str(upstream_body.get("image_ref") or "") if isinstance(upstream_body, dict) else ""
+    if not image_ref:
+        raise HTTPException(status_code=502, detail="Upload returned no image_ref")
+
+    return {
+        "configured": True,
+        "image_ref": image_ref,
+        "bytes": upstream_body.get("bytes") if isinstance(upstream_body, dict) else len(image_bytes),
+        "image_format": upstream_body.get("image_format") if isinstance(upstream_body, dict) else "",
+        # Surfaced so the browser can say "sent on the 12th, gone since the 11th of next month"
+        # rather than discovering the 30-day purge as a broken reference (FASTAPI-TEXT2SQL-275).
+        "deposited_at": upstream_body.get("deposited_at") if isinstance(upstream_body, dict) else "",
+        "purge_after": upstream_body.get("purge_after") if isinstance(upstream_body, dict) else "",
+        "retention_days": (
+            upstream_body.get("retention_days") if isinstance(upstream_body, dict) else None
+        ),
+    }
 
 
 @app.get("/tool/detail/{entity}/{entity_id}")
@@ -3026,6 +3353,19 @@ HARNESS_LOG_EVENTS = frozenset({
     # not the render decision taken from it, and a screen that "did not follow the
     # conversation" is indistinguishable from a screen that was deliberately left alone.
     "forced_search_render_skipped",
+    # VOICE-AGENT-158: one entry per photo the Look button sends, with its source (camera or
+    # library), the size after the client-side resize, the resize and deposit wall clocks, and the
+    # image_ref the API gave back — never the bytes. This is the latency the ticket promises to
+    # measure, and it is measured nowhere else: the resize happens in the browser, so the server
+    # cannot time it. `look_capture_error` is its counterpart for a capture that never became a
+    # question (a decode that failed, a refused format, a deposit that did not go through).
+    #
+    # Whitelisting them is not a detail. `look_toggle` has been emitted by the browser since the
+    # first day and was never in this list, so it wrote exactly nothing for months — the same trap
+    # this file already documents for -107 and -111 above: an event that is not whitelisted is not
+    # absent, it is invisible, and a log cannot tell the two apart.
+    "look_capture",
+    "look_capture_error",
 })
 
 

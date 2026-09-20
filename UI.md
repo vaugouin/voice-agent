@@ -10,7 +10,11 @@ The app has one persistent shell, one control row, one status row, one hidden au
 - `dictationActive`: true while the idle microphone dictation recorder is capturing audio for `/transcribe`.
 - `dictationTranscribing`: true while captured idle dictation audio is being transcribed and submitted to `/text-chat`.
 - `questionInput.value`: determines whether the typed-question path is active.
-- `userLookOpen`: stores the Look toggle state. It is `false` on page load and flips only when the Look button is clicked.
+- `lookMenuOpen`: true while the Look source menu is open. The Look button itself has no state; this one belongs to the popup.
+- `lookPendingCapture`: a photo that has been decoded and resized but not confirmed. It exists only while the confirmation overlay is up, and holds the resized blob, its dimensions and a local object URL.
+- `lookAttachedImage`: the photo the conversation is currently about, once confirmed and deposited. Holds the API's `image_ref`, a local object URL for the thumbnail, the source (`camera` or `library`), the byte size, the dimensions and the purge date. `null` when no photo is attached.
+- `lookCaptureGeneration`: invalidates an in-flight decode or deposit when the user cancels, retakes, or starts a new conversation.
+- `lookCameraAvailable`: false when `enumerateDevices()` reports no `videoinput`, which removes the camera entry from the source menu. It fails open: a browser that will not answer keeps the entry.
 - `pendingRealtimeTextTurns`: typed turns submitted after Start while the Realtime data channel is still opening; they are sent when the channel opens.
 - `resultsPanel.hidden`: determines whether result/detail content is visible and whether compact results mode is active.
 - `launchSplashHasRun`: true after the cold-load splash sequence starts; prevents the splash from replaying on New conversation or later showcase renders.
@@ -74,7 +78,7 @@ The control row is `.controls`. It contains, in order:
 - App menu button.
 - Start/Stop button slot.
 - Microphone open/closed toggle slot.
-- Look on/off toggle slot.
+- Look button slot (opens the photo source menu).
 - Back button.
 - Forward button.
 - Text entry.
@@ -323,30 +327,62 @@ Idle dictation:
 
 ## Look Toggle
 
-Element: `#lookToggleButton`
+Elements: `#lookToggleButton`, `#lookMenu`, `#lookCameraInput`, `#lookLibraryInput`, `#lookPreviewOverlay`, `#lookAttachment`
 
-Purpose: toggles the browser UI's Look state. This is currently visual state management only; it does not start a camera or vision request.
+Purpose: sends a photo as a question. A click opens a source menu, the chosen photo is resized in the browser, shown for confirmation, deposited on the text2SQL API, and asked about through `/text-chat`. The button is an action, not a toggle: it has no on/off state and never shows a cross.
 
 Visual:
 
 - Sits immediately to the right of the microphone toggle in its own 52px slot.
 - Uses the same green button background and 52px icon-control style as the microphone controls.
-- Shows the eye icon when Look is on.
-- Shows the eye icon with a cross layered over it when Look is off.
+- Shows the eye icon, always the same, in every app state.
 
 State:
 
-- `userLookOpen` starts as `false`.
-- The initial state is Look Off.
-- The button remains enabled in all current app states.
-- `aria-pressed` mirrors `userLookOpen`.
-- The title and accessible label are `Look Off` when off and `Look On` when on.
+- The button is enabled in all app states and carries no `aria-pressed`.
+- `aria-expanded` is `true` only while the source menu is open.
+- The title and accessible label are `Look`.
 
 Click behavior:
 
-1. Toggles `userLookOpen`.
-2. Calls `updateLookToggle()`.
-3. Logs `look_toggle` through client diagnostics.
+1. Opens `#lookMenu` if it is closed, closes it if it is open.
+2. The menu is built from `LOOK_MENU_ITEMS`, one button per source; a third source is a line in that list, not a change to the markup.
+3. The camera entry is omitted when no `videoinput` device is reported.
+4. The menu closes on a click outside it, on `Escape`, and on choosing a source.
+
+### Choosing a photo
+
+1. Choosing a source opens the matching hidden file input. The camera entry carries `capture="environment"`, so the system camera handles the permission prompt, the capture and its own retake. A refused permission or a cancelled picker arrives as "no file chosen": nothing happens, no message, and no running audio session is touched.
+2. The file is decoded and drawn to a canvas at 1024px on its long side, then encoded as JPEG at quality 0.8. This also converts an iPhone HEIC into a format the API accepts.
+3. A file the browser cannot decode sets status `Photo error`, shows the reason in the subtitle lane, and logs `look_capture_error`.
+
+### Confirmation overlay
+
+Element: `#lookPreviewOverlay`
+
+- Modal, above everything else, with `body.lookPreviewOpen` locking page scroll.
+- Shows the **resized** image, not the original, with its dimensions and weight underneath.
+- `Use this photo` deposits the image and sends the turn. `Retake` reopens the same source. `Cancel` and `Escape` discard the capture and return the status to its idle text.
+- While it is open, the single-key shortcuts are inert (`keyboardOwnedElsewhere()`), so no key acts on the app behind it.
+
+### Attached photo
+
+Element: `#lookAttachment`
+
+- Appears between the control row and the status row once a photo is confirmed, and survives compact results mode, where it only gets smaller.
+- The thumbnail opens a full-size view of the photo; `Escape` or a click outside closes it.
+- The `✕` removes the photo: the chip disappears, the object URL is revoked, and later turns go back to being text-only.
+- It stays attached for the rest of the conversation, and every turn sends its `image_ref` again. The bytes are never re-sent: the API recognizes the photo by its fingerprint, so a second question about it does not read the image again.
+- `New conversation` releases it. A reconnect does not.
+
+### Sending the turn
+
+1. The confirmed bytes are posted to `/tool/vision-upload`, which proxies them to the API's `POST /uploads/vision` and returns an `image_ref`.
+2. The turn goes to `/text-chat` with that reference and whatever is in the question box, which may be empty: a photo on its own is a question.
+3. A photo turn always takes the text path, even during a Realtime session, which stops the audio transport. The subtitle lane says so.
+4. Status runs `Preparing the photo` → `Confirm the photo` → `Sending the photo` → `Reading the photo` → `Text response`.
+5. Results render through the usual `renderText2SqlResult()` / `renderEntityDetailOutput()` path: a recognised poster opens a catalogue entry, an unrecognised one says so, and a picture with nothing of cinema in it triggers no search.
+6. `look_capture` is logged on every outcome (`sent`, `cancelled`, `released`) with the source, the sizes before and after the resize, the resize and upload times, and the reference. `look_capture_error` covers a capture that never became a question.
 
 ## Text Entry
 
@@ -1344,7 +1380,7 @@ Single-key shortcuts (VOICE-AGENT-087) drive the main controls from a physical k
 | --- | --- | --- |
 | `T` | Start / Stop | Toggles the Realtime session. Presses Stop when a session is running, Start otherwise. |
 | `M` | Microphone toggle | In a session: mute / unmute. Idle: starts / sends idle dictation (same as clicking the mic button). |
-| `L` | Look toggle | Toggles the Look state. |
+| `L` | Look | Opens (or closes) the photo source menu. |
 | `N` | New conversation | Clears the UI and retained context (only while the New conversation button is visible). |
 | `⌫` Backspace | History back | Steps back through the result history (browser-style). With an image fullscreen it closes the viewer instead (VOICE-AGENT-138). |
 | `⇧⌫` Shift+Backspace | History forward | Steps forward through the result history. Also closes a fullscreen image viewer. |
@@ -1365,38 +1401,39 @@ Guards (a keypress is ignored when any hold). Since VOICE-AGENT-138 the first th
 Visual affordances:
 
 - Each main button carries a small `<kbd class="keyHint">` badge in its bottom-right corner showing its key. **The badges are hidden by request** (`.keyHint { display: none }` in `styles.css`): the shortcuts are no longer advertised in the UI, but the keydown handlers are untouched so every shortcut still works. The `<kbd>` markup and its styling remain in place; flip `display` back to `inline-flex` to restore the reminders. (Badges are also `pointer-events: none` so they never block a click.)
-- Toggling mic, Look, the session, or starting a new conversation shows a floating status toast (`#shortcutToast`, `role="status"`, `aria-live="polite"`) pinned to the top-right corner. It auto-dismisses after ~1.5s, clears its text when hidden (so assistive tech does not re-read stale content), and respects `prefers-reduced-motion`. The top-right position clears the top-centre spoken-question overlay and the bottom-centre assistant subtitle overlay. The mic toast reads the toggle's new `aria-pressed` state during a session, and labels by intent (`Listening…` / `Dictation sent`) when idle, because idle dictation starts asynchronously.
+- Toggling the mic, opening Look, toggling the session, or starting a new conversation shows a floating status toast (`#shortcutToast`, `role="status"`, `aria-live="polite"`) pinned to the top-right corner. It auto-dismisses after ~1.5s, clears its text when hidden (so assistive tech does not re-read stale content), and respects `prefers-reduced-motion`. The top-right position clears the top-centre spoken-question overlay and the bottom-centre assistant subtitle overlay. The mic toast reads the toggle's new `aria-pressed` state during a session, and labels by intent (`Listening…` / `Dictation sent`) when idle, because idle dictation starts asynchronously.
 
 `showToast(label, icon)` in `app/static/app.js` is the reusable entry point; the shortcut handler and any future caller can surface a transient status the same way.
 
 ## State Summary
 
-| State | Start | Stop | Mic toggle | Look toggle | Text input | Status row | Results panel | Header | New conversation | Subtitles |
+| State | Start | Stop | Mic toggle | Look | Text input | Status row | Results panel | Header | New conversation | Subtitles |
 | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- | --- |
-| Fresh page | visible/enabled | hidden | closed/enabled if dictation is supported | off/enabled | visible/enabled/empty | visible, `Idle` | hidden | visible | hidden | hidden |
-| Voice unsupported browser | visible/disabled | hidden | closed/enabled for dictation if supported, otherwise disabled | follows user state/enabled | visible/enabled | visible, `Idle` or unsupported error after failed start | hidden | visible | hidden | hidden |
-| Text typed, no session | visible/enabled | hidden | closed/disabled | follows user state/enabled | visible/enabled/non-empty | visible | unchanged | depends on results | unchanged | unchanged |
-| Idle dictation listening | visible/enabled | hidden | open/enabled | follows user state/enabled | visible/enabled/empty | visible unless results shown, `Dictation listening` | unchanged | depends on results | visible | unchanged |
-| Idle dictation transcribing | visible/enabled until `/text-chat` starts | hidden | closed/disabled | follows user state/enabled | visible/enabled/empty | visible unless results shown, `Transcribing speech`, then `Thinking in text` | may update | depends on results | visible | may show after response |
-| Starting audio | hidden | visible/enabled | closed until track exists | follows user state/enabled | visible/enabled | visible unless results shown, `Requesting microphone` | unchanged | depends on results | visible | unchanged |
-| Audio connected | hidden | visible/enabled | open/enabled unless manually closed | follows user state/enabled | visible/enabled | visible unless results shown, `Connected` | unchanged | depends on results | visible | unchanged |
-| Listening | hidden | visible/enabled | open/enabled unless manually closed | follows user state/enabled | visible/enabled | visible unless results shown, `Listening` | unchanged | depends on results | visible | unchanged |
-| Thinking/responding by audio | hidden | visible/enabled | follows manual open/closed state | follows user state/enabled | visible/enabled | visible unless results shown, `Thinking` or `Responding` | may become visible if tools run | hidden if results visible | visible | may show top user transcript and bottom assistant transcript when their subtitle flags are active |
-| Typed Realtime turn | hidden | visible/enabled | follows manual open/closed state | follows user state/enabled | visible/enabled/cleared | visible unless results shown, `Thinking`, `Responding`, then `Connected` | may become visible if tools run | hidden if results visible | visible | may show bottom assistant transcript when spoken subtitles are active |
-| Tool search loading | depends on session/text | depends on session | depends on session/manual state | follows user state/enabled | visible/enabled | hidden | visible with searching answer block | hidden | visible | unchanged |
-| Search results visible | depends on session/text | depends on session | depends on session/manual state | follows user state/enabled | visible/enabled | hidden | visible with answer/cards | hidden | visible | unchanged |
-| Detail page visible | depends on session/text | depends on session | depends on session/manual state | follows user state/enabled | visible/enabled | hidden | visible with detail page | hidden | visible | unchanged |
-| `/text-chat` request in flight | visible/enabled unless Realtime is unsupported | hidden unless audio stop occurred first | closed/disabled unless audio still running | follows user state/enabled | visible/enabled/cleared | visible unless results shown, `Thinking in text` | may update | depends on results | active if results render | may show after response |
-| `/text-chat` response complete | visible if input empty and no session | hidden | closed/enabled if dictation is supported and no session | follows user state/enabled | visible/enabled | visible unless results shown, `Text response` | visible if tools returned UI | hidden if results visible | visible if results rendered | visible while chunks play |
-| Error | depends on session/text | depends on session | depends on session/manual state | follows user state/enabled | visible/enabled | visible unless results shown, error text | unchanged | depends on results | unchanged | may show text error |
-| Stop clicked | visible if input empty | hidden | closed/enabled if dictation is supported | follows user state/enabled | visible/enabled | visible unless results shown, `Idle` | unchanged | depends on results | unchanged | unchanged |
-| New conversation clicked | visible | hidden | closed/enabled if dictation is supported | follows user state/enabled | visible/enabled | visible, `Idle` | hidden and cleared | visible | hidden | hidden and timer cleared |
+| Fresh page | visible/enabled | hidden | closed/enabled if dictation is supported | enabled | visible/enabled/empty | visible, `Idle` | hidden | visible | hidden | hidden |
+| Voice unsupported browser | visible/disabled | hidden | closed/enabled for dictation if supported, otherwise disabled | enabled | visible/enabled | visible, `Idle` or unsupported error after failed start | hidden | visible | hidden | hidden |
+| Text typed, no session | visible/enabled | hidden | closed/disabled | enabled | visible/enabled/non-empty | visible | unchanged | depends on results | unchanged | unchanged |
+| Idle dictation listening | visible/enabled | hidden | open/enabled | enabled | visible/enabled/empty | visible unless results shown, `Dictation listening` | unchanged | depends on results | visible | unchanged |
+| Idle dictation transcribing | visible/enabled until `/text-chat` starts | hidden | closed/disabled | enabled | visible/enabled/empty | visible unless results shown, `Transcribing speech`, then `Thinking in text` | may update | depends on results | visible | may show after response |
+| Starting audio | hidden | visible/enabled | closed until track exists | enabled | visible/enabled | visible unless results shown, `Requesting microphone` | unchanged | depends on results | visible | unchanged |
+| Audio connected | hidden | visible/enabled | open/enabled unless manually closed | enabled | visible/enabled | visible unless results shown, `Connected` | unchanged | depends on results | visible | unchanged |
+| Listening | hidden | visible/enabled | open/enabled unless manually closed | enabled | visible/enabled | visible unless results shown, `Listening` | unchanged | depends on results | visible | unchanged |
+| Thinking/responding by audio | hidden | visible/enabled | follows manual open/closed state | enabled | visible/enabled | visible unless results shown, `Thinking` or `Responding` | may become visible if tools run | hidden if results visible | visible | may show top user transcript and bottom assistant transcript when their subtitle flags are active |
+| Typed Realtime turn | hidden | visible/enabled | follows manual open/closed state | enabled | visible/enabled/cleared | visible unless results shown, `Thinking`, `Responding`, then `Connected` | may become visible if tools run | hidden if results visible | visible | may show bottom assistant transcript when spoken subtitles are active |
+| Tool search loading | depends on session/text | depends on session | depends on session/manual state | enabled | visible/enabled | hidden | visible with searching answer block | hidden | visible | unchanged |
+| Search results visible | depends on session/text | depends on session | depends on session/manual state | enabled | visible/enabled | hidden | visible with answer/cards | hidden | visible | unchanged |
+| Detail page visible | depends on session/text | depends on session | depends on session/manual state | enabled | visible/enabled | hidden | visible with detail page | hidden | visible | unchanged |
+| `/text-chat` request in flight | visible/enabled unless Realtime is unsupported | hidden unless audio stop occurred first | closed/disabled unless audio still running | enabled | visible/enabled/cleared | visible unless results shown, `Thinking in text` | may update | depends on results | active if results render | may show after response |
+| `/text-chat` response complete | visible if input empty and no session | hidden | closed/enabled if dictation is supported and no session | enabled | visible/enabled | visible unless results shown, `Text response` | visible if tools returned UI | hidden if results visible | visible if results rendered | visible while chunks play |
+| Error | depends on session/text | depends on session | depends on session/manual state | enabled | visible/enabled | visible unless results shown, error text | unchanged | depends on results | unchanged | may show text error |
+| Stop clicked | visible if input empty | hidden | closed/enabled if dictation is supported | enabled | visible/enabled | visible unless results shown, `Idle` | unchanged | depends on results | unchanged | unchanged |
+| New conversation clicked | visible | hidden | closed/enabled if dictation is supported | enabled | visible/enabled | visible, `Idle` | hidden and cleared | visible | hidden | hidden and timer cleared |
 
 ## Implementation Notes For Future Changes
 
 - `updateSessionButtons()` is the single source of truth for Start/Stop visibility and disabled state, and it refreshes the microphone toggle.
 - When `sessionRunning` is false, `#microphoneToggleButton` belongs to the idle dictation flow, not the Realtime microphone track.
-- `updateLookToggle()` is the source of truth for the Look button's icon, title, and `aria-pressed` state.
+- The Look button has no state function: it is an action button, and the only Look state that exists is `lookAttachedImage` (rendered by `renderLookAttachment()`) and `lookMenuOpen`.
+- `releaseLookAttachment()` is the only place that revokes the attached photo's object URL; anything that drops the attachment must go through it.
 - `setStatus()` is the single source of truth for status text and dot color.
 - `resultsPanel.hidden` is the trigger for compact results mode.
 - `renderText2SqlResult()` owns the answer block, result cards, query details toggle, and search pagination state.
