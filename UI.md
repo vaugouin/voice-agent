@@ -373,6 +373,7 @@ Element: `#lookAttachment`
 - The thumbnail opens a full-size view of the photo; `Escape` or a click outside closes it.
 - The `✕` removes the photo: the chip disappears, the object URL is revoked, and later turns go back to being text-only.
 - It stays attached for the rest of the conversation, and every turn sends its `image_ref` again. The bytes are never re-sent: the API recognizes the photo by its fingerprint, so a second question about it does not read the image again.
+- While it is attached, the submit button is visible even with an empty question box, so a second question about the same photo can be sent with no words and without a keyboard (VOICE-AGENT-181). Removing the chip with an empty box hides the button again.
 - `New conversation` releases it. A reconnect does not.
 
 ### Sending the turn
@@ -410,16 +411,16 @@ Default state:
 - Empty.
 - Visible.
 - Enabled. The code does not disable the textarea during audio or text requests.
-- Submit button hidden while the textarea is empty.
+- Submit button hidden while there is nothing to send: the textarea is empty **and** no photo is attached. An attached photo is enough on its own, so the button is visible with an empty box whenever `#lookAttachment` is showing (VOICE-AGENT-181).
 
 Input synchronization:
 
-`syncQuestionInputUi()` runs on `input`, `change`, `keyup`, `paste`, and `cut`.
+`syncQuestionInputUi()` runs on `input`, `change`, `keyup`, `paste`, and `cut`, and from `renderLookAttachment()`, so attaching or removing a photo shows or hides the button with the chip (`releaseLookAttachment()` goes through `renderLookAttachment()`, so it is covered too).
 
 It does three things:
 
 - Resizes the textarea using `scrollHeight`, capped by CSS `max-height`.
-- Shows `#submitQuestionButton` when the trimmed input is non-empty and hides it when the input is empty or whitespace-only, including after paste and cut operations.
+- Shows `#submitQuestionButton` when there is something to send (`hasQuestionToSend()`: trimmed input non-empty **or** a photo attached) and hides it otherwise, including after paste and cut operations. `hasQuestionText()` stays narrower on purpose, because the mic label and `toggleMicrophone()` ask it a different question, "is there typed text to replace", which an attached photo does not change.
 - Calls `updateSessionButtons()` immediately and again on a zero-delay timer.
 
 Start-button interaction:
@@ -433,12 +434,12 @@ Keyboard rules:
 - Clicking the visible up-arrow submit button submits the typed question using the same path as `Enter`.
 - `Shift+Enter` inserts a newline.
 - `Enter` is ignored during IME composition.
-- Empty or whitespace-only text does not submit.
+- Empty or whitespace-only text does not submit, unless a photo is attached: the photo is then the question.
 
 Submit behavior in `sendTextMessage()`:
 
 1. Reads `questionInput.value.trim()`.
-2. Returns immediately if the trimmed value is empty.
+2. Returns immediately if the trimmed value is empty **and** no photo is attached.
 3. If a Realtime session is running, enters the typed Realtime path, regardless of whether microphone input is open or manually closed.
 4. If that session is still opening and its data channel is not open yet, queues the typed turn and sends it when the channel opens; queued text is not added to retained context until it is sent.
 5. Once the data channel is open, sends `response.cancel` when a Realtime response is still generating, and sends `output_audio_buffer.clear` when its spoken audio is playing.
@@ -446,7 +447,7 @@ Submit behavior in `sendTextMessage()`:
 7. Keeps the audio session connected so the new response plays through the remote audio stream.
 8. Otherwise, if a Realtime response is active on an open data channel, sends `response.cancel`; if any audio connection objects exist (`pc`, `dc`, or `localStream`), calls `stop()`.
 9. For the `/text-chat` path, sets `textChatInFlight = true`; Start remains visible unless a Realtime session is running.
-10. Clears and resizes the textarea, hides the submit button, saves the submitted text as `lastUserTranscript`, and adds it to retained context.
+10. Clears and resizes the textarea, re-syncs the submit button (it stays visible when a photo is still attached, so a second question about it needs no typing), saves the submitted text as `lastUserTranscript`, and adds it to retained context.
 11. For the Realtime typed path, sets status to `Connecting for voice reply` while queued and `Thinking` once sent; for the `/text-chat` path, sets status to `Thinking in text`.
 12. For the `/text-chat` path, calls `/text-chat`.
 
@@ -1434,6 +1435,7 @@ Visual affordances:
 - When `sessionRunning` is false, `#microphoneToggleButton` belongs to the idle dictation flow, not the Realtime microphone track.
 - The Look button has no state function: it is an action button, and the only Look state that exists is `lookAttachedImage` (rendered by `renderLookAttachment()`) and `lookMenuOpen`.
 - `releaseLookAttachment()` is the only place that revokes the attached photo's object URL; anything that drops the attachment must go through it.
+- Two predicates, two questions (VOICE-AGENT-181). `hasQuestionToSend()` answers "is there anything to send" and drives `#submitQuestionButton`; `hasQuestionText()` answers "is there typed text to replace" and drives the mic label and the cancel-before-dictating branch of `toggleMicrophone()`. Widening `hasQuestionText()` instead of adding the second one would break both mic behaviors as soon as a photo is attached.
 - `setStatus()` is the single source of truth for status text and dot color.
 - `resultsPanel.hidden` is the trigger for compact results mode.
 - `renderText2SqlResult()` owns the answer block, result cards, query details toggle, and search pagination state.

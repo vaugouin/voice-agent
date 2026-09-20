@@ -584,7 +584,7 @@ Current implementation note: `loadRetainedContext()` exists, and context is save
 
 ## Text Input
 
-The UI includes a multiline question box beside the microphone controls. The microphone start control uses a layered `👄` and `❌` visual, the audio stop control is shown as `👄`, and the adjacent green microphone toggle shows `👂🏻` when input is open or `👂🏻` with `❌` when input is closed. The next green control is Look, shown as `👁️`; it is an action button, not a toggle, and a click opens the photo source menu described below. A round white submit button with a black up arrow appears immediately to the right of the question box whenever it contains non-whitespace text; clicking it submits the same way as pressing `Enter`.
+The UI includes a multiline question box beside the microphone controls. The microphone start control uses a layered `👄` and `❌` visual, the audio stop control is shown as `👄`, and the adjacent green microphone toggle shows `👂🏻` when input is open or `👂🏻` with `❌` when input is closed. The next green control is Look, shown as `👁️`; it is an action button, not a toggle, and a click opens the photo source menu described below. A round white submit button with a black up arrow appears immediately to the right of the question box whenever there is something to send, which means non-whitespace text in the box or an attached photo; clicking it submits the same way as pressing `Enter`. An attached photo is a question on its own, so the button stays available with an empty box, and a second question about the same photo can be sent without typing a word.
 
 When the Start or Stop control is shown, its session button uses the green active-control background.
 

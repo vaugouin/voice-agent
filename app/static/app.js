@@ -1552,6 +1552,15 @@ function hasQuestionText() {
   return Boolean(questionInput.value.trim());
 }
 
+// VOICE-AGENT-181: what the submit affordance asks is "is there anything to send", and an
+// attached photo answers it on its own, since /text-chat takes a turn with an image_ref and no
+// message at all. Deliberately NOT folded into hasQuestionText(): that one answers a different
+// question, "is there typed text to replace", which the mic label (updateMicrophoneToggle) and
+// toggleMicrophone() both ask, and whose answer does not change because a picture is attached.
+function hasQuestionToSend() {
+  return hasQuestionText() || Boolean(activeLookImageRef());
+}
+
 function realtimeUnavailableReason() {
   const PeerConnection = getPeerConnectionConstructor();
   if (!window.isSecureContext) {
@@ -5982,7 +5991,7 @@ function resizeQuestionInput() {
 
 function syncQuestionInputUi() {
   resizeQuestionInput();
-  submitQuestionButton.hidden = !hasQuestionText();
+  submitQuestionButton.hidden = !hasQuestionToSend();
   updateSessionButtons();
   window.setTimeout(updateSessionButtons, 0);
 }
@@ -6158,9 +6167,9 @@ async function sendTextChatMessage(text, { source = "typed", imageRef = "" } = {
   textChatInFlight = true;
   updateSessionButtons();
   questionInput.value = "";
-  submitQuestionButton.hidden = true;
-  resizeQuestionInput();
-  updateSessionButtons();
+  // VOICE-AGENT-181: a sync, not a bare `hidden = true`. The photo survives the send, and with it
+  // the ability to ask a second question about it without typing a word.
+  syncQuestionInputUi();
   // VOICE-AGENT-158: on a picture turn the words may be empty, and the transcript is what the
   // subtitle lane and the retained context show. A bracketed description keeps the conversation
   // readable without pretending the user typed anything.
@@ -6270,9 +6279,7 @@ async function sendTextMessage() {
   // known limit VOICE-AGENT-180 exists to lift.
   if (canSendTypedRealtimeTurn() && !activeLookImageRef()) {
     questionInput.value = "";
-    submitQuestionButton.hidden = true;
-    resizeQuestionInput();
-    updateSessionButtons();
+    syncQuestionInputUi();
     lastUserTranscript = text;
     activeUiLanguage = detectUiLanguageFromText(text);
     if (dc?.readyState === "open") {
@@ -7595,15 +7602,19 @@ function lookUploadErrorMessage(status, body) {
 // The attached photo, as the chip under the control row. The label is short on purpose: the
 // thumbnail says what it is, and the rest of the row is already crowded.
 function renderLookAttachment() {
-  if (!lookAttachedImage) {
+  if (lookAttachedImage) {
+    lookAttachmentThumb.src = lookAttachedImage.objectUrl;
+    lookAttachmentLabel.textContent = lookAttachedImage.source === "camera" ? "Photo" : "Picture";
+    lookAttachment.hidden = false;
+  } else {
     lookAttachment.hidden = true;
     lookAttachmentThumb.removeAttribute("src");
     lookAttachmentLabel.textContent = "";
-    return;
   }
-  lookAttachmentThumb.src = lookAttachedImage.objectUrl;
-  lookAttachmentLabel.textContent = lookAttachedImage.source === "camera" ? "Photo" : "Picture";
-  lookAttachment.hidden = false;
+  // VOICE-AGENT-181: attaching a photo gives the turn something to send and removing it takes it
+  // away, so the submit button follows the chip. releaseLookAttachment() ends up here too, which
+  // is why it does not sync on its own.
+  syncQuestionInputUi();
 }
 
 // Called on New conversation and whenever the user removes the chip. The object URL is the only
