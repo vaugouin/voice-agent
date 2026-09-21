@@ -37,7 +37,13 @@
               </span>
             </button>
             <button id="stopButton" type="button" aria-label="Mute" title="Mute" hidden>
-              👄
+              <!-- VOICE-AGENT-182: the same icon span as the Talk button above. It used to be a
+                   bare glyph, which meant the mouth changed size the moment the session started
+                   (1.2rem here against 1.35rem there) and could not carry the optical lift the
+                   other two glyphs get. One slot, two states, one size. -->
+              <span class="stopMicIcon" aria-hidden="true">
+                <span class="stopMicIconMouth">👄</span>
+              </span>
             </button>
             <kbd class="keyHint" aria-hidden="true">T</kbd>
           </div>

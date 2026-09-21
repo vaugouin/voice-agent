@@ -260,51 +260,79 @@ button {
   font-size: 1.2rem;
 }
 
-.startMicIcon {
-  position: relative;
-  display: inline-grid;
-  place-items: center;
-  width: 28px;
-  height: 28px;
-  line-height: 1;
-}
+/* ---------------------------------------------------------------------------------------------
+   The three glyph controls: mouth (Talk / Mute), ear (mic open / closed), eye (Look).
+   VOICE-AGENT-182, sized from measurement rather than by eye.
 
-.startMicIconMouth {
-  grid-area: 1 / 1;
-  font-size: 1.35rem;
-  opacity: 0.72;
-  transform: translate(-4px, 4px);
-}
+   The buttons are 52 x 42 px in every viewport, so HEIGHT is the binding constraint, and the
+   three emoji are nothing like each other in shape. Measured ink at one font-size, Segoe UI
+   Emoji: mouth 1.065 x 0.74, eye 1.065 x 0.80, ear 0.74 x 1.04. The ear is the tall one, so the
+   ear alone decides how large the other two may be. At 1.8rem its ink is 30 px tall in a 42 px
+   button, which leaves 6 px clear above and below; 2rem drops that to 4.4 px and 2.2rem to
+   2.7 px, where it reads as touching. Hence 1.8rem, chosen off the prototype sheet.
 
-.startMicIconCross {
-  grid-area: 1 / 1;
-  font-size: 1.3rem;
-  transform: translate(5px, -5px);
-  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 70%));
-}
+   Two units on purpose, and the distinction is not cosmetic:
+     - The optical lift is in `em`, because it is a property OF the glyph and scales with it.
+       CSS centres the line box, but an emoji's ink is not centred inside its line box, so
+       place-items:center alone leaves every one of these sitting low. Measured per 1 px of
+       font-size: mouth 0.135, ear and eye 0.065. Change the font-size and these stay correct.
+     - The cross offsets are in `px`, because they are positional against a fixed 52 x 42 button,
+       not against the glyph. They put the badge in the top-right corner and nowhere else.
 
+   The lift constants come from the Windows emoji font. Apple's metrics differ, so the direction
+   holds on iPhone but the magnitude is approximate; re-measure there before tuning further.
+   --------------------------------------------------------------------------------------------- */
+.startMicIcon,
+.stopMicIcon,
 .microphoneStateIcon,
 .lookStateIcon {
   position: relative;
   display: inline-grid;
   place-items: center;
-  width: 30px;
-  height: 30px;
+  width: 34px;
+  height: 34px;
   line-height: 1;
+}
+
+.startMicIconMouth,
+.stopMicIconMouth,
+.microphoneStateEar,
+.lookStateEye {
+  grid-area: 1 / 1;
+  font-size: 1.8rem;
+}
+
+/* The mouth is the worst offender: its ink sits 0.135em below the centre of its line box, which
+   is 3.9 px at this size and plainly visible once the glyph is this large. */
+.startMicIconMouth,
+.stopMicIconMouth {
+  transform: translateY(-0.135em);
 }
 
 .microphoneStateEar,
 .lookStateEye {
+  transform: translateY(-0.065em);
+}
+
+.startMicIconMouth {
+  opacity: 0.72;
+}
+
+/* The cross is a corner badge, not a second full-size glyph. That is what lets the glyph under it
+   stay centred horizontally AND vertically: the old composition pushed the mouth down-left to
+   make room, so it was never centred, and a cross grown in step with the glyph starts to leave
+   the button past this size. 1.08rem is 0.6 of the glyph, and the -11 px folds in the badge's own
+   optical lift (-10 px of position, -1 px of ink offset). */
+.startMicIconCross,
+.microphoneStateCross {
   grid-area: 1 / 1;
-  font-size: 1.35rem;
+  font-size: 1.08rem;
+  transform: translate(12px, -11px);
+  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 70%));
 }
 
 .microphoneStateCross {
-  grid-area: 1 / 1;
   display: none;
-  font-size: 1.1rem;
-  transform: translate(6px, -6px);
-  filter: drop-shadow(0 1px 2px rgb(0 0 0 / 70%));
 }
 
 .microphoneToggleButton.isClosed .microphoneStateEar {

@@ -87,6 +87,31 @@ The control row is `.controls`. It contains, in order:
 
 The row uses flex layout, bottom alignment, 10px gaps, and wrapping when the viewport is narrow.
 
+### The three glyph controls: one size, one centring rule (VOICE-AGENT-182)
+
+The mouth, ear and eye share a single sizing block in `styles.css`, because they share a button
+(52 × 42px in every viewport) and must look like one family.
+
+- **Glyph size is `1.8rem` for all four glyph elements** (`.startMicIconMouth`,
+  `.stopMicIconMouth`, `.microphoneStateEar`, `.lookStateEye`). The ceiling is set by the **ear**,
+  not by the button: at one font-size the ear's ink is 1.04× tall against the mouth's 0.74 and the
+  eye's 0.80, so the ear runs out of vertical room first. At `1.8rem` its ink is 30px in a 42px
+  button, leaving 6px clear above and below; `2rem` leaves 4.4px and `2.2rem` only 2.7px, which
+  reads as touching.
+- **The optical lift is in `em`, and it is not decoration.** CSS centres the *line box*, but an
+  emoji's ink is not centred inside its line box, so `place-items: center` alone leaves all three
+  sitting low. Measured per 1px of font-size: mouth 0.135, ear and eye 0.065. Hence
+  `translateY(-0.135em)` on the mouths and `translateY(-0.065em)` on the ear and eye, which lands
+  every glyph within 0.12px of the button centre. Because the unit is `em`, changing the glyph
+  size keeps the correction correct.
+- **The cross offsets are in `px`**, because they position a badge against a fixed button, not
+  against the glyph. `.startMicIconCross` and `.microphoneStateCross` are `1.08rem` at
+  `translate(12px, -11px)`, which is the top-right corner; the `-11px` folds in the badge's own
+  ink offset. A cross grown in step with the glyph would start to leave the button at this size,
+  and it would force the glyph off centre to make room, which is what the old composition did.
+- The lift constants were measured against the Windows emoji font. Apple's metrics differ, so the
+  direction holds on iPhone but the magnitude is approximate.
+
 ## App Menu Button And Drawer
 
 Elements:
@@ -188,9 +213,10 @@ Purpose: starts a Realtime WebRTC microphone session.
 
 Visual:
 
-- Uses a layered lips-and-cross visual made from lips and cross icon text in `.startMicIcon`.
+- Uses a lips-and-cross visual made from lips and cross icon text in `.startMicIcon`: the lips centred in the button, the cross as a badge in the top-right corner (VOICE-AGENT-182).
 - Green background inherited from the base `button` style.
 - 52px minimum width.
+- The Mute button carries the same `.stopMicIcon` structure and the same glyph size, so the lips do not change size when the session starts.
 
 Default state after page initialization:
 
@@ -295,7 +321,7 @@ Visual:
 - Sits immediately to the right of the Start/Stop slot in its own 52px slot.
 - Uses the same green button background and 52px icon-control style as the microphone session controls.
 - Shows `👂🏻` when the microphone is open.
-- Shows `👂🏻` with `❌` layered over it when the microphone is closed.
+- Shows `👂🏻` with `❌` as a badge in the top-right corner when the microphone is closed, the ear staying centred either way (VOICE-AGENT-182).
 
 State:
 
@@ -335,7 +361,7 @@ Visual:
 
 - Sits immediately to the right of the microphone toggle in its own 52px slot.
 - Uses the same green button background and 52px icon-control style as the microphone controls.
-- Shows the eye icon, always the same, in every app state.
+- Shows the eye icon, always the same, in every app state, centred like the other two (VOICE-AGENT-182).
 
 State:
 
