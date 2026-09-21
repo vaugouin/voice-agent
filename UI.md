@@ -329,7 +329,7 @@ Idle dictation:
 
 Elements: `#lookToggleButton`, `#lookMenu`, `#lookCameraInput`, `#lookLibraryInput`, `#lookPreviewOverlay`, `#lookAttachment`
 
-Purpose: sends a photo as a question. A click opens a source menu, the chosen photo is resized in the browser, shown for confirmation, deposited on the text2SQL API, and asked about through `/text-chat`. The button is an action, not a toggle: it has no on/off state and never shows a cross.
+Purpose: sends a photo as a question. A click opens a source menu, the chosen photo is resized in the browser, shown for confirmation, deposited on the text2SQL API, and asked about, by voice during a live session and through `/text-chat` otherwise. The button is an action, not a toggle: it has no on/off state and never shows a cross.
 
 Visual:
 
@@ -353,6 +353,7 @@ Click behavior:
 ### Choosing a photo
 
 1. Choosing a source opens the matching hidden file input. The camera entry carries `capture="environment"`, so the system camera handles the permission prompt, the capture and its own retake. A refused permission or a cancelled picker arrives as "no file chosen": nothing happens, no message, and no running audio session is touched.
+   - During a voice session, opening the picker also opens the **capture hold** (VOICE-AGENT-180). The system camera backgrounds the page, and a reconnect started from a background page cannot succeed, so no reconnect is attempted while the hold is open; the reason of one that was held is kept. The hold closes on whichever announcement of the return arrives first: the file, the picker's `cancel`, `visibilitychange` back to visible, `window.focus` (the only one a desktop file dialog fires), or a 45-second ceiling. Closing it runs one healing pass: a keepalive ping, a `replaceTrack` if the microphone track ended, and the held reconnect only if the peer or the channel is genuinely down. Every capture writes the session state before and after into `look_session_guard`.
 2. The file is decoded and drawn to a canvas at 1024px on its long side, then encoded as JPEG at quality 0.8. This also converts an iPhone HEIC into a format the API accepts.
 3. A file the browser cannot decode sets status `Photo error`, shows the reason in the subtitle lane, and logs `look_capture_error`.
 
@@ -372,18 +373,40 @@ Element: `#lookAttachment`
 - Appears between the control row and the status row once a photo is confirmed, and survives compact results mode, where it only gets smaller.
 - The thumbnail opens a full-size view of the photo; `Escape` or a click outside closes it.
 - The `✕` removes the photo: the chip disappears, the object URL is revoked, and later turns go back to being text-only.
-- It stays attached for the rest of the conversation, and every turn sends its `image_ref` again. The bytes are never re-sent: the API recognizes the photo by its fingerprint, so a second question about it does not read the image again.
+- It stays attached for the rest of the conversation. On the text path every turn sends its `image_ref` again, and the bytes are never re-sent: the API recognizes the photo by its fingerprint, so a second question about it does not read the image again. On the voice path a follow-up with words sends no reference at all and is answered from the entity that was resolved (VOICE-AGENT-180).
 - While it is attached, the submit button is visible even with an empty question box, so a second question about the same photo can be sent with no words and without a keyboard (VOICE-AGENT-181). Removing the chip with an empty box hides the button again.
 - `New conversation` releases it. A reconnect does not.
 
 ### Sending the turn
 
 1. The confirmed bytes are posted to `/tool/vision-upload`, which proxies them to the API's `POST /uploads/vision` and returns an `image_ref`.
-2. The turn goes to `/text-chat` with that reference and whatever is in the question box, which may be empty: a photo on its own is a question.
-3. A photo turn always takes the text path, even during a Realtime session, which stops the audio transport. The subtitle lane says so.
-4. Status runs `Preparing the photo` → `Confirm the photo` → `Sending the photo` → `Reading the photo` → `Text response`.
-5. Results render through the usual `renderText2SqlResult()` / `renderEntityDetailOutput()` path: a recognised poster opens a catalogue entry, an unrecognised one says so, and a picture with nothing of cinema in it triggers no search.
-6. `look_capture` is logged on every outcome (`sent`, `cancelled`, `released`) with the source, the sizes before and after the resize, the resize and upload times, and the reference. `look_capture_error` covers a capture that never became a question.
+2. Which path carries the turn is decided by one test: a live session **with an open data channel** takes the voice path, anything else takes the text path. `sessionRunning` on its own is not enough, because it is also true while connecting, and a turn injected into a channel that is not open yet would be lost without a word.
+3. `look_capture` is logged on every outcome (`sent`, `cancelled`, `released`) with `mode` (`voice` or `text`), the source, the sizes before and after the resize, the resize and upload times, the reference, and the session state at that moment. `look_capture_error` covers a capture that never became a question.
+
+#### Text path (no session, or a session still connecting)
+
+1. The turn goes to `/text-chat` with the reference and whatever is in the question box, which may be empty: a photo on its own is a question.
+2. It stops the audio transport if one was running, and the subtitle lane says so.
+3. Status runs `Preparing the photo` → `Confirm the photo` → `Sending the photo` → `Reading the photo` → `Text response`.
+4. Results render through the usual `renderText2SqlResult()` / `renderEntityDetailOutput()` path: a recognised poster opens a catalogue entry, an unrecognised one says so, and a picture with nothing of cinema in it triggers no search.
+
+#### Voice path (VOICE-AGENT-180)
+
+The session stays up and the agent speaks the answer. The order matters and is the order below.
+
+1. **The photo interrupts**, exactly as starting to speak or sending a typed turn does: `response.cancel` plus `output_audio_buffer.clear` if the agent was mid-sentence. It does not queue behind the end of the turn; nothing else in the app queues.
+2. The words are the ones **in the question box**, which is usually empty. The last spoken transcript is deliberately not reused: it has already been sent and answered as its own turn.
+3. The search runs **in the browser**, not by the model: `/tool/text2sql` with the `image_ref`. `image_ref` is never in a Realtime tool schema, so the model cannot ask for a second reading of a photo that has already been read.
+4. Status runs `Sending the photo` → `Reading the photo` → `Responding` (on `response.created`) → `Connected` (on `response.done`). The mic mutes for the duration as for any tool call, the results panel clears off the previous grid before the answer lands (VOICE-AGENT-146), and a holding line covers the wait after ~900ms if nothing else is speaking.
+5. The result renders on screen through the same `renderText2SqlResult()` path as every other search.
+6. The **structured result** is then injected into the conversation as a bracketed `[Photo turn: …]` user message, and a response is asked for afterwards, through the same deferring helper a tool output uses, with the tool-response watchdog armed behind it. No image ever travels on the data channel; the block is fitted to the channel budget first, and when it does not fit the evidence is shed by degree (candidate reasons, then hint heads, then the candidate list, then the winner alone) so the clues never disappear entirely. Measured: a nominal turn is ~1.5 KB and is sent whole.
+7. `look_voice_turn` records the search time, the vision verdict (candidate count, dominance, cache hit), whether the injection reached the channel, and how far the evidence had to be shed (`evidence_steps`, expected to be 0). `look_voice_turn_error` covers a search that failed, a channel that closed while the photo was being read, and a send that threw.
+
+#### A second question about the same photo, during a session
+
+- **Spoken**, or typed with words: an ordinary Realtime turn, carrying no `image_ref` at all. The photo's clues and result are already in the conversation, so "who directed it?" is answered from the entity that was resolved, with the detail tools. No second reading, and no cost.
+- **Typed with no words** (the submit button is visible because a photo is attached, VOICE-AGENT-181): the photo is asked again over the voice path with the reference already held. The bytes are never re-sent and the API serves its vision cache.
+- With no session, both cases go to `/text-chat` with the reference, as before.
 
 ## Text Entry
 
@@ -1420,6 +1443,7 @@ Visual affordances:
 | Listening | hidden | visible/enabled | open/enabled unless manually closed | enabled | visible/enabled | visible unless results shown, `Listening` | unchanged | depends on results | visible | unchanged |
 | Thinking/responding by audio | hidden | visible/enabled | follows manual open/closed state | enabled | visible/enabled | visible unless results shown, `Thinking` or `Responding` | may become visible if tools run | hidden if results visible | visible | may show top user transcript and bottom assistant transcript when their subtitle flags are active |
 | Typed Realtime turn | hidden | visible/enabled | follows manual open/closed state | enabled | visible/enabled/cleared | visible unless results shown, `Thinking`, `Responding`, then `Connected` | may become visible if tools run | hidden if results visible | visible | may show bottom assistant transcript when spoken subtitles are active |
+| Photo turn during a session (VOICE-AGENT-180) | hidden | visible/enabled | closed while the photo is read, then follows manual state | enabled | visible/enabled/cleared | visible unless results shown, `Sending the photo`, `Reading the photo`, `Responding`, then `Connected` | visible and cleared, then the recognised entry | hidden if results visible | visible | may show `📷 Photo` in the user lane, and the spoken answer in the assistant lane |
 | Tool search loading | depends on session/text | depends on session | depends on session/manual state | enabled | visible/enabled | hidden | visible with searching answer block | hidden | visible | unchanged |
 | Search results visible | depends on session/text | depends on session | depends on session/manual state | enabled | visible/enabled | hidden | visible with answer/cards | hidden | visible | unchanged |
 | Detail page visible | depends on session/text | depends on session | depends on session/manual state | enabled | visible/enabled | hidden | visible with detail page | hidden | visible | unchanged |
@@ -1435,6 +1459,8 @@ Visual affordances:
 - When `sessionRunning` is false, `#microphoneToggleButton` belongs to the idle dictation flow, not the Realtime microphone track.
 - The Look button has no state function: it is an action button, and the only Look state that exists is `lookAttachedImage` (rendered by `renderLookAttachment()`) and `lookMenuOpen`.
 - `releaseLookAttachment()` is the only place that revokes the attached photo's object URL; anything that drops the attachment must go through it.
+- `confirmLookCapture()` owns the one decision of which path a photo takes; `sendLookVoiceTurn()` owns the voice turn end to end (interrupt, search, render, inject, ask for a response). `lookVoiceTurnBlock()` is the whitelist of what the voice model may read of a picture turn, and `fitLookVoiceTurnBlock()` the only place the clues are allowed to be trimmed.
+- `beginLookCaptureHold()` / `endLookCaptureHold()` bracket the window where the page may be in the background with a live session; `healVoiceSessionAfterCapture()` is the single repair path and `replaceLocalAudioTrack()` the only place a live session's microphone track is swapped. A reconnect must never be started from inside the hold.
 - Two predicates, two questions (VOICE-AGENT-181). `hasQuestionToSend()` answers "is there anything to send" and drives `#submitQuestionButton`; `hasQuestionText()` answers "is there typed text to replace" and drives the mic label and the cancel-before-dictating branch of `toggleMicrophone()`. Widening `hasQuestionText()` instead of adding the second one would break both mic behaviors as soon as a photo is attached.
 - `setStatus()` is the single source of truth for status text and dot color.
 - `resultsPanel.hidden` is the trigger for compact results mode.

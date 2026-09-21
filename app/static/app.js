@@ -325,6 +325,16 @@ let lookPendingCapture = null;
 let lookMenuOpen = false;
 let lookCaptureGeneration = 0;
 let lookCameraAvailable = true;
+// VOICE-AGENT-180. The window between "the system camera was opened" and "the page has it back",
+// during a live voice session. While it is open no reconnect is started (see scheduleReconnect):
+// a rebuild needs getUserMedia, and getUserMedia cannot succeed while the camera app owns the
+// device and the page is in the background, so it would fail and burn one of five attempts. The
+// reason of the reconnect that was held is kept so the healing pass can honour it.
+let lookCaptureHoldActive = false;
+let lookCaptureHoldSource = "";
+let lookCaptureHoldStartedAt = 0;
+let lookCaptureHoldTimer = null;
+let lookDeferredReconnectReason = "";
 let connectionGeneration = 0;
 let reconnectAttempts = 0;
 let reconnectInProgress = false;
@@ -1773,6 +1783,12 @@ function setupPageDiagnostics() {
       // the data-channel/UDP path before consent freshness fails.
       sendKeepAlivePing();
     }
+    // VOICE-AGENT-180: on a phone this is the event that says the system camera has handed the
+    // screen back, and it is the moment the session can be checked over and repaired. Kept
+    // separate from the wake-lock branch above because it must run even with no `pc` left.
+    if (document.visibilityState === "visible") {
+      endLookCaptureHold("page_visible");
+    }
   });
   window.addEventListener("pagehide", () => {
     clientLog("page_lifecycle", browserContext("pagehide"), "error");
@@ -1790,6 +1806,9 @@ function setupPageDiagnostics() {
     if (!manuallyStopped && pc) {
       sendKeepAlivePing();
     }
+    // VOICE-AGENT-180: a desktop file dialog fires no visibilitychange, because the page never
+    // stops being visible. This is the only announcement of the return there.
+    endLookCaptureHold("window_focus");
   });
   window.addEventListener("online", () => {
     clientLog("network_status", browserContext("online"));
@@ -6272,12 +6291,23 @@ async function sendTextMessage() {
     return;
   }
 
-  // VOICE-AGENT-158: a question about the attached photo goes through /text-chat even during a
-  // Realtime session. The image must not travel on the data channel (VOICE-AGENT-109 owns that
-  // size limit) and the Realtime model is deliberately never shown the picture, so the text path
-  // is the only one that can answer it today. Asking it stops the audio session, which is the
-  // known limit VOICE-AGENT-180 exists to lift.
-  if (canSendTypedRealtimeTurn() && !activeLookImageRef()) {
+  // VOICE-AGENT-180 lifted the VOICE-AGENT-158 limit that sent every turn carrying a photo to
+  // /text-chat, stopping the audio session with it. Two cases now, and neither costs the session:
+  //
+  //   - With words, the turn is an ORDINARY typed Realtime turn and carries no image_ref at all.
+  //     The photo has already been read, and its clues and result are in the conversation as the
+  //     injected block, so "who directed it?" is answered from the entity that was resolved, with
+  //     the detail tools. That is the multi-turn rule of VOICE-AGENT-179 and the acceptance
+  //     criterion of this ticket: no second reading of the same picture, which would cost four
+  //     cents and two seconds to learn what the model already has in front of it.
+  //   - With no words, there is nothing to say in a typed turn, so the photo is asked again over
+  //     the voice path with the reference already held. The bytes are never re-sent and the API
+  //     serves its vision cache, which is what VOICE-AGENT-181 specified for the text path.
+  if (!text && activeLookImageRef() && sessionRunning && dc?.readyState === "open") {
+    await sendLookVoiceTurn(activeLookImageRef(), lookAttachedImage);
+    return;
+  }
+  if (canSendTypedRealtimeTurn() && text) {
     questionInput.value = "";
     syncQuestionInputUi();
     lastUserTranscript = text;
@@ -6797,6 +6827,22 @@ function scheduleReconnect(reason, delayMs = 1500) {
 
   pendingReconnectResume ||= buildReconnectResume(reason);
 
+  // VOICE-AGENT-180: the system camera has the screen and, on iOS, the microphone with it. A
+  // rebuild starts with getUserMedia, which cannot succeed from a background page, so firing now
+  // would spend one of five attempts to learn nothing. The reason is kept and honoured by
+  // healVoiceSessionAfterCapture() the moment the page has the screen back, including its
+  // resume payload, captured just above, which is why this returns AFTER building it.
+  if (lookCaptureHoldActive) {
+    lookDeferredReconnectReason = reason;
+    clientLog("look_session_guard", {
+      phase: "reconnect_deferred",
+      reason,
+      source: lookCaptureHoldSource,
+      ...voiceSessionSnapshot(),
+    }, "error");
+    return;
+  }
+
   if (reconnectAttempts >= maxReconnectAttempts) {
     setStatus("Disconnected", "error");
     log("connection", "Realtime disconnected. Click Start to create a new session.");
@@ -7272,12 +7318,204 @@ function toggleMicrophone() {
 //     a refusal there lands as "no file chosen" and cannot touch a running audio session, which is
 //     the acceptance criterion for the permission case.
 //   - No image on the WebRTC data channel, ever. Its maximum message size is the subject of
-//     VOICE-AGENT-109, and the bytes travel over HTTP instead. This file's voice path is
-//     VOICE-AGENT-180 and is not wired here.
+//     VOICE-AGENT-109, and the bytes travel over HTTP instead. On the voice path only the
+//     bounded structured result travels, as an injected turn (see sendLookVoiceTurn).
 //   - No bytes kept after the deposit. What survives the turn is an object URL for the local
 //     thumbnail and a filename; the API owns the image for thirty days under a name of its own
 //     (FASTAPI-TEXT2SQL-275).
+//
+// VOICE-AGENT-180 added the voice half, which is three separate problems and not one:
+//   1. Opening the system camera backgrounds the page, and a live WebRTC session may not
+//      survive it. Handled by the capture hold plus the healing pass below, which also MEASURE
+//      the outcome (`look_session_guard`) on the real devices, since that verdict cannot be had
+//      from a desktop.
+//   2. The user triggers the turn, not the model, so the event has to be injected into the
+//      Realtime conversation and a response asked for afterwards (the VOICE-AGENT-106 order,
+//      with the VOICE-AGENT-094 watchdog behind it).
+//   3. The search runs here instead of being called by the model, because the model must never
+//      be handed `image_ref`: one photo is read once (about four cents), and a recovery
+//      re-query must not be able to read it again.
 // ---------------------------------------------------------------------------------------------
+
+// The system camera is a foreign app with the screen, so the page goes to the background and
+// comes back. Two things can be broken on the way back, the peer connection and the microphone
+// track, and they are broken differently, so they are healed differently. The hold stops the
+// ordinary reconnect machinery from firing into a background page; the healing pass runs once,
+// in the foreground, when the page has the screen again.
+//
+// The ceiling exists for the platforms where nothing announces the return. A desktop file dialog
+// fires no visibilitychange (the page stays visible), and `focus` is not guaranteed either; the
+// hold must not outlive the gesture and leave a genuinely dead session unrepaired.
+const LOOK_CAPTURE_HOLD_CEILING_MS = 45000;
+
+function beginLookCaptureHold(source) {
+  if (!sessionRunning) {
+    return;
+  }
+  lookCaptureHoldActive = true;
+  lookCaptureHoldSource = source;
+  lookCaptureHoldStartedAt = performance.now();
+  if (lookCaptureHoldTimer) {
+    window.clearTimeout(lookCaptureHoldTimer);
+  }
+  lookCaptureHoldTimer = window.setTimeout(() => {
+    lookCaptureHoldTimer = null;
+    endLookCaptureHold("ceiling");
+  }, LOOK_CAPTURE_HOLD_CEILING_MS);
+  clientLog("look_session_guard", {
+    phase: "hold_started",
+    source,
+    ...voiceSessionSnapshot(),
+  });
+}
+
+// Idempotent: the return is announced by whichever of visibilitychange, focus, the file arriving
+// or the picker's `cancel` gets there first, and on a phone several of them will.
+function endLookCaptureHold(reason) {
+  if (!lookCaptureHoldActive) {
+    return;
+  }
+  // Read before the clear, which drops it: the healing pass owes a held reconnect its own reason,
+  // because that is the one carrying the resume payload built when the connection went.
+  const deferredReason = lookDeferredReconnectReason;
+  clearLookCaptureHold();
+  healVoiceSessionAfterCapture(reason, deferredReason);
+}
+
+// Drops the hold without healing, for the one case where there is nothing left to heal.
+function clearLookCaptureHold() {
+  lookCaptureHoldActive = false;
+  lookDeferredReconnectReason = "";
+  if (lookCaptureHoldTimer) {
+    window.clearTimeout(lookCaptureHoldTimer);
+    lookCaptureHoldTimer = null;
+  }
+}
+
+function voiceSessionSnapshot() {
+  return {
+    sessionRunning,
+    connectionState: pc?.connectionState || null,
+    iceConnectionState: pc?.iceConnectionState || null,
+    dataChannelState: dc?.readyState || null,
+    micReadyState: localAudioTrack?.readyState || null,
+    micMuted: localAudioTrack?.muted ?? null,
+    micEnabled: localAudioTrack?.enabled ?? null,
+    visibilityState: document.visibilityState,
+  };
+}
+
+// The acceptance criterion in prose: "the microphone still works on the way back, with no page
+// reload and no catch-up click". Three degrees of damage, three answers.
+//
+// It also writes the verdict the ticket asks for. `look_session_guard` carries the session state
+// before and after every capture, so the question "does <input capture> survive a voice session
+// on iPhone and on iPad" is answered by the first real use on each device instead of by a
+// promise: `actions: []` means the camera cost nothing, `mic_replaced` means the track died and
+// was bought back, `reconnect` means the session itself went.
+async function healVoiceSessionAfterCapture(reason, deferredReconnectReason = "") {
+  const holdMs = lookCaptureHoldStartedAt
+    ? Math.round(performance.now() - lookCaptureHoldStartedAt)
+    : null;
+  const before = voiceSessionSnapshot();
+  if (!sessionRunning || manuallyStopped) {
+    clientLog("look_session_guard", { phase: "skipped", reason, hold_ms: holdMs, ...before });
+    return;
+  }
+  const actions = [];
+  // Cheapest first: main-thread timers are throttled in the background, so the keepalive cadence
+  // has holes in it. Pump bytes now, before judging the connection on a stale state.
+  sendKeepAlivePing();
+  if (!localAudioTrack || localAudioTrack.readyState === "ended") {
+    actions.push("mic_replaced");
+    const replaced = await replaceLocalAudioTrack("look capture returned");
+    if (!replaced) {
+      actions.push("mic_replace_failed");
+    }
+  }
+  const channelDown = !dc || dc.readyState !== "open";
+  const peerDown = !pc || pc.connectionState === "failed" || pc.connectionState === "disconnected";
+  if (channelDown || peerDown) {
+    actions.push("reconnect");
+    // The reason of the reconnect that was held, when there was one: it carries the resume
+    // payload built at the moment the connection went, which a generic reason would not.
+    scheduleReconnect(deferredReconnectReason || `look capture returned (${reason})`, 500);
+  } else {
+    syncMicrophone(`look capture returned (${reason})`);
+  }
+  clientLog("look_session_guard", {
+    phase: "healed",
+    reason,
+    source: lookCaptureHoldSource,
+    hold_ms: holdMs,
+    actions,
+    before,
+    after: voiceSessionSnapshot(),
+  }, actions.length ? "error" : "info");
+}
+
+// A microphone track that ended cannot be revived, only replaced. Done on the existing sender
+// rather than by rebuilding the session: replaceTrack needs no renegotiation, so the
+// conversation, its context and the model's turn all survive the swap.
+async function replaceLocalAudioTrack(reason) {
+  if (!pc) {
+    return false;
+  }
+  const sender = pc.getSenders().find((candidate) => !candidate.track || candidate.track.kind === "audio");
+  if (!sender || typeof sender.replaceTrack !== "function") {
+    return false;
+  }
+  const generation = connectionGeneration;
+  let stream;
+  try {
+    stream = await navigator.mediaDevices.getUserMedia({
+      audio: { echoCancellation: true, noiseSuppression: true, autoGainControl: true },
+    });
+  } catch (error) {
+    clientLog("microphone_track_replace_error", {
+      reason,
+      name: error.name,
+      message: error.message,
+    }, "error");
+    return false;
+  }
+  // The session may have been rebuilt while the permission round-trip was in flight, and the new
+  // one has its own track on its own sender. Dropping this one is the whole correction.
+  if (generation !== connectionGeneration) {
+    stream.getTracks().forEach((track) => track.stop());
+    return false;
+  }
+  const nextTrack = stream.getAudioTracks()[0];
+  if (!nextTrack) {
+    stream.getTracks().forEach((track) => track.stop());
+    return false;
+  }
+  try {
+    await sender.replaceTrack(nextTrack);
+  } catch (error) {
+    stream.getTracks().forEach((track) => track.stop());
+    clientLog("microphone_track_replace_error", {
+      reason,
+      stage: "replaceTrack",
+      name: error.name,
+      message: error.message,
+    }, "error");
+    return false;
+  }
+  const previousStream = localStream;
+  localStream = stream;
+  localAudioTrack = nextTrack;
+  previousStream?.getTracks().forEach((track) => track.stop());
+  attachTrackDiagnostics(nextTrack, "microphone (replaced)");
+  clientLog("microphone_track_replaced", {
+    reason,
+    label: nextTrack.label,
+    readyState: nextTrack.readyState,
+    muted: nextTrack.muted,
+  });
+  syncMicrophone("microphone track replaced");
+  return true;
+}
 
 // The resize is what decides the latency of a picture turn, not the model. 1024 px on the long
 // side is also what the cost was calculated against: at detail "high" the API bills about
@@ -7384,6 +7622,9 @@ function pickLookImage(source) {
   }
   input.dataset.lookSource = source;
   input.value = "";
+  // VOICE-AGENT-180: from here until the page has the screen back, the session is not to be
+  // rebuilt. A no-op outside a voice session, which is why the branch lives in the guard.
+  beginLookCaptureHold(source);
   input.click();
 }
 
@@ -7465,9 +7706,14 @@ async function prepareLookImage(file) {
 async function handleLookFileSelected(input) {
   const file = input?.files?.[0];
   const source = lookSourceOf(input);
+  // VOICE-AGENT-180: the page has the screen again, whether a photo came back or not. Released
+  // before the decode, which is foreground work and can take a second on a large photo, so a
+  // session that needs healing is not made to wait for it.
+  endLookCaptureHold(file ? "file_selected" : "no_file");
   if (!file) {
     // A cancelled picker, or a camera permission the user refused at the system prompt. Nothing to
-    // report and, by construction, nothing to undo: no session was touched to get here.
+    // report and, by construction, nothing to undo: the audio session was held, not stopped, and
+    // the release above has already checked it over.
     return;
   }
   const generation = ++lookCaptureGeneration;
@@ -7638,8 +7884,351 @@ function activeLookImageRef() {
   return lookAttachedImage?.imageRef || "";
 }
 
+// VOICE-AGENT-180. The voice half of a picture turn, which the model did not ask for.
+//
+// Why the browser runs the search itself instead of letting the model call query_text2sql: the
+// model must never be handed `image_ref`. It is the same rule the server applies to
+// text_tool_definitions() and it has a price behind it: one photo is read once, for about four
+// cents, and a model free to pass the reference could read it again on every recovery re-query.
+// So the search happens here, once, and what reaches the model is its result.
+//
+// What reaches the model, precisely: a bracketed user turn carrying the structured result. Not
+// the image (VOICE-AGENT-109 owns the channel's size limit and an image has no business on it),
+// and not a summary written here either. The agent must speak from the clues the vision model
+// read and the rows the catalogue returned, which is the VOICE-AGENT-044 grounding guardrail
+// arriving by a new door. The rules for reading this block are in the session instructions
+// (`VISION_TURN_INSTRUCTIONS` in app/main.py), where they are written once for both modes; this
+// prefix only says what the block is and where it came from.
+const LOOK_VOICE_TURN_PREFIX =
+  "[Photo turn: the user has just shown you a photo. You did not see it: a vision model read it "
+  + "server-side and the catalogue answered what it read. Everything known about the picture and "
+  + "the answer is the query_text2sql result below, including its vision_evidence. Answer the "
+  + "user now from this block, mentioning briefly what was read in the image; do not call "
+  + "query_text2sql again for this photo.]";
+
+async function sendLookVoiceTurn(imageRef, capture) {
+  // The words, if any, are the ones in the question box. The last spoken transcript is
+  // deliberately NOT used: it has already been sent as its own turn and probably answered, and
+  // pairing the photo with it would ask the same question twice. A photo on its own is the
+  // nominal voice gesture ("what is this?"), and a spoken follow-up works as the next turn,
+  // answered from the entity this one resolved.
+  const words = questionInput.value.trim();
+  if (words) {
+    questionInput.value = "";
+    syncQuestionInputUi();
+  }
+
+  // A photo is an interruption, exactly like starting to speak or sending a typed turn. The
+  // alternative, queueing it behind the end of the agent's sentence, would be the only queue in
+  // the application, and it would make the gesture feel broken on the one device it is for.
+  const interruptedResponse = Boolean(activeResponseId);
+  const interruptedAudio = Boolean(activeAudioResponseId);
+  if (interruptedResponse) {
+    sendEvent({ type: "response.cancel" });
+    activeResponseId = null;
+  }
+  if (interruptedAudio) {
+    sendEvent({ type: "output_audio_buffer.clear" });
+    activeAudioResponseId = null;
+  }
+  if (interruptedResponse || interruptedAudio) {
+    resetSpokenAudioHighlightState();
+    resetRealtimeSpokenSubtitles({ clearVisible: spokenSubtitlesEnabled() });
+  }
+
+  const transcript = words || "📷 Photo";
+  lastUserTranscript = transcript;
+  activeUiLanguage = detectUiLanguageFromText(words);
+  addRetainedContext({ type: "user", text: transcript });
+  showUserSubtitleText(transcript);
+
+  const args = { query: words, ui_language: activeUiLanguage };
+  // Counted as tool work, because that is what it is: the mic mutes for the duration and comes
+  // back when the model speaks, which is the same contract as a call the model made itself.
+  toolCallsInFlight += 1;
+  syncMicrophone("look photo turn started");
+  setStatus("Reading the photo", "live");
+  // VOICE-AGENT-146: the screen moves off the previous grid before the answer arrives, so a
+  // picture turn never leaves the voice talking about one thing while the screen shows another.
+  setLoadingResults(words, args.ui_language);
+  // VOICE-AGENT-111: the vision pre-stage plus the pipeline is the longest tool call in the
+  // application (the target is under five seconds, not under one), and the response.cancel above
+  // has just removed whatever was covering the silence. The early delay, because nothing else is
+  // going to speak.
+  const holdingLineTimer = scheduleHoldingLine("look_photo", HOLDING_LINE_DELAY_MS);
+  const startedAt = performance.now();
+  let output;
+  let searchMs = null;
+  // The same shape as handleFunctionCall, and for the same reasons: the render happens on both
+  // branches (a failed picture turn must still move the screen off the previous grid), the
+  // holding line is cancelled whatever happened so it cannot speak behind the answer, and the
+  // tool-work counter is only released once all of that is done, so the microphone does not
+  // re-open for the half second between the answer arriving and the model being asked to speak.
+  try {
+    output = await callText2Sql(args, { imageRef });
+    searchMs = Math.round(performance.now() - startedAt);
+    await renderText2SqlResult(output, args);
+  } catch (error) {
+    searchMs ??= Math.round(performance.now() - startedAt);
+    output = { error: error.message };
+    clientLog("look_voice_turn_error", {
+      stage: "search",
+      image_ref: imageRef,
+      error: error.message,
+      search_ms: searchMs,
+    }, "error");
+    await renderText2SqlResult(output, args);
+  } finally {
+    cancelHoldingLine(holdingLineTimer);
+    toolCallsInFlight = Math.max(0, toolCallsInFlight - 1);
+  }
+
+  // The channel may have gone while the photo was being read (the capture that preceded this is
+  // exactly the event that can take it). Nothing to inject into, and the guard above is already
+  // healing it; the screen keeps the answer, which is what the user is looking at.
+  if (!dc || dc.readyState !== "open") {
+    clientLog("look_voice_turn_error", {
+      stage: "inject",
+      image_ref: imageRef,
+      error: "data channel is not open",
+      search_ms: searchMs,
+      ...voiceSessionSnapshot(),
+    }, "error");
+    setStatus("Photo answer on screen", "error");
+    return { injected: false, searchMs, output };
+  }
+
+  awaitingToolResponse = true;
+  const block = lookVoiceTurnBlock(output);
+  // VOICE-AGENT-109: the structured result is subject to the same ceiling as every other tool
+  // output, so it is fitted before it is sent rather than discovered to be too big by a throwing
+  // send. The prefix and the event envelope are taken out of the budget first.
+  const budget = dataChannelBudgetBytes() - serializedByteSize(LOOK_VOICE_TURN_PREFIX) - 1024;
+  const fitted = fitLookVoiceTurnBlock(block, budget);
+  const payload = fitted.fits ? fitted.output : lookVoiceTurnMinimalBlock(block);
+  const text = [LOOK_VOICE_TURN_PREFIX, JSON.stringify(payload)].join("\n");
+  // VOICE-AGENT-109, learned the hard way in handleFunctionCall: a send can THROW when the
+  // channel's real maximum is below the one it reports, and a throw here would skip the three
+  // recovery calls below. awaitingToolResponse is already true, so that would leave the mic muted
+  // on a session nothing is going to un-wedge, the exact deadlock VOICE-AGENT-094 exists for.
+  // Hence the send in a try, the recovery in a finally, and a minimal block as the second chance.
+  let injected = false;
+  try {
+    injected = sendLookVoiceTurnItem(text);
+  } catch (error) {
+    clientLog("look_voice_turn_error", {
+      stage: "send",
+      image_ref: imageRef,
+      error: error.message,
+      attempted_bytes: serializedByteSize(text),
+      budget_bytes: dataChannelBudgetBytes(),
+      channel_reported_max: dataChannelReportedMaxMessageSize(),
+      channel_effective_max: dataChannelMaxMessageSize(),
+    }, "error");
+    try {
+      injected = sendLookVoiceTurnItem(
+        [LOOK_VOICE_TURN_PREFIX, JSON.stringify(lookVoiceTurnMinimalBlock(block))].join("\n"),
+      );
+    } catch (fallbackError) {
+      clientLog("look_voice_turn_error", {
+        stage: "send_fallback",
+        image_ref: imageRef,
+        error: fallbackError.message,
+      }, "error");
+    }
+  } finally {
+    // VOICE-AGENT-106 order: the result first, the request for a response after it, through the
+    // helper that waits for a free response slot instead of being rejected. VOICE-AGENT-094
+    // behind it, because awaitingToolResponse above keeps the mic muted until something answers.
+    requestRealtimeResponseAfterToolOutput();
+    scheduleToolResponseWatchdog();
+    syncMicrophone("look photo turn injected");
+  }
+  addRetainedContext({
+    type: "tool",
+    tool_name: "query_text2sql",
+    ...compactToolContext(args, output),
+  });
+  clientLog("look_voice_turn", {
+    image_ref: imageRef,
+    source: capture?.source || "",
+    words: words.length,
+    interruptedResponse,
+    interruptedAudio,
+    search_ms: searchMs,
+    result_count: output?.result_count ?? null,
+    error: output?.error || "",
+    error_code: output?.error_code || "",
+    vision_candidate_count: Array.isArray(output?.vision_evidence?.candidates)
+      ? output.vision_evidence.candidates.length
+      : null,
+    vision_dominant: output?.vision_evidence?.dominant ?? null,
+    vision_about_image: output?.vision_evidence?.about_image ?? null,
+    vision_cached: output?.vision_evidence?.cached ?? null,
+    injected: Boolean(injected),
+    truncated: Boolean(fitted.truncated),
+    fits: Boolean(fitted.fits),
+    // How far down LOOK_EVIDENCE_SHED_STEPS this turn had to go. 0 is the expected value and the
+    // measured one for a nominal photo; anything above 2 says the API is sending more evidence
+    // prose than the channel can hold and that its caps, not this shedder, are the place to look.
+    evidence_steps: fitted.evidenceSteps ?? 0,
+    sent_bytes: serializedByteSize(text),
+    budget_bytes: dataChannelBudgetBytes(),
+  }, injected ? "info" : "error");
+  return { injected: Boolean(injected), searchMs, output };
+}
+
+// VOICE-AGENT-180. A picture turn's block has one part the ordinary search fitter will not touch:
+// `vision_evidence`. fitSearchOutputToDataChannel() sheds rows and then result cards, and when
+// that is not enough it reports fits:false and the caller sends a minimal block, which on this
+// path would be a block with no clues in it at all. That is the one degradation this feature
+// cannot afford: the clues ARE the justification of the answer, and an agent that names a title
+// without them is back to the guess VOICE-AGENT-044 was written against.
+//
+// Measured on 2026-09-21 against the real fitter, budget 12.9 KB after the prefix: a nominal turn
+// is 1.9 KB and fits whole; a fat one is 15.6 KB and fits once the rows go; a saturated one (the
+// server's caps all reached at once) is 22 KB and does not fit at all. So the evidence is shed by
+// degree here, cheapest thing first, and the block keeps its shape down to one candidate and the
+// title read off the poster.
+const LOOK_EVIDENCE_SHED_STEPS = [
+  // 1. Every candidate keeps its best reason only. Eight second reasons are worth less than one
+  //    first reason, and a spoken answer gives one clause of evidence anyway.
+  (evidence) => ({ ...evidence, candidates: trimCandidateEvidence(evidence.candidates, 1) }),
+  // 2. The hints keep their heads. A credits block is the most discriminating clue there is, but
+  //    its first 200 characters carry the names; the rest is the small print of a poster.
+  (evidence) => ({ ...evidence, hints: trimEvidenceHints(evidence.hints, 200) }),
+  // 3. The ranking stops meaning anything past a handful, and this is also where the
+  //    VOICE-AGENT-093 "present the candidates" case lives: three is a choice, eight is a list.
+  (evidence) => ({ ...evidence, candidates: (evidence.candidates || []).slice(0, 3), candidates_truncated: true }),
+  // 4. The last stand: the winning candidate, the question the catalogue answered, and the title
+  //    text. Everything a sentence needs to say what was seen and why.
+  (evidence) => ({
+    kind: evidence.kind || "",
+    dominant: evidence.dominant ?? null,
+    about_image: evidence.about_image ?? null,
+    composed_question: evidence.composed_question || "",
+    hints: trimEvidenceHints({ title_text: evidence.hints?.title_text }, 200),
+    candidates: trimCandidateEvidence((evidence.candidates || []).slice(0, 1), 1),
+    candidates_truncated: true,
+    hints_truncated: true,
+  }),
+];
+
+function trimCandidateEvidence(candidates, keep) {
+  if (!Array.isArray(candidates)) {
+    return candidates;
+  }
+  return candidates.map((candidate) => {
+    if (!candidate || typeof candidate !== "object" || !Array.isArray(candidate.evidence)) {
+      return candidate;
+    }
+    return { ...candidate, evidence: candidate.evidence.slice(0, keep) };
+  });
+}
+
+function trimEvidenceHints(hints, maxChars) {
+  if (!hints || typeof hints !== "object") {
+    return hints;
+  }
+  const trimmed = {};
+  for (const [key, value] of Object.entries(hints)) {
+    if (value === undefined || value === null) {
+      continue;
+    }
+    if (typeof value === "string") {
+      trimmed[key] = value.slice(0, maxChars);
+    } else if (Array.isArray(value)) {
+      trimmed[key] = value
+        .slice(0, 3)
+        .map((item) => (typeof item === "string" ? item.slice(0, maxChars) : item));
+    } else {
+      trimmed[key] = value;
+    }
+  }
+  return trimmed;
+}
+
+function fitLookVoiceTurnBlock(block, budgetBytes) {
+  // The rows and the result cards go first, by the proven fitter: a picture turn's list is a list
+  // like any other, and nothing here should re-decide that order.
+  let fitted = fitSearchOutputToDataChannel(block, budgetBytes);
+  if (fitted.fits) {
+    return { ...fitted, evidenceSteps: 0 };
+  }
+  const evidence = block.vision_evidence;
+  if (!evidence || typeof evidence !== "object") {
+    return { ...fitted, evidenceSteps: 0 };
+  }
+  let shed = evidence;
+  for (const [index, step] of LOOK_EVIDENCE_SHED_STEPS.entries()) {
+    shed = step(shed);
+    fitted = fitSearchOutputToDataChannel(
+      { ...block, vision_evidence: shed, vision_evidence_truncated: true },
+      budgetBytes,
+    );
+    if (fitted.fits) {
+      return { ...fitted, truncated: true, evidenceSteps: index + 1 };
+    }
+  }
+  return { ...fitted, truncated: true, evidenceSteps: LOOK_EVIDENCE_SHED_STEPS.length };
+}
+
+function sendLookVoiceTurnItem(text) {
+  return sendEvent({
+    type: "conversation.item.create",
+    item: { type: "message", role: "user", content: [{ type: "input_text", text }] },
+  });
+}
+
+// The whitelist that decides what the voice model is allowed to read of a picture turn. Same
+// principle as the one in handleFunctionCall: a field the API adds and this list omits never
+// reaches the model. `vision_evidence` is the addition that makes the answer honest: the hints
+// and the per-candidate evidence are what let the agent say WHY this title came back.
+function lookVoiceTurnBlock(output) {
+  const block = {
+    today: output?.today || "",
+    answer: output?.answer || "",
+    error: output?.error || "",
+    result_count: output?.result_count ?? null,
+    rows_per_page: output?.rows_per_page ?? null,
+    has_more: Boolean(output?.has_more),
+    visible_results: structuredCardFocusEnabled() ? currentVisibleResultCards() : [],
+    rows: output?.rows || [],
+    sql_query: output?.sql_query || "",
+    diagnostic: output?.diagnostic || null,
+    name_ambiguity: output?.name_ambiguity || null,
+    vision_evidence: output?.vision_evidence || null,
+  };
+  // The same substitution the server makes for the text path (compact_search_for_model): on an
+  // image failure the model is shown the sentence and not the machinery. Given the raw `error`
+  // (which names the reference) and `error_code` beside the instruction not to mention them, it
+  // read them out to the user anyway. The sentence itself comes from the server, so there is one
+  // copy of it; what is duplicated here is only the rule that hides the rest.
+  const imageError = output?.image_error;
+  if (imageError && imageError.message) {
+    block.error = imageError.message;
+    block.image_unavailable = true;
+  }
+  return block;
+}
+
+// Last resort, if even a row-less and result-less block is over budget. Keeps the fact that a
+// photo was read and the sentence to say, drops everything that could have made it heavy.
+function lookVoiceTurnMinimalBlock(block) {
+  return {
+    today: block.today || "",
+    answer: block.answer || "",
+    error: block.error || "",
+    result_count: block.result_count ?? null,
+    partial: true,
+    note: "The full result of the photo could not be loaded for this turn. Say what you can from "
+      + "the conversation, or say you could not identify the picture. Never mention technical, "
+      + "channel or payload-size problems to the user.",
+  };
+}
+
 // "Use this photo": deposit, then ask. The words are optional — an image alone is the nominal
-// question ("what is this?"), and /text-chat accepts a turn with an image_ref and no message.
+// question ("what is this?"), and both paths accept a turn with an image_ref and no message.
 async function confirmLookCapture() {
   const capture = lookPendingCapture;
   if (!capture) {
@@ -7674,15 +8263,20 @@ async function confirmLookCapture() {
     discardLookPendingCapture();
     renderLookAttachment();
     closeLookPreview({ restoreFocus: false });
-    // The picture turn runs on the text path, which stops the audio transport. Said out loud
-    // rather than done silently: VOICE-AGENT-180 is the ticket that makes a photo during a spoken
-    // session possible, and until it lands this is the honest trade.
-    const sessionWasRunning = sessionRunning;
-    if (sessionWasRunning) {
+    // VOICE-AGENT-180: which of the two paths carries this photo. A live data channel takes the
+    // voice path, where the session stays up and the agent speaks the answer; anything else takes
+    // the text path, which stops the audio transport as it always did. `sessionRunning` alone is
+    // not the test, because it is true while connecting too, and a turn injected into a channel that is
+    // not open yet would be lost silently.
+    const voicePath = sessionRunning && dc?.readyState === "open";
+    if (sessionRunning && !voicePath) {
       showSubtitleText("Voice session paused to look at the photo.");
     }
     clientLog("look_capture", {
-      session_stopped: sessionWasRunning,
+      mode: voicePath ? "voice" : "text",
+      // Kept under its old name so one harvest covers both eras of the log: what it means is
+      // "this photo cost the audio session", which is now the exception rather than the rule.
+      session_stopped: sessionRunning && !voicePath,
       source: capture.source,
       outcome: "sent",
       image_ref: deposit.image_ref,
@@ -7694,11 +8288,16 @@ async function confirmLookCapture() {
       source_height: capture.sourceHeight,
       resize_ms: capture.resizeMs,
       upload_ms: uploadMs,
+      ...voiceSessionSnapshot(),
     });
-    await sendTextChatMessage(questionInput.value.trim(), {
-      source: "look",
-      imageRef: deposit.image_ref,
-    });
+    if (voicePath) {
+      await sendLookVoiceTurn(deposit.image_ref, capture);
+    } else {
+      await sendTextChatMessage(questionInput.value.trim(), {
+        source: "look",
+        imageRef: deposit.image_ref,
+      });
+    }
   } catch (error) {
     if (generation !== lookCaptureGeneration) {
       return;
@@ -8076,7 +8675,11 @@ function fitSearchOutputToDataChannel(output, budgetBytes) {
   return { output: stripped, truncated: true, fits: withinBudget(stripped), keptResults: 0 };
 }
 
-async function callText2Sql(args) {
+// VOICE-AGENT-180: `imageRef` is a second argument and never a field of `args`, on purpose.
+// `args` is what the Realtime model produced, and `image_ref` is deliberately absent from the
+// tool schema, the same rule the server applies to text_tool_definitions(). Only the picture
+// turn passes it, once, so no recovery re-query can make the API read the same photo twice.
+async function callText2Sql(args, { imageRef = "" } = {}) {
   const uiLanguage = normalizeUiLanguage(
     args.ui_language ||
     detectUiLanguageFromText(args.query || lastUserTranscript)
@@ -8090,6 +8693,7 @@ async function callText2Sql(args) {
       ui_language: uiLanguage,
       page: args.page || 1,
       question_hashed: args.question_hashed || null,
+      ...(imageRef ? { image_ref: imageRef } : {}),
     }),
   });
 
@@ -9043,6 +9647,9 @@ function stop() {
   manuallyStopped = true;
   pendingRealtimeTextTurns = [];
   cancelIdleDictation("stop");
+  // VOICE-AGENT-180: there is no session left to hold open or to heal. Dropped rather than
+  // released, so a stop during a capture does not schedule a reconnect the user just cancelled.
+  clearLookCaptureHold();
   clearReconnectTimer();
   releaseWakeLock("stop");
   cleanupConnection();
@@ -9791,6 +10398,13 @@ lookToggleButton.addEventListener("click", toggleLook);
 // nothing here beyond its own input.
 lookCameraInput.addEventListener("change", () => { handleLookFileSelected(lookCameraInput); });
 lookLibraryInput.addEventListener("change", () => { handleLookFileSelected(lookLibraryInput); });
+// VOICE-AGENT-180: a refused camera permission and a dismissed picker both arrive here, on
+// browsers that have the event (and nowhere at all on those that do not, which is why the hold
+// also ends on visibility, on focus and on a ceiling). This is the acceptance case "a refused
+// permission leaves the audio session intact": the release checks the session over and says so in
+// `look_session_guard` instead of leaving it to be discovered by a mute microphone.
+lookCameraInput.addEventListener("cancel", () => { endLookCaptureHold("picker_cancelled"); });
+lookLibraryInput.addEventListener("cancel", () => { endLookCaptureHold("picker_cancelled"); });
 lookPreviewUseButton.addEventListener("click", () => { confirmLookCapture(); });
 lookPreviewRetakeButton.addEventListener("click", retakeLookPreview);
 lookPreviewCancelButton.addEventListener("click", cancelLookPreview);

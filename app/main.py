@@ -1204,6 +1204,10 @@ def compact_detail_for_model(
 
 VISION_EVIDENCE_MAX_CANDIDATES = 8
 VISION_EVIDENCE_MAX_TEXT = 600
+# VOICE-AGENT-180: how many `evidence` strings a single candidate may carry. Three is already
+# more than an answer can say out loud in one clause, and the point of the list is the best
+# reason, not an inventory.
+VISION_EVIDENCE_MAX_EVIDENCE = 3
 
 
 def _vision_log_fields(output: Any) -> dict[str, Any]:
@@ -1263,8 +1267,38 @@ def compact_vision_evidence(evidence: Any) -> dict[str, Any] | None:
         }
     candidates = compact.get("candidates")
     if isinstance(candidates, list):
-        compact["candidates"] = candidates[:VISION_EVIDENCE_MAX_CANDIDATES]
+        compact["candidates"] = [
+            _compact_vision_candidate(candidate)
+            for candidate in candidates[:VISION_EVIDENCE_MAX_CANDIDATES]
+        ]
     return compact
+
+
+def _compact_vision_candidate(candidate: Any) -> Any:
+    """Bound a candidate's own free text (VOICE-AGENT-180).
+
+    The candidate COUNT was bounded from the start; the `evidence` strings behind each one were
+    not, and they are the same shape of risk this function exists for: model-authored prose, with
+    no ceiling, inside a loop that can run six iterations. Three reasons per candidate is already
+    more than an answer says out loud, and the list is meant to carry the best reason rather than
+    an inventory.
+
+    This is NOT what keeps a picture turn inside the WebRTC channel: saturating even these caps
+    gives a 22 KB block, well past the ~12.9 KB the channel affords, so the voice path sheds the
+    evidence by degree itself (`fitLookVoiceTurnBlock` in app.js, measured 2026-09-21). Tightening
+    the numbers here would not remove that shedder, and loosening them would not break it.
+    """
+    if not isinstance(candidate, dict):
+        return candidate
+    evidence = candidate.get("evidence")
+    if not isinstance(evidence, list):
+        return candidate
+    bounded = dict(candidate)
+    bounded["evidence"] = [
+        (item[:VISION_EVIDENCE_MAX_TEXT] if isinstance(item, str) else item)
+        for item in evidence[:VISION_EVIDENCE_MAX_EVIDENCE]
+    ]
+    return bounded
 
 
 def compact_search_for_model(output: dict[str, Any]) -> dict[str, Any]:
@@ -1511,6 +1545,20 @@ def vision_error_notice(error_code: Any) -> dict[str, str] | None:
     message = VISION_ERROR_MESSAGES.get(code)
     return {"code": code, "message": message} if message else None
 
+
+# VOICE-AGENT-180. The voice path's framing sentence, and the only thing about a picture turn
+# that differs between the two modes: the block arrives as an injected conversation item rather
+# than as a tool result the model asked for, because the user pressed a button and the model was
+# not party to it. Everything substantive stays in VISION_TURN_INSTRUCTIONS above, written once
+# and shared, which is what keeps the two modes from drifting the way VOICE-AGENT-112 did.
+VISION_VOICE_TURN_INSTRUCTIONS = (
+    "A photo can arrive mid-conversation, because the user can send one while speaking to you. "
+    "It reaches you as a bracketed [Photo turn: ...] message carrying a query_text2sql result "
+    "you did not call for: the browser deposited the picture, the API read it and answered it, "
+    "and that result is what you are given. Read it exactly as you would read a tool result of "
+    "your own, answer from it straight away, and never call query_text2sql for that photo "
+    "yourself: you have no way to reach the image, and the reading has already been paid for."
+)
 
 VISION_ERROR_INSTRUCTIONS = (
     "If the input says the photo could not be used, your whole answer is the sentence it gives "
@@ -1814,6 +1862,15 @@ def realtime_session_config(
         + " " + RESULT_COUNT_INSTRUCTIONS
         + " " + DISAMBIGUATION_INSTRUCTIONS
         + " " + GROUNDED_ABSENCE_INSTRUCTIONS
+        # VOICE-AGENT-180: carried by every session rather than injected with the photo, for two
+        # reasons. A picture turn arrives unannounced, so the rules have to be in place before it
+        # does; and the rules must still hold on the FOLLOW-UP turns, which carry no block of
+        # their own ("the photo stays attached, answer from the entity you identified"). The
+        # alternative was a copy of this prose in app.js, which is the drift VOICE-AGENT-112 cost
+        # a release to repair.
+        + " " + VISION_VOICE_TURN_INSTRUCTIONS
+        + " " + VISION_TURN_INSTRUCTIONS
+        + " " + VISION_ERROR_INSTRUCTIONS
         # VOICE-AGENT-143: the date is resolved here, at session creation, so a session that
         # spans midnight keeps the date it opened with. Acceptable: a session lasts minutes.
         + " " + current_date_instructions()
@@ -3366,6 +3423,29 @@ HARNESS_LOG_EVENTS = frozenset({
     # absent, it is invisible, and a log cannot tell the two apart.
     "look_capture",
     "look_capture_error",
+    # VOICE-AGENT-180, and this one is a measurement instrument before it is a log. The ticket
+    # asks for a verdict that cannot be obtained from a desktop: does opening the system camera
+    # survive a live voice session on an iPhone and on an iPad? Every capture now writes the
+    # session state before and after it (peer connection, data channel, microphone track), plus
+    # what had to be repaired. `actions: []` says the camera cost nothing; `mic_replaced` says the
+    # track died and was bought back without a reload; `reconnect` says the session itself went.
+    # The first real use on each device answers the question, and the answer belongs in the
+    # ticket. `reconnect_deferred` marks a rebuild held back while the camera had the screen,
+    # which is the failure the guard exists to prevent (a getUserMedia from a background page
+    # cannot succeed and would spend one of five attempts).
+    "look_session_guard",
+    # The voice picture turn itself: the search this browser ran with the image_ref, its wall
+    # clock, the vision verdict (candidate count, dominance, cache hit) and whether the injected
+    # turn actually reached the channel. `truncated` and `fits` are the VOICE-AGENT-109 ceiling
+    # seen from this path: the structured block is bounded like any other tool output, and an
+    # acceptance criterion says it must not be trimmed in practice.
+    "look_voice_turn",
+    "look_voice_turn_error",
+    # The microphone bought back by replaceTrack after a capture (VOICE-AGENT-180). Separate from
+    # `look_session_guard` because the swap is worth finding on its own: it is the difference
+    # between a session that healed and one the user had to restart by hand.
+    "microphone_track_replaced",
+    "microphone_track_replace_error",
 })
 
 
