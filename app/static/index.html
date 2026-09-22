@@ -150,18 +150,30 @@
     <div id="personaBadge" class="personaBadge" hidden aria-hidden="true">
       <img id="personaBadgeImage" alt="" decoding="async" />
     </div>
-    <!-- VOICE-AGENT-158: the confirmation step. Nothing is sent until "Use this photo" is
-         pressed, and what is shown here is the RESIZED image that will actually be deposited, not
-         the original file, so the preview cannot flatter what the vision model receives. Outside
-         <main> like the other overlays, for the same reason: the compact results mode hides the
-         header and would take a child of the panel with it. -->
+    <!-- VOICE-AGENT-184: the drop veil. The drop target is the window, not the question box: a
+         one-line strip at the bottom of a screen filled with cards is a precision target no chat
+         application asks for, so a picture is accepted anywhere and this is what says so. It is
+         `pointer-events: none` in the stylesheet and must stay that way, or it becomes the thing
+         the file lands on. -->
+    <div id="lookDropOverlay" class="lookDropOverlay" aria-hidden="true" hidden>
+      <div class="lookDropFrame">
+        <span class="lookDropIcon" aria-hidden="true">&#x1F5BC;&#xFE0F;</span>
+        <p class="lookDropText">Drop a picture to attach it</p>
+      </div>
+    </div>
+    <!-- VOICE-AGENT-158: the confirmation step. VOICE-AGENT-183: "Attach this photo" deposits
+         the image and hands back; nothing is asked until the question is submitted. What is shown
+         here is the RESIZED image that will actually be deposited, not the original file, so the
+         preview cannot flatter what the vision model receives. Outside <main> like the other
+         overlays, for the same reason: the compact results mode hides the header and would take a
+         child of the panel with it. -->
     <div id="lookPreviewOverlay" class="lookPreviewOverlay" role="dialog" aria-modal="true" aria-labelledby="lookPreviewTitle" hidden>
       <div class="lookPreviewFrame">
         <h2 id="lookPreviewTitle" class="srOnly">Confirm the photo</h2>
         <img id="lookPreviewImage" class="lookPreviewImage" alt="Photo about to be sent" decoding="async" />
         <p id="lookPreviewNote" class="lookPreviewNote" aria-live="polite"></p>
         <div class="lookPreviewActions">
-          <button id="lookPreviewUseButton" class="lookPreviewUse" type="button">Use this photo</button>
+          <button id="lookPreviewUseButton" class="lookPreviewUse" type="button">Attach this photo</button>
           <button id="lookPreviewRetakeButton" class="lookPreviewRetake" type="button">Retake</button>
           <button id="lookPreviewCancelButton" class="lookPreviewCancel" type="button">Cancel</button>
         </div>

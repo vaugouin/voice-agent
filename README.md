@@ -16,8 +16,9 @@ The app serves a minimal web UI on port `3000`. The browser creates an `RTCPeerC
 - Compact result-display mode that hides the app title and agent status while search results or entity pages are visible, leaving a one-row control header above the results panel.
 - Edge-to-edge iOS landscape layout for short viewports, including `viewport-fit=cover`, so the result UI uses the full available screen height without an outer app margin.
 - Text question input beside Start/Stop for mixed voice/text turns. `Enter` submits and `Shift+Enter` inserts a new line.
-- Picture questions through the Look button: take a photo or choose one from the library, confirm it, and ask about it. The photo is resized in the browser, deposited on the text2SQL API, and read there by a vision model that names what it points at with the clues that support it; the answer comes from the catalogue, never from a guess.
-- A photo taken **during a spoken session** keeps the session alive and is answered out loud, clues included. The agent is never shown the image: it speaks from what was read and what the catalogue returned.
+- Picture questions through the Look button: take a photo, choose one from the library, or drag one from the desktop onto the page. The photo is resized in the browser and deposited on the text2SQL API, where a vision model reads it and names what it points at with the clues that support it; the answer comes from the catalogue, never from a guess.
+- Attaching a photo does not ask anything. It files the image and hands the screen back, and the question goes out with the next thing submitted: the arrow, `Enter`, or, in a spoken session, the next sentence said out loud.
+- A photo attached **during a spoken session** keeps the session alive and is answered out loud, clues included. The agent is never shown the image: it speaks from what was read and what the catalogue returned.
 - Back and Forward buttons beside the text input for navigating previously displayed result and detail pages.
 - PNG app icon configured for browser tabs, web app metadata, and iPhone Add to Home Screen.
 - Server-side Realtime voice selection through `AGENT_VOICE`.
@@ -585,7 +586,7 @@ Current implementation note: `loadRetainedContext()` exists, and context is save
 
 ## Text Input
 
-The UI includes a multiline question box beside the microphone controls. The microphone start control shows `👄` with `❌` badged in the corner, the audio stop control is shown as `👄`, and the adjacent green microphone toggle shows `👂🏻` when input is open or `👂🏻` with a badged `❌` when input is closed. The next green control is Look, shown as `👁️`; it is an action button, not a toggle, and a click opens the photo source menu described below. The three glyphs are drawn at one size and centred on their own ink rather than on their text box, so they sit visibly inside the button rather than low in it; `UI.md` carries the measurements behind that. A round white submit button with a black up arrow appears immediately to the right of the question box whenever there is something to send, which means non-whitespace text in the box or an attached photo; clicking it submits the same way as pressing `Enter`. An attached photo is a question on its own, so the button stays available with an empty box, and a second question about the same photo can be sent without typing a word.
+The UI includes a multiline question box beside the microphone controls. The microphone start control shows `👄` with `❌` badged in the corner, the audio stop control is shown as `👄`, and the adjacent green microphone toggle shows `👂🏻` when input is open or `👂🏻` with a badged `❌` when input is closed. The next green control is Look, shown as `👁️`; it is an action button, not a toggle, and a click opens the photo source menu described below. The three glyphs are drawn at one size and centred on their own ink rather than on their text box, so they sit visibly inside the button rather than low in it; `UI.md` carries the measurements behind that. A round white submit button with a black up arrow appears immediately to the right of the question box whenever there is something to send, which means non-whitespace text in the box or an attached photo; clicking it submits the same way as pressing `Enter`. An attached photo is a question on its own, so the button stays available with an empty box, and a photo can be asked about, or asked about again, without typing a word. Attaching a photo never submits anything by itself: it is the arrow, `Enter`, or a sentence spoken into a live session that sends the turn.
 
 When the Start or Stop control is shown, its session button uses the green active-control background.
 
@@ -601,11 +602,17 @@ Pressing `Enter` after Start has begun a Realtime session sends the typed messag
 
 ## Picture Questions
 
-The green eye control, `Look`, sends a photo as a question. It is an action button: a click opens a small menu with two entries, `Take a photo` and `Choose from library`. On a phone, the first hands the job to the system camera, so the permission prompt, the flash and the retake are the ones the user already knows; refusing the permission does nothing to the app and never interrupts a running session. On a computer with no camera, the first entry is not shown.
+The green eye control, `Look`, attaches a photo so a question can be asked about it. It is an action button: a click opens a small menu with two entries, `Take a photo` and `Choose from library`. On a phone, the first hands the job to the system camera, so the permission prompt, the flash and the retake are the ones the user already knows; refusing the permission does nothing to the app and never interrupts a running session. On a computer with no camera, the first entry is not shown.
 
-The photo is then prepared in the browser before it goes anywhere: decoded, drawn to a canvas at 1024px on its long side, and encoded as JPEG at quality 0.8. That resize is what decides the latency of a picture question, and it is also what turns an iPhone HEIC into a format the API accepts. A confirmation overlay shows the resized image with its dimensions and weight, and offers `Use this photo`, `Retake` and `Cancel`. Nothing leaves the browser until the photo is confirmed.
+On a computer there is a third way in, and it needs no button: **drag a picture from the desktop and drop it anywhere on the page**. It enters at the same door as one chosen from the library, with the same resize, the same confirmation and the same attachment. A veil appears while the picture is over the window, saying the whole page will do, because aiming at the one-line question box would be a precision gesture no chat application asks for. Dropping several files at once attaches the first image and says which one; dropping something that is not an image, or dragging a picture out of a web page (which carries a link and not the file), gives a plain sentence instead of a silence.
 
-On confirmation the bytes are posted to `/tool/vision-upload`, which adds the API key and forwards them to the text2SQL API's `POST /uploads/vision`. That endpoint files the image under a name of its own and returns an `image_ref`, a bare filename. The question then goes out with the reference beside it, and the API's vision pre-stage reads the image, turns it into a question in words, and answers it with the ordinary pipeline. The picture never travels on the WebRTC data channel, whatever the mode.
+The photo is then prepared in the browser before it goes anywhere: decoded, drawn to a canvas at 1024px on its long side, and encoded as JPEG at quality 0.8. That resize is what decides the latency of a picture question, and it is also what turns an iPhone HEIC into a format the API accepts. A confirmation overlay shows the resized image with its dimensions and weight, and offers `Attach this photo`, `Retake` and `Cancel`. Nothing leaves the browser until the photo is confirmed.
+
+On confirmation the bytes are posted to `/tool/vision-upload`, which adds the API key and forwards them to the text2SQL API's `POST /uploads/vision`. That endpoint files the image under a name of its own and returns an `image_ref`, a bare filename. **That is all the attach does.** The overlay closes, the thumbnail appears under the control row, the cursor goes back to the question box, and nothing has been searched or answered: the image has been filed, the question has not been asked.
+
+The question goes out with the next thing submitted, and the photo waits for it. On a computer or a phone with the keyboard, that is the submit arrow or `Enter`, with words or with an empty box. In a spoken session it is the next sentence said out loud: a voice session has no `Enter` key, so its submission is speech, and the browser takes that turn over rather than leaving it to the agent, which is never told a photo exists and would otherwise answer blind. One consequence worth knowing: anything said while a photo is waiting becomes the question about it. Removing the chip before submitting leaves no trace at all.
+
+When the turn does go out, the reference travels beside the words, and the API's vision pre-stage reads the image, turns it into a question in words, and answers it with the ordinary pipeline. The picture never travels on the WebRTC data channel, whatever the mode.
 
 Three shapes of question, all handled upstream:
 
@@ -615,15 +622,15 @@ Three shapes of question, all handled upstream:
 
 The confirmed photo stays attached to the conversation as a thumbnail chip under the control row. Clicking it shows the photo full size; the `✕` removes it; `New conversation` releases it. Every later turn sends the same reference, and the bytes are never sent twice: the API recognises the photo by the fingerprint of its bytes, so a second question about it costs no vision call at all. The API keeps the image for thirty days so a question can be replayed from its log; past that, the reference stops designating anything and the app says so rather than breaking.
 
-The browser holds no bytes after the deposit, and none are ever written to `logs/`. What the log records is the reference, the source (`camera` or `library`), the sizes before and after the resize, and the resize and upload times, under the `look_capture` event.
+The browser holds no bytes after the deposit, and none are ever written to `logs/`. What the log records is the reference, the source (`camera`, `library` or `drop`), the sizes before and after the resize, and the resize and upload times, under the `look_capture` event: once as `attached` when the photo is filed, once as `sent` when a turn spends it, carrying what triggered that turn (`typed` or `spoken`). A drop that was refused or accepted is recorded under `look_drop`.
 
 ### A photo during a spoken session
 
-A photo taken while the agent is listening keeps the session: the answer is spoken, the microphone still works on the way back, and there is no page to reload and no button to press again. Taking it interrupts the agent mid-sentence, the same way speaking over it does.
+A photo attached while the agent is listening keeps the session: the answer is spoken, the microphone still works on the way back, and there is no page to reload and no button to press again. The question is the next sentence said out loud, or the box and the arrow if the keyboard is nearer; either one interrupts the agent mid-sentence, the same way speaking over it does.
 
 What the agent says is what the catalogue returned and what the vision model read in the picture, never its own impression of it: it is not shown the image at any point, by design. It gets the clues and the result, so it can say why a title came back ("the credits block names Ridley Scott") without having seen a single pixel.
 
-A question asked afterwards about the same photo, spoken or typed, is answered from the entry that was recognised, with no second reading of the image and nothing more to pay. Submitting with an empty box and the photo still attached asks about the photo again, and the API serves that from its recognition cache.
+A question asked afterwards about the same photo, spoken or typed, is answered from the entry that was recognised, with no second reading of the image and nothing more to pay: the photo is spent by the turn that asked about it, and only that one. Submitting with an empty box and the photo still attached asks about the photo again, and the API serves that from its recognition cache.
 
 Two limits worth knowing. A photo can only ride the voice path once the session is actually connected; taken during the few seconds of connecting, it falls back to the text path and stops the transport, as it did before. And on the way back from the system camera the app checks the session over and repairs it if the platform broke it, which it records under `look_session_guard`: that entry says, per device, whether opening the camera cost anything at all.
 
@@ -717,6 +724,7 @@ dictation_transcribed
 dictation_error
 look_capture
 look_capture_error
+look_drop
 realtime_text_sent
 realtime_text_error
 realtime_text_queued
@@ -947,12 +955,14 @@ Local smoke test:
 6. Confirm spoken answers and result cards.
 7. Type a multiline question with `Shift+Enter`, then press `Enter` to submit.
 8. With no Realtime session running and an empty text box, click the microphone toggle, ask a short question, and confirm the transcript is answered through text mode.
-9. Click the eye button, choose a source, pick a poster, and confirm it. The entry for that title should open, and the photo should stay as a chip under the control row.
+9. Click the eye button, choose a source, pick a poster, and press `Attach this photo`. The thumbnail should appear as a chip under the control row, the cursor should land in the question box, and **nothing should be searched**: no result grid, no answer. Then press `Enter` on the empty box, and the entry for that title should open.
 10. Type a follow-up about the same photo (`who wrote the music for this?`) and confirm it is answered without a second reading of the image.
-11. Picture during a spoken session (do this one on a phone, it is the case that matters): click `Start`, wait for `Connected`, then send a photo with the eye button. The answer should be **spoken**, the session should stay up, and the microphone should still answer a spoken question straight afterwards, with no reload and no second click. Then ask that follow-up out loud rather than typing it.
-12. Same again, refusing the camera permission or cancelling the picker: nothing should happen to the session.
+11. Attach another poster and remove it with the `✕` before submitting. Nothing should go out, and the screen should not move.
+12. Drag a `.jpg` from Windows Explorer onto the page. A veil should appear once while the picture is over the window, without flickering as it crosses the cards, and dropping it should open the same confirmation overlay as the library picker. Drop several files at once, and drop a `.txt`: the first should attach one picture and name it, the second should give a sentence in the subtitle lane. Neither should navigate away from the page.
+13. Picture during a spoken session (do this one on a phone, it is the case that matters): click `Start`, wait for `Connected`, then attach a photo with the eye button and **say your question out loud**. The answer should be **spoken**, the session should stay up, and the microphone should still answer a spoken question straight afterwards, with no reload and no second click. Then ask that follow-up out loud rather than typing it.
+14. Same again, refusing the camera permission or cancelling the picker: nothing should happen to the session.
 
-After steps 11 and 12, read `look_session_guard` in `logs/client-YYYYMMDD.log`. It is there to answer, per device, whether opening the system camera costs a voice session anything: `actions: []` means it cost nothing, `mic_replaced` means the microphone track died and was replaced without a reload, `reconnect` means the session itself went. `look_voice_turn` beside it carries the search time and `evidence_steps`, which should be `0`.
+After steps 13 and 14, read `look_session_guard` in `logs/client-YYYYMMDD.log`. It is there to answer, per device, whether opening the system camera costs a voice session anything: `actions: []` means it cost nothing, `mic_replaced` means the microphone track died and was replaced without a reload, `reconnect` means the session itself went. `look_voice_turn` beside it carries the search time and `evidence_steps`, which should be `0`.
 
 Picture path without a browser (the API must be reachable):
 

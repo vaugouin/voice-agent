@@ -16,6 +16,7 @@ const lookAttachmentThumb = document.querySelector("#lookAttachmentThumb");
 const lookAttachmentThumbButton = document.querySelector("#lookAttachmentThumbButton");
 const lookAttachmentLabel = document.querySelector("#lookAttachmentLabel");
 const lookAttachmentRemoveButton = document.querySelector("#lookAttachmentRemoveButton");
+const lookDropOverlay = document.querySelector("#lookDropOverlay");
 const panel = document.querySelector(".panel");
 const appTitle = document.querySelector(".appHeader h1");
 const historyBackButton = document.querySelector("#historyBackButton");
@@ -6291,6 +6292,24 @@ async function sendTextMessage() {
     return;
   }
 
+  // VOICE-AGENT-183. A photo that has been attached but not yet asked about owns this
+  // submission, words or not: attaching filed the image, and THIS is the moment the user asks
+  // about it. It comes before everything below, because everything below assumes the photo has
+  // already been read.
+  if (armedLookImageRef()) {
+    const voicePath = sessionRunning && dc?.readyState === "open";
+    const imageRef = consumeArmedLookImage({ trigger: "typed", mode: voicePath ? "voice" : "text" });
+    if (voicePath) {
+      await sendLookVoiceTurn(imageRef, lookAttachedImage, { trigger: "typed" });
+    } else {
+      if (sessionRunning) {
+        showSubtitleText("Voice session paused to look at the photo.");
+      }
+      await sendTextChatMessage(text, { source: "look", imageRef });
+    }
+    return;
+  }
+
   // VOICE-AGENT-180 lifted the VOICE-AGENT-158 limit that sent every turn carrying a photo to
   // /text-chat, stopping the audio session with it. Two cases now, and neither costs the session:
   //
@@ -7716,6 +7735,22 @@ async function handleLookFileSelected(input) {
     // the release above has already checked it over.
     return;
   }
+  try {
+    await handleLookFile(file, source);
+  } finally {
+    // The same input is reused for a retake, and a picker fires no `change` for a file it already
+    // holds; clearing it here is what lets the same photo be chosen twice.
+    if (input) {
+      input.value = "";
+    }
+  }
+}
+
+// VOICE-AGENT-184: the file, wherever it came from. The hidden picker is one caller and a drop
+// from the desktop is the other, and they share everything that matters downstream: the same
+// resize to 1024px at quality 0.8, the same confirmation overlay, the same attachment. A dropped
+// file is not a second kind of photo, it is the same photo arriving through a different door.
+async function handleLookFile(file, source) {
   const generation = ++lookCaptureGeneration;
   const startedAt = performance.now();
   setStatus("Preparing the photo", "live");
@@ -7742,11 +7777,162 @@ async function handleLookFileSelected(input) {
     showSubtitleText(message);
     log("look capture error", message);
     clientLog("look_capture_error", { source, stage: "prepare", error: message, bytes: file.size || 0 }, "error");
-  } finally {
-    if (input) {
-      input.value = "";
-    }
   }
+}
+
+// VOICE-AGENT-184: dropping a picture from the desktop.
+//
+// The listeners are on the window and they are there even when the app wants nothing from the
+// drag. That is the point: with no listener the browser applies its own default and REPLACES the
+// page with the dropped file. This app is a single page whose conversation lives in the tab's
+// memory, so a misaimed drop destroys it without a word. The guard is the part of this feature
+// that matters most, and it runs before any of the rest.
+//
+// The target is the whole window, not the question box. The screen is taken up by a grid or a
+// detail card and the box is a one-line strip at the bottom; aiming at it is a precision gesture
+// no chat application asks for. The veil is what says the whole page will do.
+
+// Known image extensions, used only when the drag hands over no MIME type at all. Windows
+// Explorer does that for a format Chrome does not know, HEIC being the one that will actually
+// happen: letting it through by name means the failure arrives from the decoder, with the message
+// the picker already produces ("The browser could not read this image"), rather than as a blanket
+// "that is not an image" that would be a lie about the file.
+const LOOK_DROP_IMAGE_EXTENSIONS = /\.(jpe?g|png|webp|gif|bmp|avif|heif|heic|tiff?)$/i;
+
+let lookDropDepth = 0;
+
+function isDroppableImageFile(file) {
+  if (!file) {
+    return false;
+  }
+  if (typeof file.type === "string" && file.type.startsWith("image/")) {
+    return true;
+  }
+  return !file.type && LOOK_DROP_IMAGE_EXTENSIONS.test(file.name || "");
+}
+
+// A drop is refused while something modal owns the screen: the confirmation overlay is a question
+// waiting for an answer, a full-size viewer is a photo already being looked at, the drawer is a
+// panel over the app. Two states fighting over one screen is the VOICE-AGENT-138 lesson.
+function lookDropBlocked() {
+  return (
+    isLookPreviewOpen() ||
+    isLaunchSplashActive() ||
+    Boolean(document.querySelector(".videoModalOverlay")) ||
+    Boolean(appMenuDrawer && !appMenuDrawer.hidden)
+  );
+}
+
+// A drag from a web page carries a URL and no file; a drag from Explorer carries "Files". Read
+// from `types` because `files` is empty during the drag itself, by design: the bytes are only
+// handed over on the drop.
+function dragCarriesFiles(event) {
+  const types = event.dataTransfer?.types;
+  if (!types) {
+    return false;
+  }
+  return Array.from(types).includes("Files");
+}
+
+function showLookDropVeil() {
+  if (!lookDropOverlay || !lookDropOverlay.hidden) {
+    return;
+  }
+  lookDropOverlay.hidden = false;
+}
+
+function hideLookDropVeil() {
+  lookDropDepth = 0;
+  if (lookDropOverlay) {
+    lookDropOverlay.hidden = true;
+  }
+}
+
+function reportLookDropRefusal(message, details) {
+  setStatus("Photo error", "error");
+  showSubtitleText(message);
+  log("look drop refused", message);
+  clientLog("look_drop", { outcome: "refused", ...details });
+}
+
+async function handleLookDrop(event) {
+  // Before anything else, and unconditionally: this is what stops the browser navigating to the
+  // file and taking the conversation with it.
+  event.preventDefault();
+  const blocked = lookDropBlocked();
+  hideLookDropVeil();
+  if (blocked) {
+    return;
+  }
+  const files = Array.from(event.dataTransfer?.files || []);
+  if (!files.length) {
+    reportLookDropRefusal(
+      "Drop an image file from your computer. A picture dragged from a web page carries a link, not the file itself.",
+      { reason: "no_files", types: Array.from(event.dataTransfer?.types || []).join(",") },
+    );
+    return;
+  }
+  const images = files.filter(isDroppableImageFile);
+  if (!images.length) {
+    const name = files[0]?.name ? ` (${files[0].name})` : "";
+    reportLookDropRefusal(`That is not an image${name}. Drop a JPEG, PNG or WEBP.`, {
+      reason: "not_image",
+      files: files.length,
+      type: files[0]?.type || "",
+    });
+    return;
+  }
+  const file = images[0];
+  // Explorer is happy to hand over a whole selection. One photo is one question, so the first
+  // image wins and the user is told which one, rather than losing the rest in silence or having
+  // the whole gesture refused for being too generous.
+  if (files.length > 1) {
+    showSubtitleText(`${files.length} files dropped. Attaching the first picture: ${file.name}.`);
+  }
+  clientLog("look_drop", {
+    outcome: "accepted",
+    files: files.length,
+    images: images.length,
+    name: file.name || "",
+    type: file.type || "",
+    bytes: file.size || 0,
+  });
+  await handleLookFile(file, "drop");
+}
+
+function registerLookDropListeners() {
+  // Every `dragover` must be prevented, not just the first: a single unprevented one and `drop`
+  // never fires at all. This is the number one cause of drag and drop that "does not work".
+  window.addEventListener("dragover", (event) => {
+    event.preventDefault();
+    if (event.dataTransfer) {
+      event.dataTransfer.dropEffect = dragCarriesFiles(event) && !lookDropBlocked() ? "copy" : "none";
+    }
+  });
+  // `dragenter` and `dragleave` fire once per element crossed on the way across the page, so the
+  // veil is driven by a depth counter rather than by the events themselves. Without it, it
+  // strobes for the whole length of the journey.
+  window.addEventListener("dragenter", (event) => {
+    event.preventDefault();
+    if (!dragCarriesFiles(event) || lookDropBlocked()) {
+      return;
+    }
+    lookDropDepth += 1;
+    showLookDropVeil();
+  });
+  window.addEventListener("dragleave", () => {
+    if (lookDropDepth === 0) {
+      return;
+    }
+    lookDropDepth -= 1;
+    if (lookDropDepth === 0) {
+      hideLookDropVeil();
+    }
+  });
+  window.addEventListener("drop", handleLookDrop);
+  // A drag abandoned outside the window (Escape, or released over another application) leaves no
+  // drop and no final dragleave on some paths, so the veil comes down on this too.
+  window.addEventListener("dragend", hideLookDropVeil);
 }
 
 function openLookPreview() {
@@ -7791,12 +7977,18 @@ function discardLookPendingCapture() {
   lookPendingCapture = null;
 }
 
+// Where the status goes when a photo episode ends without a question being asked: a cancelled
+// preview, and since VOICE-AGENT-183 an attach too, which now ends the same way.
+function restoreRestingStatus() {
+  setStatus(sessionRunning ? "Listening" : "Idle", sessionRunning ? "live" : "idle");
+}
+
 function cancelLookPreview() {
   const source = lookPendingCapture?.source || "library";
   lookCaptureGeneration += 1;
   discardLookPendingCapture();
   closeLookPreview();
-  setStatus(sessionRunning ? "Listening" : "Idle", sessionRunning ? "live" : "idle");
+  restoreRestingStatus();
   clientLog("look_capture", { source, outcome: "cancelled" });
 }
 
@@ -7805,7 +7997,10 @@ function retakeLookPreview() {
   lookCaptureGeneration += 1;
   discardLookPendingCapture();
   closeLookPreview({ restoreFocus: false });
-  pickLookImage(source);
+  // VOICE-AGENT-184: a dropped file has no picker to reopen, so "Retake" on one falls back to the
+  // library. Mapped here rather than inside pickLookImage(), which would otherwise stamp "drop"
+  // onto a real file input and get it back as a source the menu never offered.
+  pickLookImage(source === "camera" ? "camera" : "library");
 }
 
 async function depositLookImage(blob, signal) {
@@ -7884,6 +8079,40 @@ function activeLookImageRef() {
   return lookAttachedImage?.imageRef || "";
 }
 
+// VOICE-AGENT-183: attaching is not sending, so an attached photo has two lives and `armed` is
+// the first one. Armed means deposited on the API, shown as the chip, and not yet asked about by
+// anything. The turn the user actually submits spends it: the arrow, Enter, or the next sentence
+// spoken into a live session, and the words of that turn are the question. Afterwards the same
+// photo stays attached under the VOICE-AGENT-179 rule, where a follow-up is answered from the
+// entity that was resolved rather than by reading the picture a second time.
+function armedLookImageRef() {
+  return lookAttachedImage?.armed ? lookAttachedImage.imageRef : "";
+}
+
+// Spent BEFORE the search starts, never after. Two transcripts can land while one picture search
+// is still running, and the second must not fire the same photo again at four cents a reading.
+function consumeArmedLookImage({ trigger, mode }) {
+  const imageRef = armedLookImageRef();
+  if (!imageRef) {
+    return "";
+  }
+  lookAttachedImage.armed = false;
+  clientLog("look_capture", {
+    outcome: "sent",
+    // What turned the photo into a question: the submit arrow or Enter ("typed"), or a sentence
+    // spoken while it was armed ("spoken"). The attach itself never does, which is the ticket.
+    trigger,
+    mode,
+    // Kept under its old name so one harvest covers both eras of the log: what it means is "this
+    // photo cost the audio session", which only the text path still does, and only at send time.
+    session_stopped: mode === "text" && sessionRunning,
+    source: lookAttachedImage.source,
+    image_ref: imageRef,
+    ...voiceSessionSnapshot(),
+  });
+  return imageRef;
+}
+
 // VOICE-AGENT-180. The voice half of a picture turn, which the model did not ask for.
 //
 // Why the browser runs the search itself instead of letting the model call query_text2sql: the
@@ -7906,14 +8135,52 @@ const LOOK_VOICE_TURN_PREFIX =
   + "user now from this block, mentioning briefly what was read in the image; do not call "
   + "query_text2sql again for this photo.]";
 
-async function sendLookVoiceTurn(imageRef, capture) {
-  // The words, if any, are the ones in the question box. The last spoken transcript is
-  // deliberately NOT used: it has already been sent as its own turn and probably answered, and
-  // pairing the photo with it would ask the same question twice. A photo on its own is the
-  // nominal voice gesture ("what is this?"), and a spoken follow-up works as the next turn,
-  // answered from the entity this one resolved.
-  const words = questionInput.value.trim();
-  if (words) {
+// VOICE-AGENT-183, the spoken half of the arming rule. A voice session has no Enter key: its
+// submission is speech, so the sentence said while a photo is armed is what asks about it.
+//
+// Why it has to be intercepted here rather than left to the model: the model is never told a
+// photo exists (it holds no `image_ref`, by the VOICE-AGENT-180 rule), so a spoken "what film is
+// this?" would be answered blind, on a picture nothing has read. The turn is therefore taken over
+// by the browser, which runs the search itself and injects the result, exactly as it does for the
+// typed trigger.
+//
+// The model has usually started a response by the time a transcript lands. sendLookVoiceTurn
+// cancels it, which is the same interruption a photo has always performed on a sentence in
+// progress; the cost is at worst half a word spoken before the answer proper.
+//
+// Returns true when it has taken the turn over, so the caller knows not to treat it as ordinary.
+function startArmedLookTurnFromTranscript(transcript) {
+  // No channel, nothing to inject into. Belt and braces: a transcript cannot arrive without one.
+  if (!dc || dc.readyState !== "open") {
+    return false;
+  }
+  const capture = lookAttachedImage;
+  const imageRef = consumeArmedLookImage({ trigger: "spoken", mode: "voice" });
+  if (!imageRef) {
+    return false;
+  }
+  // Fire and forget, like the verbose re-fetch it stands in for: the event handler must not be
+  // held open for the length of a vision search, and sendLookVoiceTurn owns its own failure path.
+  void sendLookVoiceTurn(imageRef, capture, { words: transcript, trigger: "spoken" });
+  return true;
+}
+
+async function sendLookVoiceTurn(imageRef, capture, options = {}) {
+  // Two triggers since VOICE-AGENT-183, and they differ only in where the words come from.
+  //
+  //   - "typed": the words are the ones in the question box, which may be empty. Nothing has
+  //     announced this turn yet, so the bookkeeping below does it.
+  //   - "spoken": the user said something while a photo was armed, and THAT sentence is the
+  //     question about it. The transcript handler has already made it a user turn (subtitle lane,
+  //     retained context, lastUserTranscript), so it is passed in here and not announced twice.
+  //
+  // What is never used, in either case, is an OLD spoken transcript: it has already been sent as
+  // its own turn and probably answered, and pairing the photo with it would ask the same question
+  // twice. A photo on its own remains the nominal gesture ("what is this?").
+  const trigger = options.trigger === "spoken" ? "spoken" : "typed";
+  const spokenTrigger = typeof options.words === "string";
+  const words = spokenTrigger ? options.words.trim() : questionInput.value.trim();
+  if (!spokenTrigger && words) {
     questionInput.value = "";
     syncQuestionInputUi();
   }
@@ -7926,6 +8193,14 @@ async function sendLookVoiceTurn(imageRef, capture) {
   if (interruptedResponse) {
     sendEvent({ type: "response.cancel" });
     activeResponseId = null;
+  } else if (spokenTrigger) {
+    // VOICE-AGENT-183: on the spoken trigger the server created its own response the moment the
+    // speech was committed, and the transcript that brought us here arrives after it. If that
+    // `response.created` has not reached us yet, the branch above does not fire and the model
+    // speaks a blind answer over the picture search. So the cancel goes out anyway; the worst
+    // case is an "no active response" error event in the log, which is the trade the forced
+    // verbose re-fetch has made from this same handler since VOICE-AGENT-107.
+    sendEvent({ type: "response.cancel" });
   }
   if (interruptedAudio) {
     sendEvent({ type: "output_audio_buffer.clear" });
@@ -7935,12 +8210,19 @@ async function sendLookVoiceTurn(imageRef, capture) {
     resetSpokenAudioHighlightState();
     resetRealtimeSpokenSubtitles({ clearVisible: spokenSubtitlesEnabled() });
   }
+  // VOICE-AGENT-183: the speech commit that opened this turn armed the fallback that asks for a
+  // response when the model produced none within 1200ms. It must not fire behind a picture
+  // search: it would create a response on a conversation that has not been told about the photo
+  // yet, and the agent would answer the question blind while the block was still being fetched.
+  clearResponseFallback();
 
   const transcript = words || "📷 Photo";
-  lastUserTranscript = transcript;
-  activeUiLanguage = detectUiLanguageFromText(words);
-  addRetainedContext({ type: "user", text: transcript });
-  showUserSubtitleText(transcript);
+  if (!spokenTrigger) {
+    lastUserTranscript = transcript;
+    activeUiLanguage = detectUiLanguageFromText(words);
+    addRetainedContext({ type: "user", text: transcript });
+    showUserSubtitleText(transcript);
+  }
 
   const args = { query: words, ui_language: activeUiLanguage };
   // Counted as tool work, because that is what it is: the mic mutes for the duration and comes
@@ -8052,6 +8334,8 @@ async function sendLookVoiceTurn(imageRef, capture) {
   clientLog("look_voice_turn", {
     image_ref: imageRef,
     source: capture?.source || "",
+    // VOICE-AGENT-183: which gesture asked the question, the arrow/Enter or a spoken sentence.
+    trigger,
     words: words.length,
     interruptedResponse,
     interruptedAudio,
@@ -8227,8 +8511,13 @@ function lookVoiceTurnMinimalBlock(block) {
   };
 }
 
-// "Use this photo": deposit, then ask. The words are optional — an image alone is the nominal
-// question ("what is this?"), and both paths accept a turn with an image_ref and no message.
+// "Attach this photo": deposit, then hand back. VOICE-AGENT-183, attaching is not sending. The
+// bytes do go up to the API here, but that is the image being FILED, not the question being
+// asked, and it is exactly what the web front has always done (tmdb-front, `f_visionupload`).
+// What the photo does instead is arm the next turn: the submit arrow, Enter, or the next sentence
+// spoken into a live session. The words of that turn are optional, since an image alone is the
+// nominal question ("what is this?"), and both paths accept a turn with an image_ref and no
+// message.
 async function confirmLookCapture() {
   const capture = lookPendingCapture;
   if (!capture) {
@@ -8237,8 +8526,8 @@ async function confirmLookCapture() {
   const generation = lookCaptureGeneration;
   lookPreviewUseButton.disabled = true;
   lookPreviewRetakeButton.disabled = true;
-  lookPreviewNote.textContent = "Sending the photo…";
-  setStatus("Sending the photo", "live");
+  lookPreviewNote.textContent = "Attaching the photo…";
+  setStatus("Attaching the photo", "live");
   const startedAt = performance.now();
   try {
     const deposit = await depositLookImage(capture.blob);
@@ -8255,6 +8544,8 @@ async function confirmLookCapture() {
       width: capture.width,
       height: capture.height,
       purgeAfter: deposit.purge_after || "",
+      // VOICE-AGENT-183: filed, not yet asked about. The next submission spends it.
+      armed: true,
     };
     // The object URL now belongs to the attachment, so the pending capture must not revoke it.
     if (lookPendingCapture) {
@@ -8263,22 +8554,19 @@ async function confirmLookCapture() {
     discardLookPendingCapture();
     renderLookAttachment();
     closeLookPreview({ restoreFocus: false });
-    // VOICE-AGENT-180: which of the two paths carries this photo. A live data channel takes the
-    // voice path, where the session stays up and the agent speaks the answer; anything else takes
-    // the text path, which stops the audio transport as it always did. `sessionRunning` alone is
-    // not the test, because it is true while connecting too, and a turn injected into a channel that is
-    // not open yet would be lost silently.
-    const voicePath = sessionRunning && dc?.readyState === "open";
-    if (sessionRunning && !voicePath) {
-      showSubtitleText("Voice session paused to look at the photo.");
-    }
+    // The same gesture as the web front at the same moment (tmdb-front, `f_visionhandlefile`):
+    // the thumbnail appears and the cursor goes back to the box, so the next keystroke is the
+    // question rather than a hunt for where to type it. The submit arrow is already visible, put
+    // there by renderLookAttachment() above (VOICE-AGENT-181).
+    questionInput.focus();
+    restoreRestingStatus();
     clientLog("look_capture", {
-      mode: voicePath ? "voice" : "text",
-      // Kept under its old name so one harvest covers both eras of the log: what it means is
-      // "this photo cost the audio session", which is now the exception rather than the rule.
-      session_stopped: sessionRunning && !voicePath,
+      outcome: "attached",
+      // VOICE-AGENT-180's test, recorded at the moment of the attach because it is a fact about
+      // the app's state; which path actually carries the turn is decided again when the user
+      // submits, since a session can start or stop in between.
+      mode: sessionRunning && dc?.readyState === "open" ? "voice" : "text",
       source: capture.source,
-      outcome: "sent",
       image_ref: deposit.image_ref,
       bytes: capture.blob.size,
       width: capture.width,
@@ -8290,14 +8578,6 @@ async function confirmLookCapture() {
       upload_ms: uploadMs,
       ...voiceSessionSnapshot(),
     });
-    if (voicePath) {
-      await sendLookVoiceTurn(deposit.image_ref, capture);
-    } else {
-      await sendTextChatMessage(questionInput.value.trim(), {
-        source: "look",
-        imageRef: deposit.image_ref,
-      });
-    }
   } catch (error) {
     if (generation !== lookCaptureGeneration) {
       return;
@@ -9309,9 +9589,14 @@ async function handleServerEvent(event) {
       addRetainedContext({ type: "user", text: lastUserTranscript });
       clientLog("user_transcript", { item_id: event.item_id, transcript: lastUserTranscript });
       showUserSubtitleText(lastUserTranscript);
-      // Option 2: on a background question about the active entity, force a verbose
-      // re-fetch + inject grounded context (fire-and-forget; guarded internally).
-      maybeForceVerboseActiveEntityRefetch(lastUserTranscript);
+      // VOICE-AGENT-183: a photo attached and not yet asked about arms this turn, and the
+      // sentence just spoken IS the question about it. Checked before the verbose re-fetch,
+      // because the two are alternatives: one takes over the turn, the other enriches it.
+      if (!startArmedLookTurnFromTranscript(lastUserTranscript)) {
+        // Option 2: on a background question about the active entity, force a verbose
+        // re-fetch + inject grounded context (fire-and-forget; guarded internally).
+        maybeForceVerboseActiveEntityRefetch(lastUserTranscript);
+      }
     }
     inputTranscripts.delete(event.item_id);
   }
@@ -10459,6 +10744,9 @@ questionInput.addEventListener("keydown", (event) => {
 submitQuestionButton.addEventListener("click", submitQuestion);
 syncQuestionInputUi();
 renderLookAttachment();
+// VOICE-AGENT-184: registered at load and never removed. The page-replacing default it
+// neutralises is in force from the first paint, so the guard has to be too.
+registerLookDropListeners();
 setSessionRunning(false);
 updateHistoryButtons();
 newConversationButton.addEventListener("click", startNewConversation);
