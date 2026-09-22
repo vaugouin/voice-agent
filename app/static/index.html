@@ -261,6 +261,13 @@
         <p>Follow on <a class="aboutLink" href="https://x.com/AFistfulOfReels" target="_blank" rel="noopener noreferrer">X</a> and <a class="aboutLink" href="https://www.youtube.com/@AFistfulOfReels" target="_blank" rel="noopener noreferrer">YouTube</a></p>
         <p>Built with AI agents</p>
         <p>Voice via <a class="aboutLink" href="https://platform.openai.com/docs/guides/realtime" target="_blank" rel="noopener noreferrer">OpenAI Realtime API</a></p>
+        <!-- The one credit here that names a MODEL rather than an API, and it is therefore the one
+             that can go stale without anything breaking. The photo is read upstream, by
+             fastapi-text2sql, whose `llm_model_vision` defaults to `gpt-6-astra` but also accepts
+             gpt-4o and the GPT-5.x line. If that default moves, this line becomes false and
+             nothing will fail: check it against `strvisionmodeldefault` in the API's
+             `text2sql.py` when the vision model changes. -->
+        <p>Picture recognition via <a class="aboutLink" href="https://platform.openai.com/docs/guides/images-vision" target="_blank" rel="noopener noreferrer">OpenAI GPT-6 Astra</a></p>
         <p class="aboutSubhead">Data and pictures from</p>
         <ul class="logoRow logoRow--sources" aria-label="Data sources">
           <li><a href="https://www.themoviedb.org" target="_blank" rel="noopener noreferrer"><img class="tmdbLogo" src="./static/icons/tmdb-logo.svg" alt="The Movie Database (TMDB)" title="The Movie Database (TMDB)" /></a></li>
