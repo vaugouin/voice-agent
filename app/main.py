@@ -1477,6 +1477,38 @@ GROUNDED_ABSENCE_INSTRUCTIONS = (
     "plot, production, or reception data does not exist."
 )
 
+# VOICE-AGENT-185. The follow-up that names nobody. Measured twice in one session on
+# 2026-09-22, both on the same Parasite page: "And tell me about the director of this movie?"
+# (15:06) and "And who are the name of the actors?" (15:41). Both went to query_text2sql as
+# bare text, both came back with "Complex entity resolution is required before SQL generation"
+# and zero rows, both cost a blanked screen, a red error and 9 to 11 seconds before the model
+# re-routed itself to the right tool.
+#
+# The cause is in the sentence above this one: the routing rule opens with "When the user asks
+# a cinema, movie, TV, ACTOR, director ... question, call query_text2sql", so a follow-up about
+# the actors matches on the keyword, while the detail-tool sentence speaks of "a specific
+# returned entity" and does not obviously cover "the actors" of a film already on screen.
+#
+# What makes the search the wrong tool here is not the topic, it is the missing subject:
+# /search/text2sql is STATELESS. It receives one question and nothing else, no conversation,
+# no screen. Handed "who are the actors?", it correctly answers that it cannot tell which film
+# is meant. So the rule is written about the subject, not about a list of topics: a list would
+# be whack-a-mole, since the two measured cases had different topics (cast, then director).
+FOLLOW_UP_ROUTING_INSTRUCTIONS = (
+    "Follow-up questions that name no entity: query_text2sql is a STATELESS search. It receives "
+    "your question text and nothing else, with no memory of this conversation and no knowledge "
+    "of what is on screen. Therefore, when the user's question refers to an entity already "
+    "resolved in this conversation rather than naming one ('this movie', 'the actors', 'its "
+    "director', 'the budget', 'her other films'), you MUST call that entity's dedicated detail "
+    "tool with its id, never query_text2sql. Sending such a question to query_text2sql cannot "
+    "work: with no title or name in the text, the search has nothing to resolve and returns an "
+    "error instead of an answer. This holds even when the question is about a topic the search "
+    "handles for a NEW subject, such as actors, directors, box office or awards: what decides "
+    "the tool is whether the question names its own subject, not what the question is about. "
+    "If the user genuinely starts a new search, they will name the new title or person, and "
+    "query_text2sql is then the right call."
+)
+
 # VOICE-AGENT-158. Sent only on a turn that carries an image. The API has already done the
 # reading and the resolving: its vision pre-stage turns the picture into a question in words,
 # composes it deterministically, and answers it with the ordinary pipeline. What the model must
@@ -1862,6 +1894,10 @@ def realtime_session_config(
         + " " + RESULT_COUNT_INSTRUCTIONS
         + " " + DISAMBIGUATION_INSTRUCTIONS
         + " " + GROUNDED_ABSENCE_INSTRUCTIONS
+        # VOICE-AGENT-185: after GROUNDED_ABSENCE, which sends the model to the detail tool
+        # for missing background. This one sends it there for a missing SUBJECT, which is the
+        # other half of the same reflex.
+        + " " + FOLLOW_UP_ROUTING_INSTRUCTIONS
         # VOICE-AGENT-180: carried by every session rather than injected with the photo, for two
         # reasons. A picture turn arrives unannounced, so the rules have to be in place before it
         # does; and the rules must still hold on the FOLLOW-UP turns, which carry no block of
@@ -2782,6 +2818,10 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         + " " + DISAMBIGUATION_INSTRUCTIONS
         + " " + DISAMBIGUATION_TEXT_ADDENDUM
         + " " + GROUNDED_ABSENCE_INSTRUCTIONS
+        # VOICE-AGENT-185: the same rule in both modes, per the VOICE-AGENT-112 lesson. It
+        # bites less here, since /text-chat pre-fires one search per message whatever the
+        # model thinks, but the model still chooses the tools for every turn after that.
+        + " " + FOLLOW_UP_ROUTING_INSTRUCTIONS
         # VOICE-AGENT-143: recomputed on every typed turn, so the text path is always exact.
         + " " + current_date_instructions()
     )

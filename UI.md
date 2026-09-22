@@ -785,14 +785,19 @@ Repeated render stability:
 - Detail signatures include the detail tool/entity, stable entity key, language, error/empty state, and render-relevant detail data excluding non-rendered `wikipedia_content`.
 - Loading a different search/detail, appending a pagination page, opening a different record, or starting a new conversation resets or updates the signature normally.
 
-Failed typed search, no repaint (VOICE-AGENT-142):
+Failed search, no repaint (VOICE-AGENT-142, extended to voice by VOICE-AGENT-185):
 
-- On the typed path (`/text-chat`) the server pre-executes one `query_text2sql` per message, and that search drives the render.
-- When its `diagnostic.reason` is a failure (`no_sql`, `sql_error`, `entity_unresolved`, `ambiguous`, `transient`, `unknown`) and it returned no rows, `renderText2SqlResult()` is **not** called: `#resultsContent` keeps whatever it was showing (a season sheet, an entity detail, a previous result page) and the answer arrives through the subtitle caption only.
+- When a `query_text2sql` result's `diagnostic.reason` is a failure (`no_sql`, `sql_error`, `entity_unresolved`, `ambiguous`, `transient`, `unknown`) and it returned no rows, `renderText2SqlResult()` is **not** called: `#resultsContent` keeps whatever it was showing (a season sheet, an entity detail, a previous result page) and the answer arrives through the subtitle caption or the spoken reply only.
 - `ok` and `empty_result` render normally. `empty_result` is a real answer to a real query ("no film matches") and must be shown; a failure never represented the question, so it has nothing to show.
-- The guard does not apply while `#resultsPanel` is `hidden`: on a cold start there is no view to preserve, so the failure renders its answer block as before.
-- Each skip emits a `forced_search_render_skipped` log entry (`reason`, `result_count`, `forced`), so a log harvest can tell a deliberately preserved screen from one that failed to update.
-- Voice path unchanged: there the model chooses when to search, and a failed search still renders.
+- **Both paths, since VOICE-AGENT-185.** VOICE-AGENT-142 had applied this to the typed path only, reasoning that on the typed path the server pre-executes a search per message whereas in voice the model chooses to search, so a voice failure was meaningful. Measured on 2026-09-22, the model chooses wrong in a recognisable way: a follow-up naming no entity ("who are the actors?") goes to the search, fails, and wipes the film the user was looking at for the three seconds it takes the model to re-route to the detail tool. The model still receives the full output and its diagnostic, so nothing changes for grounding or recovery.
+- The guard does not apply when there was nothing on screen to preserve: on a cold start the failure renders its answer block as before, otherwise a first failed question would leave a blank panel and no word at all. The typed path reads `#resultsPanel.hidden` at decision time; the voice path cannot, because `setLoadingResults()` has already unhidden the panel at tool-call start (VOICE-AGENT-146), so it captures the answer **before** that wipe and passes it to the guard.
+- Each skip emits a `forced_search_render_skipped` log entry (`source` (`voice` or `text`), `reason`, `result_count`, `error`, and `forced` on the typed path), so a log harvest can tell a deliberately preserved screen from one that failed to update, and can read the upstream error that was withheld.
+
+Failure sentences (VOICE-AGENT-185):
+
+- When a failed search **is** rendered, the engine's own error string is never what the user reads. The answer line shows the API's `answer` when it composed one, which on a subject-less question is the useful sentence ("Could you please specify the movie or series you are referring to?"); otherwise `SEARCH_FAILURE_SENTENCES` maps the `diagnostic.reason` to a plain sentence.
+- The `.errorText` paragraph is skipped entirely when it would repeat the answer line, which is the usual case.
+- The raw upstream string keeps two homes, neither of them the default view: the collapsed query-details disclosure (`▶`, beside the justification and the SQL) and `logs/client-*.log`. It reached a user's screen verbatim on 2026-09-22, which is what this rule exists to stop.
 
 ### Text2SQL Answer Block
 

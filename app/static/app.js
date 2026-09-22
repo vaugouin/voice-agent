@@ -4717,15 +4717,25 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
     answer.textContent = output.answer || upstream.answer || `Results for: ${args.query || ""}`;
     answerBlock.append(answer);
 
-    const error = output.error || upstream.error || "";
-    if (error) {
-      const errorEl = document.createElement("p");
-      errorEl.className = "errorText";
-      errorEl.textContent = error;
-      answerBlock.append(errorEl);
+    // VOICE-AGENT-185: a plain sentence, never the engine's own words. "Complex entity
+    // resolution is required before SQL generation" is a note between the pipeline and its
+    // author, and it was read by a user on 2026-09-22. The raw string keeps its place in the
+    // log and in the details disclosure below, which is where someone debugging looks.
+    // Skipped when the answer line above is already saying it, which is the usual case: the API
+    // composes its own user-facing sentence on this failure, and it is better than any map.
+    const rawError = searchErrorText(output);
+    if (rawError) {
+      const sentence = searchFailureSentence(output);
+      if (sentence && sentence !== answer.textContent) {
+        const errorEl = document.createElement("p");
+        errorEl.className = "errorText";
+        errorEl.textContent = sentence;
+        answerBlock.append(errorEl);
+      }
     }
     const detailsText = [
       upstream.justification || "",
+      rawError,
       upstream.sql_query || output.sql_query || "",
       upstream.total_processing_time
         ? `Total processing time: ${Number(upstream.total_processing_time).toFixed(3)}s`
@@ -6147,14 +6157,63 @@ function searchDiagnosticReason(toolOutput) {
   return String(diagnostic.reason || "").trim();
 }
 
-function searchFailedWithNothingToShow(toolOutput) {
+// VOICE-AGENT-185. The two strings a failed search carries, read the same way everywhere: on
+// screen, in the log, and in the sentence shown to the user. `error` is written by the API's
+// engine for its own operators; `answer` is the sentence the API composed FOR the user, and on
+// this failure it is the good one ("Could you please specify the movie or series you are
+// referring to?"). The app used to print the first and ignore the second.
+function searchErrorText(toolOutput) {
+  const upstream = toolOutput?.upstream && typeof toolOutput.upstream === "object" ? toolOutput.upstream : {};
+  return String(toolOutput?.error || upstream.error || "");
+}
+
+function searchUpstreamAnswer(toolOutput) {
+  const upstream = toolOutput?.upstream && typeof toolOutput.upstream === "object" ? toolOutput.upstream : {};
+  return String(toolOutput?.answer || upstream.answer || "");
+}
+
+// VOICE-AGENT-185. What the user is allowed to read. The engine's own phrasing is not it:
+// "Complex entity resolution is required before SQL generation" (fastapi-text2sql main.py:3782)
+// is a note between the pipeline and its author, and it reached a user's screen on 2026-09-22.
+// The app already does this for the vision failures, turning each error_code into a plain
+// sentence; this is the same treatment for the search ones.
+//
+// Order matters. The API's own `answer` wins when there is one, because it was written for the
+// user and is usually more specific than anything that could be written here. The map is the
+// fallback, and the raw string is never shown: it stays in the log, where it belongs.
+const SEARCH_FAILURE_SENTENCES = {
+  no_sql: "I could not tell what this question is about. Name the film, series or person and ask again.",
+  entity_unresolved: "I could not find what this question refers to in the catalogue.",
+  ambiguous: "That could mean several things. Say which one you mean.",
+  sql_error: "Something went wrong building that search.",
+  transient: "The catalogue did not answer in time. Ask again in a moment.",
+  unknown: "That search did not return anything I can show.",
+};
+
+function searchFailureSentence(toolOutput) {
+  const answer = searchUpstreamAnswer(toolOutput);
+  if (answer) {
+    return answer;
+  }
+  const reason = searchDiagnosticReason(toolOutput);
+  return SEARCH_FAILURE_SENTENCES[reason] || SEARCH_FAILURE_SENTENCES.unknown;
+}
+
+// VOICE-AGENT-185 added `hadContent`. The text path can read `resultsPanel.hidden` at the
+// moment of the decision, because nothing has touched the panel yet. The voice path cannot: it
+// calls setLoadingResults() when the tool call STARTS (VOICE-AGENT-146, the screen must not keep
+// showing one film while the voice asks about another), and that unhides the panel. Reading the
+// flag afterwards would always say "there was something to protect", so a failed FIRST search
+// would be withheld and leave the user with a blank panel and no word at all. The voice path
+// therefore captures the answer before the wipe and passes it in.
+function searchFailedWithNothingToShow(toolOutput, { hadContent = !resultsPanel.hidden } = {}) {
   const reason = searchDiagnosticReason(toolOutput);
   if (!SEARCH_FAILURE_REASONS.has(reason)) {
     return false;
   }
   // Nothing on screen yet (cold start, showcase still up): there is no sheet to protect, and
   // silence would leave the user with no visible acknowledgement at all. Render as before.
-  if (resultsPanel.hidden) {
+  if (!hadContent) {
     return false;
   }
   return Number(toolOutput.result_count || 0) <= 0;
@@ -6220,9 +6279,12 @@ async function sendTextChatMessage(text, { source = "typed", imageRef = "" } = {
         // untouched: what is withheld is a painting, not a fact.
         if (searchFailedWithNothingToShow(toolOutput)) {
           clientLog("forced_search_render_skipped", {
+            source: "text",
             forced: toolResult.forced === true,
             reason: searchDiagnosticReason(toolOutput),
             result_count: Number(toolOutput.result_count || 0),
+            // VOICE-AGENT-185: same two fields as the voice path, so one harvest covers both.
+            error: searchErrorText(toolOutput),
           });
         } else {
           await renderText2SqlResult(toolOutput, toolArgs);
@@ -9267,6 +9329,9 @@ async function handleFunctionCall(item) {
   toolCallsInFlight += 1;
   syncMicrophone("tool call started");
   clientLog("tool_call_start", { name: item.name, args, call_id: item.call_id });
+  // VOICE-AGENT-185: read BEFORE setLoadingResults() clears the panel, because it is the only
+  // moment at which "was the user looking at something" still has an answer.
+  const hadResultsOnScreen = !resultsPanel.hidden;
   if (item.name === "query_text2sql") {
     setLoadingResults(args.query, args.ui_language);
   } else {
@@ -9299,9 +9364,33 @@ async function handleFunctionCall(item) {
       // harvest covers voice and text uniformly. Without it a voice log cannot tell a flag
       // that never fired from one that simply is not logged (FASTAPI-TEXT2SQL-157 / -093).
       name_ambiguity_count: output.name_ambiguity?.count ?? null,
+      // VOICE-AGENT-185: the API answers a failed search with HTTP 200 and an `error` field, so
+      // this call is a "success" by every transport measure while a red sentence lands on the
+      // user's screen. Logging the two strings here is what makes that visible turn replayable
+      // offline: `error` is what was shown, `answer` is the sentence the API meant the user to
+      // read. Empty on every ordinary call, which is most of them.
+      error: searchErrorText(output),
+      upstream_answer: searchUpstreamAnswer(output),
     });
     if (item.name === "query_text2sql") {
-      await renderText2SqlResult(output, args);
+      // VOICE-AGENT-185: the guard VOICE-AGENT-142 built for this exact case, which until now
+      // existed only on the text path (sendTextChatMessage). A search that failed with nothing
+      // to show does not get to repaint: the model still receives the output and its diagnostic
+      // below, so grounding and recovery are untouched, and what is withheld is a painting.
+      // Measured twice on 2026-09-22: a follow-up naming no entity ("who are the actors?") wiped
+      // the film that was on screen and put an engine message in its place, for the three
+      // seconds it took the model to re-route itself to get_movie_detail.
+      if (searchFailedWithNothingToShow(output, { hadContent: hadResultsOnScreen })) {
+        clientLog("forced_search_render_skipped", {
+          source: "voice",
+          call_id: item.call_id,
+          reason: searchDiagnosticReason(output),
+          result_count: Number(output.result_count || 0),
+          error: searchErrorText(output),
+        });
+      } else {
+        await renderText2SqlResult(output, args);
+      }
     } else {
       renderEntityDetailOutput(output, args);
     }
