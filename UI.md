@@ -759,7 +759,11 @@ Global results-mode effect:
 
 ### Loading Search Results
 
-`setLoadingResults(query)` is called when the Realtime model calls `query_text2sql`.
+`setLoadingResults(query, uiLanguage, { imageUrl, question })` paints the waiting screen. It is called in three places:
+
+- when the Realtime model calls `query_text2sql` (question shown: the model's `query`);
+- when a picture turn starts on the voice path (`sendLookVoiceTurn`), with the photo and the user's words;
+- on the typed path (`sendTextChatMessage`, VOICE-AGENT-186), only when the turn is a photo turn (the armed photo) or when `#resultsPanel` is hidden. Any other typed question leaves the answer on screen, because `/text-chat` may answer it from context without searching.
 
 It:
 
@@ -769,12 +773,18 @@ It:
 - hides loader, Load more, and end marker
 - clears current pagination state
 - resets loading flags
-- renders one `.answerBlock`
+- renders one `.pendingTurn` block
 
-Loading answer text:
+The waiting screen (VOICE-AGENT-186):
 
-- `Searching: {query}` if a query string exists.
-- `Searching...` otherwise.
+- `.pendingTurnImage`: the attached photo in large (same sizing as the full-size view), on picture turns only.
+- `.pendingTurnQuestion`: the question in large type, when there are words.
+- `.pendingTurnStatus`: `Reading the photo…` on a picture turn, `Searching…` otherwise.
+- A picture turn always repaints, even when its words match the search on screen (a second wordless photo would otherwise keep the first one's answer).
+- It lives inside `#resultsContent`, so any render (result, failure, detail) replaces it. The full-size view opened by clicking the thumbnail (`openLookAttachmentViewer`) lives on `document.body` and is not touched by renders: if the user opened it, it stays when the result arrives.
+- Typed path exit: when the turn ends and the waiting screen is still the only content (text-only answer, `/text-chat` error), `dismissPendingTurn()` removes it and hides `#resultsPanel`.
+- Typed path failure guard: once the waiting screen is painted, `searchFailedWithNothingToShow()` gets `hadContent: false`, so a failed search renders its sentence instead of leaving the waiting screen orphaned.
+- Known limit, voice path: when VOICE-AGENT-185 withholds a failed search after the waiting screen was painted, the waiting screen stays until the model's next tool call (the measured case is the re-route to a detail tool).
 
 Repeated render stability:
 

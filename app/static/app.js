@@ -1981,12 +1981,22 @@ async function logPeerStats(reason, peer) {
   }
 }
 
-function setLoadingResults(query, uiLanguage = "") {
+// VOICE-AGENT-186: the waiting screen shows what was asked, the photo in large when the turn is a
+// picture turn and the question in large type, instead of one small line lost in a black panel.
+// It lives INSIDE #resultsContent on purpose. Every render clears that container, success or
+// failure, so what the app put up here disappears with the answer without any state to track;
+// and the full-size view the user opens from the thumbnail (openLookAttachmentViewer) lives on
+// document.body, which no render touches, so what the user opened stays. Do not turn this into
+// an auto-opened modal: that would need a close hook on every render and error path, and would
+// take the focus away from the text box.
+function setLoadingResults(query, uiLanguage = "", { imageUrl = "", question = "" } = {}) {
   setConversationActive(true);
   activeUiLanguage = uiLanguage
     ? normalizeUiLanguage(uiLanguage)
     : detectUiLanguageFromText(query || lastUserTranscript);
-  if (matchesCurrentSearchRequest(query, activeUiLanguage)) {
+  // A photo is always a new question, even with the same (often empty) words as the search on
+  // screen: without the imageUrl test, a second wordless photo would keep the first one's answer.
+  if (!imageUrl && matchesCurrentSearchRequest(query, activeUiLanguage)) {
     resultsPanel.hidden = false;
     resultsLoader.hidden = true;
     loadMoreButton.hidden = true;
@@ -2008,13 +2018,51 @@ function setLoadingResults(query, uiLanguage = "") {
   loadingMore = false;
   autoPagesLoaded = 0;
 
+  resultsContent.append(buildPendingTurnBlock({ imageUrl, question: question || query }));
+}
+
+function buildPendingTurnBlock({ imageUrl = "", question = "" } = {}) {
   const block = document.createElement("div");
-  block.className = "answerBlock";
-  const text = document.createElement("p");
-  text.className = "answerText";
-  text.textContent = query ? `Searching: ${query}` : "Searching...";
-  block.append(text);
-  resultsContent.append(block);
+  block.className = "pendingTurn";
+  block.setAttribute("role", "status");
+  if (imageUrl) {
+    const image = document.createElement("img");
+    image.className = "pendingTurnImage";
+    image.src = imageUrl;
+    image.alt = "The photo being searched";
+    image.decoding = "async";
+    block.append(image);
+  }
+  const words = String(question || "").trim();
+  if (words) {
+    const text = document.createElement("p");
+    text.className = "pendingTurnQuestion";
+    text.textContent = words;
+    block.append(text);
+  }
+  const status = document.createElement("p");
+  status.className = "pendingTurnStatus";
+  status.textContent = imageUrl ? "Reading the photo…" : "Searching…";
+  block.append(status);
+  return block;
+}
+
+// True while the waiting screen is still the only thing on screen, i.e. no render replaced it.
+function pendingTurnOnScreen() {
+  return resultsContent.childElementCount === 1
+    && resultsContent.firstElementChild?.classList.contains("pendingTurn");
+}
+
+// The typed path's exit (VOICE-AGENT-186). /text-chat may answer from its context with no tool at
+// all, in which case nothing renders and the waiting screen would stay up forever. It is removed
+// and the panel hidden: whatever it showed before the question was already wiped by the waiting
+// screen, so an empty panel would only be a blank one.
+function dismissPendingTurn() {
+  if (!pendingTurnOnScreen()) {
+    return;
+  }
+  clearResultsContent();
+  resultsPanel.hidden = true;
 }
 
 function yearFromDate(value) {
@@ -6257,6 +6305,20 @@ async function sendTextChatMessage(text, { source = "typed", imageRef = "" } = {
   activeUiLanguage = detectUiLanguageFromText(text);
   addRetainedContext({ type: "user", text: transcript });
   setStatus(attachedImageRef ? "Reading the photo" : "Thinking in text", "live");
+  // VOICE-AGENT-186: the waiting screen, on the typed path too, but only where it hides nothing.
+  // A photo turn (the armed photo, passed in as `imageRef`) is a new question and wipes the
+  // screen as the voice picture turn does. A question asked on an empty screen has nothing to
+  // wipe. Any other typed question keeps the answer on screen, because /text-chat may well answer
+  // it from context without searching, and wiping it then would be the VOICE-AGENT-146 lie in
+  // reverse: a blank screen while the voice talks about the film that was there.
+  const photoTurn = Boolean(imageRef);
+  const pendingTurnPainted = photoTurn || resultsPanel.hidden;
+  if (pendingTurnPainted) {
+    setLoadingResults(text, activeUiLanguage, {
+      imageUrl: photoTurn ? lookAttachedImage?.objectUrl || "" : "",
+      question: text,
+    });
+  }
   clientLog("text_chat_sent", {
     length: text.length,
     source,
@@ -6277,7 +6339,12 @@ async function sendTextChatMessage(text, { source = "typed", imageRef = "" } = {
         // VOICE-AGENT-142: a search that failed does not get to repaint. The model still
         // receives the output and its diagnostic below, so grounding and recovery are
         // untouched: what is withheld is a painting, not a fact.
-        if (searchFailedWithNothingToShow(toolOutput)) {
+        // VOICE-AGENT-186: once the waiting screen is painted there is nothing left to protect,
+        // so the failure renders; reading the panel now would see the waiting screen and say
+        // "keep it", leaving it orphaned. Same trap as the voice path's hadResultsOnScreen.
+        if (searchFailedWithNothingToShow(toolOutput, {
+          hadContent: pendingTurnPainted ? false : !resultsPanel.hidden,
+        })) {
           clientLog("forced_search_render_skipped", {
             source: "text",
             forced: toolResult.forced === true,
@@ -6341,6 +6408,7 @@ async function sendTextChatMessage(text, { source = "typed", imageRef = "" } = {
     clientLog("text_chat_error", { source, error: error.message }, "error");
   } finally {
     if (isCurrentTextChatRequest(requestGeneration, requestAbortController)) {
+      dismissPendingTurn();
       textChatAbortController = null;
       textChatInFlight = false;
       updateSessionButtons();
@@ -8294,7 +8362,8 @@ async function sendLookVoiceTurn(imageRef, capture, options = {}) {
   setStatus("Reading the photo", "live");
   // VOICE-AGENT-146: the screen moves off the previous grid before the answer arrives, so a
   // picture turn never leaves the voice talking about one thing while the screen shows another.
-  setLoadingResults(words, args.ui_language);
+  // VOICE-AGENT-186: and what it moves to is the photo itself, in large, with the words under it.
+  setLoadingResults(words, args.ui_language, { imageUrl: capture?.objectUrl || "", question: words });
   // VOICE-AGENT-111: the vision pre-stage plus the pipeline is the longest tool call in the
   // application (the target is under five seconds, not under one), and the response.cancel above
   // has just removed whatever was covering the silence. The early delay, because nothing else is

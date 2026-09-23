@@ -2647,6 +2647,42 @@ body.lookPreviewOpen {
   object-fit: contain;
 }
 
+/* VOICE-AGENT-186: the waiting screen. The photo gets the same treatment as the full-size view
+   above (contained, rounded, as large as the screen allows), and the question is set in large
+   type under it. It sits inside #resultsContent, so the next render replaces it. */
+.pendingTurn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  min-height: 50vh;
+  padding: 16px;
+  text-align: center;
+}
+
+.pendingTurnImage {
+  max-width: min(960px, 100%);
+  max-height: 62vh;
+  border-radius: 10px;
+  object-fit: contain;
+}
+
+.pendingTurnQuestion {
+  max-width: 40ch;
+  margin: 0;
+  color: var(--text-primary);
+  font-size: clamp(1.25rem, 3.2vw, 2rem);
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+
+.pendingTurnStatus {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
+
 /* A phone in landscape is 430px tall: the confirmation has to give the image what is left after
    the buttons, and the buttons must stay on one row. */
 @media (orientation: landscape) and (max-height: 520px) {
@@ -2662,5 +2698,19 @@ body.lookPreviewOpen {
   .lookPreviewActions button {
     min-height: 38px;
     padding: 0 12px;
+  }
+
+  .pendingTurn {
+    gap: 8px;
+    min-height: 0;
+    padding: 8px;
+  }
+
+  .pendingTurnImage {
+    max-height: 58vh;
+  }
+
+  .pendingTurnQuestion {
+    font-size: 1.1rem;
   }
 }
