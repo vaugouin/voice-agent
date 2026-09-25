@@ -2002,7 +2002,11 @@ def realtime_session_config(
                 "turn_detection": {
                     "type": "server_vad",
                     "threshold": 0.5,
-                    "prefix_padding_ms": 300,
+                    # VOICE-AGENT-192: 300 -> 800. The VAD keeps only this much audio from
+                    # before the point where it detects speech. A quiet opening phrase after
+                    # silence ("In space," then a pause, then a louder "no one can hear you
+                    # scream") was detected late and lost for both the transcript and the model.
+                    "prefix_padding_ms": 800,
                     "silence_duration_ms": 700,
                     "create_response": True,
                     "interrupt_response": True,
@@ -3388,6 +3392,12 @@ HARNESS_LOG_EVENTS = frozenset({
     # whose firing is invisible cannot be told apart from a guard that never fires, and this
     # one has to be watched for false positives on real speech.
     "user_transcript_discarded",
+    # VOICE-AGENT-192. Where the server VAD placed the start and end of each spoken turn, in
+    # milliseconds of the session's input audio, keyed by the same item_id as user_transcript.
+    # Without them a transcript missing its first words ("In space" in the 2026-09-24 riddle
+    # replay) cannot be told apart from a user who said less: the cut is invisible.
+    "speech_started",
+    "speech_stopped",
     "assistant_transcript",
     "text_chat_sent",
     "text_chat_success",

@@ -9701,6 +9701,13 @@ async function handleServerEvent(event) {
   clientLog("realtime_event", summarizeRealtimeEvent(event), event.type === "error" ? "error" : "info");
 
   if (event.type === "input_audio_buffer.speech_started") {
+    // VOICE-AGENT-192: logged before the muted early return, so a detection that is ignored
+    // still leaves its trace. audio_start_ms already includes the prefix padding.
+    clientLog("speech_started", {
+      item_id: event.item_id,
+      audio_start_ms: event.audio_start_ms,
+      mic_enabled: localAudioTrack?.enabled ?? null,
+    });
     if (activeResponseId || activeAudioResponseId) {
       resetSpokenAudioHighlightState();
       resetRealtimeSpokenSubtitles({ clearVisible: spokenSubtitlesEnabled() });
@@ -9715,6 +9722,13 @@ async function handleServerEvent(event) {
       return;
     }
     setStatus("Listening", "live");
+  }
+
+  if (event.type === "input_audio_buffer.speech_stopped") {
+    clientLog("speech_stopped", {
+      item_id: event.item_id,
+      audio_end_ms: event.audio_end_ms,
+    });
   }
 
   if (event.type === "input_audio_buffer.committed") {
