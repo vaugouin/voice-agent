@@ -1990,6 +1990,9 @@ async function logPeerStats(reason, peer) {
 // an auto-opened modal: that would need a close hook on every render and error path, and would
 // take the focus away from the text box.
 function setLoadingResults(query, uiLanguage = "", { imageUrl = "", question = "" } = {}) {
+  // The showcase sits above #resultsPanel, so a waiting screen painted while it is up would land
+  // under it. The voice path closes it in start(); the typed path only reaches it here.
+  dismissLaunchShowcase();
   setConversationActive(true);
   activeUiLanguage = uiLanguage
     ? normalizeUiLanguage(uiLanguage)
