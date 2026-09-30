@@ -4,6 +4,7 @@ __pycache__/
 *.py[cod]
 
 logs/*.log
+doc/logs-download/logs/
 uvicorn.err.log
 uvicorn.out.log
 

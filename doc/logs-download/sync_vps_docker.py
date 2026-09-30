@@ -12,7 +12,11 @@ Pulls NEW and NEWER files from the VPS down into the local copy, over SFTP
     an endless re-copy loop. Use --strict-mtime for the old timestamp-trusting
     behavior.
   * Creates any missing local directories.
-  * NEVER deletes anything locally — files removed on the VPS stay in the mirror.
+  * By default NEVER deletes anything locally: files removed on the VPS stay in
+    the mirror. Opt in with VPS_DELETE=true in .env to also remove local files and
+    folders that no longer exist on the VPS. Deletion only happens inside folders this run
+    actually listed on the VPS: excluded paths, skipped symlinks, other roots, and
+    folders whose remote listing failed are never touched.
   * One-way only (remote -> local). Local changes are never pushed up.
   * Resilient to dropped SFTP sessions: if the SSH transport dies mid-walk, the
     session is rebuilt and the failing operation retried, and a failure in one
@@ -43,7 +47,7 @@ Credentials live in a `.env` file beside this script (see .env.example) and are
 loaded automatically. Real environment variables override .env; CLI flags
 override both. Recognised keys: VPS_HOST, VPS_PORT, VPS_USER, VPS_REMOTE,
 VPS_LOCAL, VPS_EXTRA_ROOTS, VPS_KEY_FILE, VPS_KEY_PASSPHRASE,
-VPS_SSH_PASSWORD. The .env is
+VPS_SSH_PASSWORD, VPS_DELETE. The .env is
 git/docker-ignored.
 
 VPS_KEY_FILE accepts three path forms, all resolved by resolve_path():
@@ -57,6 +61,7 @@ Usage (PowerShell):
   copy .env.example .env   # then edit .env and set VPS_SSH_PASSWORD
   python sync_vps_docker.py              # root@host, full tree minus excludes
   python sync_vps_docker.py --dry-run    # show what WOULD be copied
+  python sync_vps_docker.py --dry-run    # with VPS_DELETE=true, also shows what WOULD be deleted
   python sync_vps_docker.py --user debian  # non-root (skips root-owned files)
 
 Root login: if the server only allows root by password (no root SSH key), set
@@ -70,6 +75,7 @@ import argparse
 import fnmatch
 import os
 import posixpath
+import shutil
 import stat
 import sys
 import time
@@ -136,6 +142,8 @@ class Stats:
         self.bytes_copied = 0
         self.excluded = 0
         self.reconnects = 0
+        self.deleted_files = 0
+        self.deleted_dirs = 0
 
 
 def human(n: float) -> str:
@@ -184,6 +192,16 @@ class CopyLog:
         copy_time = time.strftime("%Y-%m-%d %H:%M:%S")
         self.fh.write(f"{copy_time}\t{remote_path}\t"
                       f"{os.path.abspath(local_path)}\t{_fmt_time(source_mtime)}\n")
+        self.fh.flush()
+
+    def record_delete(self, remote_path: str, local_path: str, kind: str) -> None:
+        """Log a local deletion (VPS_DELETE); the last column reads DELETED (<kind>)."""
+        if not self.path:
+            return
+        self._ensure_open()
+        op_time = time.strftime("%Y-%m-%d %H:%M:%S")
+        self.fh.write(f"{op_time}\t{remote_path}\t"
+                      f"{os.path.abspath(local_path)}\tDELETED ({kind})\n")
         self.fh.flush()
 
     def close(self) -> None:
@@ -345,9 +363,68 @@ def copy_file(session, remote_path: str, local_path: str, remote_attr, stats: St
         print(f"  !! FAILED: {remote_path}  ({exc})", file=sys.stderr)
 
 
+def _force_remove(func, path, _exc) -> None:
+    """rmtree error handler: clear the read-only bit (Windows) and retry once."""
+    os.chmod(path, stat.S_IWRITE)
+    func(path)
+
+
+def delete_extraneous(remote_dir: str, local_dir: str, remote_names: set[str],
+                      stats: Stats, excludes: list[str], other_roots: set[str],
+                      dry_run: bool, log: CopyLog) -> None:
+    """Remove local entries of *local_dir* that are absent from *remote_names*.
+
+    Called only after a successful remote listing of *remote_dir*, so a failed or
+    partial listing can never wipe the local folder. Local entries that match an
+    exclude rule or map to another mirrored root are out of scope and kept.
+    Names are compared with os.path.normcase, so on Windows a case-only rename
+    on the VPS does not delete the local copy it just overwrote.
+    """
+    try:
+        local_names = os.listdir(local_dir)
+    except OSError:
+        return  # local folder absent (e.g. dry run) or unreadable: nothing to do
+
+    for name in sorted(local_names):
+        if os.path.normcase(name) in remote_names:
+            continue
+        remote_path = posixpath.join(remote_dir, name)
+        if remote_path in other_roots or is_excluded(remote_path, name, excludes):
+            continue
+        local_path = os.path.join(local_dir, name)
+        is_dir = os.path.isdir(local_path) and not os.path.islink(local_path)
+        kind = "dir" if is_dir else "file"
+        if dry_run:
+            print(f"  WOULD DELETE ({kind}): {local_path}")
+        else:
+            try:
+                if is_dir:
+                    if sys.version_info >= (3, 12):
+                        shutil.rmtree(local_path, onexc=_force_remove)
+                    else:
+                        shutil.rmtree(local_path, onerror=_force_remove)
+                else:
+                    try:
+                        os.remove(local_path)
+                    except PermissionError:
+                        os.chmod(local_path, stat.S_IWRITE)
+                        os.remove(local_path)
+            except OSError as exc:
+                stats.failed += 1
+                print(f"  !! DELETE FAILED: {local_path}  ({exc})", file=sys.stderr)
+                continue
+            log.record_delete(remote_path, local_path, kind)
+            print(f"  DELETED ({kind}): {local_path}")
+        if is_dir:
+            stats.deleted_dirs += 1
+        else:
+            stats.deleted_files += 1
+
+
 def sync_dir(session, remote_dir: str, local_dir: str, stats: Stats,
              excludes: list[str], follow_symlinks: bool, dry_run: bool,
-             other_roots: set[str], log: CopyLog, strict_mtime: bool = False) -> None:
+             other_roots: set[str], log: CopyLog, strict_mtime: bool = False,
+             delete: bool = False) -> None:
     try:
         entries = session.listdir_attr(remote_dir)
     except (PermissionError, IOError, OSError) as exc:
@@ -383,7 +460,7 @@ def sync_dir(session, remote_dir: str, local_dir: str, stats: Stats,
 
         if stat.S_ISDIR(mode) or (stat.S_ISLNK(mode) and follow_symlinks):
             sync_dir(session, remote_path, local_path, stats, excludes,
-                     follow_symlinks, dry_run, other_roots, log, strict_mtime)
+                     follow_symlinks, dry_run, other_roots, log, strict_mtime, delete)
         elif stat.S_ISREG(mode):
             do_copy, reason = should_copy(attr, local_path, strict_mtime)
             if do_copy:
@@ -408,6 +485,13 @@ def sync_dir(session, remote_dir: str, local_dir: str, stats: Stats,
         else:
             # FIFO, socket, device — never mirror these.
             stats.excluded += 1
+
+    if delete:
+        # Every name the VPS listed counts as present, whatever happened to it
+        # above (copied, excluded, skipped symlink, special file, own root).
+        remote_names = {os.path.normcase(a.filename) for a in entries}
+        delete_extraneous(remote_dir, local_dir, remote_names, stats, excludes,
+                          other_roots, dry_run, log)
 
 
 def connect(args) -> paramiko.SSHClient:
@@ -586,8 +670,16 @@ def main() -> int:
                         "(legacy behavior). Default is size-first: a timestamp-only "
                         "drift realigns the local mtime instead of re-downloading.")
     p.add_argument("--dry-run", action="store_true",
-                   help="Report what would be copied without writing anything")
+                   help="Report what would be copied (and deleted) without writing anything")
     args = p.parse_args()
+
+    # Deletion propagation is set in the .env only (VPS_DELETE), not on the CLI:
+    # a destructive mode belongs to the mirror's config, not to a one-off flag.
+    delete_raw = env("VPS_DELETE", "false").strip().lower()
+    if delete_raw not in ("true", "1", "yes", "on", "false", "0", "no", "off"):
+        print(f"ERROR: VPS_DELETE must be true or false, got {delete_raw!r}.", file=sys.stderr)
+        return 2
+    args.delete = delete_raw in ("true", "1", "yes", "on")
 
     missing = [label for label, val in (("VPS_HOST / --host", args.host),
                                         ("VPS_LOCAL / --local", args.local)) if not val]
@@ -641,7 +733,8 @@ def main() -> int:
 
     print(f"Syncing  {args.user}@{args.host}  (local base: {local_base})")
     print(f"Mode: {'DRY RUN' if args.dry_run else 'LIVE'} | "
-          f"symlinks: {'followed' if args.follow_symlinks else 'skipped'}")
+          f"symlinks: {'followed' if args.follow_symlinks else 'skipped'} | "
+          f"deletions: {'propagated' if args.delete else 'off'}")
     if args.exclude_file and os.path.isfile(args.exclude_file):
         print(f"Exclude file: {args.exclude_file}")
     print(f"Exclude rules ({len(excludes)}): {excludes if excludes else '(none — full tree)'}")
@@ -674,7 +767,8 @@ def main() -> int:
             try:
                 sync_dir(session, remote_root, local_root, stats, excludes,
                          follow_symlinks=args.follow_symlinks, dry_run=args.dry_run,
-                         other_roots=other_roots, log=log, strict_mtime=args.strict_mtime)
+                         other_roots=other_roots, log=log, strict_mtime=args.strict_mtime,
+                         delete=args.delete)
             except Exception as exc:  # noqa: BLE001 — isolate a root failure so the
                 # remaining roots still sync (e.g. a reconnect that ultimately failed).
                 stats.failed += 1
@@ -703,6 +797,8 @@ def main() -> int:
     print(f"  mtime realgn: {stats.reconciled}")
     print(f"  excluded:     {stats.excluded}")
     print(f"  dirs created: {stats.dirs_created}")
+    if args.delete:
+        print(f"  deleted:      {stats.deleted_files} files, {stats.deleted_dirs} dirs")
     print(f"  failed:       {stats.failed}")
     print(f"  reconnects:   {stats.reconnects}")
     print(f"  data copied:  {human(stats.bytes_copied)}")
