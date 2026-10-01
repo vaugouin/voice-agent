@@ -259,6 +259,19 @@ DEFAULT_REALTIME_VOICE = "ash"
 DEFAULT_REALTIME_MODEL = "gpt-realtime-2"
 DEFAULT_TRANSCRIPTION_MODEL = "gpt-4o-transcribe"
 
+
+def transcription_model() -> str:
+    """The speech-to-text model, read from OPENAI_TRANSCRIPTION_MODEL on every call.
+
+    LLM-TASKS-007: the Realtime session block used the constant directly and ignored the env
+    var that the /transcribe endpoint honoured, so a test of another transcription model
+    silently covered only the dictation path. Both paths now go through this function.
+    """
+    return (
+        os.getenv("OPENAI_TRANSCRIPTION_MODEL", DEFAULT_TRANSCRIPTION_MODEL).strip()
+        or DEFAULT_TRANSCRIPTION_MODEL
+    )
+
 # VOICE-AGENT-102. The session used to pin transcription to English. Speaking French to a
 # transcriber locked on "en" does not degrade gracefully: it returns a fluent, plausible,
 # wrong English-shaped sentence ("Le Ciel qui appartient a la Britannia" for "les films qui
@@ -340,7 +353,7 @@ def realtime_transcription_config() -> dict[str, Any]:
     treats an absent key as auto-detect, and sending an empty string is not the same thing.
     """
     config: dict[str, Any] = {
-        "model": DEFAULT_TRANSCRIPTION_MODEL,
+        "model": transcription_model(),
         "prompt": transcription_prompt(),
     }
     if REALTIME_TRANSCRIPTION_LANGUAGE:
@@ -2235,10 +2248,7 @@ async def transcribe_audio(request: Request) -> dict[str, Any]:
     content_type = request.headers.get("content-type", "audio/webm")
     media_type = content_type.split(";", 1)[0].strip().lower() or "audio/webm"
     extension = transcription_file_extension(content_type)
-    model = (
-        os.getenv("OPENAI_TRANSCRIPTION_MODEL", DEFAULT_TRANSCRIPTION_MODEL).strip()
-        or DEFAULT_TRANSCRIPTION_MODEL
-    )
+    model = transcription_model()
 
     async with httpx.AsyncClient(timeout=60) as client:
         try:

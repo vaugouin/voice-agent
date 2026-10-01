@@ -258,9 +258,16 @@
       <section id="appMenuAboutScreen" class="appMenuScreen appMenuSection" aria-labelledby="aboutTitle" data-app-menu-screen="about" hidden>
         <p class="aboutAppName" id="aboutTitle">You talkin' to me?</p>
         <p>Design by <a class="aboutLink" href="https://x.com/AFistfulOfReels" target="_blank" rel="noopener noreferrer">A Fistful of Reels</a></p>
-        <p>Follow on <a class="aboutLink" href="https://x.com/AFistfulOfReels" target="_blank" rel="noopener noreferrer">X</a> and <a class="aboutLink" href="https://www.youtube.com/@AFistfulOfReels" target="_blank" rel="noopener noreferrer">YouTube</a></p>
+        <p>Follow on <a class="aboutLink" href="https://x.com/AFistfulOfReels" target="_blank" rel="noopener noreferrer">X</a> , <a class="aboutLink" href="https://www.youtube.com/@AFistfulOfReels" target="_blank" rel="noopener noreferrer">YouTube</a> and <a class="aboutLink" href="https://www.tiktok.com/@afistfulofreels" target="_blank" rel="noopener noreferrer">TikTok</a></p>
         <p>Built with AI agents</p>
         <p>Voice via <a class="aboutLink" href="https://platform.openai.com/docs/guides/realtime" target="_blank" rel="noopener noreferrer">OpenAI Realtime API</a></p>
+        <!-- Names the provider, not the models, on purpose. A spoken or typed question goes through
+             several upstream LLM tasks in fastapi-text2sql (entity extraction, text-to-SQL, answer
+             entity, complex question, single value), and on 2026-10-01 they ran on two different
+             models, gpt-4o and gpt-6-luna, with a GPT-6 campaign under way to move more of them. A
+             model name here would be wrong for some tasks today and stale after the next switch.
+             Inventory: Nestor projets/t2s-backlog/topics/llm-tasks.md. -->
+        <p>Questions turned into database searches via <a class="aboutLink" href="https://platform.openai.com/docs/models" target="_blank" rel="noopener noreferrer">OpenAI models</a></p>
         <!-- The one credit here that names a MODEL rather than an API, and it is therefore the one
              that can go stale without anything breaking. The photo is read upstream, by
              fastapi-text2sql, whose `llm_model_vision` defaults to `gpt-6-astra` but also accepts
