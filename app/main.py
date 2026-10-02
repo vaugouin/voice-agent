@@ -257,7 +257,15 @@ REALTIME_VOICES = {
 }
 DEFAULT_REALTIME_VOICE = "ash"
 DEFAULT_REALTIME_MODEL = "gpt-realtime-2"
-DEFAULT_TRANSCRIPTION_MODEL = "gpt-4o-transcribe"
+# LLM-TASKS-009: gpt-4o-transcribe is shut off by OpenAI on 2027-02-26. gpt-transcribe serves
+# both paths (the Realtime session block and the /audio/transcriptions file endpoint), which
+# gpt-live-transcribe does not: it is offered on Realtime transcription only.
+DEFAULT_TRANSCRIPTION_MODEL = "gpt-transcribe"
+
+# Models older than gpt-transcribe reject the `keywords` and `languages` fields with a 400
+# (measured 2026-10-02 on gpt-4o-transcribe). Pointing OPENAI_TRANSCRIPTION_MODEL back at one
+# of them restores the pre-009 request shape: the whole vocabulary inside the prompt.
+_LEGACY_TRANSCRIPTION_PREFIXES = ("gpt-4o", "whisper")
 
 
 def transcription_model() -> str:
@@ -272,6 +280,11 @@ def transcription_model() -> str:
         or DEFAULT_TRANSCRIPTION_MODEL
     )
 
+
+def transcription_takes_hints(model: str) -> bool:
+    """True when the model accepts the `keywords` and `languages` fields (LLM-TASKS-009)."""
+    return not model.startswith(_LEGACY_TRANSCRIPTION_PREFIXES)
+
 # VOICE-AGENT-102. The session used to pin transcription to English. Speaking French to a
 # transcriber locked on "en" does not degrade gracefully: it returns a fluent, plausible,
 # wrong English-shaped sentence ("Le Ciel qui appartient a la Britannia" for "les films qui
@@ -280,6 +293,17 @@ def transcription_model() -> str:
 # gesture between two turns. The variable stays as the way back: if auto-detection turns out
 # to mangle short English turns, pin it to "en" without touching code or shipping a build.
 REALTIME_TRANSCRIPTION_LANGUAGE = (os.getenv("REALTIME_TRANSCRIPTION_LANGUAGE") or "").strip()
+
+# LLM-TASKS-009. gpt-transcribe takes a list of expected languages, a hint and not a lock: it
+# keeps auto-detection between them, which is what VOICE-AGENT-102 needed. On the 2026-10-02
+# bench it also stopped one short English turn from coming back in Cyrillic. Comma-separated
+# ISO-639-1 codes; empty sends no hint. A pinned REALTIME_TRANSCRIPTION_LANGUAGE wins on the
+# Realtime path, since the API refuses `language` and `languages` together.
+TRANSCRIPTION_LANGUAGES = tuple(
+    code.strip()
+    for code in (os.getenv("TRANSCRIPTION_LANGUAGES", "en,fr") or "").split(",")
+    if code.strip()
+)
 
 # VOICE-AGENT-128. A generic language model hears "back surface" for "box office" and "the
 # titan song list" for "Sight and Sound": 4 turns lost out of 12 in one rehearsal, and twice
@@ -292,8 +316,15 @@ ASR_DOMAIN_TERMS = tuple(LEXICONS["asr_domain_terms"])
 ASR_PROPER_NOUNS = tuple(LEXICONS["asr_proper_nouns"])
 
 
-def transcription_prompt() -> str:
+def transcription_prompt(model: str | None = None) -> str:
     """Domain bias handed to the speech-to-text step (VOICE-AGENT-128).
+
+    LLM-TASKS-009: on a model that takes hints, the prompt is the framing alone and the
+    vocabulary travels in `keywords` (transcription_keywords()). Measured on 2026-10-02 over
+    111 clips cut from the recorded videos: framing + keywords + languages gave the lowest
+    word error rate (5.4 %, against 5.5 % with the list in the prompt and 6.0 % with no list)
+    and kept "Jeanne Dielman" and "Grand Illusion", which the bare model missed. A legacy
+    model gets the original shape below.
 
     A short framing, then the vocabulary. The framing used to carry a French sentence, so
     that removing the language lock (VOICE-AGENT-102) would not be undone by an English-only
@@ -305,7 +336,19 @@ def transcription_prompt() -> str:
     in as many words; the proper nouns do the domain work by themselves, being spelled the
     same in both languages.
     """
+    if transcription_takes_hints(model or transcription_model()):
+        return " ".join(ASR_PROMPT_INTRO)
     return " ".join(ASR_PROMPT_INTRO) + " " + ", ".join(ASR_DOMAIN_TERMS + ASR_PROPER_NOUNS) + "."
+
+
+def transcription_keywords() -> list[str]:
+    """The vocabulary as `keywords` items: one line each, without `<` or `>` (API rule)."""
+    keywords = []
+    for term in ASR_DOMAIN_TERMS + ASR_PROPER_NOUNS:
+        cleaned = re.sub(r"[<>\r\n]+", " ", term).strip()
+        if cleaned:
+            keywords.append(cleaned)
+    return keywords
 
 
 # VOICE-AGENT-167. Handed silence, the transcriber returns the prompt above as its
@@ -323,7 +366,10 @@ def _asr_echo_key(value: str) -> str:
 ASR_VOCABULARY_KEYS = frozenset(
     key for key in (_asr_echo_key(t) for t in ASR_DOMAIN_TERMS + ASR_PROPER_NOUNS) if key
 )
-ASR_PROMPT_ECHO_TEXT = _asr_echo_key(transcription_prompt())
+# Built from the lists and not from transcription_prompt(), exactly as app.js does, so the
+# guard still knows the whole vocabulary when the prompt carries only the framing
+# (LLM-TASKS-009). A keyword list coming back on silence is caught by the list-shape rule.
+ASR_PROMPT_ECHO_TEXT = _asr_echo_key(" ".join(ASR_PROMPT_INTRO + ASR_DOMAIN_TERMS + ASR_PROPER_NOUNS))
 
 
 def is_asr_prompt_echo(value: str) -> bool:
@@ -352,12 +398,17 @@ def realtime_transcription_config() -> dict[str, Any]:
     `language` is omitted entirely when REALTIME_TRANSCRIPTION_LANGUAGE is empty: the API
     treats an absent key as auto-detect, and sending an empty string is not the same thing.
     """
+    model = transcription_model()
     config: dict[str, Any] = {
-        "model": transcription_model(),
-        "prompt": transcription_prompt(),
+        "model": model,
+        "prompt": transcription_prompt(model),
     }
+    if transcription_takes_hints(model):
+        config["keywords"] = transcription_keywords()
     if REALTIME_TRANSCRIPTION_LANGUAGE:
         config["language"] = REALTIME_TRANSCRIPTION_LANGUAGE
+    elif transcription_takes_hints(model) and TRANSCRIPTION_LANGUAGES:
+        config["languages"] = list(TRANSCRIPTION_LANGUAGES)
     return config
 
 
@@ -2242,6 +2293,20 @@ async def create_realtime_session(request: Request) -> PlainTextResponse:
     return PlainTextResponse(answer_sdp, media_type="application/sdp", headers=headers)
 
 
+def transcription_form_fields(model: str) -> dict[str, Any]:
+    """Multipart fields of the dictation upload, the same bias as the Realtime block.
+
+    The list fields go as `keywords[]` / `languages[]`, the form the API parses (checked
+    2026-10-02: an invalid item under that name is refused, so the field is read).
+    """
+    fields: dict[str, Any] = {"model": model, "prompt": transcription_prompt(model)}
+    if transcription_takes_hints(model):
+        fields["keywords[]"] = transcription_keywords()
+        if TRANSCRIPTION_LANGUAGES:
+            fields["languages[]"] = list(TRANSCRIPTION_LANGUAGES)
+    return fields
+
+
 @app.post("/transcribe")
 async def transcribe_audio(request: Request) -> dict[str, Any]:
     api_key = os.getenv("OPENAI_API_KEY")
@@ -2265,9 +2330,9 @@ async def transcribe_audio(request: Request) -> dict[str, Any]:
                 "https://api.openai.com/v1/audio/transcriptions",
                 headers={"Authorization": f"Bearer {api_key}"},
                 # VOICE-AGENT-128: the dictation upload gets the same domain bias as the
-                # Realtime session. It never carried a language pin, so it needs nothing
-                # from VOICE-AGENT-102, only the vocabulary.
-                data={"model": model, "prompt": transcription_prompt()},
+                # Realtime session. It never carried a language pin; since LLM-TASKS-009 it
+                # carries the same `languages` hint, never REALTIME_TRANSCRIPTION_LANGUAGE.
+                data=transcription_form_fields(model),
                 files={"file": (f"dictation.{extension}", audio_bytes, media_type)},
             )
         except httpx.HTTPError as exc:

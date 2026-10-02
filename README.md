@@ -64,13 +64,14 @@ Create `.env` from `.env.example`:
 OPENAI_API_KEY=sk-your-key-here
 OPENAI_TEXT_MODEL=gpt-6-sol
 OPENAI_REALTIME_MODEL=gpt-realtime-2
-OPENAI_TRANSCRIPTION_MODEL=gpt-4o-transcribe
+OPENAI_TRANSCRIPTION_MODEL=gpt-transcribe
 ENABLE_STRUCTURED_CARD_FOCUS=true
 ENABLE_SPOKEN_SUBTITLES=false
 ENABLE_USER_TRANSCRIPT_SUBTITLES=false
 AGENT_SOUL=default
 AGENT_TIMEZONE=Europe/Paris
 REALTIME_TRANSCRIPTION_LANGUAGE=
+TRANSCRIPTION_LANGUAGES=en,fr
 
 TEXT2SQL_BASE_URL=http://your_host:8000
 TEXT2SQL_API_KEY_NAME=X-API-Key
@@ -209,9 +210,9 @@ The server creates a session with:
 
 - model: `OPENAI_REALTIME_MODEL`, default `gpt-realtime-2`
 - voice: selected server-side by `AGENT_VOICE` (currently `shimmer`; falls back to `ash` if unset)
-- input transcription: `gpt-4o-transcribe`, **language auto-detected** and biased with a domain lexicon
+- input transcription: `gpt-transcribe` (`gpt-4o-transcribe` until 1.2.1; OpenAI shuts it off on 2027-02-26), **language auto-detected** between the `TRANSCRIPTION_LANGUAGES` hint (`en,fr` by default) and biased with a domain lexicon
   - The session no longer pins the spoken language. Set `REALTIME_TRANSCRIPTION_LANGUAGE=en` (or any language code) to pin it again; leave it empty, the default, for auto-detection. Pinning is not neutral when the wrong language is spoken: a transcriber locked on English does not degrade, it returns a fluent and wrong English-shaped sentence, so a bilingual demo needs the empty value.
-  - The `prompt` field carries a short cinema vocabulary (`asr_prompt_intro`, `asr_domain_terms`, `asr_proper_nouns` in [app/lexicons.json](app/lexicons.json)). Without it the transcriber hears "back surface" for "box office" and "the titan song list" for "Sight and Sound". Edit `asr_proper_nouns` before a demo or a shoot to add the names that will actually be spoken; keep the list short, since an over-long prompt makes the transcriber hallucinate the terms it was primed with. The same lexicon is sent with the `/transcribe` dictation upload.
+  - The cinema vocabulary lives in [app/lexicons.json](app/lexicons.json) (`asr_prompt_intro`, `asr_domain_terms`, `asr_proper_nouns`). On `gpt-transcribe` the `prompt` carries only the framing sentences and the terms go in the dedicated `keywords` field; pointing `OPENAI_TRANSCRIPTION_MODEL` back at a `gpt-4o-*` or `whisper` model restores the old shape, every term inside the `prompt`, since those models refuse `keywords` and `languages`. The 2026-10-02 bench behind the change (111 clips cut from the recorded videos, four arms) is in LLM-TASKS-009 of the Nestor backlog. Without it the transcriber hears "back surface" for "box office" and "the titan song list" for "Sight and Sound". Edit `asr_proper_nouns` before a demo or a shoot to add the names that will actually be spoken; keep the list short, since an over-long prompt makes the transcriber hallucinate the terms it was primed with. The same lexicon is sent with the `/transcribe` dictation upload.
 - input noise reduction: `near_field` (server-side, applied before turn detection/transcription; suppresses room noise and the assistant's own echo that the browser `echoCancellation` was letting through as phantom user turns)
 - turn detection: server VAD (threshold 0.5, `prefix_padding_ms` 800, `silence_duration_ms` 700). The padding was raised from 300 in 1.1.8 (VOICE-AGENT-192): a quiet first phrase after silence was detected late and its words lost. Each detection is logged as `speech_started` (`audio_start_ms`, padding included) and `speech_stopped` (`audio_end_ms`) in `logs/client.log`, with the same `item_id` as the `user_transcript` of that turn.
 - tools: `query_text2sql` plus dedicated detail tools for movies, series, seasons, episodes, persons, companies, networks, collections, topics, lists, movements, technicals, genres, groups, deaths, awards, nominations, and locations
@@ -643,7 +644,7 @@ Two limits worth knowing. A photo can only ride the voice path once the session 
 
 The app uses `app/static/icons/voice-agent-1254x1254.png` as its browser favicon, Apple touch icon, and web manifest icon. The manifest is served from `/static/site.webmanifest`, with `start_url` and `scope` pointing back to the app root so iPhone home-screen shortcuts launch `/` instead of `/static/`. Modern browsers and iOS Safari can use the PNG directly; an `.ico` file is optional legacy fallback and is not required for browser tabs or iPhone Add to Home Screen.
 
-The `/transcribe` endpoint forwards browser-recorded dictation audio to the OpenAI audio transcription API with `OPENAI_TRANSCRIPTION_MODEL`, defaulting to `gpt-4o-transcribe`, and returns the transcript text to the browser. The Realtime session's input transcription reads the same variable, through the same `transcription_model()` helper, so one setting moves both speech-to-text paths.
+The `/transcribe` endpoint forwards browser-recorded dictation audio to the OpenAI audio transcription API with `OPENAI_TRANSCRIPTION_MODEL`, defaulting to `gpt-transcribe`, with the same `prompt`, `keywords` and `languages` hint as the Realtime session, and returns the transcript text to the browser. The Realtime session's input transcription reads the same variable, through the same `transcription_model()` helper, so one setting moves both speech-to-text paths.
 
 The `/text-chat` endpoint calls the OpenAI Responses API with `OPENAI_TEXT_MODEL`, defaulting to `gpt-6-sol` (`gpt-5.1` until 1.1.11; OpenAI shuts `gpt-5.1` off on 2027-04-01). The client sends compact retained conversation context with the text message so follow-up typed or dictated turns can stay coherent. To guarantee the same visible behavior as the audio agent, the endpoint always executes `query_text2sql` once for the submitted message before asking the text model to answer. It returns that forced tool output to the browser for card rendering, provides it to the model as grounded context, and still exposes every detail lookup tool so the text model can request entity pages when needed.
 
