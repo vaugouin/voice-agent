@@ -2686,7 +2686,7 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
     # VOICE-AGENT-118. /text-chat takes a JSON payload and no Request object, so the persona
     # slug travels in the body here while the voice path puts it on the /session query string.
     active_soul = resolve_soul(payload.soul)
-    model = os.getenv("OPENAI_TEXT_MODEL", "gpt-5.1")
+    model = os.getenv("OPENAI_TEXT_MODEL", "gpt-6-sol")
     verbose_detail_request = is_verbose_detail_request(message)
     generic_verbose_detail_request = is_generic_verbose_detail_request(message)
     # VOICE-AGENT-104: pre-fetch the active entity's verbose detail not only on the terse

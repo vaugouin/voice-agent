@@ -61,7 +61,7 @@ Create `.env` from `.env.example`:
 
 ```text
 OPENAI_API_KEY=sk-your-key-here
-OPENAI_TEXT_MODEL=gpt-5.1
+OPENAI_TEXT_MODEL=gpt-6-sol
 OPENAI_REALTIME_MODEL=gpt-realtime-2
 OPENAI_TRANSCRIPTION_MODEL=gpt-4o-transcribe
 ENABLE_STRUCTURED_CARD_FOCUS=true
@@ -644,7 +644,7 @@ The app uses `app/static/icons/voice-agent-1254x1254.png` as its browser favicon
 
 The `/transcribe` endpoint forwards browser-recorded dictation audio to the OpenAI audio transcription API with `OPENAI_TRANSCRIPTION_MODEL`, defaulting to `gpt-4o-transcribe`, and returns the transcript text to the browser. The Realtime session's input transcription reads the same variable, through the same `transcription_model()` helper, so one setting moves both speech-to-text paths.
 
-The `/text-chat` endpoint calls the OpenAI Responses API with `OPENAI_TEXT_MODEL`, defaulting to `gpt-5.1`. The client sends compact retained conversation context with the text message so follow-up typed or dictated turns can stay coherent. To guarantee the same visible behavior as the audio agent, the endpoint always executes `query_text2sql` once for the submitted message before asking the text model to answer. It returns that forced tool output to the browser for card rendering, provides it to the model as grounded context, and still exposes every detail lookup tool so the text model can request entity pages when needed.
+The `/text-chat` endpoint calls the OpenAI Responses API with `OPENAI_TEXT_MODEL`, defaulting to `gpt-6-sol` (`gpt-5.1` until 1.1.11; OpenAI shuts `gpt-5.1` off on 2027-04-01). The client sends compact retained conversation context with the text message so follow-up typed or dictated turns can stay coherent. To guarantee the same visible behavior as the audio agent, the endpoint always executes `query_text2sql` once for the submitted message before asking the text model to answer. It returns that forced tool output to the browser for card rendering, provides it to the model as grounded context, and still exposes every detail lookup tool so the text model can request entity pages when needed.
 
 When text-mode tool calls return data, the browser renders those results in the same results panel used by voice-mode tool calls. For example, a typed movie search populates text2sql result cards, and a typed detail request can still render the matching entity detail page.
 
