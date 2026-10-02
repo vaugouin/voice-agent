@@ -4185,6 +4185,170 @@ function titleForRecord(record) {
   );
 }
 
+// VOICE-AGENT-195. "Brief me": one button on a record page asks what matters about that record.
+// The words are written once by the server (`POST /brief`, which owns the instructions) and then
+// delivered by whichever transport is live: read aloud by the Realtime model during a voice
+// session, so they come with its subtitles, or shown in the subtitle overlay otherwise. The
+// briefing never repaints the page, and it stays on the sheet as "The essentials", cached per
+// record, language and persona, so Back/Forward and a second press cost nothing.
+const BRIEF_VOICE_TURN_PREFIX =
+  "[The user pressed Brief me on the page on screen. Read this briefing aloud as written, adding nothing:]";
+const briefCache = new Map();
+let briefInFlightKey = "";
+
+function briefRequestForRecord(record) {
+  // The page's own detail request, and only when the sheet being painted is the one the
+  // detail state describes (both render paths set the state with this very object first).
+  if (!currentDetailState || currentDetailState.detail !== record || !currentDetailState.toolName) {
+    return null;
+  }
+  const { toolName: _toolName, ...args } = currentDetailState.args || {};
+  return {
+    toolName: currentDetailState.toolName,
+    args,
+    ui_language: normalizeUiLanguage(currentDetailState.ui_language || activeUiLanguage),
+  };
+}
+
+function briefCacheKey(request) {
+  const args = Object.keys(request.args).sort().map((key) => [key, request.args[key]]);
+  return JSON.stringify([request.toolName, args, request.ui_language, soulPreference() || ""]);
+}
+
+function appendBriefControls(body, record) {
+  const request = briefRequestForRecord(record);
+  if (!request) {
+    return;
+  }
+  const key = briefCacheKey(request);
+  const row = document.createElement("div");
+  row.className = "detailBriefRow";
+  row.dataset.briefKey = key;
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "detailBriefButton";
+  button.title = "What's the big deal?";
+  button.setAttribute("aria-label", "Brief me: what matters about this record");
+  const icon = document.createElement("span");
+  icon.className = "detailBriefIcon";
+  icon.setAttribute("aria-hidden", "true");
+  icon.textContent = "🧠";
+  const label = document.createElement("span");
+  label.className = "detailBriefText";
+  label.textContent = briefInFlightKey === key ? "Thinking…" : "Brief me";
+  button.append(icon, label);
+  button.disabled = briefInFlightKey === key;
+  button.addEventListener("click", () => {
+    runBrief(request, key, titleForRecord(record));
+  });
+  row.append(button);
+  body.append(row);
+  const cached = briefCache.get(key);
+  if (cached) {
+    showBriefEssentials(row, cached);
+  }
+}
+
+function liveBriefRow(key) {
+  // The row of the page on screen, if that page is the record this key names. A briefing that
+  // lands after the user moved on is cached for the way back, never shown on another sheet.
+  return Array.from(resultsContent.querySelectorAll(".detailBriefRow"))
+    .find((row) => row.dataset.briefKey === key) || null;
+}
+
+function showBriefEssentials(row, text) {
+  let block = row.nextElementSibling;
+  if (!block || !block.classList.contains("detailBrief")) {
+    block = document.createElement("section");
+    block.className = "detailBrief";
+    row.after(block);
+  }
+  block.replaceChildren();
+  appendText(block, "detailBriefLabel", "The essentials");
+  appendText(block, "detailBriefBody", text);
+}
+
+function setBriefButtonBusy(row, busy) {
+  const button = row.querySelector(".detailBriefButton");
+  if (!button) {
+    return;
+  }
+  button.disabled = busy;
+  const label = button.querySelector(".detailBriefText");
+  if (label) {
+    label.textContent = busy ? "Thinking…" : "Brief me";
+  }
+}
+
+function deliverBrief(text, { cached }) {
+  const voice = canSendTypedRealtimeTurn() && dc && dc.readyState === "open";
+  clientLog("brief_delivered", { mode: voice ? "voice" : "text", cached, length: text.length });
+  if (voice) {
+    // The Realtime model reads the words; its transcript reaches the retained context and the
+    // spoken subtitles through the ordinary assistant-audio path.
+    sendTypedRealtimeTurn(`${BRIEF_VOICE_TURN_PREFIX}\n${text}`);
+    return;
+  }
+  addRetainedContext({ type: "assistant", text });
+  showPersonaBadge();
+  showSubtitleText(text);
+}
+
+async function runBrief(request, key, title) {
+  const cached = briefCache.get(key);
+  if (cached) {
+    deliverBrief(cached, { cached: true });
+    return;
+  }
+  if (briefInFlightKey === key) {
+    return;
+  }
+  briefInFlightKey = key;
+  const startRow = liveBriefRow(key);
+  if (startRow) {
+    setBriefButtonBusy(startRow, true);
+  }
+  clientLog("brief_requested", { tool_name: request.toolName, title, ui_language: request.ui_language });
+  try {
+    const soul = soulPreference();
+    const response = await fetch(appUrl("brief"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        tool_name: request.toolName,
+        args: request.args,
+        ui_language: request.ui_language,
+        ...(soul ? { soul } : {}),
+      }),
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(typeof body.detail === "string" ? body.detail : `HTTP ${response.status}`);
+    }
+    const text = sanitizeAssistantFeedbackText(body.text || "");
+    if (!text) {
+      throw new Error("empty briefing");
+    }
+    briefCache.set(key, text);
+    const row = liveBriefRow(key);
+    if (row) {
+      showBriefEssentials(row, text);
+      deliverBrief(text, { cached: false });
+    }
+  } catch (error) {
+    clientLog("brief_error", { tool_name: request.toolName, error: error.message }, "error");
+    if (liveBriefRow(key)) {
+      showSubtitleText("The briefing could not be prepared. Try again in a moment.");
+    }
+  } finally {
+    briefInFlightKey = "";
+    const row = liveBriefRow(key);
+    if (row) {
+      setBriefButtonBusy(row, false);
+    }
+  }
+}
+
 function renderSingleDetail(container, record, { loading = false, error = "" } = {}) {
   container.replaceChildren();
   const detail = document.createElement("section");
@@ -4240,6 +4404,9 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
   appendText(body, "singleDetailTitle", titleForRecord(record));
   if (!record.ID_PERSON) {
     appendText(body, "singleDetailTagline", firstValue(record.TAGLINE, record.OVERVIEW, record.DESCRIPTION));
+  }
+  if (!loading && !error) {
+    appendBriefControls(body, record);
   }
 
   const metrics = document.createElement("div");

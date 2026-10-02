@@ -1683,6 +1683,66 @@ button.search-poster-card-link {
   line-height: 1.45;
 }
 
+/* VOICE-AGENT-195: "Brief me", a text button with an emoji at the label's own size (not one of
+   the 52 x 42 glyph controls of the control row, so the VOICE-AGENT-182 lifts do not apply). */
+.detailBriefRow {
+  display: flex;
+}
+
+.detailBriefButton {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 38px;
+  border: 1px solid rgb(187 134 252 / 55%);
+  border-radius: 999px;
+  padding: 6px 16px 6px 12px;
+  background: rgb(187 134 252 / 14%);
+  color: var(--text-primary);
+  font: inherit;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.detailBriefButton:hover:not(:disabled),
+.detailBriefButton:focus-visible {
+  border-color: var(--accent-primary);
+  background: rgb(187 134 252 / 26%);
+}
+
+.detailBriefButton:disabled {
+  cursor: progress;
+  opacity: 0.7;
+}
+
+.detailBriefIcon {
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+.detailBrief {
+  max-width: 78ch;
+  border-left: 3px solid var(--accent-primary);
+  border-radius: 0 8px 8px 0;
+  padding: 10px 14px;
+  background: rgb(0 0 0 / 28%);
+}
+
+.detailBriefLabel {
+  margin-bottom: 6px;
+  color: var(--accent-secondary);
+  font-size: 0.82rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+
+.detailBriefBody {
+  color: rgb(255 255 255 / 88%);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
 .detailMetrics {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));

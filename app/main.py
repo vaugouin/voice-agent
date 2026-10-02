@@ -521,6 +521,15 @@ class TextChatRequest(BaseModel):
     image_ref: str | None = None
 
 
+class BriefRequest(BaseModel):
+    # VOICE-AGENT-195: the record whose page carries the "Brief me" button, as the detail tool
+    # and arguments the browser already used to paint that page.
+    tool_name: str
+    args: dict[str, Any] = Field(default_factory=dict)
+    ui_language: str | None = None
+    soul: str | None = None
+
+
 class ClientLogRequest(BaseModel):
     level: str = "info"
     event: str
@@ -3069,6 +3078,109 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
     }
 
 
+# VOICE-AGENT-195. "Brief me" asks what matters about the record on screen, not what it is
+# about: the tagline above the button already tells the story, so the briefing is about
+# standing, significance and influence. It is written once, here, for both modes: the text
+# path shows it as subtitles, the voice path hands the same words to the Realtime model to
+# read aloud, so the two modes cannot drift apart (the VOICE-AGENT-112 lesson).
+BRIEF_INSTRUCTIONS = (
+    "The user pressed the Brief me button on the page of the record given in the input. "
+    "Tell them what is important about this record: why it matters, its standing, what "
+    "sets it apart, the awards or recognition it received, its influence or legacy; for a "
+    "person, the defining points of their career; for a company, a place or any other "
+    "record, what makes it notable in film and television. Do not retell the plot and do "
+    "not repeat the tagline shown on the page: mention the story in one clause at most, "
+    "only when the rest cannot be understood without it. Ground every fact in the detail "
+    "record and the wikipedia_content provided, and invent nothing: when the record carries "
+    "little, say less rather than pad. Write four to six sentences of flowing prose, with no "
+    "list, no heading and no markdown, because the text is read aloud and shown as "
+    "subtitles. Never mention IMDb, Wikidata, TMDb, ID_* fields or any other database "
+    "identifier. Answer in {language}."
+)
+
+
+@app.post("/brief")
+async def brief(payload: BriefRequest) -> dict[str, Any]:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="OPENAI_API_KEY is not set")
+
+    tool_name = payload.tool_name.strip()
+    if not DETAIL_TOOL_BY_NAME.get(tool_name):
+        raise HTTPException(status_code=400, detail=f"Unsupported detail tool: {tool_name}")
+
+    ui_language = normalize_ui_language(payload.ui_language or payload.args.get("ui_language"))
+    detail_args = {
+        key: value for key, value in payload.args.items()
+        if key not in {"toolName", "collection", "page", "rows_per_page"}
+    }
+    detail_args["ui_language"] = ui_language
+    detail_output = await execute_text_tool(tool_name, detail_args)
+    if not isinstance(detail_output, dict) or detail_output.get("error") or not detail_output.get("detail"):
+        error = detail_output.get("error") if isinstance(detail_output, dict) else ""
+        raise HTTPException(status_code=502, detail=error or "No detail record returned")
+
+    active_soul = resolve_soul(payload.soul)
+    model = os.getenv("OPENAI_TEXT_MODEL", "gpt-6-sol")
+    instructions = (
+        soul_instructions(active_soul)
+        + " "
+        + BRIEF_INSTRUCTIONS.format(language="French" if ui_language == "fr" else "English")
+        + " " + current_date_instructions()
+    )
+    input_text = (
+        current_date_line()
+        + "\n\nRecord on screen (detail tool output):\n"
+        + json.dumps(
+            compact_detail_for_model(detail_output, verbose=True),
+            ensure_ascii=False,
+        )
+    )
+    async with httpx.AsyncClient(timeout=60) as client:
+        try:
+            response = await client.post(
+                "https://api.openai.com/v1/responses",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json={
+                    "model": model,
+                    "instructions": instructions,
+                    "input": [{"role": "user", "content": input_text}],
+                    "store": False,
+                    "truncation": "auto",
+                },
+            )
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    content_type = response.headers.get("content-type", "")
+    upstream_body: Any = response.json() if "application/json" in content_type else response.text
+    if response.status_code >= 400:
+        raise HTTPException(status_code=response.status_code, detail=upstream_body)
+
+    output_text = extract_response_text(upstream_body)
+    write_client_log("brief_success", {
+        "source": "brief",
+        "tool_name": tool_name,
+        "entity": detail_output.get("entity") or DETAIL_TOOL_BY_NAME.get(tool_name) or "",
+        "id": detail_output.get("id") or detail_args.get("id") or "",
+        "ui_language": ui_language,
+        "soul": active_soul.slug,
+        "model": model,
+        "length": len(output_text),
+    })
+    write_client_log("assistant_transcript", {"source": "brief", "transcript": output_text})
+    return {
+        "model": model,
+        "tool_name": tool_name,
+        "entity": detail_output.get("entity", ""),
+        "ui_language": ui_language,
+        "text": output_text,
+    }
+
+
 def _with_date_guardrail(payload: dict[str, Any]) -> dict[str, Any]:
     """Attach the dated precedence rule to a tool payload (VOICE-AGENT-149).
 
@@ -3415,6 +3527,13 @@ HARNESS_LOG_EVENTS = frozenset({
     "text_chat_cancelled",
     "realtime_text_sent",
     "reco_cards_shown",
+    # VOICE-AGENT-195. The "Brief me" button: which record was asked about, how the answer was
+    # delivered (voice or text, fresh or from the cache), and the failures. Without them a
+    # briefing leaves no trace but its assistant_transcript, with nothing to say what asked.
+    "brief_requested",
+    "brief_success",
+    "brief_delivered",
+    "brief_error",
     # VOICE-AGENT-118. Emitted once per Realtime session with the character that answered:
     # persona slug, its brevity dial, and the Realtime voice. A persona comparison is only
     # interpretable if each recording says which soul and which voice were in play.

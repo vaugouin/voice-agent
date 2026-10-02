@@ -19,6 +19,7 @@ The app serves a minimal web UI on port `3000`. The browser creates an `RTCPeerC
 - Picture questions through the Look button: take a photo, choose one from the library, or drag one from the desktop onto the page. The photo is resized in the browser and deposited on the text2SQL API, where a vision model reads it and names what it points at with the clues that support it; the answer comes from the catalogue, never from a guess.
 - Attaching a photo does not ask anything. It files the image and hands the screen back, and the question goes out with the next thing submitted: the arrow, `Enter`, or, in a spoken session, the next sentence said out loud.
 - A photo attached **during a spoken session** keeps the session alive and is answered out loud, clues included. The agent is never shown the image: it speaks from what was read and what the catalogue returned.
+- **Brief me** button (🧠) on every record page: one press asks what matters about the record (standing, recognition, influence), written by `POST /brief` from the record's detail and Wikipedia content. Read aloud during a voice session, shown as subtitles otherwise, and kept on the page as **The essentials**.
 - Back and Forward buttons beside the text input for navigating previously displayed result and detail pages.
 - PNG app icon configured for browser tabs, web app metadata, and iPhone Add to Home Screen.
 - Server-side Realtime voice selection through `AGENT_VOICE`.

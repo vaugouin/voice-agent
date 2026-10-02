@@ -1001,6 +1001,31 @@ If detail exists:
 - technical detail pages use localized `DESCRIPTION` as the title, show `TECHNICAL_TYPE` as a type metric, and render associated `movies` plus same-type `siblings` as clickable rails when returned
 - company and network detail pages asynchronously swap their main logo visual to the padded 2:3 master (`applySyntheticLogo()`) when the deterministically derived URL loads; embedded `Companies`/`Networks` relation rails on any detail page apply the same upgrade per rail item, keyed on the item's `ID_COMPANY`/`ID_NETWORK`. On 404 the raw TMDb logo or text fallback stays
 
+### Brief Me Button (VOICE-AGENT-195)
+
+Element: `.detailBriefButton` (🧠 **Brief me**, tooltip "What's the big deal?") inside `.detailBriefRow`, created by `appendBriefControls()` in `.singleDetailBody`, between the tagline and the metric tiles. It is a text button with the emoji at label size, not one of the control-row glyph buttons.
+
+Purpose: tells the user what matters about the record on screen (standing, recognition, influence; for a person, the defining points of a career), not its plot, which the tagline already gives.
+
+Visibility:
+
+- Rendered on every loaded detail page (movie, series, season, episode, person, company, network, collection, location, …) whose `currentDetailState` describes the record being painted.
+- Not rendered on loading placeholders, on `Unable to load details`, or on the `No detail record returned.` page.
+
+Click:
+
+1. If the briefing for this record, language and persona is already in `briefCache`, it is delivered again at once, with no request.
+2. Otherwise the button is disabled and reads `Thinking…`, and the browser posts the page's detail tool and arguments to `POST /brief`. The server fetches the detail with its verbose Wikipedia content and writes the briefing (`BRIEF_INSTRUCTIONS`, `app/main.py`). Nothing is searched and the page is not repainted.
+3. On success the text is cached and a **The essentials** block (`.detailBrief`) appears right under the button, then the text is delivered:
+   - **Voice session open** (`sessionRunning` and the data channel open): sent as a typed Realtime turn prefixed with `BRIEF_VOICE_TURN_PREFIX`, so the model reads it aloud; subtitles follow the usual spoken-subtitle rules.
+   - **No voice session**: added to retained context as an assistant turn and shown through the assistant subtitle overlay, with the persona badge, like a `/text-chat` answer.
+4. If the user left the page before the answer arrived, the text is cached but neither shown nor delivered; it appears when the page is shown again.
+5. On failure the subtitle overlay says `The briefing could not be prepared. Try again in a moment.` and `brief_error` is logged. The button is re-enabled in every case.
+
+History: the essentials block is not stored in the history entry. Back/Forward re-renders the page, and `appendBriefControls()` restores the block from `briefCache` (page lifetime only; a reload forgets it).
+
+Logs: `brief_requested`, `brief_delivered` (`mode` voice/text, `cached`), `brief_error` from the browser; `brief_success` and an `assistant_transcript` with `source: "brief"` from the server.
+
 ### Entity Detail Rail Pagination
 
 Entity detail pages can paginate embedded relation rails independently from search results.
