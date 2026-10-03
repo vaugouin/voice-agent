@@ -9538,6 +9538,92 @@ function handleStructuredCardFocusCall(item, args) {
   syncMicrophone("structured card focus output sent");
 }
 
+// VOICE-AGENT-197: a deep-dive voice question is answered by the server from the full record
+// (POST /deep-answer), and only the answer crosses the data channel. The material does not fit
+// the channel budget (VOICE-AGENT-109): on the French New Wave the trimmer kept a 50-film list
+// and two clipped sections out of 31 KB, and the model said it knew nothing about techniques or
+// directors (VOICE-AGENT-196). The rules for the model live in Python
+// (DEEP_ANSWER_VOICE_INSTRUCTIONS); this file only carries the transport label. Any failure
+// returns null and the caller keeps today's trimmed payload, so a turn can never wedge on it.
+// `?deepAnswer=off` keeps the old path reachable for an A/B comparison in the same build.
+const DEEP_ANSWER_TIMEOUT_MS = 20000;
+const DEEP_ANSWER_CONTEXT_TURNS = 6;
+const DEEP_ANSWER_VOICE_TURN_PREFIX = "[Deep answer: the answer to the user's question about the record on screen.]";
+
+function deepAnswerEnabled() {
+  const params = new URLSearchParams(window.location.search);
+  return parseUrlBooleanFlag(params.get("deepAnswer") ?? params.get("deep_answer")) !== false;
+}
+
+// The last few spoken turns, so the composer can tell what "and the directors?" refers to. The
+// question itself travels separately and is dropped here if it is the latest user turn.
+function deepAnswerContextTurns(question) {
+  const turns = retainedContext
+    .filter((item) => (item.type === "user" || item.type === "assistant") && item.text)
+    .map((item) => ({ type: item.type, text: String(item.text).trim() }));
+  const last = turns[turns.length - 1];
+  if (last && last.type === "user" && last.text === String(question || "").trim()) {
+    turns.pop();
+  }
+  return turns
+    .slice(-DEEP_ANSWER_CONTEXT_TURNS)
+    .map((turn) => `${turn.type === "user" ? "User" : "Assistant"}: ${turn.text.slice(0, 600)}`);
+}
+
+async function fetchDeepAnswer(toolName, args, question) {
+  const started = performance.now();
+  const id = args?.id ?? args?.wikidata_id ?? null;
+  clientLog("deep_answer_requested", { tool_name: toolName, id, question: String(question || "").slice(0, 200) });
+  const controller = new AbortController();
+  const timer = window.setTimeout(() => controller.abort(), DEEP_ANSWER_TIMEOUT_MS);
+  try {
+    const soul = soulPreference();
+    const response = await fetch(appUrl("deep-answer"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: controller.signal,
+      body: JSON.stringify({
+        tool_name: toolName,
+        args,
+        question,
+        context: deepAnswerContextTurns(question),
+        ui_language: args?.ui_language,
+        ...(soul ? { soul } : {}),
+      }),
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      throw new Error(typeof body.detail === "string" ? body.detail : `HTTP ${response.status}`);
+    }
+    const text = sanitizeAssistantFeedbackText(body.text || "").trim();
+    if (!text) {
+      throw new Error("empty deep answer");
+    }
+    return { text, ms: Math.round(performance.now() - started) };
+  } catch (error) {
+    clientLog("deep_answer_error", {
+      tool_name: toolName,
+      id,
+      error: error.name === "AbortError" ? "timeout" : error.message,
+      ms: Math.round(performance.now() - started),
+    }, "error");
+    return null;
+  } finally {
+    window.clearTimeout(timer);
+  }
+}
+
+// The detail payload the model receives when a deep answer exists: the record's own fields for
+// follow-up questions, the answer, and no Wikipedia prose, which is what overflowed the channel.
+function deepAnswerToolOutput(modelToolOutput, text) {
+  const {
+    wikipedia_content: _sections,
+    wikipedia_content_mode: _mode,
+    ...rest
+  } = modelToolOutput || {};
+  return { ...rest, deep_answer: text };
+}
+
 async function handleFunctionCall(item) {
   if (
     item?.type !== "function_call" ||
@@ -9648,6 +9734,22 @@ async function handleFunctionCall(item) {
     cancelHoldingLine(holdingLineTimer);
   }
 
+  // VOICE-AGENT-197: composed before the call is released, so the microphone and the
+  // in-flight count stay exactly as the tool call left them while the server writes.
+  const verboseDetailRequest = Boolean(DETAIL_TOOL_ENTITIES[item.name]) && shouldUseVerboseDetail(lastUserTranscript);
+  let deepAnswer = null;
+  if (verboseDetailRequest && deepAnswerEnabled() && output && !output.error && output.detail) {
+    const deepHoldingLineTimer = scheduleHoldingLine("deep_answer", TOOL_HOLDING_LINE_DELAY_MS);
+    try {
+      deepAnswer = await fetchDeepAnswer(item.name, args, lastUserTranscript);
+    } finally {
+      cancelHoldingLine(deepHoldingLineTimer);
+    }
+    if (!deepAnswer) {
+      clientLog("deep_answer_fallback", { source: "tool_call", tool: item.name, call_id: item.call_id });
+    }
+  }
+
   toolCallsInFlight = Math.max(0, toolCallsInFlight - 1);
   awaitingToolResponse = true;
   const toolOutput = item.name === "query_text2sql"
@@ -9689,10 +9791,12 @@ async function handleFunctionCall(item) {
         ui_language: output.ui_language || args.ui_language || "",
         detail: output.detail || null,
       };
-  const verboseDetailRequest = DETAIL_TOOL_ENTITIES[item.name] && shouldUseVerboseDetail(lastUserTranscript);
-  const modelToolOutput = item.name === "query_text2sql"
+  const compactedToolOutput = item.name === "query_text2sql"
     ? toolOutput
     : compactDetailForModel(toolOutput, DETAIL_TOOL_ENTITIES[item.name], { verbose: verboseDetailRequest });
+  const modelToolOutput = deepAnswer
+    ? deepAnswerToolOutput(compactedToolOutput, deepAnswer.text)
+    : compactedToolOutput;
   lastToolOutput = toolOutput;
   addRetainedContext({
     type: "tool",
@@ -9759,6 +9863,17 @@ async function handleFunctionCall(item) {
     // `fits === false` means even a section-less payload is over budget, so sending it would
     // throw; go straight to the minimal output, which always fits.
     sendFunctionCallOutput(item.call_id, fittedToolOutput.fits ? fittedToolOutput.output : minimalToolOutput());
+    if (deepAnswer) {
+      clientLog("deep_answer_delivered", {
+        source: "tool_call",
+        tool: item.name,
+        call_id: item.call_id,
+        ms: deepAnswer.ms,
+        length: deepAnswer.text.length,
+        sent_bytes: serializedByteSize(JSON.stringify(fittedToolOutput.output)),
+        fits: fittedToolOutput.fits,
+      });
+    }
   } catch (error) {
     clientLog("tool_output_send_error", {
       tool: item.name,
@@ -9815,6 +9930,32 @@ async function maybeForceVerboseActiveEntityRefetch(transcript) {
     // VOICE-AGENT-111: and immediately arm the line that covers the wait the cancel just
     // uncovered. This is THE path the 16-to-24-second silences were measured on.
     holdingLineTimer = scheduleHoldingLine("verbose_refetch", HOLDING_LINE_DELAY_MS);
+    // VOICE-AGENT-197: the same question answered server-side from the full record. Only the
+    // answer is injected; the trimmed verbose detail below is the fallback when it fails.
+    if (deepAnswerEnabled()) {
+      const deepArgs = { ...args, ui_language: args.ui_language || normalizeUiLanguage(activeUiLanguage || "en") };
+      const deep = await fetchDeepAnswer(toolName, deepArgs, transcript);
+      if (deep) {
+        cancelHoldingLine(holdingLineTimer);
+        holdingLineTimer = null;
+        const deepText = `${DEEP_ANSWER_VOICE_TURN_PREFIX}\n${deep.text}`;
+        sendEvent({
+          type: "conversation.item.create",
+          item: { type: "message", role: "user", content: [{ type: "input_text", text: deepText }] },
+        });
+        requestRealtimeResponseAfterToolOutput();
+        clientLog("deep_answer_delivered", {
+          source: "verbose_refetch",
+          tool: toolName,
+          id: args.id ?? args.wikidata_id ?? null,
+          ms: deep.ms,
+          length: deep.text.length,
+          sent_bytes: serializedByteSize(deepText),
+        });
+        return;
+      }
+      clientLog("deep_answer_fallback", { source: "verbose_refetch", tool: toolName });
+    }
     const output = await callEntityDetail(toolName, args);
     cancelHoldingLine(holdingLineTimer);
     holdingLineTimer = null;

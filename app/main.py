@@ -581,6 +581,18 @@ class BriefRequest(BaseModel):
     soul: str | None = None
 
 
+class DeepAnswerRequest(BaseModel):
+    # VOICE-AGENT-197: a deep-dive voice question, answered here from the full detail so the long
+    # material never has to cross the WebRTC data channel. `context` is the last few turns, only
+    # there to resolve what "and the directors?" refers to.
+    tool_name: str
+    args: dict[str, Any] = Field(default_factory=dict)
+    question: str
+    context: list[str] = Field(default_factory=list)
+    ui_language: str | None = None
+    soul: str | None = None
+
+
 class ClientLogRequest(BaseModel):
     level: str = "info"
     event: str
@@ -1516,6 +1528,20 @@ DISAMBIGUATION_TEXT_ADDENDUM = (
     "answer from that."
 )
 
+# VOICE-AGENT-197. Voice only: on a deep-dive question the browser has the answer composed
+# server-side from the full record (POST /deep-answer) and hands it over, because the material
+# itself does not fit the data channel. The model is the voice of that answer, not its editor:
+# a relay that "improves" it would reintroduce exactly the facts-from-memory the composer was
+# told not to use.
+DEEP_ANSWER_VOICE_INSTRUCTIONS = (
+    "On a deep-dive question, a detail tool result may carry a deep_answer field, or the answer "
+    "may arrive as a bracketed [Deep answer: ...] message. That text is your answer to the "
+    "user's question, already prepared from the complete record. Speak it as your own answer: "
+    "keep every fact and every name, add no fact of your own, and drop nothing that matters; "
+    "you may smooth a word for speech. Do not announce it and never say it was prepared, "
+    "received or looked up. The other fields of that result are there for follow-up questions."
+)
+
 VERBOSE_DETAIL_INSTRUCTIONS = (
     "Default to concise answers. If the user explicitly asks to tell me more, "
     "answer in detail, explain the full story, go deeper, or asks for a longer "
@@ -1963,6 +1989,9 @@ def realtime_session_config(
     )
     instructions += (
         " " + VERBOSE_DETAIL_INSTRUCTIONS
+        # VOICE-AGENT-197: right after the verbose rule, because in voice mode a verbose detail
+        # request now comes back as a deep answer.
+        + " " + DEEP_ANSWER_VOICE_INSTRUCTIONS
         + " " + RECOVERY_INSTRUCTIONS
         + " " + RESULT_COUNT_INSTRUCTIONS
         + " " + DISAMBIGUATION_INSTRUCTIONS
@@ -3246,6 +3275,216 @@ async def brief(payload: BriefRequest) -> dict[str, Any]:
     }
 
 
+# VOICE-AGENT-197. A deep-dive voice question is answered here, where the full record fits, and
+# only the answer crosses the data channel. Measured on the French New Wave (2026-10-02): the
+# browser had to cut 31 KB of material to 14 KB, kept a 50-film list and two clipped sections,
+# and the model said it knew nothing about techniques or directors that sat in the dropped ones.
+DEEP_ANSWER_INSTRUCTIONS = (
+    "The user is talking with you by voice about the record given in the input, and asked the "
+    "question given at the end of the input. Answer that question, and only that question, from "
+    "the detail record and the wikipedia_content provided. Ground every fact in that material and "
+    "invent nothing: never fill a gap from your own memory or training. Speak as someone who knows "
+    "the subject, never as someone reading a document: never mention records, data, results, "
+    "summaries, sections, sources, Wikipedia, the database, tools, the material, or what you were "
+    "given. When the "
+    "material does not cover part of the question, say so in one short natural clause, the way a "
+    "knowledgeable person would, then go on with what you do know. When two passages disagree on "
+    "a date or a figure, never describe the disagreement: leave that detail out, or say it without "
+    "the contested part. Write spoken prose of about six to ten sentences, fewer when the question "
+    "is narrow, with no list, no heading and no markdown, "
+    "because it is read aloud. Use the earlier turns only to understand what the question refers "
+    "to. Never mention IMDb, Wikidata, TMDb, ID_* fields or any other database identifier. Answer "
+    "in {language}."
+)
+# Sections that carry links and citations, not answers. Matched on the normalized title prefix,
+# English and French, so "Notes and references" and "Liens externes" both go.
+DEEP_ANSWER_SKIPPED_SECTION_PREFIXES = (
+    "see also", "notes", "references", "external links", "further reading", "bibliography",
+    "sources", "citations", "voir aussi", "liens externes", "bibliographie", "articles connexes",
+)
+DEEP_ANSWER_MAX_SECTION_CHARS = 6000
+DEEP_ANSWER_MAX_TOTAL_CHARS = 60000
+# Image lists answer nothing and are most of a series sheet's weight (VOICE-AGENT-154).
+DEEP_ANSWER_MEDIA_KEYS = frozenset(
+    {"posters", "backdrops", "stills", "logos", "profiles", "videos", "wikipedia_images"}
+)
+DEEP_ANSWER_MAX_LIST_ITEMS = 25
+DEEP_ANSWER_MAX_CONTEXT_TURNS = 6
+
+
+def deep_answer_model_settings() -> tuple[str, str]:
+    """Model and reasoning effort of the composer, separate from the text chat (VOICE-AGENT-197).
+
+    The answer is spoken, so its latency adds to a voice turn: the composer gets its own pair of
+    settings instead of riding on OPENAI_TEXT_MODEL. Bench of 2026-10-03 (movement, series in
+    French, person, film, same material as this endpoint): Sol at its default effort 5.4 s mean;
+    with reasoning off, Sol `none` 3.75 s and Luna `low` 3.84 s over 12 calls each. So the gain
+    is in the effort, not the model, and at equal speed Sol wins on the answer: Luna described
+    its own source twice in 12 ("the material here", "the career summary I have") and set
+    titles in markdown four times, Sol did neither. An empty effort, or `default`, sends no
+    `reasoning` field, which leaves the model at its own default.
+    """
+    model = (os.getenv("DEEP_ANSWER_MODEL") or "gpt-6-sol").strip()
+    effort = (os.getenv("DEEP_ANSWER_REASONING_EFFORT") or "none").strip().lower()
+    if effort == "default":
+        effort = ""
+    return model, effort
+
+
+def deep_answer_request_body(model: str, effort: str, instructions: str, input_text: str) -> dict[str, Any]:
+    body: dict[str, Any] = {
+        "model": model,
+        "instructions": instructions,
+        "input": [{"role": "user", "content": input_text}],
+        "store": False,
+        "truncation": "auto",
+    }
+    if effort:
+        body["reasoning"] = {"effort": effort}
+    return body
+
+
+def deep_answer_material(detail_output: dict[str, Any], question: str) -> dict[str, Any]:
+    """The detail record as the composer reads it: media lists out, long lists capped, and every
+    Wikipedia section that can carry an answer, ranked by the question (VOICE-AGENT-197)."""
+    detail = detail_output.get("detail") if isinstance(detail_output.get("detail"), dict) else {}
+    record: dict[str, Any] = {}
+    for key, value in detail.items():
+        if key == "wikipedia_content" or key in DEEP_ANSWER_MEDIA_KEYS:
+            continue
+        if isinstance(value, list) and len(value) > DEEP_ANSWER_MAX_LIST_ITEMS:
+            record[key] = value[:DEEP_ANSWER_MAX_LIST_ITEMS]
+            record[f"{key}_total"] = len(value)
+        else:
+            record[key] = value
+
+    sections = detail.get("wikipedia_content")
+    sections = [s for s in sections if isinstance(s, dict)] if isinstance(sections, list) else []
+    kept = []
+    for section in sections:
+        title = str(section.get("title") or section.get("TITLE") or "").strip()
+        if normalized_intent_text(title).startswith(DEEP_ANSWER_SKIPPED_SECTION_PREFIXES):
+            continue
+        content = str(section.get("content") or section.get("CONTENT") or "").strip()
+        if content:
+            kept.append({"title": title, "content": content})
+    # Intro first as the anchor, then the sections whose titles answer this question, in article
+    # order on equal scores (sorted() is stable), so the total cap cuts the least relevant ones.
+    if len(kept) > 1:
+        tokens = _intent_tokens(question)
+        kept = [kept[0], *sorted(kept[1:], key=lambda s: -_title_intent_score(s["title"], tokens))]
+    wikipedia_content = []
+    total = 0
+    for section in kept:
+        content = section["content"]
+        if len(content) > DEEP_ANSWER_MAX_SECTION_CHARS:
+            content = content[:DEEP_ANSWER_MAX_SECTION_CHARS].rstrip() + "..."
+        if total + len(content) > DEEP_ANSWER_MAX_TOTAL_CHARS:
+            break
+        total += len(content)
+        wikipedia_content.append({"title": section["title"], "content": content})
+
+    return {
+        "entity": detail_output.get("entity", ""),
+        "detail": record,
+        "wikipedia_content": wikipedia_content,
+    }
+
+
+@app.post("/deep-answer")
+async def deep_answer(payload: DeepAnswerRequest) -> dict[str, Any]:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise HTTPException(status_code=500, detail="OPENAI_API_KEY is not set")
+
+    tool_name = payload.tool_name.strip()
+    if not DETAIL_TOOL_BY_NAME.get(tool_name):
+        raise HTTPException(status_code=400, detail=f"Unsupported detail tool: {tool_name}")
+    question = payload.question.strip()
+    if not question:
+        raise HTTPException(status_code=400, detail="Missing question")
+
+    started = datetime.now(timezone.utc)
+    ui_language = normalize_ui_language(payload.ui_language or payload.args.get("ui_language"))
+    detail_args = {
+        key: value for key, value in payload.args.items()
+        if key not in {"toolName", "collection", "page", "rows_per_page"}
+    }
+    detail_args["ui_language"] = ui_language
+    detail_output = await execute_text_tool(tool_name, detail_args)
+    if not isinstance(detail_output, dict) or detail_output.get("error") or not detail_output.get("detail"):
+        error = detail_output.get("error") if isinstance(detail_output, dict) else ""
+        raise HTTPException(status_code=502, detail=error or "No detail record returned")
+
+    active_soul = resolve_soul(payload.soul)
+    model, effort = deep_answer_model_settings()
+    instructions = (
+        soul_instructions(active_soul)
+        + " "
+        + DEEP_ANSWER_INSTRUCTIONS.format(language="French" if ui_language == "fr" else "English")
+        + " " + current_date_instructions()
+    )
+    material = deep_answer_material(detail_output, question)
+    material_json = json.dumps(material, ensure_ascii=False)
+    turns = [str(turn).strip() for turn in payload.context if str(turn).strip()]
+    turns = turns[-DEEP_ANSWER_MAX_CONTEXT_TURNS:]
+    input_text = (
+        current_date_line()
+        + "\n\nRecord on screen (detail tool output):\n"
+        + material_json
+        + ("\n\nEarlier turns:\n" + "\n".join(turns) if turns else "")
+        + "\n\nQuestion: " + question
+    )
+    async with httpx.AsyncClient(timeout=45) as client:
+        try:
+            response = await client.post(
+                "https://api.openai.com/v1/responses",
+                headers={
+                    "Authorization": f"Bearer {api_key}",
+                    "Content-Type": "application/json",
+                },
+                json=deep_answer_request_body(model, effort, instructions, input_text),
+            )
+        except httpx.HTTPError as exc:
+            raise HTTPException(status_code=502, detail=str(exc)) from exc
+
+    content_type = response.headers.get("content-type", "")
+    upstream_body: Any = response.json() if "application/json" in content_type else response.text
+    if response.status_code >= 400:
+        raise HTTPException(status_code=response.status_code, detail=upstream_body)
+
+    # Luna sets titles in *italics* despite the no-markdown rule (bench of 2026-10-03), and the
+    # text is shown as subtitles: keep the words, drop the asterisks. Kept for whichever model
+    # DEEP_ANSWER_MODEL selects.
+    output_text = re.sub(r"\*{1,2}([^*\n]+)\*{1,2}", r"\1", extract_response_text(upstream_body))
+    if not output_text:
+        raise HTTPException(status_code=502, detail="Empty deep answer")
+    elapsed = (datetime.now(timezone.utc) - started).total_seconds()
+    # The text is logged so the relay can be checked against the spoken assistant_transcript.
+    write_client_log("deep_answer_success", {
+        "tool_name": tool_name,
+        "entity": detail_output.get("entity") or DETAIL_TOOL_BY_NAME.get(tool_name) or "",
+        "id": detail_output.get("id") or detail_args.get("id") or "",
+        "ui_language": ui_language,
+        "soul": active_soul.slug,
+        "model": model,
+        "reasoning_effort": effort or "default",
+        "question": question[:300],
+        "sections_sent": len(material["wikipedia_content"]),
+        "input_bytes": len(input_text.encode("utf-8")),
+        "seconds": round(elapsed, 2),
+        "length": len(output_text),
+        "text": output_text,
+    })
+    return {
+        "model": model,
+        "tool_name": tool_name,
+        "entity": detail_output.get("entity", ""),
+        "ui_language": ui_language,
+        "text": output_text,
+    }
+
+
 def _with_date_guardrail(payload: dict[str, Any]) -> dict[str, Any]:
     """Attach the dated precedence rule to a tool payload (VOICE-AGENT-149).
 
@@ -3599,6 +3838,14 @@ HARNESS_LOG_EVENTS = frozenset({
     "brief_success",
     "brief_delivered",
     "brief_error",
+    # VOICE-AGENT-197. The deep-dive answer composed server-side: asked, delivered to the model
+    # (with the composer's latency as the browser saw it), failed, and fell back to the trimmed
+    # payload. deep_answer_success is written by the server and carries the composed text.
+    "deep_answer_requested",
+    "deep_answer_success",
+    "deep_answer_delivered",
+    "deep_answer_error",
+    "deep_answer_fallback",
     # VOICE-AGENT-118. Emitted once per Realtime session with the character that answered:
     # persona slug, its brevity dial, and the Realtime voice. A persona comparison is only
     # interpretable if each recording says which soul and which voice were in play.
