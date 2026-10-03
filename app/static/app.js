@@ -215,6 +215,8 @@ const DETAIL_RAIL_AUTO_LOAD_THRESHOLD_PX = 360;
 const SYNTHETIC_STYLE_VERSION = "v1";
 const CONTEXT_STORAGE_KEY = "voice-agent-context-v1";
 const STRUCTURED_CARD_FOCUS_TOOL = "focus_result_card";
+// VOICE-AGENT-198: the model's own way to POST /deep-answer (tool defined in app/main.py).
+const ASK_ABOUT_RECORD_TOOL = "ask_about_record";
 // VOICE-AGENT-085: the spoken-card highlight targets two card families that never
 // coexist in `#resultsContent` — search grid cards (`.search-poster-card`) and entity
 // detail rail cards (`.detailVisualCard`). One selector covers both so the matcher,
@@ -308,6 +310,9 @@ let toolResponseWatchdogTimer = null;
 let lastUserTranscript = "";
 let lastToolArgs = null;
 let lastToolOutput = null;
+// VOICE-AGENT-198: the last detail record the model fetched, so ask_about_record can still find
+// a record after the page on screen changed or when no detail page is painted.
+let lastDetailCall = null;
 let pendingReconnectResume = null;
 const inputTranscripts = new Map();
 let pendingResponseFallbackTimer = null;
@@ -9624,12 +9629,105 @@ function deepAnswerToolOutput(modelToolOutput, text) {
   return { ...rest, deep_answer: text };
 }
 
+// VOICE-AGENT-198. Which record the question is about: the one the model names, else the page on
+// screen, else the last detail record it fetched. Null when there is none, and the model is told
+// to fetch the detail first.
+function resolveAskAboutRecordTarget(args) {
+  const named = String(args?.detail_tool || "");
+  const namedArgs = args?.detail_args && typeof args.detail_args === "object" ? args.detail_args : null;
+  if (DETAIL_TOOL_ENTITIES[named] && namedArgs && Object.keys(namedArgs).length) {
+    return { toolName: named, args: baseDetailArgs(namedArgs), source: "model" };
+  }
+  if (currentDetailState?.toolName && currentDetailState.args) {
+    return { toolName: currentDetailState.toolName, args: { ...currentDetailState.args }, source: "screen" };
+  }
+  if (lastDetailCall) {
+    return { toolName: lastDetailCall.toolName, args: { ...lastDetailCall.args }, source: "last_call" };
+  }
+  return null;
+}
+
+async function handleAskAboutRecordCall(item, args) {
+  const question = String(args?.question || lastUserTranscript || "").trim();
+  const target = resolveAskAboutRecordTarget(args);
+  const uiLanguage = normalizeUiLanguage(activeUiLanguage || currentSearchState?.ui_language || "en");
+  clientLog("tool_call_start", { name: item.name, args, call_id: item.call_id, target_source: target?.source || null });
+  // The default is what the model gets if anything below throws: it must always receive an
+  // output for this call_id, or the turn waits forever (VOICE-AGENT-094).
+  let output = {
+    error: "unavailable",
+    note: "That answer could not be prepared this time. Answer from what you already have, "
+      + "without describing what is missing or why.",
+  };
+  toolCallsInFlight += 1;
+  syncMicrophone("tool call started");
+  const holdingLineTimer = scheduleHoldingLine("ask_about_record", TOOL_HOLDING_LINE_DELAY_MS);
+  try {
+    if (!target || !question) {
+      output = {
+        error: "no_record",
+        note: "No record is open yet. Call the detail tool of the record first, then ask again. "
+          + "Never mention tools or records to the user.",
+      };
+    } else {
+      const targetArgs = { ...target.args, ui_language: target.args.ui_language || uiLanguage };
+      const deep = await fetchDeepAnswer(target.toolName, targetArgs, question);
+      if (deep) {
+        output = {
+          entity: DETAIL_TOOL_ENTITIES[target.toolName],
+          id: targetArgs.id ?? targetArgs.wikidata_id ?? "",
+          deep_answer: deep.text,
+        };
+        clientLog("deep_answer_delivered", {
+          source: "ask_tool",
+          tool: target.toolName,
+          call_id: item.call_id,
+          target_source: target.source,
+          ms: deep.ms,
+          length: deep.text.length,
+        });
+      } else {
+        output = {
+          error: "unavailable",
+          note: "That answer could not be prepared this time. Answer from what you already have, "
+            + "without describing what is missing or why.",
+        };
+        clientLog("deep_answer_fallback", { source: "ask_tool", tool: target.toolName, call_id: item.call_id });
+      }
+    }
+    clientLog("tool_call_success", {
+      name: item.name,
+      call_id: item.call_id,
+      entity: output.entity || null,
+      id: output.id ?? null,
+      error: output.error || "",
+    });
+  } catch (error) {
+    clientLog("tool_call_error", { name: item.name, call_id: item.call_id, error: error.message }, "error");
+  } finally {
+    cancelHoldingLine(holdingLineTimer);
+    toolCallsInFlight = Math.max(0, toolCallsInFlight - 1);
+  }
+
+  awaitingToolResponse = true;
+  try {
+    sendFunctionCallOutput(item.call_id, output);
+  } catch (error) {
+    clientLog("tool_output_send_error", { tool: item.name, call_id: item.call_id, error: error.message }, "error");
+  } finally {
+    requestRealtimeResponseAfterToolOutput();
+    scheduleToolResponseWatchdog(); // VOICE-AGENT-094: guarantee this turn can't wedge.
+    syncMicrophone("tool output sent");
+  }
+}
+
 async function handleFunctionCall(item) {
   if (
     item?.type !== "function_call" ||
     (
       item.name !== "query_text2sql" &&
       item.name !== STRUCTURED_CARD_FOCUS_TOOL &&
+      item.name !== ASK_ABOUT_RECORD_TOOL &&
       !DETAIL_TOOL_ENTITIES[item.name]
     )
   ) {
@@ -9645,12 +9743,19 @@ async function handleFunctionCall(item) {
     handleStructuredCardFocusCall(item, args);
     return;
   }
+  if (item.name === ASK_ABOUT_RECORD_TOOL) {
+    await handleAskAboutRecordCall(item, args);
+    return;
+  }
   args.ui_language = item.name === "query_text2sql"
     ? detectUiLanguageFromText(lastUserTranscript || args.query)
     : normalizeUiLanguage(activeUiLanguage || currentSearchState?.ui_language || "en");
 
   log("tool call", { name: item.name, args });
   lastToolArgs = args;
+  if (DETAIL_TOOL_ENTITIES[item.name]) {
+    lastDetailCall = { toolName: item.name, args: baseDetailArgs(args) };
+  }
   toolCallsInFlight += 1;
   syncMicrophone("tool call started");
   clientLog("tool_call_start", { name: item.name, args, call_id: item.call_id });
@@ -11090,6 +11195,7 @@ function clearConversationUi() {
   lastUserTranscript = "";
   lastToolArgs = null;
   lastToolOutput = null;
+  lastDetailCall = null;
   inputTranscripts.clear();
 }
 

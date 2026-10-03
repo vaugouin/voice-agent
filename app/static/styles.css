@@ -1722,7 +1722,6 @@ button.search-poster-card-link {
 }
 
 .detailBrief {
-  max-width: 78ch;
   border-left: 3px solid var(--accent-primary);
   border-radius: 0 8px 8px 0;
   padding: 10px 14px;
@@ -1737,7 +1736,11 @@ button.search-poster-card-link {
   text-transform: uppercase;
 }
 
+/* Short lines without the empty half: the briefing fills the header's width and flows into as
+   many ~42-character columns as fit (two on a laptop, one on a phone, no media query). */
 .detailBriefBody {
+  column-width: 42ch;
+  column-gap: 32px;
   color: rgb(255 255 255 / 88%);
   font-size: 1rem;
   line-height: 1.5;

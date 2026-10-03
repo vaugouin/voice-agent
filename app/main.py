@@ -1063,6 +1063,57 @@ def focus_result_card_tool_definition() -> dict[str, Any]:
     }
 
 
+# VOICE-AGENT-198. The voice model's own door to POST /deep-answer. The word-list trigger of
+# VOICE-AGENT-197 missed a question about a character (Melisandre, 2026-10-03): three answers
+# said her role was not described while the record said it plainly, in a section the compact
+# payload had cut. The model knew the compact detail fell short (it said so three times); this
+# tool lets it act on that instead of admitting a gap. Voice only: /text-chat reads on the server.
+ASK_ABOUT_RECORD_TOOL = "ask_about_record"
+
+
+def ask_about_record_tool_definition() -> dict[str, Any]:
+    return {
+        "type": "function",
+        "name": ASK_ABOUT_RECORD_TOOL,
+        "description": (
+            "Ask a precise question about one record (movie, series, season, episode, person, "
+            "or any other detail record) and get back the answer, written from that record's "
+            "complete content, including everything the compact detail leaves out: characters "
+            "and who plays them, story arcs, scenes, themes, production, reception, careers. "
+            "By default it reads the record on screen."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "question": {
+                    "type": "string",
+                    "description": (
+                        "The user's question, made self-contained: name the character, person "
+                        "or topic and the title it belongs to, e.g. 'What is Melisandre's role "
+                        "in Game of Thrones?'."
+                    ),
+                },
+                "detail_tool": {
+                    "type": "string",
+                    "enum": list(DETAIL_TOOL_BY_NAME),
+                    "description": (
+                        "Optional. The detail tool of the record to read, when it is not the "
+                        "record on screen, e.g. right after a search."
+                    ),
+                },
+                "detail_args": {
+                    "type": "object",
+                    "description": (
+                        "Optional, with detail_tool: the same arguments you would pass to that "
+                        "detail tool, e.g. {\"id\": 1399}."
+                    ),
+                },
+            },
+            "required": ["question"],
+        },
+    }
+
+
 def detail_tool_definitions() -> list[dict[str, Any]]:
     tools = []
     for config in DETAIL_ENTITY_CONFIG.values():
@@ -1542,6 +1593,19 @@ DEEP_ANSWER_VOICE_INSTRUCTIONS = (
     "received or looked up. The other fields of that result are there for follow-up questions."
 )
 
+# VOICE-AGENT-198, voice only, next to the deep-answer rule it extends.
+ASK_ABOUT_RECORD_INSTRUCTIONS = (
+    "The detail you receive in voice mode is compact: it carries the record's fields and only "
+    "the beginning of its background, so it often lacks what a precise question needs. When the "
+    "user asks about something inside a record (a character and who plays them, a role, a story "
+    "arc, a scene, a theme, a production, reception or career detail) and the detail you have "
+    "does not state it plainly, call ask_about_record with the question made self-contained, "
+    "then speak its deep_answer. Never tell the user that something is missing, not covered, or "
+    "not described before calling ask_about_record for it. Never announce that you are looking "
+    "something up without calling a tool in the same turn. Do not call it when the compact "
+    "detail already answers (a year, a rating, a runtime, a credit that is listed)."
+)
+
 VERBOSE_DETAIL_INSTRUCTIONS = (
     "Default to concise answers. If the user explicitly asks to tell me more, "
     "answer in detail, explain the full story, go deeper, or asks for a longer "
@@ -1992,6 +2056,7 @@ def realtime_session_config(
         # VOICE-AGENT-197: right after the verbose rule, because in voice mode a verbose detail
         # request now comes back as a deep answer.
         + " " + DEEP_ANSWER_VOICE_INSTRUCTIONS
+        + " " + ASK_ABOUT_RECORD_INSTRUCTIONS  # VOICE-AGENT-198
         + " " + RECOVERY_INSTRUCTIONS
         + " " + RESULT_COUNT_INSTRUCTIONS
         + " " + DISAMBIGUATION_INSTRUCTIONS
@@ -2058,7 +2123,7 @@ def realtime_session_config(
                 "additionalProperties": False,
             },
         }
-    ] + detail_tool_definitions()
+    ] + detail_tool_definitions() + [ask_about_record_tool_definition()]
     if structured_card_focus:
         instructions += (
             " Search results may include a visible_results list whose index "

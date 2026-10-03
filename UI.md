@@ -1016,7 +1016,7 @@ Click:
 
 1. If the briefing for this record, language and persona is already in `briefCache`, it is delivered again at once, with no request.
 2. Otherwise the button is disabled and reads `Thinking…`, and the browser posts the page's detail tool and arguments to `POST /brief`. The server fetches the detail with its verbose Wikipedia content and writes the briefing (`BRIEF_INSTRUCTIONS`, `app/main.py`). Nothing is searched and the page is not repainted.
-3. On success the text is cached and a **The essentials** block (`.detailBrief`) appears right under the button, then the text is delivered:
+3. On success the text is cached and a **The essentials** block (`.detailBrief`) appears right under the button, then the text is delivered. The block spans the header's full width and its text flows into columns of about 42 characters (`column-width: 42ch`): two on a laptop, one on a phone, so lines stay short without leaving half the width empty. Delivery:
    - **Voice session open** (`sessionRunning` and the data channel open): sent as a typed Realtime turn prefixed with `BRIEF_VOICE_TURN_PREFIX`, so the model reads it aloud; subtitles follow the usual spoken-subtitle rules.
    - **No voice session**: added to retained context as an assistant turn and shown through the assistant subtitle overlay, with the persona badge, like a `/text-chat` answer.
 4. If the user left the page before the answer arrived, the text is cached but neither shown nor delivered; it appears when the page is shown again.
