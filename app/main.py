@@ -891,6 +891,25 @@ def normalized_intent_text(value: Any) -> str:
     return re.sub(r"[^a-z0-9]+", " ", folded).strip()
 
 
+# VOICE-AGENT-122: the phrases by which an answer describes its own material ("the record", "the
+# data I have here"). Measured, not filtered: the prompt forbids them, this counts what slips
+# through. Same list as app.js, from lexicons.json.
+META_TALK_TERMS = tuple(
+    normalized_intent_text(term) for term in LEXICONS.get("meta_talk_terms", []) if normalized_intent_text(term)
+)
+
+
+def meta_talk_hits(text: Any) -> list[str]:
+    padded = f" {normalized_intent_text(text)} "
+    return [term for term in META_TALK_TERMS if f" {term} " in padded]
+
+
+def log_meta_talk(source: str, text: Any, **fields: Any) -> None:
+    hits = meta_talk_hits(text)
+    if hits:
+        write_client_log("meta_talk_detected", {"source": source, "terms": hits, **fields})
+
+
 def is_verbose_detail_request(value: Any) -> bool:
     clean = normalized_intent_text(value)
     return any(phrase in clean for phrase in VERBOSE_DETAIL_TRIGGER_PHRASES)
@@ -3223,6 +3242,7 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
                 "forced": bool(o.get("forced")),
             })
     write_client_log("assistant_transcript", {"source": "text-chat", "transcript": output_text})
+    log_meta_talk("text-chat", output_text)
 
     return {
         "configured": True,
@@ -3331,6 +3351,7 @@ async def brief(payload: BriefRequest) -> dict[str, Any]:
         "length": len(output_text),
     })
     write_client_log("assistant_transcript", {"source": "brief", "transcript": output_text})
+    log_meta_talk("brief", output_text, tool_name=tool_name)
     return {
         "model": model,
         "tool_name": tool_name,
@@ -3541,6 +3562,7 @@ async def deep_answer(payload: DeepAnswerRequest) -> dict[str, Any]:
         "length": len(output_text),
         "text": output_text,
     })
+    log_meta_talk("deep_answer", output_text, tool_name=tool_name)
     return {
         "model": model,
         "tool_name": tool_name,
@@ -3911,6 +3933,10 @@ HARNESS_LOG_EVENTS = frozenset({
     "deep_answer_delivered",
     "deep_answer_error",
     "deep_answer_fallback",
+    # VOICE-AGENT-122. An answer that names its own material ("the record", "the data I have
+    # here"): source (voice, text-chat, brief, deep_answer) and the terms of meta_talk_terms
+    # it matched. The count per session is the measure the ticket asked for.
+    "meta_talk_detected",
     # VOICE-AGENT-118. Emitted once per Realtime session with the character that answered:
     # persona slug, its brevity dial, and the Realtime voice. A persona comparison is only
     # interpretable if each recording says which soul and which voice were in play.

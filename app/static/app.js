@@ -522,6 +522,18 @@ const BACKGROUND_FAMILY_KEYWORDS = LEXICONS.background_family_keywords;
 // unrelated titles.
 const INTENT_STOPWORDS = new Set(LEXICONS.intent_stopwords);
 
+// VOICE-AGENT-122: phrases by which a spoken answer describes its own material ("the record",
+// "the data I have here"). Measured, not filtered: souls/_core.md forbids them, this counts
+// what slips through. Same list and same matching as main.py, from lexicons.json.
+const META_TALK_TERMS = (LEXICONS.meta_talk_terms || [])
+  .map((term) => normalizedIntentText(term))
+  .filter(Boolean);
+
+function metaTalkHits(text) {
+  const padded = ` ${normalizedIntentText(text)} `;
+  return META_TALK_TERMS.filter((term) => padded.includes(` ${term} `));
+}
+
 function intentTokens(value) {
   const seen = new Set();
   for (const token of normalizedIntentText(value).split(" ")) {
@@ -10194,6 +10206,10 @@ async function handleServerEvent(event) {
     if (transcript.trim()) {
       addRetainedContext({ type: "assistant", text: transcript.trim() });
       clientLog("assistant_transcript", { item_id: event.item_id, transcript: transcript.trim() });
+      const metaTalk = metaTalkHits(transcript);
+      if (metaTalk.length) {
+        clientLog("meta_talk_detected", { source: "voice", item_id: event.item_id, terms: metaTalk });
+      }
       assistantSpokenHighlightBuffer = transcript.trim();
       enqueueSpokenAudioHighlightCues(assistantSpokenHighlightBuffer);
       completeRealtimeSpokenSubtitle(transcript);
