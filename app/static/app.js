@@ -2726,7 +2726,9 @@ function cardSpecFromRecord(record) {
   }
 
   if (record.ID_EPISODE || type === "episode") {
-    const title = record.TITLE || record.CONTENT_TITLE || `Episode ${record.EPISODE_NUMBER || ""}`;
+    // VOICE-AGENT-199: the API names the title EPISODE_TITLE (T2S column); TITLE is its
+    // deprecated duplicate, kept as a fallback until FASTAPI-TEXT2SQL-179 drops it.
+    const title = record.EPISODE_TITLE || record.TITLE || record.CONTENT_TITLE || `Episode ${record.EPISODE_NUMBER || ""}`;
     const episodeLabel = record.SEASON_NUMBER !== undefined && record.EPISODE_NUMBER !== undefined
       ? `S${String(record.SEASON_NUMBER).padStart(2, "0")}E${String(record.EPISODE_NUMBER).padStart(2, "0")}`
       : "";
@@ -2746,7 +2748,8 @@ function cardSpecFromRecord(record) {
 
   if (record.ID_SEASON || type === "season") {
     const seasonNumber = Number(record.SEASON_NUMBER);
-    const title = record.TITLE || (seasonNumber === 0 ? "Specials" : `Season ${record.SEASON_NUMBER || ""}`);
+    // VOICE-AGENT-199: SEASON_TITLE first, TITLE as the deprecated fallback.
+    const title = record.SEASON_TITLE || record.TITLE || (seasonNumber === 0 ? "Specials" : `Season ${record.SEASON_NUMBER || ""}`);
     return withRecordDetail({
       title,
       subtitle: firstValue(formatDate(record.DAT_AIR), record.AIR_YEAR),
@@ -3065,6 +3068,7 @@ function seasonRailItems(items, idSerie) {
     .map((item) => {
       const seasonNumber = Number(item.SEASON_NUMBER);
       const title = firstValue(
+        item.SEASON_TITLE,
         item.TITLE,
         Number.isFinite(seasonNumber)
           ? seasonNumber === 0
@@ -3090,7 +3094,7 @@ function episodeRailItems(items, idSerie, seasonNumber) {
     .map((item) => {
       const episodeNumber = Number(item.EPISODE_NUMBER);
       const episodeLabel = Number.isFinite(episodeNumber) ? `Episode ${episodeNumber}` : "Episode";
-      const title = firstValue(item.TITLE, episodeLabel);
+      const title = firstValue(item.EPISODE_TITLE, item.TITLE, episodeLabel);
       const airDate = firstValue(formatDate(item.DAT_AIR), item.AIR_YEAR);
       // VOICE-AGENT-139: the IMDb rating joins the subtitle, and only when it exists.
       // uniqueNonEmpty() drops the empty string, so an episode that has not aired shows
@@ -4178,7 +4182,11 @@ function detailCollectionHasUnloadedPages(collectionName) {
 }
 
 function titleForRecord(record) {
+  // VOICE-AGENT-199: an episode or season record names its title EPISODE_TITLE /
+  // SEASON_TITLE; TITLE stays for the other records and as the deprecated duplicate.
   return firstValue(
+    record.EPISODE_TITLE,
+    record.SEASON_TITLE,
     record.TITLE,
     record.MOVIE_TITLE,
     record.SERIE_TITLE,
