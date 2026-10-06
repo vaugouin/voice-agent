@@ -389,6 +389,27 @@ def is_asr_prompt_echo(value: str) -> bool:
         return True
     if len(segments) >= _ASR_ECHO_MIN_TERMS and known >= -(-len(segments) * 8 // 10):
         return True
+    # Rule 3 (VOICE-AGENT-200), twin of isAsrVocabularyRun in app.js: a short run of the
+    # vocabulary in list order, no comma, no other word ("Box office gross.", 2026-10-05).
+    if _is_asr_vocabulary_run(normalized):
+        return True
+    return False
+
+
+_ASR_VOCABULARY_RUN_KEYS = [key for key in (_asr_echo_key(t) for t in ASR_DOMAIN_TERMS + ASR_PROPER_NOUNS) if key]
+_ASR_ECHO_RUN_MIN_TERMS = 2
+
+
+def _is_asr_vocabulary_run(normalized: str) -> bool:
+    """True when the text is two or more consecutive vocabulary terms, in list order, and nothing else."""
+    keys = _ASR_VOCABULARY_RUN_KEYS
+    for start in range(len(keys)):
+        run, end = keys[start], start
+        while len(run) < len(normalized) and end + 1 < len(keys):
+            end += 1
+            run = f"{run} {keys[end]}"
+        if run == normalized and end - start + 1 >= _ASR_ECHO_RUN_MIN_TERMS:
+            return True
     return False
 
 
@@ -2255,6 +2276,9 @@ def realtime_session_config(
         },
         "tools": tools,
         "tool_choice": "auto",
+        # VOICE-AGENT-205: the transcriber's token logprobs, so client.log says how sure it
+        # was. A broken fragment and a clean sentence look alike in user_transcript otherwise.
+        "include": ["item.input_audio_transcription.logprobs"],
     }
 
 

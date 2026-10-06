@@ -472,7 +472,44 @@ function isAsrPromptEcho(value) {
   if (known >= ASR_ECHO_MIN_TERMS && ASR_PROMPT_ECHO_TEXT.includes(normalized)) return true;
   // Rule 2: the list shape. Five or more comma-separated parts, nearly all of them vocabulary.
   if (segments.length >= ASR_ECHO_MIN_TERMS && known >= Math.ceil(segments.length * 0.8)) return true;
+  // Rule 3 (VOICE-AGENT-200): a short run of the vocabulary, in list order, with no comma and
+  // no other word. "Box office gross." and "box office gross budget filmography." came back on
+  // near-silent fragments on 2026-10-05; rules 1 and 2 count comma-separated parts, so a run
+  // with no comma was one unknown part and passed. Two whole terms at least, so "box office"
+  // alone, a plausible real follow-up, still goes through.
+  if (isAsrVocabularyRun(normalized)) return true;
 
+  return false;
+}
+
+// VOICE-AGENT-205: mean and minimum token logprob of a transcription, from the logprobs the
+// session asks for (`include` in realtime_session_config). Empty object when the event has
+// none (older transcription model, or the field renamed), so the log line never breaks.
+function asrLogprobSummary(logprobs) {
+  if (!Array.isArray(logprobs) || logprobs.length === 0) return {};
+  const values = logprobs.map((item) => Number(item?.logprob)).filter((v) => Number.isFinite(v));
+  if (values.length === 0) return {};
+  const mean = values.reduce((sum, v) => sum + v, 0) / values.length;
+  return {
+    asr_logprob_mean: Math.round(mean * 1000) / 1000,
+    asr_logprob_min: Math.round(Math.min(...values) * 1000) / 1000,
+    asr_tokens: values.length,
+  };
+}
+
+const ASR_VOCABULARY_RUN_KEYS =ASR_VOCABULARY.map((term) => normalizedIntentText(term)).filter(Boolean);
+const ASR_ECHO_RUN_MIN_TERMS = 2;
+
+function isAsrVocabularyRun(normalized) {
+  for (let start = 0; start < ASR_VOCABULARY_RUN_KEYS.length; start += 1) {
+    let run = ASR_VOCABULARY_RUN_KEYS[start];
+    let end = start;
+    while (run.length < normalized.length && end + 1 < ASR_VOCABULARY_RUN_KEYS.length) {
+      end += 1;
+      run = `${run} ${ASR_VOCABULARY_RUN_KEYS[end]}`;
+    }
+    if (run === normalized && end - start + 1 >= ASR_ECHO_RUN_MIN_TERMS) return true;
+  }
   return false;
 }
 
@@ -10397,18 +10434,20 @@ async function handleServerEvent(event) {
     // context and the verbose refetch all start, and a phantom that reaches any of them has
     // already derailed the conversation.
     const asrPromptEcho = transcript.trim() ? isAsrPromptEcho(transcript) : false;
+    const asrConfidence = asrLogprobSummary(event.logprobs);
     if (asrPromptEcho) {
       clientLog("user_transcript_discarded", {
         item_id: event.item_id,
         reason: "asr_prompt_echo",
         transcript: transcript.trim().slice(0, 200),
+        ...asrConfidence,
       });
     }
     if (transcript.trim() && !asrPromptEcho) {
       lastUserTranscript = transcript.trim();
       activeUiLanguage = detectUiLanguageFromText(lastUserTranscript);
       addRetainedContext({ type: "user", text: lastUserTranscript });
-      clientLog("user_transcript", { item_id: event.item_id, transcript: lastUserTranscript });
+      clientLog("user_transcript", { item_id: event.item_id, transcript: lastUserTranscript, ...asrConfidence });
       showUserSubtitleText(lastUserTranscript);
       // VOICE-AGENT-183: a photo attached and not yet asked about arms this turn, and the
       // sentence just spoken IS the question about it. Checked before the verbose re-fetch,
