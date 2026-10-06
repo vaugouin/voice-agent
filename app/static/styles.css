@@ -1611,7 +1611,18 @@ button.search-poster-card-link {
   z-index: 1000;
   background: rgb(0 0 0 / 94%);
   cursor: zoom-out;
-  touch-action: pan-y;
+  /* VOICE-AGENT-055: the page underneath is locked (body.imageViewerOpen), so the browser has
+     nothing to scroll here; `none` hands pinches and pans to the viewer's own zoom instead of
+     the browser's page zoom. */
+  touch-action: none;
+}
+
+.personPortraitViewer.isFullscreen.isZoomed {
+  cursor: grab;
+}
+
+.personPortraitViewer.isFullscreen.isZoomed .portraitNav {
+  display: none;
 }
 
 .personPortraitViewer.isFullscreen img {
@@ -1633,6 +1644,8 @@ button.search-poster-card-link {
   height: calc(100% - 36px);
   aspect-ratio: auto;
   object-fit: contain;
+  transform-origin: center center;
+  will-change: transform;
 }
 
 .personPortraitViewer.isFullscreen .personPortraitCounter {

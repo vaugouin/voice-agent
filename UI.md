@@ -1414,6 +1414,26 @@ Default behavior:
 - Pressing `Backspace` also closes it (VOICE-AGENT-138): with an image fullscreen, "back" means leaving the image, not stepping through the result history buried underneath it. `Shift+Backspace` behaves the same way here.
 - **The single-key shortcuts stay live while an image is fullscreen** (VOICE-AGENT-138). The viewer is `position: fixed; inset: 0; z-index: 1000` over an opaque backdrop, so it covers the whole `.controls` bar: the buttons are unreachable by pointer, and blocking the keys as well left no way at all to mute the mic or stop a running session, while the subtitles (`z-index: 1200`) kept showing the conversation going on. `M`, `T`, `L` and `N` therefore keep working, and the shortcut toast (`z-index: 1300`) renders above the viewer so the feedback is visible. `triggerControl()` needs no change: it only checks `hidden`/`disabled`, and the controls are covered, not hidden.
 
+### Pinch-to-zoom (VOICE-AGENT-055)
+
+A **fullscreen** image (portrait, poster, backdrop, and the single-image viewers) can be zoomed to
+look at a detail. Inline, the card keeps `touch-action: pan-y` so the page still scrolls; fullscreen
+switches to `touch-action: none` (the page is locked by `body.imageViewerOpen` anyway) so the
+gesture reaches the viewer instead of the browser's page zoom. One controller,
+`attachImageZoom()`, serves both builders.
+
+- **Two fingers** zoom around their midpoint, from 1x to 5x (`IMAGE_ZOOM_MAX`).
+- **One finger** pans while zoomed, bounded to the picture's own rendered size (not the letterboxed box).
+- **Double tap** returns to 1x. While zoomed, a **single tap does nothing**: closing on it would throw
+  away the detail just reached. At 1x a tap closes fullscreen, as before.
+- While zoomed the viewer carries `.isZoomed`: the ‹ › arrows are hidden and a swipe does not
+  navigate. At 1x the swipe works as before.
+- **A pinch pauses a running slideshow**, through the same switch as ■: the button shows ▶ and the
+  per-page state records "stopped". Returning to 1x does **not** restart it; ▶ does, and pressing ▶
+  on a zoomed picture first brings it back to 1x. The slideshow therefore never advances under a zoom.
+- Any new picture (arrow, slideshow tick, size change on entering fullscreen) arrives at 1x, and
+  closing the viewer (tap, `Escape`, `Backspace`) resets the zoom through `resetImageZoom()`.
+
 ### Detail Media Navigation
 
 Portraits, posters and backdrops are all built by **one** function, `buildSwipeImageViewer()`, with

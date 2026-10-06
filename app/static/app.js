@@ -3297,6 +3297,7 @@ function toggleFullscreenImageViewer(viewer) {
   const wasFullscreen = viewer.classList.contains("isFullscreen");
   document.querySelectorAll(".personPortraitViewer.isFullscreen").forEach((item) => {
     item.classList.remove("isFullscreen");
+    resetImageZoom(item);
   });
   document.body.classList.toggle("imageViewerOpen", !wasFullscreen);
   if (!wasFullscreen) {
@@ -3327,11 +3328,196 @@ function isFullscreenImageViewerOpen() {
 function closeFullscreenImageViewer() {
   document.querySelectorAll(".personPortraitViewer.isFullscreen").forEach((item) => {
     item.classList.remove("isFullscreen");
+    resetImageZoom(item);
   });
   document.body.classList.remove("imageViewerOpen");
 }
 
 const SLIDESHOW_INTERVAL_MS = 2600;
+
+// VOICE-AGENT-055: pinch-to-zoom on a fullscreen image, to look at a detail of a poster, a
+// backdrop or a portrait. Fullscreen only: inline, the card keeps `touch-action: pan-y` so the
+// page still scrolls under the finger. Two fingers zoom around their midpoint (1x to 5x), one
+// finger pans while zoomed, a double tap goes back to 1x. While zoomed a single tap does NOT
+// close the viewer (it would throw away the detail the user just reached); at 1x it does, as
+// before. The swipe navigation is the caller's, and it asks `isGestureOwned()` first: a pinch,
+// or any gesture on a zoomed image, is never a swipe. Closing the viewer and changing the
+// picture both come back to 1x through `resetImageZoom()`.
+const IMAGE_ZOOM_MAX = 5;
+const IMAGE_ZOOM_DOUBLE_TAP_MS = 350;
+const imageZoomControllers = new WeakMap();
+
+function resetImageZoom(viewer) {
+  imageZoomControllers.get(viewer)?.reset();
+}
+
+function attachImageZoom(viewer, img, { onPinchStart } = {}) {
+  const pointers = new Map();
+  let scale = 1;
+  let tx = 0;
+  let ty = 0;
+  let pinch = null;
+  let pan = null;
+  let gestureOwned = false;
+  let suppressClick = false;
+  let lastTapAt = 0;
+
+  const apply = () => {
+    img.style.transform = scale > 1 ? `translate(${tx}px, ${ty}px) scale(${scale})` : "";
+    viewer.classList.toggle("isZoomed", scale > 1);
+  };
+  const reset = () => {
+    scale = 1;
+    tx = 0;
+    ty = 0;
+    pinch = null;
+    pan = null;
+    apply();
+  };
+  // Keep the picture over the screen: the bounds come from the picture's own rendered size
+  // (object-fit: contain letterboxes it inside the img box), not from the box.
+  const clamp = () => {
+    const boxWidth = img.clientWidth;
+    const boxHeight = img.clientHeight;
+    const fit = img.naturalWidth && img.naturalHeight
+      ? Math.min(boxWidth / img.naturalWidth, boxHeight / img.naturalHeight)
+      : 0;
+    const shownWidth = fit ? img.naturalWidth * fit : boxWidth;
+    const shownHeight = fit ? img.naturalHeight * fit : boxHeight;
+    const maxX = Math.max(0, (shownWidth * scale - boxWidth) / 2);
+    const maxY = Math.max(0, (shownHeight * scale - boxHeight) / 2);
+    tx = Math.min(maxX, Math.max(-maxX, tx));
+    ty = Math.min(maxY, Math.max(-maxY, ty));
+  };
+  // Centre of the img box without the current transform (scaling about the centre does not
+  // move it, translating does).
+  const layoutCentre = () => {
+    const rect = img.getBoundingClientRect();
+    return { x: rect.left + rect.width / 2 - tx, y: rect.top + rect.height / 2 - ty };
+  };
+  const pinchGeometry = () => {
+    const [a, b] = [...pointers.values()];
+    return {
+      distance: Math.hypot(b.x - a.x, b.y - a.y) || 1,
+      mid: { x: (a.x + b.x) / 2, y: (a.y + b.y) / 2 },
+    };
+  };
+  const startPinch = () => {
+    const { distance, mid } = pinchGeometry();
+    const centre = layoutCentre();
+    pinch = {
+      distance,
+      scale,
+      centre,
+      // The point of the picture under the fingers, in unscaled picture coordinates.
+      anchor: { x: (mid.x - centre.x - tx) / scale, y: (mid.y - centre.y - ty) / scale },
+    };
+    pan = null;
+  };
+  const startPan = (point) => {
+    pan = { x: point.x, y: point.y, tx, ty };
+    pinch = null;
+  };
+
+  img.draggable = false;
+  viewer.addEventListener("pointerdown", (event) => {
+    if (pointers.size === 0) {
+      // A new gesture starts: forget what the previous one decided.
+      gestureOwned = scale > 1;
+      suppressClick = false;
+    }
+    if (!viewer.classList.contains("isFullscreen") || event.target.closest("button")) {
+      return;
+    }
+    pointers.set(event.pointerId, { x: event.clientX, y: event.clientY, startX: event.clientX, startY: event.clientY });
+    if (pointers.size === 2) {
+      gestureOwned = true;
+      onPinchStart?.();
+      startPinch();
+    } else if (pointers.size === 1 && scale > 1) {
+      startPan(event);
+    }
+  });
+  viewer.addEventListener("pointermove", (event) => {
+    const point = pointers.get(event.pointerId);
+    if (!point) {
+      return;
+    }
+    point.x = event.clientX;
+    point.y = event.clientY;
+    if (Math.hypot(point.x - point.startX, point.y - point.startY) > 8 && gestureOwned) {
+      suppressClick = true;
+    }
+    if (pinch && pointers.size >= 2) {
+      const { distance, mid } = pinchGeometry();
+      scale = Math.min(IMAGE_ZOOM_MAX, Math.max(1, pinch.scale * (distance / pinch.distance)));
+      tx = mid.x - pinch.centre.x - scale * pinch.anchor.x;
+      ty = mid.y - pinch.centre.y - scale * pinch.anchor.y;
+      clamp();
+      apply();
+      event.preventDefault();
+    } else if (pan && scale > 1) {
+      tx = pan.tx + (point.x - pan.x);
+      ty = pan.ty + (point.y - pan.y);
+      clamp();
+      apply();
+      event.preventDefault();
+    }
+  });
+  const release = (event) => {
+    if (!pointers.delete(event.pointerId)) {
+      return;
+    }
+    if (pinch) {
+      suppressClick = true;
+    }
+    if (pointers.size === 1) {
+      // One finger left after a pinch: carry on as a pan from where it is.
+      const [remaining] = pointers.values();
+      if (scale > 1) {
+        startPan(remaining);
+      } else {
+        pinch = null;
+      }
+    } else if (pointers.size === 0) {
+      pinch = null;
+      pan = null;
+      if (scale < 1.02) {
+        reset();
+      }
+    }
+  };
+  viewer.addEventListener("pointerup", release);
+  viewer.addEventListener("pointercancel", release);
+
+  const controller = {
+    reset,
+    isZoomed: () => scale > 1,
+    // True while (and just after) a gesture that belongs to the zoom: the caller must not read
+    // it as a swipe.
+    isGestureOwned: () => gestureOwned,
+    // Called first by the img click handler; true means "the zoom used this tap".
+    handleClick: () => {
+      if (suppressClick) {
+        suppressClick = false;
+        return true;
+      }
+      if (scale <= 1) {
+        return false;
+      }
+      const now = Date.now();
+      if (now - lastTapAt < IMAGE_ZOOM_DOUBLE_TAP_MS) {
+        lastTapAt = 0;
+        reset();
+      } else {
+        lastTapAt = now;
+      }
+      return true;
+    },
+  };
+  imageZoomControllers.set(viewer, controller);
+  return controller;
+}
 
 // VOICE-AGENT-175: TMDb only serves pictures at a handful of pre-rendered widths (its
 // /configuration endpoint's poster_sizes / backdrop_sizes / profile_sizes), fixed at build
@@ -3427,7 +3613,12 @@ function buildSwipeImageViewer(record, {
     const size = isFullscreen
       ? tmdbSizeForBox(kind, window.innerWidth - 36, window.innerHeight - 36)
       : (TMDB_DEFAULT_SIZE[kind] || TMDB_DEFAULT_SIZE.poster);
-    img.src = imageUrl(images[index], size) || "";
+    const src = imageUrl(images[index], size) || "";
+    if (img.getAttribute("src") !== src) {
+      // VOICE-AGENT-055: a new picture (or a new size of it) always arrives at 1x.
+      resetImageZoom(viewer);
+    }
+    img.src = src;
     counter.textContent = `${index + 1} / ${images.length}`;
   };
   const show = (direction) => {
@@ -3477,10 +3668,24 @@ function buildSwipeImageViewer(record, {
   });
   slideshowButton.addEventListener("click", (event) => {
     event.stopPropagation();
-    setSlideshowRunning(!slideshowTimer);
+    const starting = !slideshowTimer;
+    if (starting) {
+      // VOICE-AGENT-055: the slideshow never runs over a zoomed picture.
+      resetImageZoom(viewer);
+    }
+    setSlideshowRunning(starting);
   });
 
+  // VOICE-AGENT-055: a pinch pauses a running slideshow, through the same switch as the ■
+  // button, so the button shows ▶ and the saved page state records "stopped". Coming back to
+  // 1x does not restart it: the user resumes with ▶.
+  const zoom = attachImageZoom(viewer, img, { onPinchStart: () => setSlideshowRunning(false) });
+
   img.addEventListener("click", () => {
+    if (zoom.handleClick()) {
+      swiped = false;
+      return;
+    }
     if (swiped) {
       swiped = false;
       return;
@@ -3499,6 +3704,10 @@ function buildSwipeImageViewer(record, {
     }
     const deltaX = event.clientX - pointerStartX;
     pointerStartX = null;
+    if (zoom.isGestureOwned() || zoom.isZoomed()) {
+      // VOICE-AGENT-055: a pinch, or a pan on a zoomed picture, is not a swipe.
+      return;
+    }
     if (Math.abs(deltaX) >= 40) {
       swiped = true;
       showByHand(deltaX < 0 ? 1 : -1);
@@ -3548,7 +3757,11 @@ function buildSingleImageViewer(record, path, kind = "poster") {
   };
   render();
   setImageText(img, titleForRecord(record));
+  const zoom = attachImageZoom(viewer, img);
   img.addEventListener("click", () => {
+    if (zoom.handleClick()) {
+      return;
+    }
     toggleFullscreenImageViewer(viewer);
     render();
   });
