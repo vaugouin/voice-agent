@@ -1023,6 +1023,70 @@ def _log_subtitle_startup() -> None:
 _log_subtitle_startup()
 
 
+# VOICE-AGENT-194. `server_vad` ends a turn on silence alone (700 ms), so a riddle said with
+# pauses was cut in two to four pieces, each transcribed on its own (6 voice turns out of 11
+# on 2026-10-05). `semantic_vad` asks a classifier whether the speaker has FINISHED, from the
+# words heard so far; `eagerness: low` waits longest (up to 8 s per the OpenAI reference).
+# It takes neither `threshold`, `prefix_padding_ms` nor `silence_duration_ms`: the 800 ms
+# padding of VOICE-AGENT-192 goes away with it and has to be re-measured on a replay.
+# Reverting is a restart, not a deploy: REALTIME_TURN_DETECTION=server_vad.
+REALTIME_TURN_DETECTION_MODES = ("semantic_vad", "server_vad")
+REALTIME_VAD_EAGERNESS_VALUES = ("low", "medium", "high", "auto")
+
+
+def _realtime_turn_detection_choice() -> tuple[str, str, str]:
+    """(mode, eagerness, source) read from the environment, with a WARNING on bad values."""
+    raw_mode = (os.getenv("REALTIME_TURN_DETECTION") or "").strip().lower()
+    mode, source = "semantic_vad", "built-in default"
+    if raw_mode:
+        if raw_mode in REALTIME_TURN_DETECTION_MODES:
+            mode, source = raw_mode, "env"
+        else:
+            print(f"[voice-agent] WARNING unknown REALTIME_TURN_DETECTION '{raw_mode}', "
+                  f"using {mode}", flush=True)
+    raw_eager = (os.getenv("REALTIME_VAD_EAGERNESS") or "").strip().lower()
+    eagerness = raw_eager if raw_eager in REALTIME_VAD_EAGERNESS_VALUES else "low"
+    if raw_eager and raw_eager != eagerness:
+        print(f"[voice-agent] WARNING unknown REALTIME_VAD_EAGERNESS '{raw_eager}', "
+              "using low", flush=True)
+    return mode, eagerness, source
+
+
+def realtime_turn_detection_config() -> dict[str, Any]:
+    mode, eagerness, _ = _realtime_turn_detection_choice()
+    if mode == "server_vad":
+        return {
+            "type": "server_vad",
+            "threshold": 0.5,
+            # VOICE-AGENT-192: 300 -> 800. The VAD keeps only this much audio from
+            # before the point where it detects speech. A quiet opening phrase after
+            # silence ("In space," then a pause, then a louder "no one can hear you
+            # scream") was detected late and lost for both the transcript and the model.
+            "prefix_padding_ms": 800,
+            "silence_duration_ms": 700,
+            "create_response": True,
+            "interrupt_response": True,
+        }
+    return {
+        "type": "semantic_vad",
+        "eagerness": eagerness,
+        "create_response": True,
+        "interrupt_response": True,
+    }
+
+
+def _log_turn_detection_startup() -> None:
+    """Fourth startup line: the effective turn detection and where it came from."""
+    mode, eagerness, source = _realtime_turn_detection_choice()
+    detail = (f"eagerness {eagerness}" if mode == "semantic_vad"
+              else "threshold 0.5, padding 800 ms, silence 700 ms")
+    print(f"[voice-agent] turn detection: {mode} ({detail}, from {source}); "
+          "REALTIME_TURN_DETECTION=server_vad reverts on restart", flush=True)
+
+
+_log_turn_detection_startup()
+
+
 def structured_card_focus_enabled(request: Request) -> bool:
     if not env_bool("ENABLE_STRUCTURED_CARD_FOCUS", True):
         return False
@@ -2185,18 +2249,7 @@ def realtime_session_config(
                 # bias). Built together on purpose: the two tickets pull on the same lever,
                 # and the prompt is what keeps accuracy up once the language pin is gone.
                 "transcription": realtime_transcription_config(),
-                "turn_detection": {
-                    "type": "server_vad",
-                    "threshold": 0.5,
-                    # VOICE-AGENT-192: 300 -> 800. The VAD keeps only this much audio from
-                    # before the point where it detects speech. A quiet opening phrase after
-                    # silence ("In space," then a pause, then a louder "no one can hear you
-                    # scream") was detected late and lost for both the transcript and the model.
-                    "prefix_padding_ms": 800,
-                    "silence_duration_ms": 700,
-                    "create_response": True,
-                    "interrupt_response": True,
-                }
+                "turn_detection": realtime_turn_detection_config(),
             },
             "output": {"voice": selected_voice},
         },
