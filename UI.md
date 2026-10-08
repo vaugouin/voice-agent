@@ -1490,6 +1490,32 @@ Two rules worth knowing, both learned from bugs:
   stopped stays stopped, one they had running resumes. Reduced motion suppresses the *default* only,
   never a state the user set by hand.
 
+### Video Modal and Voice Trailer (VOICE-AGENT-070, VOICE-AGENT-207)
+
+The **Videos** rail of a movie or series page opens a video in `.videoModalOverlay` /
+`.videoModalFrame` (`openVideoModal()`), a YouTube or Vimeo embed with `autoplay=1`.
+
+- **Two sizes.** The small window is 16:9, at most 960 px wide and never taller than the screen.
+  The large window (`.videoModalFrame.isLarge`) fills the browser window at 16:9 with a small
+  margin. A video opened **by a click** starts small; a trailer asked for **by voice** starts large.
+- **`.videoModalSize`** (⤡ in the large window, ⤢ in the small one), next to the ✕, switches
+  between the two. True fullscreen stays on YouTube's own button: a voice command cannot request
+  it, since every browser demands a click or a key for fullscreen.
+- **Closing**: ✕, a click on the dark backdrop, or `Escape`.
+- **The microphone is shut while any video modal is open** (`videoModalOpen`, read by
+  `canEnableMicrophone()`), so the soundtrack is never transcribed into turns; it reopens on close
+  if the user had it open. Only one video modal exists at a time: opening another closes the first.
+- **Voice trigger.** "Show me the trailer" on a movie or series page makes the model call
+  `play_trailer`. The browser picks a Trailer before a Teaser before any other video, preferring the
+  UI language, cuts anything the model was saying, and opens it large. The model is not asked to
+  answer, so it stays silent over the video. With no video on the page, or no movie or series page
+  on screen, it says so in one sentence. Voice only: the typed path has no trailer action yet.
+- **iPhone / iPad**: Safari does not start a video with sound without a tap, and a voice command is
+  not one, so there the window may open on a paused player that needs one tap.
+
+Logs: `video_modal_opened` (`source` click/voice, `large`, `type`), `video_modal_resize`,
+`video_modal_closed`, and the usual `tool_call_start` / `tool_call_success` for `play_trailer`.
+
 ## Voice Selection
 
 There is no rendered voice selector in the current `index.html`.

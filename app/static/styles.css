@@ -2078,6 +2078,8 @@ button.detailVisualCard:hover {
 .videoModalFrame {
   position: relative;
   width: min(960px, 100%);
+  /* VOICE-AGENT-207: capped by the height too, or a phone in landscape overflows the screen. */
+  width: min(960px, 100%, calc((100dvh - 48px) * 16 / 9));
   aspect-ratio: 16 / 9;
   background: #000000;
   border-radius: 10px;
@@ -2105,8 +2107,31 @@ button.detailVisualCard:hover {
   line-height: 1;
   cursor: pointer;
 }
+/* VOICE-AGENT-207: the large window fills the browser window at 16:9 with a small margin; the
+   width is capped by the height so the frame never overflows a wide, short window. */
+.videoModalFrame.isLarge {
+  width: min(100%, calc((100vh - 48px) * 16 / 9));
+  width: min(100%, calc((100dvh - 48px) * 16 / 9));
+}
+.videoModalSize {
+  position: absolute;
+  top: -14px;
+  right: 30px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 1px solid rgb(255 255 255 / 25%);
+  background: #1a1a1a;
+  color: #ffffff;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+}
+.videoModalFrame.isLarge .videoModalClose { top: 8px; right: 8px; }
+.videoModalFrame.isLarge .videoModalSize { top: 8px; right: 52px; }
 @media (max-width: 640px) {
   .videoModalClose { top: 6px; right: 6px; }
+  .videoModalSize { top: 6px; right: 48px; }
 }
 
 .detailVisualTitle {

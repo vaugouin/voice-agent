@@ -1174,6 +1174,22 @@ def focus_result_card_tool_definition() -> dict[str, Any]:
 # tool lets it act on that instead of admitting a gap. Voice only: /text-chat reads on the server.
 ASK_ABOUT_RECORD_TOOL = "ask_about_record"
 
+# VOICE-AGENT-207. Voice only, handled in the browser: it plays the trailer of the movie or series
+# on screen in the large video window and mutes the microphone until the window closes.
+PLAY_TRAILER_TOOL = "play_trailer"
+
+
+def play_trailer_tool_definition() -> dict[str, Any]:
+    return {
+        "type": "function",
+        "name": PLAY_TRAILER_TOOL,
+        "description": (
+            "Play the trailer of the movie or series on screen, in a large video window. Takes "
+            "no argument: it always plays the trailer of the page the user is looking at."
+        ),
+        "parameters": {"type": "object", "properties": {}, "additionalProperties": False},
+    }
+
 
 def ask_about_record_tool_definition() -> dict[str, Any]:
     return {
@@ -1710,6 +1726,16 @@ ASK_ABOUT_RECORD_INSTRUCTIONS = (
     "detail already answers (a year, a rating, a runtime, a credit that is listed)."
 )
 
+# VOICE-AGENT-207, voice only.
+PLAY_TRAILER_INSTRUCTIONS = (
+    "When the user asks to see, play, watch or launch the trailer or teaser of the movie or "
+    "series on screen, call play_trailer at once, without saying anything before it. If it "
+    "returns ok, say nothing at all: the video is playing and the microphone stays off until it "
+    "closes. If it returns ok false, say in one short sentence that there is no trailer to play "
+    "here. Never call it unless the user asked for a trailer or a teaser, and never search for "
+    "another title to find one."
+)
+
 VERBOSE_DETAIL_INSTRUCTIONS = (
     "Default to concise answers. If the user explicitly asks to tell me more, "
     "answer in detail, explain the full story, go deeper, or asks for a longer "
@@ -2161,6 +2187,7 @@ def realtime_session_config(
         # request now comes back as a deep answer.
         + " " + DEEP_ANSWER_VOICE_INSTRUCTIONS
         + " " + ASK_ABOUT_RECORD_INSTRUCTIONS  # VOICE-AGENT-198
+        + " " + PLAY_TRAILER_INSTRUCTIONS  # VOICE-AGENT-207
         + " " + RECOVERY_INSTRUCTIONS
         + " " + RESULT_COUNT_INSTRUCTIONS
         + " " + DISAMBIGUATION_INSTRUCTIONS
@@ -2227,7 +2254,7 @@ def realtime_session_config(
                 "additionalProperties": False,
             },
         }
-    ] + detail_tool_definitions() + [ask_about_record_tool_definition()]
+    ] + detail_tool_definitions() + [ask_about_record_tool_definition(), play_trailer_tool_definition()]
     if structured_card_focus:
         instructions += (
             " Search results may include a visible_results list whose index "

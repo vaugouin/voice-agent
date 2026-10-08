@@ -190,6 +190,13 @@ let currentSearchState = null;
 // result was not ambiguous. { entity, ids:Set<string>, candidates:[{id, display, discriminator}] }.
 let pendingDisambiguation = null;
 let currentDetailState = null;
+// VOICE-AGENT-207: true while a video modal is on screen. Read by canEnableMicrophone(): the
+// microphone stays shut for the whole playback and syncMicrophone() reopens it on close, so the
+// trailer's soundtrack is never transcribed into turns. One modal at a time; a second open
+// (a voice request over a clicked video) closes the first through closeActiveVideoModal.
+let videoModalOpen = false;
+let closeActiveVideoModal = null;
+
 let loadingDetailCollections = new Set();
 let activeUiLanguage = "en";
 let loadingMore = false;
@@ -217,6 +224,8 @@ const CONTEXT_STORAGE_KEY = "voice-agent-context-v1";
 const STRUCTURED_CARD_FOCUS_TOOL = "focus_result_card";
 // VOICE-AGENT-198: the model's own way to POST /deep-answer (tool defined in app/main.py).
 const ASK_ABOUT_RECORD_TOOL = "ask_about_record";
+// VOICE-AGENT-207: browser-side action, the trailer of the record on screen.
+const PLAY_TRAILER_TOOL = "play_trailer";
 // VOICE-AGENT-085: the spoken-card highlight targets two card families that never
 // coexist in `#resultsContent` — search grid cards (`.search-poster-card`) and entity
 // detail rail cards (`.detailVisualCard`). One selector covers both so the matcher,
@@ -4222,7 +4231,11 @@ function videoThumbUrl(video) {
   return "";
 }
 
-function openVideoModal(video) {
+// VOICE-AGENT-207: `large` fills the browser window (16:9, small margin), which is how a trailer
+// asked for by voice opens, since a voice command cannot request real fullscreen (every browser
+// demands a click or a key for that). The ⤡/⤢ button switches between the large and the small
+// window; YouTube's own button still gives true fullscreen.
+function openVideoModal(video, { large = false, source = "click" } = {}) {
   const site = String(video.VIDEO_SITE || "").toLowerCase();
   let embed = video.EMBED_URL || "";
   if (!embed && site === "youtube" && video.VIDEO_KEY) embed = `https://www.youtube.com/embed/${video.VIDEO_KEY}`;
@@ -4230,11 +4243,13 @@ function openVideoModal(video) {
     if (video.WATCH_URL) window.open(video.WATCH_URL, "_blank", "noopener");
     return;
   }
+  closeActiveVideoModal?.();
   const src = embed + (embed.includes("?") ? "&" : "?") + "autoplay=1&rel=0";
   const overlay = document.createElement("div");
   overlay.className = "videoModalOverlay";
   const frameWrap = document.createElement("div");
   frameWrap.className = "videoModalFrame";
+  frameWrap.classList.toggle("isLarge", large);
   const iframe = document.createElement("iframe");
   iframe.src = src;
   iframe.title = video.VIDEO_NAME || "Video";
@@ -4245,17 +4260,60 @@ function openVideoModal(video) {
   closeBtn.className = "videoModalClose";
   closeBtn.setAttribute("aria-label", "Close video");
   closeBtn.textContent = "✕";
+  const sizeBtn = document.createElement("button");
+  sizeBtn.type = "button";
+  sizeBtn.className = "videoModalSize";
+  const syncSizeButton = () => {
+    const isLarge = frameWrap.classList.contains("isLarge");
+    sizeBtn.textContent = isLarge ? "⤡" : "⤢";
+    sizeBtn.setAttribute("aria-label", isLarge ? "Smaller video window" : "Larger video window");
+    sizeBtn.title = isLarge ? "Smaller window" : "Larger window";
+  };
+  syncSizeButton();
+  sizeBtn.addEventListener("click", () => {
+    frameWrap.classList.toggle("isLarge");
+    syncSizeButton();
+    clientLog("video_modal_resize", { large: frameWrap.classList.contains("isLarge") });
+  });
   const close = () => {
     overlay.remove();
     document.removeEventListener("keydown", onKey);
+    if (closeActiveVideoModal === close) {
+      closeActiveVideoModal = null;
+      videoModalOpen = false;
+      syncMicrophone("video closed");
+      clientLog("video_modal_closed", { source });
+    }
   };
   const onKey = (event) => { if (event.key === "Escape") close(); };
   overlay.addEventListener("click", (event) => { if (event.target === overlay) close(); });
   closeBtn.addEventListener("click", close);
   document.addEventListener("keydown", onKey);
-  frameWrap.append(iframe, closeBtn);
+  frameWrap.append(iframe, sizeBtn, closeBtn);
   overlay.append(frameWrap);
   document.body.append(overlay);
+  closeActiveVideoModal = close;
+  videoModalOpen = true;
+  syncMicrophone("video opened");
+  clientLog("video_modal_opened", { source, large, site, type: video.VIDEO_TYPE || "", name: video.VIDEO_NAME || "" });
+}
+
+// VOICE-AGENT-207: the video "the trailer" means on this page. A Trailer before a Teaser before
+// anything else (featurette, clip), then the UI language, then the API's own order.
+const TRAILER_TYPE_RANK = { trailer: 0, teaser: 1 };
+function pickTrailerVideo(videos, uiLanguage) {
+  const playable = (Array.isArray(videos) ? videos : []).filter(isPlayableVideo);
+  const language = String(uiLanguage || "").toLowerCase();
+  const rank = (video, position) => {
+    const type = String(video.VIDEO_TYPE || "").toLowerCase();
+    const typeRank = TRAILER_TYPE_RANK[type] ?? 2;
+    const videoLanguage = String(video.ISO_639_1 || video.VIDEO_LANGUAGE || video.LANGUAGE || "").toLowerCase();
+    const languageRank = language && videoLanguage === language ? 0 : 1;
+    return [typeRank, languageRank, position];
+  };
+  return playable
+    .map((video, position) => ({ video, key: rank(video, position) }))
+    .sort((a, b) => a.key[0] - b.key[0] || a.key[1] - b.key[1] || a.key[2] - b.key[2])[0]?.video || null;
 }
 
 function buildVideoCard(video) {
@@ -7830,7 +7888,8 @@ function setMicrophoneEnabled(enabled) {
 }
 
 function canEnableMicrophone() {
-  return userMicrophoneOpen && toolCallsInFlight === 0 && !awaitingToolResponse;
+  // VOICE-AGENT-207: a playing video keeps the mic shut, or its soundtrack becomes turns.
+  return userMicrophoneOpen && toolCallsInFlight === 0 && !awaitingToolResponse && !videoModalOpen;
 }
 
 function syncMicrophone(reason) {
@@ -9991,6 +10050,47 @@ async function handleAskAboutRecordCall(item, args) {
   }
 }
 
+// VOICE-AGENT-207. "Show me the trailer": the record on screen, nothing searched, nothing
+// fetched. On success the output goes back WITHOUT a response request, so the model stays silent
+// over the video (it was told so too) and anything it had started saying is cut. On failure the
+// usual tool-output path runs, so the model says in one sentence that there is no trailer here.
+function handlePlayTrailerCall(item) {
+  const detail = !resultsPanel.hidden ? currentDetailState?.detail : null;
+  const uiLanguage = normalizeUiLanguage(activeUiLanguage || currentDetailState?.ui_language || "en");
+  const video = detail ? pickTrailerVideo(detail.videos, uiLanguage) : null;
+  clientLog("tool_call_start", { name: item.name, call_id: item.call_id, entity: currentDetailState?.entity || null });
+  if (video) {
+    cancelAssistantOutput("trailer opened");
+    openVideoModal(video, { large: true, source: "voice" });
+    const output = { ok: true, title: titleForRecord(detail), video_type: video.VIDEO_TYPE || "", note: "The video is playing. Say nothing." };
+    try {
+      sendFunctionCallOutput(item.call_id, output);
+    } catch (error) {
+      clientLog("tool_output_send_error", { tool: item.name, call_id: item.call_id, error: error.message }, "error");
+    }
+    clientLog("tool_call_success", { name: item.name, call_id: item.call_id, ok: true, video_type: output.video_type });
+    return;
+  }
+  const output = {
+    ok: false,
+    error: detail ? "no_trailer" : "no_record",
+    note: detail
+      ? "This page has no trailer. Say so in one short sentence."
+      : "No movie or series page is open. Say in one short sentence that you can play a trailer once a movie or series is on screen.",
+  };
+  clientLog("tool_call_success", { name: item.name, call_id: item.call_id, ok: false, error: output.error });
+  awaitingToolResponse = true;
+  try {
+    sendFunctionCallOutput(item.call_id, output);
+  } catch (error) {
+    clientLog("tool_output_send_error", { tool: item.name, call_id: item.call_id, error: error.message }, "error");
+  } finally {
+    requestRealtimeResponseAfterToolOutput();
+    scheduleToolResponseWatchdog(); // VOICE-AGENT-094
+    syncMicrophone("tool output sent");
+  }
+}
+
 async function handleFunctionCall(item) {
   if (
     item?.type !== "function_call" ||
@@ -9998,6 +10098,7 @@ async function handleFunctionCall(item) {
       item.name !== "query_text2sql" &&
       item.name !== STRUCTURED_CARD_FOCUS_TOOL &&
       item.name !== ASK_ABOUT_RECORD_TOOL &&
+      item.name !== PLAY_TRAILER_TOOL &&
       !DETAIL_TOOL_ENTITIES[item.name]
     )
   ) {
@@ -10015,6 +10116,10 @@ async function handleFunctionCall(item) {
   }
   if (item.name === ASK_ABOUT_RECORD_TOOL) {
     await handleAskAboutRecordCall(item, args);
+    return;
+  }
+  if (item.name === PLAY_TRAILER_TOOL) {
+    handlePlayTrailerCall(item);
     return;
   }
   args.ui_language = item.name === "query_text2sql"
