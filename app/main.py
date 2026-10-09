@@ -1802,6 +1802,20 @@ FOLLOW_UP_ROUTING_INSTRUCTIONS = (
     "query_text2sql is then the right call."
 )
 
+# VOICE-AGENT-210. Voice only: the browser attaches `record_detail` to a query_text2sql output
+# when the search resolved to ONE record and the screen opened that record's full page. Before
+# this, a search for "Stanley Kubrick" handed the model one line ("Here's the information for
+# Stanley Kubrick") while the screen showed 53 credits, and the model said twice that it could
+# not take the user through his career. The text path does not need it: /text-chat forces the
+# detail call server-side.
+SINGLE_RECORD_DETAIL_INSTRUCTIONS = (
+    "When a query_text2sql result carries record_detail, the search found exactly one title or "
+    "person and the screen is showing that record's full page: record_detail is what that page "
+    "shows (for a person, credits lists the films and series on screen with years and roles). "
+    "Answer from it as fully as from a detail tool result, and never say you cannot go through a "
+    "filmography or a career that record_detail lists."
+)
+
 # VOICE-AGENT-158. Sent only on a turn that carries an image. The API has already done the
 # reading and the resolving: its vision pre-stage turns the picture into a question in words,
 # composes it deterministically, and answers it with the ordinary pipeline. What the model must
@@ -1816,14 +1830,19 @@ VISION_TURN_INSTRUCTIONS = (
     "it, the selected candidate, and composed_question, which is the question the database "
     "actually answered. Base your answer on that block and on the rows returned beside it, "
     "never on what you would guess a poster of this description shows. "
-    "Say what was read, briefly and in plain words, so the user can tell why this title came "
-    "back: one short clause of evidence is enough ('the credits block names Ridley Scott'). "
-    "Never present a title the catalogue did not return. If vision_evidence.candidates is "
-    "empty, or the result has no rows and no selected candidate, say plainly that you could not "
-    "identify it and report what was read in the image — a plausible guess is the one answer "
-    "this feature must never give. If several candidates are close (dominant is false), present "
-    "them as a choice with what distinguishes them, exactly as for a same-name cluster, instead "
-    "of picking one silently. If about_image is true the question was about the picture itself "
+    "Speak as someone who recognises the picture at a glance, not as someone describing how it "
+    "was processed: open with the title, and if a clue helps, give it as a natural observation "
+    "in a few words ('the one facing out on your Kubrick shelf', 'Ridley Scott's name is on the "
+    "credits'). Never narrate the reading or the matching: no 'the image was read as', 'the "
+    "vision model', 'it matched', 'identified', 'a possible match', 'candidate', 'the "
+    "catalogue', and never list everything that is in the picture. "
+    "Never present a title the API did not return. If vision_evidence.candidates is "
+    "empty, or the result has no rows and no selected candidate, say plainly that you cannot "
+    "tell what it is, and say in one short clause what you do see in it — a plausible guess is "
+    "the one answer this feature must never give. If several candidates are close (dominant is "
+    "false), ask which one the user means in a single short question that names them ('The "
+    "film, or the whole Kubrick box set?'), instead of picking one silently and instead of "
+    "explaining why there are two. If about_image is true the question was about the picture itself "
     "and is answered from the pixels: answer from the hints and do not go looking for a title. "
     "If authoritative_empty is true the image has nothing of cinema in it: say so, and do not "
     "search. "
@@ -2196,6 +2215,7 @@ def realtime_session_config(
         # for missing background. This one sends it there for a missing SUBJECT, which is the
         # other half of the same reflex.
         + " " + FOLLOW_UP_ROUTING_INSTRUCTIONS
+        + " " + SINGLE_RECORD_DETAIL_INSTRUCTIONS  # VOICE-AGENT-210
         # VOICE-AGENT-180: carried by every session rather than injected with the photo, for two
         # reasons. A picture turn arrives unannounced, so the rules have to be in place before it
         # does; and the rules must still hold on the FOLLOW-UP turns, which carry no block of

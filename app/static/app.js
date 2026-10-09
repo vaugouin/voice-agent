@@ -313,6 +313,14 @@ let awaitingToolResponse = false;
 // (e.g. a "still loading" filler the model was speaking), so the response.create that
 // makes the model answer from the tool result is deferred until that response ends.
 let pendingToolResponseRequest = false;
+// VOICE-AGENT-209: true while response.done is handing several function calls of ONE model
+// turn to handleFunctionCall. Each call used to send its own response.create the moment its
+// output was in, so two calls (get_movie_detail then query_text2sql, 2026-10-09) made the model
+// answer twice, nine seconds apart, the second answer a paraphrase of the first. While the batch
+// runs, a request only marks pendingToolResponseRequest, and response.done fires ONE create
+// after the last output is in, so the single answer reads every result.
+let toolOutputBatchActive = false;
+let toolOutputBatchRequests = 0;
 // VOICE-AGENT-094: backstop timer — if the model never picks up a sent tool output, break
 // the stuck `awaitingToolResponse` so the mic can't stay muted and wedge the session.
 let toolResponseWatchdogTimer = null;
@@ -5024,6 +5032,7 @@ async function renderSingleRecordResult(parent, record) {
     retainDetailToolContext(request.toolName, currentDetailState.args, stateOutput);
     renderSingleDetail(container, detail);
     return {
+      toolName: request.toolName, // VOICE-AGENT-210: lets the voice path hand this page to the model
       output: stateOutput,
       args: cloneHistoryValue(currentDetailState.args),
     };
@@ -5324,7 +5333,8 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
         if (!skipHistory) {
           pushPageHistory({ type: "search", output, args });
         }
-        return;
+        // VOICE-AGENT-210: the page the screen just opened, for the voice path to pass on.
+        return { singleRecord: renderedDetail || null };
       }
     }
 
@@ -8766,8 +8776,8 @@ const LOOK_VOICE_TURN_PREFIX =
   "[Photo turn: the user has just shown you a photo. You did not see it: a vision model read it "
   + "server-side and the catalogue answered what it read. Everything known about the picture and "
   + "the answer is the query_text2sql result below, including its vision_evidence. Answer the "
-  + "user now from this block, mentioning briefly what was read in the image; do not call "
-  + "query_text2sql again for this photo.]";
+  + "user now from this block, as someone who recognises the picture, without describing how it "
+  + "was read; do not call query_text2sql again for this photo.]";
 
 // VOICE-AGENT-183, the spoken half of the arming rule. A voice session has no Enter key: its
 // submission is speech, so the sentence said while a photo is armed is what asks about it.
@@ -9321,6 +9331,77 @@ function compactWikipediaContent(detail, { verbose = false } = {}) {
   return compact;
 }
 
+// VOICE-AGENT-210. A search that resolves to ONE record opens that record's full page on screen
+// (renderSingleRecordResult), but the model used to receive only the search output: for "Stanley
+// Kubrick", one line, while the screen showed 53 credits. This hands the model the same page,
+// compacted like a detail tool result. A person's four credit lists are the heavy part (a full
+// filmography with posters and every field), so they become title, year and roles, in the
+// order the rails show them, capped per list; the media lists are then shed by the ordinary
+// detail fitter. Returns null when nothing useful fits, and the search output goes alone.
+const SINGLE_RECORD_CREDIT_CAP = 30;
+
+function creditYearForModel(item) {
+  const year = firstValue(
+    item.RELEASE_YEAR,
+    item.YEAR,
+    yearFromDate(item.DAT_RELEASE),
+    yearFromDate(item.DAT_FIRST_AIR),
+    yearFromDate(item.RELEASE_DATE),
+    yearFromDate(item.FIRST_AIR_DATE)
+  );
+  return year ? String(year) : "";
+}
+
+function creditsForModel(items, rolesKey) {
+  return items.slice(0, SINGLE_RECORD_CREDIT_CAP).map((item) => {
+    const line = { title: visualTitle(item) };
+    const year = creditYearForModel(item);
+    if (year) line.year = year;
+    if (item[rolesKey]) line.roles = String(item[rolesKey]);
+    return line;
+  });
+}
+
+function singleRecordDetailForModel(rendered, roomBytes) {
+  const output = rendered?.output;
+  const entity = DETAIL_TOOL_ENTITIES[rendered?.toolName];
+  if (!entity || !output?.detail || roomBytes < 2048) {
+    return null;
+  }
+  let detail = output.detail;
+  if (entity === "person") {
+    const movieCrew = dedupeCrewCredits(detail.movie_crew);
+    const seriesCrew = dedupeCrewCredits(detail.series_crew);
+    const movieCast = dedupeContentCastCredits(detail.movie_cast);
+    const seriesCast = dedupeContentCastCredits(detail.series_cast);
+    const {
+      movie_crew: _movieCrew, series_crew: _seriesCrew, movie_cast: _movieCast, series_cast: _seriesCast,
+      ...rest
+    } = detail;
+    detail = {
+      ...rest,
+      credits: {
+        movies_directed_or_crewed: creditsForModel(movieCrew, "CREW_DEPARTMENT"),
+        movies_acted: creditsForModel(movieCast, "CAST_CHARACTER"),
+        series_directed_or_crewed: creditsForModel(seriesCrew, "CREW_DEPARTMENT"),
+        series_acted: creditsForModel(seriesCast, "CAST_CHARACTER"),
+      },
+      credit_totals: {
+        movies_directed_or_crewed: movieCrew.length,
+        movies_acted: movieCast.length,
+        series_directed_or_crewed: seriesCrew.length,
+        series_acted: seriesCast.length,
+      },
+    };
+  }
+  const compacted = compactDetailForModel({ ...output, detail }, entity);
+  const fitted = fitDetailToDataChannel(compacted, roomBytes);
+  if (!fitted.fits || fitted.detailDropped) {
+    return null;
+  }
+  return fitted.output;
+}
+
 function compactDetailForModel(output, fallbackEntity, { verbose = false } = {}) {
   const detail = output?.detail && typeof output.detail === "object" ? output.detail : null;
   if (!detail) {
@@ -9718,6 +9799,13 @@ function sendFunctionCallOutput(callId, output) {
 }
 
 function requestRealtimeResponseAfterToolOutput() {
+  if (toolOutputBatchActive) {
+    // VOICE-AGENT-209: another call of the same model turn may still be running; response.done
+    // sends the one response.create once they are all in.
+    toolOutputBatchRequests += 1;
+    pendingToolResponseRequest = true;
+    return;
+  }
   if (!activeResponseId) {
     pendingToolResponseRequest = false;
     sendEvent({ type: "response.create" });
@@ -10143,6 +10231,7 @@ async function handleFunctionCall(item) {
     setLoadingEntityDetail(item.name, args);
   }
   let output;
+  let singleRecordRender = null; // VOICE-AGENT-210
   // VOICE-AGENT-111: the model usually speaks its own filler while a tool runs, but not
   // always: the measured table has an 11-second turn WITH a filler and four 16-to-24-second
   // ones without. This is the net for the second kind, and it costs nothing on a fast call
@@ -10194,7 +10283,8 @@ async function handleFunctionCall(item) {
           error: searchErrorText(output),
         });
       } else {
-        await renderText2SqlResult(output, args);
+        const rendered = await renderText2SqlResult(output, args);
+        singleRecordRender = rendered?.singleRecord || null;
       }
     } else {
       renderEntityDetailOutput(output, args);
@@ -10271,6 +10361,25 @@ async function handleFunctionCall(item) {
         ui_language: output.ui_language || args.ui_language || "",
         detail: output.detail || null,
       };
+  if (item.name === "query_text2sql" && singleRecordRender) {
+    // VOICE-AGENT-210: hand the model the page the screen opened, within what is left of the
+    // channel budget once the search output itself is counted.
+    const roomBytes = dataChannelBudgetBytes() - serializedByteSize(JSON.stringify(toolOutput)) - 512;
+    const recordDetail = singleRecordDetailForModel(singleRecordRender, roomBytes);
+    if (recordDetail) {
+      toolOutput.record_detail = recordDetail;
+    }
+    clientLog("single_record_detail", {
+      call_id: item.call_id,
+      tool: singleRecordRender.toolName || "",
+      attached: Boolean(recordDetail),
+      room_bytes: roomBytes,
+      sent_bytes: recordDetail ? serializedByteSize(JSON.stringify(recordDetail)) : 0,
+      credits: recordDetail?.detail?.credits ? Object.fromEntries(
+        Object.entries(recordDetail.detail.credits).map(([key, list]) => [key, Array.isArray(list) ? list.length : 0])
+      ) : null,
+    });
+  }
   const compactedToolOutput = item.name === "query_text2sql"
     ? toolOutput
     : compactDetailForModel(toolOutput, DETAIL_TOOL_ENTITIES[item.name], { verbose: verboseDetailRequest });
@@ -10630,8 +10739,24 @@ async function handleServerEvent(event) {
     setStatus("Connected", "live");
 
     const output = event.response?.output || [];
-    for (const item of output) {
-      await handleFunctionCall(item);
+    const functionCallCount = output.filter((item) => item?.type === "function_call").length;
+    // VOICE-AGENT-209: several calls in one turn get one answer, not one per call.
+    toolOutputBatchActive = functionCallCount > 1;
+    toolOutputBatchRequests = 0;
+    try {
+      for (const item of output) {
+        await handleFunctionCall(item);
+      }
+    } finally {
+      if (toolOutputBatchActive) {
+        clientLog("tool_output_batch", {
+          function_calls: functionCallCount,
+          response_requests: toolOutputBatchRequests,
+          responses_sent: pendingToolResponseRequest ? 1 : 0,
+        });
+      }
+      toolOutputBatchActive = false;
+      toolOutputBatchRequests = 0;
     }
     // VOICE-AGENT-094: if a tool output was waiting for a free response slot while this
     // response (e.g. a "still loading" filler) was active, fire the deferred response.create
