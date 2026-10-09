@@ -9036,6 +9036,8 @@ const LOOK_EVIDENCE_SHED_STEPS = [
     dominant: evidence.dominant ?? null,
     about_image: evidence.about_image ?? null,
     composed_question: evidence.composed_question || "",
+    // VOICE-AGENT-214: small, and what keeps a removed face name out of the answer.
+    credits_check: evidence.credits_check || null,
     hints: trimEvidenceHints({ title_text: evidence.hints?.title_text }, 200),
     candidates: trimCandidateEvidence((evidence.candidates || []).slice(0, 1), 1),
     candidates_truncated: true,
