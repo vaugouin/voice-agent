@@ -4,3 +4,6 @@
 
 # Keep the safe template tracked.
 !.env.example
+
+# Backups written by --migrate-env carry the same secrets.
+.env.bak-*

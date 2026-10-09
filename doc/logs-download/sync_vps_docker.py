@@ -18,6 +18,8 @@ Pulls NEW and NEWER files from the VPS down into the local copy, over SFTP
     actually listed on the VPS: excluded paths, skipped symlinks, other roots, and
     folders whose remote listing failed are never touched.
   * One-way only (remote -> local). Local changes are never pushed up.
+  * Deletion can be set per folder pair: a [keep] tag on a pair turns it off
+    there, a [delete] tag turns it on, whatever VPS_DELETE says.
   * Resilient to dropped SFTP sessions: if the SSH transport dies mid-walk, the
     session is rebuilt and the failing operation retried, and a failure in one
     top-level root is isolated so the remaining roots still sync — so a single
@@ -25,12 +27,24 @@ Pulls NEW and NEWER files from the VPS down into the local copy, over SFTP
     of the alphabet.
 
 By default it runs as **root** so it can read EVERYTHING (incl. root-owned TLS
-private keys and the ChromaDB store). It mirrors the main `--remote`
-(/home/debian/docker) PLUS extra system roots (/var/spool/cron/crontabs,
-/var/lib/docker/volumes, /var/lib/bind, /etc, /home/debian, /root — set via
-VPS_EXTRA_ROOTS in .env),
-each mapped under the same local base so the copy mirrors the VPS filesystem
-(remote /etc -> <base>\etc). Use --no-extra-roots to sync only the main tree.
+private keys and the ChromaDB store).
+
+What it mirrors is a list of folder pairs in the .env, one per line:
+
+  VPS_SYNC_1=/home/debian/docker -> T:\...\ovh-pv7\home\debian\docker
+  VPS_SYNC_2=/home/debian/docker/damp-vaugouin-com/mariadb_backups -> T:\...\mariadb_backups [keep]
+
+Pairs run in natural suffix order (2 before 10). A relative local folder resolves
+against the .env's folder. A pair may sit inside another one only if its local
+folder sits at the same relative place as its remote folder: the outer pair then
+leaves that subtree entirely to the inner pair (copy and deletion), which is what
+makes [keep] on an inner pair safe. Any other overlap, and any duplicate remote or
+local folder, stops the run before connecting. --sync "remote -> local" replaces
+the .env pairs for a one-off run; --only <suffix> runs a subset.
+
+The pre-2026-10 keys VPS_REMOTE / VPS_LOCAL / VPS_EXTRA_ROOTS are refused with the
+equivalent VPS_SYNC lines printed; `--migrate-env` rewrites the .env in place
+(backup kept, --dry-run to preview).
 Trim content with an exclude config file (see --exclude-file / sync_exclude.conf):
 the heavy raw database files are excluded there, while the ChromaDB vector store
 under shared_data is kept.
@@ -45,9 +59,8 @@ Exclude rules (from the config file and/or --exclude):
 
 Credentials live in a `.env` file beside this script (see .env.example) and are
 loaded automatically. Real environment variables override .env; CLI flags
-override both. Recognised keys: VPS_HOST, VPS_PORT, VPS_USER, VPS_REMOTE,
-VPS_LOCAL, VPS_EXTRA_ROOTS, VPS_KEY_FILE, VPS_KEY_PASSPHRASE,
-VPS_SSH_PASSWORD, VPS_DELETE. The .env is
+override both. Recognised keys: VPS_HOST, VPS_PORT, VPS_USER, VPS_SYNC_<suffix>,
+VPS_KEY_FILE, VPS_KEY_PASSPHRASE, VPS_SSH_PASSWORD, VPS_DELETE. The .env is
 git/docker-ignored.
 
 VPS_KEY_FILE accepts three path forms, all resolved by resolve_path():
@@ -84,20 +97,13 @@ from getpass import getpass
 import paramiko
 
 # --------------------------------------------------------------------------- #
-# Connection config (VPS_HOST, VPS_PORT, VPS_USER, VPS_REMOTE, VPS_LOCAL, the
-# password, ...) is NOT hardcoded here — it lives in .env (git/docker-ignored,
-# see .env.example) or on the command line. The argparse defaults below read it
-# straight from the environment; VPS_HOST and VPS_LOCAL are required (validated
-# after parsing), while VPS_PORT/VPS_USER/VPS_REMOTE fall back to generic,
-# non-sensitive literals if the .env omits them.
+# Connection config (VPS_HOST, VPS_PORT, VPS_USER, the password, ...) and the
+# folder pairs (VPS_SYNC_<suffix>) are NOT hardcoded here: they live in .env
+# (git/docker-ignored, see .env.example) or on the command line. The argparse
+# defaults below read it straight from the environment; VPS_HOST and at least one
+# pair are required (validated after parsing), while VPS_PORT/VPS_USER fall back
+# to generic, non-sensitive literals if the .env omits them.
 # --------------------------------------------------------------------------- #
-
-# Extra remote roots OUTSIDE the main tree are mirrored under the same local base
-# (e.g. remote /etc -> <base>\etc, where <base> is VPS_LOCAL minus the VPS_REMOTE
-# tail). Reading most of these needs root (VPS_USER=root). The list is NOT
-# hardcoded here — it lives in VPS_EXTRA_ROOTS in the .env (comma-separated; see
-# .env.example for the canonical list with per-path notes). Disable the whole
-# set with --no-extra-roots; add more with repeatable --extra-root.
 
 # Config files sit next to this script unless overridden on the command line.
 _SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -257,6 +263,205 @@ def resolve_path(path: str | None, base: str) -> str | None:
     if not os.path.isabs(expanded):
         expanded = os.path.join(base, expanded)
     return os.path.normpath(expanded)
+
+
+class SyncPair:
+    """One `remote -> local` mirror, read from a VPS_SYNC_<suffix> line or --sync."""
+
+    def __init__(self, label: str, remote: str, local: str, delete: bool) -> None:
+        self.label = label
+        self.remote = remote
+        self.local = local
+        self.delete = delete
+
+
+SYNC_KEY_PREFIX = "VPS_SYNC_"
+SYNC_ARROW = "->"
+# Trailing tags on a pair line, overriding VPS_DELETE for that pair only.
+SYNC_TAGS = {"[keep]": False, "[delete]": True}
+# Keys of the pre-VPS_SYNC layout. Their presence stops the run (see --migrate-env).
+LEGACY_KEYS = ("VPS_REMOTE", "VPS_LOCAL", "VPS_EXTRA_ROOTS")
+LEGACY_DEFAULT_REMOTE = "/home/debian/docker"
+
+
+def _sync_key_order(label: str) -> tuple:
+    """Natural order of the key suffixes: 2 before 10, numbers before names."""
+    return (0, int(label), "") if label.isdigit() else (1, 0, label.lower())
+
+
+def parse_sync_pair(label: str, text: str, config_dir: str, default_delete: bool) -> SyncPair:
+    """Parse `remote -> local [keep|delete]`; raise ValueError with a readable reason."""
+    value = text.strip()
+    delete = default_delete
+    lowered = value.lower()
+    for tag, tag_delete in SYNC_TAGS.items():
+        if lowered.endswith(tag):
+            value = value[: -len(tag)].rstrip()
+            delete = tag_delete
+            break
+    else:
+        if value.endswith("]") and "[" in value:
+            raise ValueError(f"unknown tag {value[value.rfind('['):]!r} "
+                             f"(use {' or '.join(SYNC_TAGS)})")
+    remote, arrow, local = value.partition(SYNC_ARROW)
+    remote, local = remote.strip(), local.strip()
+    if not arrow:
+        raise ValueError(f"no '{SYNC_ARROW}' between the remote and the local folder")
+    if not remote.startswith("/"):
+        raise ValueError(f"remote path must be absolute (start with /), got {remote!r}")
+    if not local:
+        raise ValueError("local folder is empty")
+    remote = posixpath.normpath(remote)
+    return SyncPair(label, remote, resolve_path(local, config_dir), delete)
+
+
+def check_sync_pairs(pairs: list[SyncPair]) -> list[str]:
+    """Return the configuration errors that make a set of pairs unsafe to run.
+
+    Nesting is allowed only when it mirrors the VPS: a pair whose local folder
+    sits inside another pair's local folder must also sit, at the same relative
+    place, inside that pair's remote folder. The outer pair then skips that
+    subtree (copy AND deletion), and the inner pair's own rules apply there, so
+    `[keep]` on an inner pair really protects it. Any other overlap would let the
+    outer pair's deletion pass wipe files the inner pair just copied.
+    """
+    errors: list[str] = []
+
+    def key(path: str) -> str:
+        return os.path.normcase(os.path.normpath(path))
+
+    for i, a in enumerate(pairs):
+        for b in pairs[i + 1:]:
+            if a.remote == b.remote:
+                errors.append(f"VPS_SYNC_{a.label} and VPS_SYNC_{b.label} read the same "
+                              f"remote folder {a.remote}")
+            if key(a.local) == key(b.local):
+                errors.append(f"VPS_SYNC_{a.label} and VPS_SYNC_{b.label} write to the same "
+                              f"local folder {a.local}")
+    for outer in pairs:
+        for inner in pairs:
+            if outer is inner or key(outer.local) == key(inner.local):
+                continue
+            try:
+                rel_local = os.path.relpath(key(inner.local), key(outer.local))
+            except ValueError:   # different drives
+                continue
+            if rel_local.startswith(os.pardir):
+                continue
+            # inner.local is inside outer.local: the remotes must nest the same way.
+            expected = posixpath.join(outer.remote, *rel_local.split(os.sep))
+            if inner.remote.lower() != expected.lower():
+                errors.append(
+                    f"VPS_SYNC_{inner.label} writes inside VPS_SYNC_{outer.label}'s local "
+                    f"folder, so its remote must be {expected}, got {inner.remote}. "
+                    f"Otherwise VPS_SYNC_{outer.label} would copy over or delete its files.")
+    return errors
+
+
+def legacy_sync_lines(values: dict[str, str]) -> tuple[list[str], list[str]]:
+    """Translate VPS_REMOTE / VPS_LOCAL / VPS_EXTRA_ROOTS into VPS_SYNC_n lines.
+
+    Reproduces the old mapping exactly, including the derived local base, and
+    returns (lines, warnings). A warning is raised when VPS_LOCAL does not end with
+    the VPS_REMOTE tail: the old base was then wrong, and so are the destinations
+    derived from it (on 2026-10-08 it climbed to C:\\).
+    """
+    remote = (values.get("VPS_REMOTE") or LEGACY_DEFAULT_REMOTE).rstrip("/") or "/"
+    local = values.get("VPS_LOCAL") or ""
+    warnings: list[str] = []
+    if not local:
+        warnings.append("VPS_LOCAL is empty: write the first VPS_SYNC line by hand.")
+    tail = [p for p in remote.strip("/").split("/") if p]
+    base = local
+    for _ in tail:
+        base = os.path.dirname(base)
+    local_parts = [p for p in os.path.normpath(local).split(os.sep) if p] if local else []
+    tail_matches = [p.lower() for p in local_parts[-len(tail):]] == [p.lower() for p in tail] \
+        if tail else True
+    lines = [f"{remote} {SYNC_ARROW} {local}"]
+    for entry in (values.get("VPS_EXTRA_ROOTS") or "").split(","):
+        entry = entry.strip()
+        if not entry:
+            continue
+        extra, sep, dest = entry.partition("=")
+        extra = extra.strip().rstrip("/")
+        if sep and dest.strip():
+            lines.append(f"{extra} {SYNC_ARROW} {dest.strip()}")
+            continue
+        derived = os.path.join(base, *[p for p in extra.strip("/").split("/") if p])
+        lines.append(f"{extra} {SYNC_ARROW} {derived}")
+        if not tail_matches:
+            warnings.append(f"{extra} -> {derived} was derived from a VPS_LOCAL that does "
+                            f"not end with {remote}: check that destination.")
+    return lines, warnings
+
+
+def migrate_env_file(path: str, dry_run: bool) -> int:
+    """Rewrite *path* from the legacy keys to VPS_SYNC_n lines (backup kept)."""
+    if not os.path.isfile(path):
+        print(f"ERROR: no .env at {path}", file=sys.stderr)
+        return 2
+    with open(path, encoding="utf-8") as fh:
+        original = fh.read().splitlines(keepends=True)
+
+    values: dict[str, str] = {}
+    legacy_idx: list[int] = []
+    has_sync = False
+    for i, raw in enumerate(original):
+        line = raw.strip()
+        if not line or line.startswith("#") or "=" not in line:
+            continue
+        key, _, val = line.removeprefix("export ").partition("=")
+        key, val = key.strip(), val.strip()
+        if len(val) >= 2 and val[0] == val[-1] and val[0] in ("'", '"'):
+            val = val[1:-1]
+        if key in LEGACY_KEYS:
+            values[key] = val
+            legacy_idx.append(i)
+        elif key.startswith(SYNC_KEY_PREFIX):
+            has_sync = True
+    if not legacy_idx:
+        print(f"Nothing to migrate: {path} has none of {', '.join(LEGACY_KEYS)}.")
+        return 0
+    if has_sync:
+        print(f"ERROR: {path} already has {SYNC_KEY_PREFIX}* lines AND legacy keys. "
+              f"Remove one set by hand.", file=sys.stderr)
+        return 2
+
+    lines, warnings = legacy_sync_lines(values)
+    eol = "\r\n" if original[0].endswith("\r\n") else "\n"
+    block = ["# Folders to mirror, VPS -> local: one pair per line, remote -> local.",
+             "# Add [keep] to never delete in that pair, [delete] to always propagate",
+             "# deletions there, whatever VPS_DELETE says. Migrated from VPS_REMOTE,",
+             f"# VPS_LOCAL and VPS_EXTRA_ROOTS on {time.strftime('%Y-%m-%d')}."]
+    block += [f"{SYNC_KEY_PREFIX}{n}={line}" for n, line in enumerate(lines, 1)]
+    block = [b + eol for b in block]
+
+    first = legacy_idx[0]
+    rewritten = [raw for i, raw in enumerate(original[:first]) if i not in legacy_idx]
+    rewritten += block
+    rewritten += [raw for i, raw in enumerate(original[first:], first) if i not in legacy_idx]
+
+    print("Legacy keys found:")
+    for key in LEGACY_KEYS:
+        if key in values:
+            print(f"  {key}={values[key]}")
+    print("\nReplaced by:")
+    for raw in block:
+        print(f"  {raw.rstrip()}")
+    for w in warnings:
+        print(f"\nWARNING: {w}")
+    print("\nComments that described the old keys are left in place: tidy them by hand.")
+    if dry_run:
+        print("\nDRY RUN: .env not modified.")
+        return 0
+    backup = f"{path}.bak-{time.strftime('%Y%m%d-%H%M%S')}"
+    shutil.copy2(path, backup)
+    with open(path, "w", encoding="utf-8", newline="") as fh:
+        fh.writelines(rewritten)
+    print(f"\n.env rewritten. Backup: {backup}")
+    print("Next: python sync_vps_docker.py --dry-run, and read the WOULD DELETE lines.")
+    return 0
 
 
 def load_excludes(path: str | None, cli_entries: list[str]) -> list[str]:
@@ -645,8 +850,14 @@ def main() -> int:
     p.add_argument("--host", default=env("VPS_HOST", None))
     p.add_argument("--port", type=int, default=int(env("VPS_PORT", 22)))
     p.add_argument("--user", default=env("VPS_USER", "root"), help="SSH user (default: root)")
-    p.add_argument("--remote", default=env("VPS_REMOTE", "/home/debian/docker"), help="Remote root dir")
-    p.add_argument("--local", default=env("VPS_LOCAL", None), help="Local mirror root dir")
+    p.add_argument("--sync", action="append", default=[], metavar='"REMOTE -> LOCAL [keep]"',
+                   help="One-off pair, replacing the VPS_SYNC_* lines of the .env; repeatable")
+    p.add_argument("--only", action="append", default=[], metavar="SUFFIX",
+                   help="Run only VPS_SYNC_<SUFFIX> (e.g. --only 2); repeatable. The other "
+                        "pairs still fence off their folders from the selected ones")
+    p.add_argument("--migrate-env", action="store_true",
+                   help="Rewrite the .env from VPS_REMOTE/VPS_LOCAL/VPS_EXTRA_ROOTS to "
+                        "VPS_SYNC_n lines (backup kept; with --dry-run, print only)")
     p.add_argument("--password", help="SSH password (prefer VPS_SSH_PASSWORD in .env or --key-file)")
     p.add_argument("--key-passphrase", default=env("VPS_KEY_PASSPHRASE", None),
                    help="Passphrase for an encrypted --key-file (else prompted)")
@@ -659,10 +870,6 @@ def main() -> int:
                    help="Directory for the per-run copy log (default: logs/ beside script)")
     p.add_argument("--exclude", action="append", default=[],
                    help="Extra exclude entry (absolute path, name, or glob); repeatable")
-    p.add_argument("--extra-root", action="append", default=[],
-                   help="Additional remote root to mirror under the local base; repeatable")
-    p.add_argument("--no-extra-roots", action="store_true",
-                   help="Sync only the main --remote tree (skip /etc, /var/lib/docker/volumes, ...)")
     p.add_argument("--follow-symlinks", action="store_true",
                    help="Follow symlinks instead of skipping them")
     p.add_argument("--strict-mtime", action="store_true",
@@ -673,6 +880,24 @@ def main() -> int:
                    help="Report what would be copied (and deleted) without writing anything")
     args = p.parse_args()
 
+    if args.migrate_env:
+        return migrate_env_file(os.path.abspath(args.env_file), args.dry_run)
+
+    legacy = [k for k in LEGACY_KEYS if os.environ.get(k)]
+    if legacy:
+        lines, warnings = legacy_sync_lines({k: os.environ.get(k, "") for k in LEGACY_KEYS})
+        print(f"ERROR: {', '.join(legacy)} are no longer read. Each mirrored folder is now one\n"
+              f"       {SYNC_KEY_PREFIX}<n>=remote {SYNC_ARROW} local line. Equivalent of the "
+              f"current config:", file=sys.stderr)
+        for n, line in enumerate(lines, 1):
+            print(f"         {SYNC_KEY_PREFIX}{n}={line}", file=sys.stderr)
+        for w in warnings:
+            print(f"       WARNING: {w}", file=sys.stderr)
+        print(f"       Rewrite the .env automatically (backup kept):\n"
+              f"         python sync_vps_docker.py --migrate-env --dry-run   # preview\n"
+              f"         python sync_vps_docker.py --migrate-env", file=sys.stderr)
+        return 2
+
     # Deletion propagation is set in the .env only (VPS_DELETE), not on the CLI:
     # a destructive mode belongs to the mirror's config, not to a one-off flag.
     delete_raw = env("VPS_DELETE", "false").strip().lower()
@@ -681,8 +906,7 @@ def main() -> int:
         return 2
     args.delete = delete_raw in ("true", "1", "yes", "on")
 
-    missing = [label for label, val in (("VPS_HOST / --host", args.host),
-                                        ("VPS_LOCAL / --local", args.local)) if not val]
+    missing = [label for label, val in (("VPS_HOST / --host", args.host),) if not val]
     if missing:
         print(f"ERROR: missing required config: {', '.join(missing)}.\n"
               f"       Set it in {env_file} (copy from .env.example) or pass it on the CLI.",
@@ -704,41 +928,54 @@ def main() -> int:
 
     excludes = load_excludes(args.exclude_file, args.exclude)
 
-    # The local base is VPS_LOCAL minus the VPS_REMOTE tail, e.g.
-    #   /home/debian/docker  +  ...\ovh-pv5\home\debian\docker   ->   ...\ovh-pv5
-    # Extra roots map remote /X -> <base>\X so the local copy mirrors the VPS fs.
-    main_remote = args.remote.rstrip("/")
-    local_base = args.local
-    for _ in [p for p in main_remote.strip("/").split("/") if p]:
-        local_base = os.path.dirname(local_base)
+    # Every mirrored folder is one explicit pair: VPS_SYNC_<suffix>=remote -> local,
+    # with an optional [keep] / [delete] tag overriding VPS_DELETE for that pair.
+    # Nothing is derived any more: the old "local base" computed from VPS_LOCAL
+    # minus the VPS_REMOTE tail climbed to C:\ on 2026-10-08 when the two did not
+    # match. --sync replaces the .env pairs for a one-off run.
+    if args.sync:
+        raw_pairs = [(str(n), text) for n, text in enumerate(args.sync, 1)]
+    else:
+        raw_pairs = sorted(((k[len(SYNC_KEY_PREFIX):], v) for k, v in os.environ.items()
+                            if k.startswith(SYNC_KEY_PREFIX) and v.strip()),
+                           key=lambda kv: _sync_key_order(kv[0]))
+    if not raw_pairs:
+        print(f"ERROR: nothing to sync. Add {SYNC_KEY_PREFIX}1=/remote/folder {SYNC_ARROW} "
+              f"C:\\local\\folder to {env_file}, or pass --sync.", file=sys.stderr)
+        return 2
+    pairs: list[SyncPair] = []
+    errors: list[str] = []
+    for label, text in raw_pairs:
+        try:
+            pairs.append(parse_sync_pair(label, text, config_dir, args.delete))
+        except ValueError as exc:
+            errors.append(f"{SYNC_KEY_PREFIX}{label}: {exc}")
+    errors += check_sync_pairs(pairs)
+    unknown = [o for o in args.only if o not in {sp.label for sp in pairs}]
+    if unknown:
+        errors.append(f"--only {', '.join(unknown)}: no such {SYNC_KEY_PREFIX}<suffix> "
+                      f"(known: {', '.join(sp.label for sp in pairs)})")
+    if errors:
+        print("ERROR: invalid sync configuration:", file=sys.stderr)
+        for e in errors:
+            print(f"  - {e}", file=sys.stderr)
+        return 2
+    # Fences come from ALL pairs, even with --only: a nested pair keeps its subtree
+    # out of reach of the outer one whether or not it runs this time.
+    other_roots = {sp.remote for sp in pairs}
+    selected = [sp for sp in pairs if not args.only or sp.label in args.only]
 
-    def local_for(remote_path: str) -> str:
-        parts = [p for p in remote_path.strip("/").split("/") if p]
-        return os.path.join(local_base, *parts)
-
-    # Build the ordered list of (remote, local) roots. The base extra roots come
-    # from VPS_EXTRA_ROOTS in the .env (comma-separated); --no-extra-roots drops
-    # them, while explicit --extra-root flags are always honoured (appended).
-    extra = list(args.extra_root)
-    if not args.no_extra_roots:
-        env_roots = [r.strip().rstrip("/")
-                     for r in env("VPS_EXTRA_ROOTS", "").split(",") if r.strip()]
-        extra = env_roots + extra
-    roots: list[tuple[str, str]] = [(main_remote, args.local)]
-    for r in extra:
-        r = r.rstrip("/")
-        if r and r not in {rt for rt, _ in roots}:
-            roots.append((r, local_for(r)))
-    other_roots = {r for r, _ in roots}
-
-    print(f"Syncing  {args.user}@{args.host}  (local base: {local_base})")
+    print(f"Syncing  {args.user}@{args.host}")
     print(f"Mode: {'DRY RUN' if args.dry_run else 'LIVE'} | "
           f"symlinks: {'followed' if args.follow_symlinks else 'skipped'} | "
-          f"deletions: {'propagated' if args.delete else 'off'}")
+          f"default deletions (VPS_DELETE): {'propagated' if args.delete else 'off'}")
     if args.exclude_file and os.path.isfile(args.exclude_file):
         print(f"Exclude file: {args.exclude_file}")
     print(f"Exclude rules ({len(excludes)}): {excludes if excludes else '(none — full tree)'}")
-    print(f"Roots ({len(roots)}): {', '.join(r for r, _ in roots)}")
+    print(f"Pairs ({len(selected)} of {len(pairs)}):")
+    for sp in selected:
+        print(f"  {SYNC_KEY_PREFIX}{sp.label}: {sp.remote}  ->  {sp.local}  "
+              f"[{'delete' if sp.delete else 'keep'}]")
     print("=" * 70)
 
     stats = Stats()
@@ -757,18 +994,20 @@ def main() -> int:
     session = None
     try:
         session = SftpSession(args, stats)
-        for remote_root, local_root in roots:
+        for sp in selected:
+            remote_root = sp.remote
             try:
                 session.stat(remote_root)
             except IOError:
                 print(f"  (skip) remote root not found: {remote_root}", file=sys.stderr)
                 continue
-            print(f"\n>>> {remote_root}  ->  {local_root}")
+            print(f"\n>>> {SYNC_KEY_PREFIX}{sp.label}: {remote_root}  ->  {sp.local}  "
+                  f"[{'delete' if sp.delete else 'keep'}]")
             try:
-                sync_dir(session, remote_root, local_root, stats, excludes,
+                sync_dir(session, remote_root, sp.local, stats, excludes,
                          follow_symlinks=args.follow_symlinks, dry_run=args.dry_run,
                          other_roots=other_roots, log=log, strict_mtime=args.strict_mtime,
-                         delete=args.delete)
+                         delete=sp.delete)
             except Exception as exc:  # noqa: BLE001 — isolate a root failure so the
                 # remaining roots still sync (e.g. a reconnect that ultimately failed).
                 stats.failed += 1
@@ -797,7 +1036,7 @@ def main() -> int:
     print(f"  mtime realgn: {stats.reconciled}")
     print(f"  excluded:     {stats.excluded}")
     print(f"  dirs created: {stats.dirs_created}")
-    if args.delete:
+    if any(sp.delete for sp in selected):
         print(f"  deleted:      {stats.deleted_files} files, {stats.deleted_dirs} dirs")
     print(f"  failed:       {stats.failed}")
     print(f"  reconnects:   {stats.reconnects}")
