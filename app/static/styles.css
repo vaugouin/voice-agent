@@ -21,6 +21,10 @@
      far the caption steps up over it, so the two can never drift apart. */
   --personaBadgeSize: clamp(56px, 7.5vw, 96px);
   --personaBadgeInset: 22px;
+  /* The badge's left edge lines up with the detail portrait's left edge: main padding (12) +
+     panel border and padding (1 + 20) + .singleDetail border and padding (1 + 24) = 58px.
+     Small screens, whose paddings differ, fall back to the corner inset (media queries below). */
+  --personaBadgeLeft: 58px;
 }
 
 * {
@@ -555,7 +559,7 @@ button:disabled {
    as a black hole while the image decodes. */
 .personaBadge {
   position: fixed;
-  left: var(--personaBadgeInset);
+  left: var(--personaBadgeLeft);
   bottom: var(--personaBadgeInset);
   z-index: 1200;
   width: var(--personaBadgeSize);
@@ -589,8 +593,9 @@ button:disabled {
    the screen, floating over the content. The badge's own height is a constant we control, the
    caption's is not, so pushing the variable thing over the fixed one is the exact way round.
    The step is derived from the badge variables, so resizing the disc can never leave the
-   caption sitting on top of it. */
-@media (max-width: 1039px) {
+   caption sitting on top of it. The breakpoint follows the badge's right edge
+   (58px + 7.5vw) against the caption's left edge ((100vw - 860px) / 2): they part at ~1170px. */
+@media (max-width: 1199px) {
   body.personaBadgeVisible .subtitleOverlay {
     bottom: calc(var(--personaBadgeInset) + var(--personaBadgeSize) + 12px);
   }
@@ -2169,6 +2174,10 @@ button.detailVisualCard:hover {
 }
 
 @media (max-width: 768px) {
+  :root {
+    --personaBadgeLeft: var(--personaBadgeInset);
+  }
+
   main {
     padding: 10px;
   }
@@ -2277,6 +2286,7 @@ button.detailVisualCard:hover {
   :root {
     --personaBadgeSize: 40px;
     --personaBadgeInset: 12px;
+    --personaBadgeLeft: var(--personaBadgeInset);
   }
 }
 

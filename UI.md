@@ -1231,7 +1231,7 @@ Purpose: shows the **portrait of the persona currently answering**, so the chara
 Visual:
 
 - **Fixed disc pinned to the window bottom-left**, on the same baseline as the assistant `#subtitleOverlay`, at `z-index: 1200`.
-- **Size and inset come from two custom properties**, `--personaBadgeSize: clamp(56px, 7.5vw, 96px)` and `--personaBadgeInset: 22px`, declared on `:root`. The disc therefore scales with the window: 56px on a phone, ~88px on an iPad, 96px on a desktop. A flat 56px was sized for a phone and read as an afterthought on a 1180px iPad.
+- **Size and inset come from two custom properties**, `--personaBadgeSize: clamp(56px, 7.5vw, 96px)` and `--personaBadgeInset: 22px` (bottom), plus `--personaBadgeLeft: 58px` (left), declared on `:root`. The left offset lines up the disc with the detail portrait's left edge; at or below `768px`, and in phone landscape, it falls back to the corner inset. The disc therefore scales with the window: 56px on a phone, ~88px on an iPad, 96px on a desktop. A flat 56px was sized for a phone and read as an afterthought on a 1180px iPad.
 - Circle via `border-radius: 50%` + `overflow: hidden`, portrait scaled with `object-fit: cover`.
 - Background `#f2efe6`, the portraits' own paper tone, so the disc never flashes dark while the image decodes.
 - Fades in and out over 260ms (`opacity` + `translateY`/`scale`); pointer events disabled.
@@ -1264,7 +1264,7 @@ It is deliberately **not** tied to the subtitle setting: `ENABLE_SPOKEN_SUBTITLE
 Caption collision rule:
 
 - `#subtitleOverlay` is centered and capped at `min(860px, 100vw - 32px)`, so the bottom-left corner is only free on a wide window.
-- **The badge never moves. The caption does.** While the badge is visible, `document.body` carries the `personaBadgeVisible` class, and below `1040px` the caption steps up to `calc(var(--personaBadgeInset) + var(--personaBadgeSize) + 12px)`. The step is **derived from the badge variables**, so resizing the disc can never leave the caption sitting on top of it.
+- **The badge never moves. The caption does.** While the badge is visible, `document.body` carries the `personaBadgeVisible` class, and below `1200px` the caption steps up to `calc(var(--personaBadgeInset) + var(--personaBadgeSize) + 12px)`. The step is **derived from the badge variables**, so resizing the disc can never leave the caption sitting on top of it.
 - In landscape under 520px tall the media query overrides the two variables (`40px` / `12px`); the disc shrinks and the caption's step follows on its own.
 - The caption transitions its `bottom` over 260ms so the step reads as deliberate rather than as a jump.
 - On a window wider than `1040px` nothing moves: the caption keeps its baseline and sits to the right of the badge.
