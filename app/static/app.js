@@ -10139,6 +10139,9 @@ async function fetchDeepAnswer(toolName, args, question) {
     if (!text) {
       throw new Error("empty deep answer");
     }
+    if (body.episode_pick && toolName === "get_series_detail") {
+      showDeepAnswerEpisode(body.episode_pick, args?.ui_language);
+    }
     return { text, ms: Math.round(performance.now() - started) };
   } catch (error) {
     clientLog("deep_answer_error", {
@@ -10150,6 +10153,40 @@ async function fetchDeepAnswer(toolName, args, question) {
     return null;
   } finally {
     window.clearTimeout(timer);
+  }
+}
+
+// VOICE-AGENT-216. "Which episode has the best rating?" on a series page: the server ranked
+// every season's episodes and names the one its answer is about, and the screen opens it while
+// the answer is spoken. Not awaited, so the voice never waits on the page. Skipped when the
+// user has left that series in the meantime, since the page would then land on a new subject.
+async function showDeepAnswerEpisode(pick, uiLanguage) {
+  const episodeArgs = {
+    id_serie: pick.id_serie,
+    season_number: pick.season_number,
+    episode_number: pick.episode_number,
+    ui_language: normalizeUiLanguage(uiLanguage || activeUiLanguage || "en"),
+  };
+  const onSeries = () => currentDetailState?.entity === "serie"
+    && String(currentDetailState.detail?.ID_SERIE ?? currentDetailState.args?.id ?? "") === String(pick.id_serie);
+  if (!onSeries()) {
+    clientLog("deep_answer_episode_skipped", { ...episodeArgs, reason: "series no longer on screen" });
+    return;
+  }
+  try {
+    const output = await callEntityDetail("get_episode_detail", episodeArgs);
+    if (!onSeries() || output?.error || !output?.detail) {
+      clientLog("deep_answer_episode_skipped", {
+        ...episodeArgs,
+        reason: output?.error || (!output?.detail ? "no detail" : "series no longer on screen"),
+      });
+      return;
+    }
+    lastDetailCall = { toolName: "get_episode_detail", args: baseDetailArgs(episodeArgs) };
+    renderEntityDetailOutput(output, episodeArgs);
+    clientLog("deep_answer_episode_shown", { ...episodeArgs, title: pick.title || "", rating: pick.rating ?? null });
+  } catch (error) {
+    clientLog("deep_answer_episode_skipped", { ...episodeArgs, reason: error.message }, "error");
   }
 }
 
@@ -10297,6 +10334,80 @@ function handlePlayTrailerCall(item) {
   }
 }
 
+// VOICE-AGENT-217. A voice search that still holds the user's "he" or "his". The search is
+// stateless, so the pronoun stands for nobody there: on 2026-10-10 "Which movies did he direct
+// with Leonardo DiCaprio?" painted 50 unfiltered DiCaprio films and "only his 10 best-rated ones"
+// the 10 best films of all time, each corrected by the model itself three seconds later. The
+// call is now returned to the model before it reaches the API or the screen, ONCE per user turn:
+// a title that is a pronoun ("Her") comes back unchanged on the second call and goes through.
+// The rule the model should follow in the first place is in FOLLOW_UP_ROUTING_INSTRUCTIONS.
+const FOLLOW_UP_PRONOUNS = {
+  en: new Set(LEXICONS.follow_up_pronouns_en || []),
+  fr: new Set(LEXICONS.follow_up_pronouns_fr || []),
+};
+let pronounGuardTranscript = null;
+
+function foldedWords(text) {
+  return String(text || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .split(/[^a-z0-9]+/)
+    .filter(Boolean);
+}
+
+function unresolvedPronounInQuery(query, uiLanguage) {
+  const language = normalizeUiLanguage(uiLanguage) === "fr" ? "fr" : "en";
+  const pronouns = FOLLOW_UP_PRONOUNS[language];
+  const words = foldedWords(query);
+  for (let index = 0; index < words.length; index += 1) {
+    const word = words[index];
+    if (!pronouns.has(word)) continue;
+    // French impersonal "il" refers to nobody: "il y a", "il faut", "il existe", "s'il".
+    if (word === "il" && (["y", "faut", "existe"].includes(words[index + 1]) || words[index - 1] === "s")) continue;
+    return word;
+  }
+  return "";
+}
+
+function personInFocusName() {
+  const detail = !resultsPanel.hidden && currentDetailState?.entity === "person" ? currentDetailState.detail : null;
+  return detail?.PERSON_NAME || "";
+}
+
+function returnUnresolvedPronounCall(item, args, pronoun) {
+  const personOnScreen = personInFocusName();
+  const previousSearch = String(lastToolArgs?.query || "").slice(0, 300);
+  const output = {
+    error: "unresolved_pronoun",
+    pronoun,
+    person_on_screen: personOnScreen || null,
+    previous_search: previousSearch || null,
+    note: `Not searched: the search is stateless and cannot know who "${pronoun}" is. Call `
+      + "query_text2sql again with the same question, the pronoun replaced by the full name of the "
+      + "person it refers to (the person on screen, else the last person named in this conversation). "
+      + "If you cannot tell who is meant, ask the user in one short sentence. Say nothing about this "
+      + "step to the user.",
+  };
+  clientLog("pronoun_query_returned", {
+    call_id: item.call_id,
+    query: String(args.query || "").slice(0, 300),
+    pronoun,
+    person_on_screen: personOnScreen || null,
+    previous_search: previousSearch || null,
+  });
+  awaitingToolResponse = true;
+  try {
+    sendFunctionCallOutput(item.call_id, output);
+  } catch (error) {
+    clientLog("tool_output_send_error", { tool: item.name, call_id: item.call_id, error: error.message }, "error");
+  } finally {
+    requestRealtimeResponseAfterToolOutput();
+    scheduleToolResponseWatchdog(); // VOICE-AGENT-094
+    syncMicrophone("tool output sent");
+  }
+}
+
 async function handleFunctionCall(item) {
   if (
     item?.type !== "function_call" ||
@@ -10331,6 +10442,14 @@ async function handleFunctionCall(item) {
   args.ui_language = item.name === "query_text2sql"
     ? detectUiLanguageFromText(lastUserTranscript || args.query)
     : normalizeUiLanguage(activeUiLanguage || currentSearchState?.ui_language || "en");
+  if (item.name === "query_text2sql" && pronounGuardTranscript !== lastUserTranscript) {
+    const pronoun = unresolvedPronounInQuery(args.query, args.ui_language);
+    if (pronoun) {
+      pronounGuardTranscript = lastUserTranscript;
+      returnUnresolvedPronounCall(item, args, pronoun);
+      return;
+    }
+  }
 
   log("tool call", { name: item.name, args });
   lastToolArgs = args;

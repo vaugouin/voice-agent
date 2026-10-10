@@ -1799,7 +1799,21 @@ FOLLOW_UP_ROUTING_INSTRUCTIONS = (
     "handles for a NEW subject, such as actors, directors, box office or awards: what decides "
     "the tool is whether the question names its own subject, not what the question is about. "
     "If the user genuinely starts a new search, they will name the new title or person, and "
-    "query_text2sql is then the right call."
+    "query_text2sql is then the right call. "
+    # VOICE-AGENT-217: the half-named follow-up. On 2026-10-10 three questions went to the search
+    # with the user's pronoun in them ("Which movies did he direct with Leonardo DiCaprio?", "his
+    # 10 best-rated ones", "his record"): each named SOMETHING, so the rule above did not stop
+    # them, and the API answered for nobody (50 unfiltered DiCaprio films, the 10 best films of
+    # all time, a clarifying question). The browser now returns such a call once; this is the
+    # rule that should make that unnecessary.
+    "A question that names one thing but refers to a person with a pronoun (he, she, him, his, "
+    "her; il, elle, lui, son, sa, ses) is half-named: when you send it to query_text2sql, "
+    "replace each such pronoun with the full name of the person it refers to, which is the "
+    "person on screen or the last person named in this conversation, so 'Which movies did he "
+    "direct with Leonardo DiCaprio?' after Martin Scorsese becomes 'Which movies did Martin "
+    "Scorsese direct with Leonardo DiCaprio?' and 'only his 10 best-rated ones' after Pedro "
+    "Pascal becomes 'the 10 best-rated films and TV series of Pedro Pascal'. Never send the "
+    "pronoun itself to the search."
 )
 
 # VOICE-AGENT-210. Voice only: the browser attaches `record_detail` to a query_text2sql output
@@ -3613,6 +3627,87 @@ def deep_answer_material(detail_output: dict[str, Any], question: str) -> dict[s
     }
 
 
+# VOICE-AGENT-216. A series record lists its seasons, not its episodes, so "which episode has
+# the best rating?" on the Breaking Bad page (2026-10-10) got a season average and "I can't tell
+# you which individual episode", while every episode's rating sat one season call away (Felina,
+# 9.8). On a series page, a question about episodes now brings every season's episode list into
+# the composer's material, ranked, and names the episode the screen should open.
+EPISODE_QUESTION_WORDS = frozenset(normalized_intent_text(w) for w in LEXICONS.get("episode_question_words", []))
+EPISODE_BEST_WORDS = frozenset(normalized_intent_text(w) for w in LEXICONS.get("episode_best_words", []))
+EPISODE_WORST_WORDS = frozenset(normalized_intent_text(w) for w in LEXICONS.get("episode_worst_words", []))
+EPISODE_RANKING_MAX_SEASONS = 40
+EPISODE_RANKING_TOP = 10
+EPISODE_RANKING_BOTTOM = 5
+EPISODE_RANKING_INSTRUCTIONS = (
+    "The input also carries episode_ratings, built from every season's episode list: "
+    "highest_rated and lowest_rated rank the episodes of the whole series by rating, and "
+    "best_by_season gives each season's top episode. Answer a question about episodes from it, "
+    "naming the episode by its title, its season and episode number, and its rating."
+)
+
+
+def episode_question_kind(question: Any) -> str:
+    """'' when the question is not about episodes, else 'best', 'worst' or 'other'."""
+    words = set(normalized_intent_text(question).split())
+    if not words & EPISODE_QUESTION_WORDS:
+        return ""
+    if words & EPISODE_WORST_WORDS:
+        return "worst"
+    if words & EPISODE_BEST_WORDS:
+        return "best"
+    return "other"
+
+
+def _episode_row(season_number: int, episode: dict[str, Any]) -> dict[str, Any]:
+    return {
+        "season_number": season_number,
+        "episode_number": episode.get("EPISODE_NUMBER"),
+        "title": episode.get("EPISODE_TITLE") or "",
+        "rating": episode.get("IMDB_RATING"),
+        "votes": episode.get("IMDB_VOTES"),
+        "air_date": episode.get("DAT_AIR") or "",
+    }
+
+
+async def series_episode_ratings(id_serie: Any, seasons: Any, ui_language: str) -> dict[str, Any] | None:
+    """Every rated episode of a series, ranked, from one season call per season (specials out)."""
+    numbers = sorted({
+        int(s["SEASON_NUMBER"]) for s in (seasons if isinstance(seasons, list) else [])
+        if isinstance(s, dict) and isinstance(s.get("SEASON_NUMBER"), int) and s["SEASON_NUMBER"] > 0
+    })[:EPISODE_RANKING_MAX_SEASONS]
+    if not numbers:
+        return None
+    outputs = await asyncio.gather(*(
+        get_entity_detail_data("season", {"id_serie": id_serie, "season_number": n, "ui_language": ui_language})
+        for n in numbers
+    ), return_exceptions=True)
+    episodes: list[dict[str, Any]] = []
+    total = 0
+    for number, output in zip(numbers, outputs):
+        detail = output.get("detail") if isinstance(output, dict) else None
+        listed = detail.get("episodes") if isinstance(detail, dict) else None
+        for episode in listed if isinstance(listed, list) else []:
+            if not isinstance(episode, dict):
+                continue
+            total += 1
+            if isinstance(episode.get("IMDB_RATING"), (int, float)):
+                episodes.append(_episode_row(number, episode))
+    if not episodes:
+        return None
+    # Equal ratings: the episode more people rated first, then the earlier one.
+    ranked = sorted(episodes, key=lambda e: (-e["rating"], -(e["votes"] or 0), e["season_number"], e["episode_number"] or 0))
+    best_by_season: dict[int, dict[str, Any]] = {}
+    for episode in ranked:
+        best_by_season.setdefault(episode["season_number"], episode)
+    return {
+        "episodes_listed": total,
+        "episodes_rated": len(ranked),
+        "highest_rated": ranked[:EPISODE_RANKING_TOP],
+        "lowest_rated": list(reversed(ranked[-EPISODE_RANKING_BOTTOM:])),
+        "best_by_season": [best_by_season[n] for n in sorted(best_by_season)],
+    }
+
+
 @app.post("/deep-answer")
 async def deep_answer(payload: DeepAnswerRequest) -> dict[str, Any]:
     api_key = os.getenv("OPENAI_API_KEY")
@@ -3647,6 +3742,20 @@ async def deep_answer(payload: DeepAnswerRequest) -> dict[str, Any]:
         + " " + current_date_instructions()
     )
     material = deep_answer_material(detail_output, question)
+    # VOICE-AGENT-216: the episodes of a series, fetched only when the question is about them.
+    episode_kind = episode_question_kind(question) if tool_name == "get_series_detail" else ""
+    episode_ratings = None
+    episode_pick = None
+    if episode_kind:
+        series = detail_output.get("detail") or {}
+        id_serie = series.get("ID_SERIE") or detail_args.get("id")
+        episode_ratings = await series_episode_ratings(id_serie, series.get("seasons"), ui_language)
+        if episode_ratings:
+            material["episode_ratings"] = episode_ratings
+            instructions += " " + EPISODE_RANKING_INSTRUCTIONS
+            ranking = {"best": "highest_rated", "worst": "lowest_rated"}.get(episode_kind)
+            if ranking and episode_ratings[ranking]:
+                episode_pick = {"id_serie": id_serie, **episode_ratings[ranking][0]}
     material_json = json.dumps(material, ensure_ascii=False)
     turns = [str(turn).strip() for turn in payload.context if str(turn).strip()]
     turns = turns[-DEEP_ANSWER_MAX_CONTEXT_TURNS:]
@@ -3697,6 +3806,9 @@ async def deep_answer(payload: DeepAnswerRequest) -> dict[str, Any]:
         "seconds": round(elapsed, 2),
         "length": len(output_text),
         "text": output_text,
+        "episode_question": episode_kind or None,
+        "episodes_rated": episode_ratings["episodes_rated"] if episode_ratings else None,
+        "episode_pick": episode_pick,
     })
     log_meta_talk("deep_answer", output_text, tool_name=tool_name)
     return {
@@ -3705,6 +3817,8 @@ async def deep_answer(payload: DeepAnswerRequest) -> dict[str, Any]:
         "entity": detail_output.get("entity", ""),
         "ui_language": ui_language,
         "text": output_text,
+        # VOICE-AGENT-216: the episode the answer names, for the browser to open on screen.
+        "episode_pick": episode_pick,
     }
 
 
@@ -4069,6 +4183,12 @@ HARNESS_LOG_EVENTS = frozenset({
     "deep_answer_delivered",
     "deep_answer_error",
     "deep_answer_fallback",
+    # VOICE-AGENT-216: the episode a series deep answer named, opened on screen or not.
+    "deep_answer_episode_shown",
+    "deep_answer_episode_skipped",
+    # VOICE-AGENT-217: a voice search holding "he" or "his" sent back to the model to be
+    # restated with the name, before it reached the stateless API.
+    "pronoun_query_returned",
     # VOICE-AGENT-122. An answer that names its own material ("the record", "the data I have
     # here"): source (voice, text-chat, brief, deep_answer) and the terms of meta_talk_terms
     # it matched. The count per session is the measure the ticket asked for.

@@ -465,5 +465,12 @@
     "from what i have",
     "poster reading",
     "the poster reading"
-  ]
+  ],
+  "_comment_episodes": "VOICE-AGENT-216: a deep-dive question on a SERIES page that asks about its episodes ('which episode has the best rating?') gets every season's episode list in the composer's material, since the series record carries seasons only. episode_question_words detect the question (normalized, accents folded); best/worst words choose which episode the screen opens. Python only (app/main.py).",
+  "episode_question_words": ["episode", "episodes", "ep", "eps", "épisode", "épisodes"],
+  "episode_best_words": ["best", "highest", "top", "greatest", "finest", "favorite", "favourite", "meilleur", "meilleure", "meilleurs", "meilleures", "mieux"],
+  "episode_worst_words": ["worst", "lowest", "weakest", "pire", "pires", "moins"],
+  "_comment_pronouns": "VOICE-AGENT-217: third-person pronouns that, in a query_text2sql call made from voice, stand for a person the stateless search cannot know. A query holding one is sent back to the model once per user turn, to be restated with the name. Normalized words (lowercase, accents folded); French 'il' is listed but the impersonal 'il y a', 'il faut', 's il' are excluded in code. JS only (app/static/app.js).",
+  "follow_up_pronouns_en": ["he", "she", "him", "his", "her", "hers", "himself", "herself"],
+  "follow_up_pronouns_fr": ["il", "elle", "lui", "ses", "sa", "son", "leurs"]
 }
