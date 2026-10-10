@@ -14,7 +14,10 @@
   Only the prose below is injected: this comment, the front matter and the markdown headings
   are stripped, and inner whitespace is collapsed, at load time. Front matter keys: `name` (a
   label for logs and the /souls listing), `brevity` (`concise` or `expansive` — it drives the
-  per-surface length delta) and `voice` (the Realtime voice this character speaks with).
+  per-surface length delta), `voice` (the Realtime voice this character speaks with) and
+  `intro` (VOICE-AGENT-215: the one line the Settings picker plays when this persona is
+  chosen, recorded to `app/static/souls/<slug>.mp3` by `tools/generate-soul-intros.py`;
+  re-run the script after changing it, the app never synthesizes it live).
   PERSONA ONLY: operational rules (which tool to call, id-hiding, recovery, disambiguation)
   stay in the code, and the rules that must never bend stay in `souls/_core.md`. Edit this file
   to change the default character; it takes effect on restart, like VERSION. If you change it,
@@ -34,6 +37,7 @@
 name: Cinema companion (default)
 brevity: concise
 voice: shimmer
+intro: Hi, I'm your cinema companion. Ask me about any movie or series, and let's explore it together.
 ---
 
 # Who you are

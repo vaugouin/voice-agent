@@ -2434,8 +2434,8 @@ async def index() -> HTMLResponse:
 
 @app.get("/souls")
 async def list_souls() -> dict[str, Any]:
-    """Which personas this build can serve, so a test run (or a later in-app picker) does not
-    have to guess the slugs. VOICE-AGENT-118. The prose itself is deliberately not exposed:
+    """Which personas this build can serve, so a test run (or the Settings picker,
+    VOICE-AGENT-215) does not have to guess the slugs. VOICE-AGENT-118. The prose itself is deliberately not exposed:
     this is a selector, not a prompt dump.
     """
     ordered = sorted(
@@ -2459,6 +2459,13 @@ async def list_souls() -> dict[str, Any]:
                 "avatar": (
                     f"static/souls/{soul.slug}.webp"
                     if (STATIC_DIR / "souls" / f"{soul.slug}.webp").is_file()
+                    else ""
+                ),
+                # VOICE-AGENT-215: the recorded intro the Settings picker plays on selection
+                # (tools/generate-soul-intros.py). Empty = not recorded, the picker stays silent.
+                "intro_audio": (
+                    f"static/souls/{soul.slug}.mp3"
+                    if (STATIC_DIR / "souls" / f"{soul.slug}.mp3").is_file()
                     else ""
                 ),
             }

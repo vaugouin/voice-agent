@@ -201,7 +201,7 @@
         <button id="appMenuSettingsButton" class="appMenuNavItem" type="button" aria-controls="appMenuSettingsScreen">
           <span>
             <strong>Settings</strong>
-            <span>Subtitles, language, and voice.</span>
+            <span>Persona, subtitles, language, and voice.</span>
           </span>
           <svg aria-hidden="true" viewBox="0 0 24 24">
             <path d="M9 5l7 7-7 7" />
@@ -220,6 +220,15 @@
 
       <section id="appMenuSettingsScreen" class="appMenuScreen appMenuSection" aria-labelledby="settingsTitle" data-app-menu-screen="settings" hidden>
         <h3 id="settingsTitle">Settings</h3>
+        <!-- VOICE-AGENT-215: persona picker, filled from /souls by app.js. The choice is saved on
+             this device and wins over ?soul= and AGENT_SOUL. -->
+        <div class="menuPersona" id="personaSetting" hidden>
+          <span>
+            <strong>Persona</strong>
+            <span id="personaPickerHint">Who answers you. Saved on this device.</span>
+          </span>
+          <div id="personaPicker" class="personaPicker" role="radiogroup" aria-label="Persona"></div>
+        </div>
         <label class="menuToggle">
           <span>
             <strong>Assistant subtitles</strong>

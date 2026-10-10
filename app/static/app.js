@@ -712,10 +712,39 @@ function userTranscriptSubtitlesEnabled() {
 // VOICE-AGENT-118: persona selection for this page load, e.g. ?soul=video-store. Validated
 // client-side to the same slug shape the server accepts, so a typo travels as "no preference"
 // (server default) instead of as a junk query string. The server re-validates regardless.
+// VOICE-AGENT-215: a persona chosen in Settings is saved on this device and wins over ?soul=
+// (and therefore over AGENT_SOUL): an installed Edge app ignores the URL of its shortcut, so
+// the picker is the only selection that survives every way of launching the app.
+const PERSONA_STORAGE_KEY = "voiceAgent.soul";
+const SOUL_SLUG_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
+let sessionSoulOverride = null;
+
+function storedSoulPreference() {
+  try {
+    const value = (window.localStorage.getItem(PERSONA_STORAGE_KEY) ?? "").trim().toLowerCase();
+    return SOUL_SLUG_PATTERN.test(value) ? value : null;
+  } catch (error) {
+    return null;
+  }
+}
+
+function storeSoulPreference(slug) {
+  try {
+    window.localStorage.setItem(PERSONA_STORAGE_KEY, slug);
+  } catch (error) {
+    // Private window or blocked storage: the choice still holds for this page load.
+  }
+  sessionSoulOverride = slug;
+}
+
 function soulPreference() {
+  const chosen = sessionSoulOverride || storedSoulPreference();
+  if (chosen) {
+    return chosen;
+  }
   const params = new URLSearchParams(window.location.search);
   const value = (params.get("soul") ?? params.get("soulSlug") ?? "").trim().toLowerCase();
-  return /^[a-z0-9][a-z0-9-]*$/.test(value) ? value : null;
+  return SOUL_SLUG_PATTERN.test(value) ? value : null;
 }
 
 // VOICE-AGENT-118: Realtime voice for this page load, e.g. ?voice=cedar. Same contract as the
@@ -6191,16 +6220,103 @@ async function loadActivePersona() {
     const match =
       souls.find((soul) => soul.slug === wanted) ||
       souls.find((soul) => soul.slug === body.default);
+    renderPersonaPicker(souls, match ? match.slug : "");
     if (!match || !match.avatar) {
       return;
     }
-    activePersona = match;
-    // Only the active portrait is fetched, never the four.
-    personaBadgeImage.src = appUrl(match.avatar);
+    setActivePersona(match);
     clientLog("persona_badge_ready", { soul: match.slug, voice: match.voice || "" });
   } catch (error) {
     log("persona badge unavailable", error.message);
   }
+}
+
+function setActivePersona(persona) {
+  activePersona = persona;
+  if (personaBadgeImage && persona.avatar) {
+    personaBadgeImage.src = appUrl(persona.avatar);
+  }
+}
+
+// ---------------------------------------------------------------------------------------
+// VOICE-AGENT-215: persona picker in Settings. The four portraits, one click to switch, and
+// the persona's recorded intro played in its own voice. The choice is stored on this device
+// (PERSONA_STORAGE_KEY) and wins over ?soul= and AGENT_SOUL. A Realtime session keeps the
+// persona and voice it was opened with, so a switch during a session applies to the next one;
+// typed questions pick it up immediately (they send soulPreference() on every request).
+// ---------------------------------------------------------------------------------------
+const personaSetting = document.querySelector("#personaSetting");
+const personaPicker = document.querySelector("#personaPicker");
+const personaPickerHint = document.querySelector("#personaPickerHint");
+let personaCatalog = [];
+let personaIntroAudio = null;
+
+function personaDisplayName(persona) {
+  // Labels carry a note for the reader of /souls ("Chatterbox (test persona)"): not for a button.
+  return String(persona.label || persona.slug).replace(/\s*\(.*\)\s*$/, "");
+}
+
+function renderPersonaPicker(souls, activeSlug) {
+  if (!personaSetting || !personaPicker) {
+    return;
+  }
+  personaCatalog = souls.filter((soul) => soul.avatar);
+  if (personaCatalog.length < 2) {
+    personaSetting.hidden = true;
+    return;
+  }
+  personaPicker.replaceChildren(
+    ...personaCatalog.map((persona) => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = "personaChoice";
+      button.dataset.soul = persona.slug;
+      button.setAttribute("role", "radio");
+      button.setAttribute("aria-checked", persona.slug === activeSlug ? "true" : "false");
+      const image = document.createElement("img");
+      image.src = appUrl(persona.avatar);
+      image.alt = "";
+      image.loading = "lazy";
+      const name = document.createElement("span");
+      name.textContent = personaDisplayName(persona);
+      button.append(image, name);
+      button.addEventListener("click", () => choosePersona(persona.slug));
+      return button;
+    })
+  );
+  personaSetting.hidden = false;
+}
+
+function choosePersona(slug) {
+  const persona = personaCatalog.find((soul) => soul.slug === slug);
+  if (!persona) {
+    return;
+  }
+  storeSoulPreference(slug);
+  setActivePersona(persona);
+  for (const button of personaPicker.querySelectorAll(".personaChoice")) {
+    button.setAttribute("aria-checked", button.dataset.soul === slug ? "true" : "false");
+  }
+  if (personaPickerHint) {
+    personaPickerHint.textContent = sessionRunning
+      ? `${personaDisplayName(persona)} answers from your next session.`
+      : `${personaDisplayName(persona)} answers you. Saved on this device.`;
+  }
+  playPersonaIntro(persona);
+  clientLog("persona_selected", { soul: slug, voice: persona.voice || "", session_running: sessionRunning });
+}
+
+function playPersonaIntro(persona) {
+  if (personaIntroAudio) {
+    personaIntroAudio.pause();
+    personaIntroAudio = null;
+  }
+  // Never over a live conversation: the intro would talk over the assistant and leak into the mic.
+  if (!persona.intro_audio || sessionRunning) {
+    return;
+  }
+  personaIntroAudio = new Audio(appUrl(persona.intro_audio));
+  personaIntroAudio.play().catch((error) => log("persona intro unavailable", error.message));
 }
 
 function showPersonaBadge() {
