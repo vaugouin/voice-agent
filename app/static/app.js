@@ -4588,28 +4588,75 @@ function logRecoCardsShown(record) {
   });
 }
 
+// The generic rails, keyed by their API collection. appendMixedVisualSections renders them in
+// this order for the pages that have no order of their own; the movie and series sheets
+// (VOICE-AGENT-230) place some of them by name with appendMixedRail, then skip those.
+const MIXED_VISUAL_RAILS = [
+  ["movies", "Movies", "poster"],
+  ["series", "Series", "poster"],
+  ["persons", "People", "profile"],
+  ["awards", "Awards", "poster"],
+  ["nominations", "Nominations", "poster"],
+  ["collections", "Collections", "poster"],
+  ["topics", "Topics", "poster"],
+  ["lists", "Lists", "poster"],
+  ["movements", "Movements", "poster"],
+  ["siblings", "Related technicals", "poster"],
+  ["groups", "Groups", "profile"],
+  ["deaths", "Deaths", "profile"],
+  ["companies", "Companies", "logo"],
+  ["networks", "Networks", "logo"],
+];
+
+function appendMixedRail(parent, record, key) {
+  const rail = MIXED_VISUAL_RAILS.find(([name]) => name === key);
+  if (!rail) {
+    return false;
+  }
+  const [collectionName, title, kind] = rail;
+  return appendVisualRail(parent, title, record[collectionName], { kind, collectionName });
+}
+
 function appendMixedVisualSections(parent, record, { skip = [] } = {}) {
   const skipped = new Set(skip);
-  if (!skipped.has("movies")) {
-    appendVisualRail(parent, "Movies", record.movies, { kind: "poster", collectionName: "movies" });
+  MIXED_VISUAL_RAILS.forEach(([key]) => {
+    if (!skipped.has(key)) {
+      appendMixedRail(parent, record, key);
+    }
+  });
+}
+
+// VOICE-AGENT-230. One order for the movie and series sheets, from the work itself outwards,
+// the exits last: watch it, who made it, its recognition, where it comes from, what it belongs
+// to, its family, then elsewhere. `seasons` is the series' own rail, after the videos.
+const TITLE_SHEET_PLACED_RAILS = ["companies", "networks", "awards", "nominations", "movements", "topics", "collections", "lists"];
+
+function appendTitleSheetRails(body, record, { castCredits, crewCredits, seasons = null }) {
+  appendVideoRail(body, record.videos); // VOICE-AGENT-070
+  if (seasons) {
+    appendVisualRail(body, "Seasons", seasons, { kind: "poster", collectionName: "seasons" });
   }
-  if (!skipped.has("series")) {
-    appendVisualRail(parent, "Series", record.series, { kind: "poster", collectionName: "series" });
+  if (!appendVisualRail(body, "Cast", castCredits, { kind: "profile", collectionName: "cast" })) {
+    appendList(body, "Cast", namesFrom(castCredits, "PERSON_NAME", Infinity));
   }
-  if (!skipped.has("persons")) {
-    appendVisualRail(parent, "People", record.persons, { kind: "profile", collectionName: "persons" });
-  }
-  appendVisualRail(parent, "Awards", record.awards, { kind: "poster", collectionName: "awards" });
-  appendVisualRail(parent, "Nominations", record.nominations, { kind: "poster", collectionName: "nominations" });
-  appendVisualRail(parent, "Collections", record.collections, { kind: "poster", collectionName: "collections" });
-  appendVisualRail(parent, "Topics", record.topics, { kind: "poster", collectionName: "topics" });
-  appendVisualRail(parent, "Lists", record.lists, { kind: "poster", collectionName: "lists" });
-  appendVisualRail(parent, "Movements", record.movements, { kind: "poster", collectionName: "movements" });
-  appendVisualRail(parent, "Related technicals", record.siblings, { kind: "poster", collectionName: "siblings" });
-  appendVisualRail(parent, "Groups", record.groups, { kind: "profile", collectionName: "groups" });
-  appendVisualRail(parent, "Deaths", record.deaths, { kind: "profile", collectionName: "deaths" });
-  appendVisualRail(parent, "Companies", record.companies, { kind: "logo", collectionName: "companies" });
-  appendVisualRail(parent, "Networks", record.networks, { kind: "logo", collectionName: "networks" });
+  appendVisualRail(body, "Crew", crewCredits, { kind: "profile", collectionName: "crew" });
+  appendMixedRail(body, record, "companies");
+  appendMixedRail(body, record, "networks");
+  appendMixedRail(body, record, "awards");
+  appendMixedRail(body, record, "nominations");
+  appendBasedOnRail(body, record); // VOICE-AGENT-218
+  appendTitleLocationRails(body, record); // VOICE-AGENT-227
+  appendMixedRail(body, record, "movements");
+  appendMixedRail(body, record, "topics");
+  appendVisualRail(body, "Technicals", record.technicals, { kind: "poster", collectionName: "technicals" });
+  // FASTAPI-152: cross-type T2S collection rail, movies and series mixed in release order.
+  appendVisualRail(body, record.collection_name || "Collection", record.collection_movies, { kind: "poster", collectionName: "collection_movies" });
+  appendMixedRail(body, record, "collections");
+  appendMixedRail(body, record, "lists");
+  appendVisualRail(body, "Similar", record.similar, { kind: "poster", collectionName: "similar" });
+  appendVisualRail(body, "Recommended", record.recommendations, { kind: "poster", collectionName: "recommendations" });
+  logRecoCardsShown(record);
+  appendMixedVisualSections(body, record, { skip: TITLE_SHEET_PLACED_RAILS });
 }
 
 // A place is the same place whether a film was shot there or set there, so the distinction is
@@ -5167,21 +5214,7 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     appendChipStrip(body, "Genres", (record.genres || []).map((genre) => genre && genre.GENRE_NAME));
     appendChipStrip(body, "Spoken languages", (record.spoken_languages || []).map(formatLanguageCode));
     appendChipStrip(body, "Production countries", (record.production_countries || []).map((code) => ({ text: countryFlag(code), title: countryName(code) })));
-    if (!appendVisualRail(body, "Cast", castCredits, { kind: "profile", collectionName: "cast" })) {
-      appendList(body, "Cast", namesFrom(castCredits, "PERSON_NAME", Infinity));
-    }
-    appendVisualRail(body, "Crew", crewCredits, { kind: "profile", collectionName: "crew" });
-    // VOICE-AGENT-218: after Crew, not above Cast. One or two cards would push every rail down,
-    // and the author is often already credited in Crew (Novel, Writer), so the source reads as its follow-up.
-    appendBasedOnRail(body, record);
-    appendTitleLocationRails(body, record); // VOICE-AGENT-227
-    appendVisualRail(body, "Technicals", record.technicals, { kind: "poster", collectionName: "technicals" });
-    appendVisualRail(body, record.collection_name || "Collection", record.collection_movies, { kind: "poster", collectionName: "collection_movies" });
-    appendVisualRail(body, "Similar", record.similar, { kind: "poster", collectionName: "similar" });
-    appendVisualRail(body, "Recommended", record.recommendations, { kind: "poster", collectionName: "recommendations" });
-    logRecoCardsShown(record);
-    appendVideoRail(body, record.videos); // VOICE-AGENT-070
-    appendMixedVisualSections(body, record);
+    appendTitleSheetRails(body, record, { castCredits, crewCredits }); // VOICE-AGENT-230
   } else if (record.ID_SERIE || String(record.CONTENT_TYPE || "").toLowerCase() === "serie") {
     const crewCredits = dedupePersonCrewCredits(record.crew);
     const castCredits = dedupePersonCastCredits(record.cast);
@@ -5204,24 +5237,11 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     appendChipStrip(body, "Genres", (record.genres || []).map((genre) => genre && genre.GENRE_NAME));
     appendChipStrip(body, "Spoken languages", (record.spoken_languages || []).map(formatLanguageCode));
     appendChipStrip(body, "Production countries", (record.production_countries || []).map((code) => ({ text: countryFlag(code), title: countryName(code) })));
-    appendVisualRail(body, "Seasons", seasonRailItems(record.seasons, record.ID_SERIE), { kind: "poster", collectionName: "seasons" });
-    if (!appendVisualRail(body, "Cast", castCredits, { kind: "profile", collectionName: "cast" })) {
-      appendList(body, "Cast", namesFrom(castCredits, "PERSON_NAME", Infinity));
-    }
-    appendVisualRail(body, "Crew", crewCredits, { kind: "profile", collectionName: "crew" });
-    // VOICE-AGENT-218: after Crew, not above Cast. One or two cards would push every rail down,
-    // and the author is often already credited in Crew (Novel, Writer), so the source reads as its follow-up.
-    appendBasedOnRail(body, record);
-    appendTitleLocationRails(body, record); // VOICE-AGENT-227
-    // FASTAPI-152: cross-type T2S collection rail — a collection can hold both films and
-    // series (e.g. Star Trek); each card routes to the right detail by its own ID_MOVIE /
-    // ID_SERIE (detailRequestFromRecord), so movies and series mix in one chronological rail.
-    appendVisualRail(body, record.collection_name || "Collection", record.collection_movies, { kind: "poster", collectionName: "collection_movies" });
-    appendVisualRail(body, "Similar", record.similar, { kind: "poster", collectionName: "similar" });
-    appendVisualRail(body, "Recommended", record.recommendations, { kind: "poster", collectionName: "recommendations" });
-    logRecoCardsShown(record);
-    appendVideoRail(body, record.videos); // VOICE-AGENT-070
-    appendMixedVisualSections(body, record);
+    appendTitleSheetRails(body, record, { // VOICE-AGENT-230
+      castCredits,
+      crewCredits,
+      seasons: seasonRailItems(record.seasons, record.ID_SERIE),
+    });
   } else if (record.ID_PERSON) {
     // VOICE-AGENT-092: full birth/death dates (fall back to the year), plus Gender and
     // Popularity, to match the tmdb-front person page.
