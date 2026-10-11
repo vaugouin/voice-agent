@@ -632,7 +632,10 @@ DETAIL_ENTITY_CONFIG = {
             "IMDb/Wikidata IDs, ratings, technical flags, technicals, cast, "
             "crew, genre codes, companies, production countries, spoken "
             "languages, topics, lists, collections, movements, awards, "
-            "nominations, posters, and backdrops."
+            "nominations, posters, backdrops, and based_on: the works it is adapted from "
+            "(novel, manga, play, game, tale, or an earlier film or series), each with "
+            "ID_SOURCE_WORK, SOURCE_WORK_NAME, SOURCE_WORK_TYPE, SOURCE_WORK_FORM and "
+            "SOURCE_WORK_YEAR. An empty based_on means no source is recorded."
         ),
     },
     "serie": {
@@ -646,7 +649,8 @@ DETAIL_ENTITY_CONFIG = {
             "and last air dates, season and episode counts, ratings, status, "
             "Wikidata/IMDb IDs, cast, crew, genre codes, companies, networks, "
             "production countries, spoken languages, topics, lists, collections, "
-            "movements, awards, nominations, posters, and backdrops. It lists the "
+            "movements, awards, nominations, posters, backdrops, and based_on (the works "
+            "it is adapted from, same shape as on get_movie_detail). It lists the "
             "SEASONS but NOT the individual episodes: for anything about a specific "
             "episode, call get_season_detail."
         ),
@@ -860,6 +864,28 @@ DETAIL_ENTITY_CONFIG = {
             "facts about the same place: answer the one that was asked and never merge the "
             "two counts or the two lists. LOCATION_TYPE says what kind of place it is (city, "
             "country, region, island, structure, nature, fiction)."
+        ),
+    },
+    # VOICE-AGENT-218, API FASTAPI-TEXT2SQL-323: the work a movie or series is adapted from.
+    # Opened from a source_work search row or from a based_on item of a movie or series. The
+    # record also carries ID_MOVIE / ID_SERIE when the source is itself a film or series of the
+    # catalogue (Scarface 1932 for Scarface 1983), which is why the browser checks
+    # ID_SOURCE_WORK before ID_MOVIE (isSourceWorkRecord in app.js).
+    "source_work": {
+        "tool_name": "get_source_work_detail",
+        "path": "sourceworks",
+        "id_name": "ID_SOURCE_WORK",
+        "id_param": "id",
+        "id_type": "integer",
+        "description": (
+            "Get a source work by ID_SOURCE_WORK: the novel, manga, play, video game, tale, or "
+            "earlier film or series that movies and TV series are adapted from. Returns "
+            "SOURCE_WORK_NAME, SOURCE_WORK_TYPE (literary, comic, stage, game, screen, folklore, "
+            "other), SOURCE_WORK_FORM (manga, light_novel, play, musical, or empty), "
+            "SOURCE_WORK_YEAR, MOVIE_COUNT and SERIE_COUNT, the adaptations as movies and "
+            "series (oldest first), and source_entity, the film or series the source IS when "
+            "it is itself on screen material. Use ID_SOURCE_WORK from a based_on item of "
+            "get_movie_detail / get_series_detail or from a source_work search row."
         ),
     },
 }
@@ -1186,6 +1212,25 @@ def play_trailer_tool_definition() -> dict[str, Any]:
         "description": (
             "Play the trailer of the movie or series on screen, in a large video window. Takes "
             "no argument: it always plays the trailer of the page the user is looking at."
+        ),
+        "parameters": {"type": "object", "properties": {}, "additionalProperties": False},
+    }
+
+
+# VOICE-AGENT-218. Voice only, handled in the browser like play_trailer: it returns the based_on
+# list of the movie or series on screen, so "what is it based on?" is answered from the page the
+# user is looking at, with no search and no fetch.
+READ_BASED_ON_TOOL = "read_based_on"
+
+
+def read_based_on_tool_definition() -> dict[str, Any]:
+    return {
+        "type": "function",
+        "name": READ_BASED_ON_TOOL,
+        "description": (
+            "Return the works the movie or series on screen is adapted from (its based_on list: "
+            "name, kind of work, year, and ID_SOURCE_WORK for get_source_work_detail). Takes no "
+            "argument: it always reads the page the user is looking at."
         ),
         "parameters": {"type": "object", "properties": {}, "additionalProperties": False},
     }
@@ -1736,6 +1781,27 @@ PLAY_TRAILER_INSTRUCTIONS = (
     "another title to find one."
 )
 
+# VOICE-AGENT-218, voice only. Same pattern as the trailer: the answer is already on the page
+# (the "Based on" rail), so reading it costs no search. query_text2sql would get the question
+# without its subject ("what is it based on?") and fail, or re-resolve a title the screen holds.
+READ_BASED_ON_INSTRUCTIONS = (
+    "When the user asks what the movie or series on screen is based on or adapted from, or "
+    "whether it comes from a book, a novel, a manga, a comic, a play, a game or an earlier film, "
+    "call read_based_on first, never query_text2sql. Answer from its based_on list: name the "
+    "work, say what kind of work it is and its year when given. If the list is empty, say the "
+    "catalogue records no source for it, without claiming it is an original story. If it "
+    "returns ok false because no movie or series page is open, call the detail tool of the "
+    "movie or series discussed in this conversation and answer from its based_on field. To say "
+    "more about one source work, call get_source_work_detail with its ID_SOURCE_WORK."
+)
+
+# VOICE-AGENT-218, both modes: the detail field that answers "what is it based on?".
+SOURCE_WORK_INSTRUCTIONS = (
+    "Movie and series details carry based_on, the works they are adapted from; answer questions "
+    "about a title's source from that field rather than from memory, and open a source work "
+    "with get_source_work_detail and its ID_SOURCE_WORK."
+)
+
 VERBOSE_DETAIL_INSTRUCTIONS = (
     "Default to concise answers. If the user explicitly asks to tell me more, "
     "answer in detail, explain the full story, go deeper, or asks for a longer "
@@ -2203,7 +2269,8 @@ def realtime_session_config(
         "question, call query_text2sql with the user's spoken request as "
         "plain text. When the user asks for details about a specific returned "
         "entity, call the dedicated detail tool with that entity ID "
-        "(ID_LOCATION for locations, never the Wikidata Q-id). "
+        "(ID_LOCATION for locations, never the Wikidata Q-id; ID_SOURCE_WORK for "
+        "source works). "
         "Seasons use ID_SERIE plus SEASON_NUMBER; "
         "episodes use ID_SERIE, SEASON_NUMBER, and EPISODE_NUMBER. For example, "
         "for a movie plot, call get_movie_detail with ID_MOVIE. Pass "
@@ -2226,6 +2293,8 @@ def realtime_session_config(
         + " " + DEEP_ANSWER_VOICE_INSTRUCTIONS
         + " " + ASK_ABOUT_RECORD_INSTRUCTIONS  # VOICE-AGENT-198
         + " " + PLAY_TRAILER_INSTRUCTIONS  # VOICE-AGENT-207
+        + " " + READ_BASED_ON_INSTRUCTIONS  # VOICE-AGENT-218
+        + " " + SOURCE_WORK_INSTRUCTIONS  # VOICE-AGENT-218
         + " " + RECOVERY_INSTRUCTIONS
         + " " + RESULT_COUNT_INSTRUCTIONS
         + " " + DISAMBIGUATION_INSTRUCTIONS
@@ -2293,7 +2362,11 @@ def realtime_session_config(
                 "additionalProperties": False,
             },
         }
-    ] + detail_tool_definitions() + [ask_about_record_tool_definition(), play_trailer_tool_definition()]
+    ] + detail_tool_definitions() + [
+        ask_about_record_tool_definition(),
+        play_trailer_tool_definition(),
+        read_based_on_tool_definition(),  # VOICE-AGENT-218
+    ]
     if structured_card_focus:
         instructions += (
             " Search results may include a visible_results list whose index "
@@ -3144,7 +3217,8 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         "message and provided the result in the input. Base your answer on "
         "that tool result, not on pretraining. If the user asks for details "
         "about a specific returned entity, call the dedicated detail tool with "
-        "that entity ID (ID_LOCATION for locations, never the Wikidata Q-id). "
+        "that entity ID (ID_LOCATION for locations, never the Wikidata Q-id; "
+        "ID_SOURCE_WORK for source works). "
         "Seasons use ID_SERIE plus "
         "SEASON_NUMBER; episodes use ID_SERIE, SEASON_NUMBER, and EPISODE_NUMBER. "
         "Pass ui_language to search and detail tools, using fr for French "
@@ -3173,6 +3247,7 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         # bites less here, since /text-chat pre-fires one search per message whatever the
         # model thinks, but the model still chooses the tools for every turn after that.
         + " " + FOLLOW_UP_ROUTING_INSTRUCTIONS
+        + " " + SOURCE_WORK_INSTRUCTIONS  # VOICE-AGENT-218
         # VOICE-AGENT-143: recomputed on every typed turn, so the text path is always exact.
         + " " + current_date_instructions()
     )

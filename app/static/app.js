@@ -226,6 +226,8 @@ const STRUCTURED_CARD_FOCUS_TOOL = "focus_result_card";
 const ASK_ABOUT_RECORD_TOOL = "ask_about_record";
 // VOICE-AGENT-207: browser-side action, the trailer of the record on screen.
 const PLAY_TRAILER_TOOL = "play_trailer";
+// VOICE-AGENT-218: browser-side read of the "Based on" rail of the record on screen.
+const READ_BASED_ON_TOOL = "read_based_on";
 // VOICE-AGENT-085: the spoken-card highlight targets two card families that never
 // coexist in `#resultsContent` — search grid cards (`.search-poster-card`) and entity
 // detail rail cards (`.detailVisualCard`). One selector covers both so the matcher,
@@ -301,6 +303,7 @@ const DETAIL_TOOL_ENTITIES = {
   get_award_detail: "award",
   get_nomination_detail: "nomination",
   get_location_detail: "location",
+  get_source_work_detail: "source_work", // VOICE-AGENT-218
 };
 const DETAIL_ENTITY_TO_TOOL = Object.fromEntries(
   Object.entries(DETAIL_TOOL_ENTITIES).map(([toolName, entity]) => [entity, toolName])
@@ -1136,6 +1139,7 @@ function detailArgsSignature(args = {}) {
       "ID_AWARD",
       "ID_NOMINATION",
       "ID_LOCATION",
+      "ID_SOURCE_WORK",
       // Legacy tolerance only: locations keyed on ID_WIKIDATA before API 1.1.19. Kept last so
       // it can never outrank a real entity id in the signature.
       "ID_WIKIDATA",
@@ -1173,6 +1177,7 @@ function recordIdentitySignature(record = {}) {
     "ID_DEATH",
     "ID_AWARD",
     "ID_NOMINATION",
+    "ID_SOURCE_WORK",
     "ID_WIKIDATA",
   ];
   const ids = {};
@@ -2787,6 +2792,21 @@ function cardSpecFromRecord(record) {
     });
   }
 
+  // VOICE-AGENT-218: before the movie branch, because a source work that is itself a film
+  // carries that film's ID_MOVIE (see isSourceWorkRecord).
+  if (isSourceWorkRecord(record)) {
+    const kind = sourceWorkKindLabel(record);
+    const year = sourceWorkYear(record);
+    return withRecordDetail({
+      title: record.SOURCE_WORK_NAME || record.CONTENT_TITLE || uiText("Source work", "Œuvre source"),
+      subtitle: sourceWorkSubtitle(record),
+      imageUrl: imageUrl(record.WIKIPEDIA_IMAGE_PATH || record.POSTER_PATH, "w342"),
+      meta: [kind, year, sourceWorkAdaptationCount(record)],
+      rating: record.IMDB_RATING,
+      overview: record.OVERVIEW || "",
+    });
+  }
+
   if (record.ID_MOVIE || type === "movie") {
     const title = record.MOVIE_TITLE || record.CONTENT_TITLE || record.TITLE || `Movie ${record.ID_MOVIE || ""}`;
     // VOICE-AGENT-125: in a mixed movie+serie UNION the movie release date comes back as
@@ -2972,8 +2992,96 @@ function appendAggregateCard(grid, record) {
   }
 }
 
+// VOICE-AGENT-218. Source works (FASTAPI-TEXT2SQL-320/-323): the novel, manga, play, game, tale
+// or earlier film a movie or series is adapted from. A source work row carries ID_MOVIE or
+// ID_SERIE when the source is itself a film or series of the catalogue (Scarface 1932 for
+// Scarface 1983), so ID_SOURCE_WORK alone is not enough to tell it from a movie row that merely
+// joined the source: what settles it is that the row names no film, series or person of its own.
+function isSourceWorkRecord(record) {
+  if (!record || typeof record !== "object") {
+    return false;
+  }
+  const id = record.ID_SOURCE_WORK;
+  if (id === null || id === undefined || String(id).trim() === "") {
+    return false;
+  }
+  const type = String(record.CONTENT_TYPE || "").toLowerCase();
+  return !record.MOVIE_TITLE && !record.SERIE_TITLE && !record.PERSON_NAME &&
+    !record.ID_PERSON && !record.ID_EPISODE && !record.ID_SEASON &&
+    !["movie", "serie", "season", "episode"].includes(type);
+}
+
+// UI wording for the labels this feature adds, in the language of the page.
+function uiText(en, fr) {
+  return normalizeUiLanguage(activeUiLanguage) === "fr" ? fr : en;
+}
+
+const SOURCE_WORK_FORM_LABELS = {
+  manga: ["Manga", "Manga"],
+  light_novel: ["Light novel", "Light novel"],
+  play: ["Play", "Pièce de théâtre"],
+  musical: ["Musical", "Comédie musicale"],
+};
+const SOURCE_WORK_TYPE_LABELS = {
+  literary: ["Book", "Livre"],
+  comic: ["Comic", "Bande dessinée"],
+  stage: ["Stage work", "Œuvre scénique"],
+  game: ["Game", "Jeu"],
+  screen: ["Film or series", "Film ou série"],
+  folklore: ["Folk tale", "Conte"],
+  // 'other' (a character, a franchise...) says nothing worth a line under the name.
+  other: ["", ""],
+};
+
+// The form refines the type (a manga is a comic), so it wins when present. A screen source
+// that is a catalogue film or series says which of the two it is.
+function sourceWorkKindLabel(record) {
+  const form = String(record?.SOURCE_WORK_FORM || "").trim().toLowerCase();
+  const type = String(record?.SOURCE_WORK_TYPE || "").trim().toLowerCase();
+  if (SOURCE_WORK_FORM_LABELS[form]) {
+    return uiText(...SOURCE_WORK_FORM_LABELS[form]);
+  }
+  if (type === "screen" && record?.ID_MOVIE) {
+    return uiText("Film", "Film");
+  }
+  if (type === "screen" && record?.ID_SERIE) {
+    return uiText("TV series", "Série");
+  }
+  if (SOURCE_WORK_TYPE_LABELS[type]) {
+    return uiText(...SOURCE_WORK_TYPE_LABELS[type]);
+  }
+  return form || type ? prettyLabel(form || type) : "";
+}
+
+// Wikidata dates the Odyssey and the Iliad before year 0, so the year can be negative.
+function sourceWorkYear(record) {
+  const year = Number(record?.SOURCE_WORK_YEAR);
+  if (!Number.isFinite(year) || year === 0) {
+    return "";
+  }
+  return year < 0 ? uiText(`${-year} BC`, `${-year} av. J.-C.`) : String(year);
+}
+
+function sourceWorkSubtitle(record) {
+  return uniqueNonEmpty([sourceWorkKindLabel(record), sourceWorkYear(record)]).join(" · ");
+}
+
+function sourceWorkAdaptationCount(record) {
+  const total = (Number(record?.MOVIE_COUNT) || 0) + (Number(record?.SERIE_COUNT) || 0);
+  if (!total) {
+    return "";
+  }
+  return total === 1 ? "1 adaptation" : `${total} adaptations`;
+}
+
 function detailRequestFromRecord(record) {
   const type = String(record.CONTENT_TYPE || "").toLowerCase();
+  // VOICE-AGENT-218: first, for the same reason as in cardSpecFromRecord. A based_on item or a
+  // source_work search row whose source is a film carries ID_MOVIE, and would otherwise open
+  // the film instead of the source work.
+  if (isSourceWorkRecord(record)) {
+    return { toolName: "get_source_work_detail", id: record.ID_SOURCE_WORK };
+  }
   if (record.ID_EPISODE || type === "episode") {
     if (
       record.ID_SERIE !== null && record.ID_SERIE !== undefined &&
@@ -3120,12 +3228,14 @@ function visualTitle(item) {
     item.DESCRIPTION,
     item.DESCRIPTION_FR,
     item.ITEM_LABEL,
-    item.LOCATION_NAME
+    item.LOCATION_NAME,
+    item.SOURCE_WORK_NAME
   );
 }
 
 function visualSubtitle(item) {
   return firstValue(
+    isSourceWorkRecord(item) ? sourceWorkSubtitle(item) : "", // VOICE-AGENT-218
     item.SEASON_SUBTITLE,
     item.EPISODE_SUBTITLE,
     item.CAST_CHARACTER,
@@ -4521,6 +4631,58 @@ function locationRoleItems(items, role) {
   return (Array.isArray(items) ? items : []).filter((item) => detailItemRole(item) === role);
 }
 
+// VOICE-AGENT-218. "Based on" on a movie or series sheet: one card per source work, shown only
+// when the API returned some. Each card opens the source work (detailRequestFromRecord checks
+// ID_SOURCE_WORK before the ID_MOVIE a film source also carries). No image means the neutral
+// title placeholder every image-less card gets; type or form and year go under the name.
+function appendBasedOnRail(parent, record) {
+  const items = Array.isArray(record?.based_on) ? record.based_on : [];
+  if (!items.length) {
+    return false;
+  }
+  return appendVisualRail(parent, uiText("Based on", "D'après"), items, {
+    kind: "poster",
+    collectionName: "based_on",
+  });
+}
+
+// VOICE-AGENT-218. The source-work sheet: what kind of work, when, how often adapted, then the
+// film or series it IS when it is one (source_entity), then its adaptations in two rails paged
+// like the person credits (collection=movies / collection=series).
+function appendSourceWorkSheet(body, metrics, record) {
+  appendMetric(metrics, "Type", sourceWorkKindLabel(record));
+  appendMetric(metrics, uiText("Year", "Année"), sourceWorkYear(record));
+  appendMetric(metrics, uiText("Movies", "Films"), record.MOVIE_COUNT);
+  appendMetric(metrics, uiText("Series", "Séries"), record.SERIE_COUNT);
+  appendMetric(metrics, "IMDb", formatRating(record.IMDB_RATING || record.IMDB_RATING_WEIGHTED));
+  appendMetric(metrics, uiText("Popularity", "Popularité"), formatRating(record.POPULARITY));
+  if (metrics.children.length) {
+    body.append(metrics);
+  }
+  const source = record.source_entity && typeof record.source_entity === "object" ? record.source_entity : null;
+  if (source) {
+    const isSerie = String(source.ENTITY_TYPE || "").toLowerCase() === "serie" || (!source.ID_MOVIE && source.ID_SERIE);
+    appendVisualRail(
+      body,
+      isSerie ? uiText("The original series", "La série d'origine") : uiText("The original film", "Le film d'origine"),
+      [source],
+      { kind: "poster" }
+    );
+  }
+  appendVisualRail(body, uiText("Movies adapted from it", "Films adaptés de cette œuvre"), record.movies, {
+    kind: "poster",
+    collectionName: "movies",
+  });
+  appendVisualRail(body, uiText("TV shows adapted from it", "Séries adaptées de cette œuvre"), record.series, {
+    kind: "poster",
+    collectionName: "series",
+  });
+}
+
+function hasWikipediaContent(record) {
+  return Array.isArray(record?.wikipedia_content) && record.wikipedia_content.length > 0;
+}
+
 function detailCollectionHasUnloadedPages(collectionName) {
   const meta = detailCollectionPagination(collectionName);
   return Boolean(meta && meta.total > meta.loaded);
@@ -4549,6 +4711,7 @@ function titleForRecord(record) {
     record.DEATH_NAME,
     record.AWARD_NAME,
     record.NOMINATION_NAME,
+    record.SOURCE_WORK_NAME,
     record.ITEM_LABEL,
     record.CONTENT_TITLE,
     "Result"
@@ -4721,6 +4884,7 @@ async function runBrief(request, key, title) {
 
 function renderSingleDetail(container, record, { loading = false, error = "" } = {}) {
   container.replaceChildren();
+  const sourceWork = isSourceWorkRecord(record); // VOICE-AGENT-218
   const detail = document.createElement("section");
   detail.className = "singleDetail";
 
@@ -4744,7 +4908,7 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
       fallback.textContent = titleForRecord(record);
       media.append(fallback);
     }
-  } else if (record.ID_MOVIE || record.ID_SERIE || record.ID_SEASON) {
+  } else if (!sourceWork && (record.ID_MOVIE || record.ID_SERIE || record.ID_SEASON)) {
     media.append(buildPosterSwipeViewer(record));
     const backdropViewer = buildBackdropSwipeViewer(record);
     if (backdropViewer) {
@@ -4775,14 +4939,18 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
   if (!record.ID_PERSON) {
     appendText(body, "singleDetailTagline", firstValue(record.TAGLINE, record.OVERVIEW, record.DESCRIPTION));
   }
-  if (!loading && !error) {
+  // VOICE-AGENT-218: a source work has nothing to brief from until the Wikipedia crawl covers
+  // source works (wikipedia_content stays [] until then), so the button waits for it.
+  if (!loading && !error && (!sourceWork || hasWikipediaContent(record))) {
     appendBriefControls(body, record);
   }
 
   const metrics = document.createElement("div");
   metrics.className = "detailMetrics";
 
-  if (record.ID_EPISODE || String(record.CONTENT_TYPE || "").toLowerCase() === "episode") {
+  if (sourceWork) {
+    appendSourceWorkSheet(body, metrics, record);
+  } else if (record.ID_EPISODE || String(record.CONTENT_TYPE || "").toLowerCase() === "episode") {
     const crewCredits = dedupePersonCrewCredits(record.crew);
     const castCredits = dedupePersonCastCredits(record.cast);
     const episodeNumber = record.EPISODE_NUMBER !== null && record.EPISODE_NUMBER !== undefined
@@ -4902,6 +5070,7 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     appendChipStrip(body, "Genres", (record.genres || []).map((genre) => genre && genre.GENRE_NAME));
     appendChipStrip(body, "Spoken languages", (record.spoken_languages || []).map(formatLanguageCode));
     appendChipStrip(body, "Production countries", (record.production_countries || []).map((code) => ({ text: countryFlag(code), title: countryName(code) })));
+    appendBasedOnRail(body, record); // VOICE-AGENT-218
     if (!appendVisualRail(body, "Cast", castCredits, { kind: "profile", collectionName: "cast" })) {
       appendList(body, "Cast", namesFrom(castCredits, "PERSON_NAME", Infinity));
     }
@@ -4935,6 +5104,7 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     appendChipStrip(body, "Genres", (record.genres || []).map((genre) => genre && genre.GENRE_NAME));
     appendChipStrip(body, "Spoken languages", (record.spoken_languages || []).map(formatLanguageCode));
     appendChipStrip(body, "Production countries", (record.production_countries || []).map((code) => ({ text: countryFlag(code), title: countryName(code) })));
+    appendBasedOnRail(body, record); // VOICE-AGENT-218
     appendVisualRail(body, "Seasons", seasonRailItems(record.seasons, record.ID_SERIE), { kind: "poster", collectionName: "seasons" });
     if (!appendVisualRail(body, "Cast", castCredits, { kind: "profile", collectionName: "cast" })) {
       appendList(body, "Cast", namesFrom(castCredits, "PERSON_NAME", Infinity));
@@ -5066,9 +5236,19 @@ async function renderSingleRecordResult(parent, record) {
       args: cloneHistoryValue(currentDetailState.args),
     };
   } catch (error) {
-    renderSingleDetail(container, record, { error: `Detail fetch failed: ${error.message}` });
+    renderSingleDetail(container, record, { error: detailFetchErrorText(request.toolName, error.message) });
     return null;
   }
+}
+
+// VOICE-AGENT-218: /sourceworks/{id} only exists once the API runs FASTAPI-TEXT2SQL-323. Until
+// then a click on a "Based on" card gets an upstream 404: keep the card's own name, type and year
+// on the sheet and say the page is not available yet, instead of a raw JSON error.
+function detailFetchErrorText(toolName, message) {
+  if (toolName === "get_source_work_detail" && /upstream_status"?\s*:\s*404/.test(String(message || ""))) {
+    return uiText("This source work page is not available yet.", "La fiche de cette œuvre n'est pas encore disponible.");
+  }
+  return `Detail fetch failed: ${message}`;
 }
 
 // VOICE-AGENT-108: build the spoken/typed selection the model should act on, using the
@@ -9598,7 +9778,8 @@ const DETAIL_MEDIA_LISTS = [
   "posters", "backdrops", "stills", "logos", "profiles", "videos", "wikipedia_images",
 ];
 // Never shed: small, and they are what episode and season questions are made of.
-const DETAIL_KEEP_LISTS = ["episodes", "seasons"];
+// VOICE-AGENT-218: based_on too, a few rows that answer "what is it based on?".
+const DETAIL_KEEP_LISTS = ["episodes", "seasons", "based_on"];
 const DETAIL_SHED_STEPS = [
   { label: "media", drop: DETAIL_MEDIA_LISTS },
   {
@@ -9848,6 +10029,8 @@ async function callEntityDetail(toolName, args) {
   }
   const id =
     args.id ||
+    // VOICE-AGENT-218: ahead of ID_MOVIE, which a source work that is a film also carries.
+    (entity === "source_work" ? args.ID_SOURCE_WORK : "") ||
     args.wikidata_id ||
     args.ID_WIKIDATA ||
     args.ID_MOVIE ||
@@ -10334,6 +10517,65 @@ function handlePlayTrailerCall(item) {
   }
 }
 
+// VOICE-AGENT-218. "What is it based on?", "Is it from a book?": the answer is the "Based on" rail
+// of the page on screen, read here with no search and no fetch, the way play_trailer reads
+// detail.videos. Unlike the trailer the model must speak afterwards, so the output takes the
+// ordinary path: response request plus the VOICE-AGENT-094 watchdog.
+function handleReadBasedOnCall(item) {
+  const state = !resultsPanel.hidden ? currentDetailState : null;
+  const entity = state?.entity || "";
+  const detail = entity === "movie" || entity === "serie" ? state.detail : null;
+  clientLog("tool_call_start", { name: item.name, call_id: item.call_id, entity: entity || null });
+  let output;
+  if (!detail) {
+    output = {
+      ok: false,
+      error: "no_record",
+      note: "No movie or series page is open. Call the detail tool of the movie or series discussed in this conversation and answer from its based_on field.",
+    };
+  } else {
+    const items = Array.isArray(detail.based_on) ? detail.based_on : [];
+    const total = Number(detail.pagination?.based_on?.total) || items.length;
+    output = {
+      ok: true,
+      entity,
+      title: titleForRecord(detail),
+      year: yearFromDate(detail.DAT_RELEASE || detail.DAT_FIRST_AIR),
+      based_on: items.map((source) => ({
+        ID_SOURCE_WORK: source.ID_SOURCE_WORK,
+        SOURCE_WORK_NAME: source.SOURCE_WORK_NAME || "",
+        SOURCE_WORK_TYPE: source.SOURCE_WORK_TYPE || "",
+        SOURCE_WORK_FORM: source.SOURCE_WORK_FORM || "",
+        SOURCE_WORK_YEAR: source.SOURCE_WORK_YEAR ?? null,
+        kind: sourceWorkKindLabel(source),
+        source_is_movie: Boolean(source.ID_MOVIE),
+        source_is_series: Boolean(source.ID_SERIE),
+      })),
+      total,
+      note: items.length
+        ? "Answer from based_on."
+        : "The catalogue records no source work for this title. Say so; do not claim it is an original story.",
+    };
+  }
+  clientLog("tool_call_success", {
+    name: item.name,
+    call_id: item.call_id,
+    ok: output.ok,
+    error: output.error || "",
+    result_count: output.based_on ? output.based_on.length : null,
+  });
+  awaitingToolResponse = true;
+  try {
+    sendFunctionCallOutput(item.call_id, output);
+  } catch (error) {
+    clientLog("tool_output_send_error", { tool: item.name, call_id: item.call_id, error: error.message }, "error");
+  } finally {
+    requestRealtimeResponseAfterToolOutput();
+    scheduleToolResponseWatchdog(); // VOICE-AGENT-094
+    syncMicrophone("tool output sent");
+  }
+}
+
 // VOICE-AGENT-217. A voice search that still holds the user's "he" or "his". The search is
 // stateless, so the pronoun stands for nobody there: on 2026-10-10 "Which movies did he direct
 // with Leonardo DiCaprio?" painted 50 unfiltered DiCaprio films and "only his 10 best-rated ones"
@@ -10416,6 +10658,7 @@ async function handleFunctionCall(item) {
       item.name !== STRUCTURED_CARD_FOCUS_TOOL &&
       item.name !== ASK_ABOUT_RECORD_TOOL &&
       item.name !== PLAY_TRAILER_TOOL &&
+      item.name !== READ_BASED_ON_TOOL &&
       !DETAIL_TOOL_ENTITIES[item.name]
     )
   ) {
@@ -10437,6 +10680,10 @@ async function handleFunctionCall(item) {
   }
   if (item.name === PLAY_TRAILER_TOOL) {
     handlePlayTrailerCall(item);
+    return;
+  }
+  if (item.name === READ_BASED_ON_TOOL) {
+    handleReadBasedOnCall(item);
     return;
   }
   args.ui_language = item.name === "query_text2sql"
