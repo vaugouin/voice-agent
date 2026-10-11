@@ -472,5 +472,9 @@
   "episode_worst_words": ["worst", "lowest", "weakest", "pire", "pires", "moins"],
   "_comment_pronouns": "VOICE-AGENT-217: third-person pronouns that, in a query_text2sql call made from voice, stand for a person the stateless search cannot know. A query holding one is sent back to the model once per user turn, to be restated with the name. Normalized words (lowercase, accents folded); French 'il' is listed but the impersonal 'il y a', 'il faut', 's il' are excluded in code. JS only (app/static/app.js).",
   "follow_up_pronouns_en": ["he", "she", "him", "his", "her", "hers", "himself", "herself"],
-  "follow_up_pronouns_fr": ["il", "elle", "lui", "ses", "sa", "son", "leurs"]
+  "follow_up_pronouns_fr": ["il", "elle", "lui", "ses", "sa", "son", "leurs"],
+  "_comment_group_pronouns": "VOICE-AGENT-225: the plural pronouns that stand for a group (a band, a troupe) in a voice query_text2sql call. Checked only when a group is in focus (its page on screen, a group in the last search rows, or a group word in the previous search), because 'they' is too common to send back otherwise. JS only (app/static/app.js).",
+  "follow_up_group_pronouns_en": ["they", "them", "their", "theirs", "themselves"],
+  "follow_up_group_pronouns_fr": ["ils", "elles", "eux", "leur", "leurs"],
+  "group_subject_words": ["member", "members", "band", "bands", "group", "groups", "troupe", "troupes", "duo", "trio", "quartet", "quintet", "membre", "membres", "groupe", "groupes"]
 }

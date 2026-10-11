@@ -810,9 +810,15 @@ DETAIL_ENTITY_CONFIG = {
         "id_param": "id",
         "id_type": "integer",
         "description": (
-            "Get all fields for a person group by ID_GROUP, including "
-            "organization, club, or musical group details, plus associated "
-            "persons ordered by display order."
+            "Get all fields for a person group by ID_GROUP (a band, comedy troupe, duo, "
+            "club or organization), including its members as persons ordered by display "
+            "order, plus movies and series: the films and TV series the group made, each "
+            "with MEMBER_COUNT (how many of its members are credited on it), MEMBER_SHARE "
+            "(0 to 1, 1 meaning every member took part), IS_GROUP_CREDITED (1 when the group "
+            "itself is credited), CREDIT_KINDS and MEMBER_NAMES (the members credited). "
+            "PERSON_COUNT is the number of members; MOVIE_WORK_COUNT and SERIE_WORK_COUNT, "
+            "when present, count the group's movies and series. Use it to answer which "
+            "movies or series a group made, made together, or made with all its members."
         ),
     },
     "death": {
@@ -1802,6 +1808,24 @@ SOURCE_WORK_INSTRUCTIONS = (
     "with get_source_work_detail and its ID_SOURCE_WORK."
 )
 
+# VOICE-AGENT-225, both modes: a group's films and series are in its detail. On 2026-10-11
+# "And which movie did they make together?" after "Who are the members of the Beatles?" went to
+# query_text2sql as is and came back no_sql ("Which people do you mean?"). The API now returns
+# the group's movies and series with member counts (FASTAPI-TEXT2SQL-325), so the answer is
+# one detail call away, and "all of them" is a filter on MEMBER_SHARE, not a new search.
+GROUP_WORKS_INSTRUCTIONS = (
+    "Group details (get_group_detail) carry movies and series: the films and TV series the "
+    "group made, each with MEMBER_COUNT, MEMBER_SHARE and MEMBER_NAMES. When a group is on "
+    "screen or was the last subject of this conversation and the user asks which movies or "
+    "series they made, made together, or appeared in together, answer from that group's "
+    "detail movies and series, calling get_group_detail with its ID_GROUP if you do not have "
+    "them yet, and never call query_text2sql for it. 'All of them', 'the whole group' or "
+    "'every member' means only the items with MEMBER_SHARE = 1; otherwise say how many members "
+    "took part when it matters (for example 'five of the six'). If both lists come back empty, "
+    "say the catalogue has no films or series recorded for the group yet, and only then search "
+    "with query_text2sql, naming the group in full."
+)
+
 VERBOSE_DETAIL_INSTRUCTIONS = (
     "Default to concise answers. If the user explicitly asks to tell me more, "
     "answer in detail, explain the full story, go deeper, or asks for a longer "
@@ -1879,7 +1903,14 @@ FOLLOW_UP_ROUTING_INSTRUCTIONS = (
     "direct with Leonardo DiCaprio?' after Martin Scorsese becomes 'Which movies did Martin "
     "Scorsese direct with Leonardo DiCaprio?' and 'only his 10 best-rated ones' after Pedro "
     "Pascal becomes 'the 10 best-rated films and TV series of Pedro Pascal'. Never send the "
-    "pronoun itself to the search."
+    "pronoun itself to the search. "
+    # VOICE-AGENT-225: the same rule for a group. "they", "them" and "their" after a band or a
+    # troupe stand for the group, and the search cannot know which one either.
+    "The same holds for a group: when they, them or their (ils, elles, eux, leur, leurs) refer "
+    "to a band, troupe or other group on screen or named last, replace them with the group's "
+    "full name, so 'Which movies did they make together?' after the Beatles becomes 'Which "
+    "movies did The Beatles make together?', and first check whether the group's detail "
+    "already answers it."
 )
 
 # VOICE-AGENT-210. Voice only: the browser attaches `record_detail` to a query_text2sql output
@@ -2295,6 +2326,7 @@ def realtime_session_config(
         + " " + PLAY_TRAILER_INSTRUCTIONS  # VOICE-AGENT-207
         + " " + READ_BASED_ON_INSTRUCTIONS  # VOICE-AGENT-218
         + " " + SOURCE_WORK_INSTRUCTIONS  # VOICE-AGENT-218
+        + " " + GROUP_WORKS_INSTRUCTIONS  # VOICE-AGENT-225
         + " " + RECOVERY_INSTRUCTIONS
         + " " + RESULT_COUNT_INSTRUCTIONS
         + " " + DISAMBIGUATION_INSTRUCTIONS
@@ -3248,6 +3280,7 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         # model thinks, but the model still chooses the tools for every turn after that.
         + " " + FOLLOW_UP_ROUTING_INSTRUCTIONS
         + " " + SOURCE_WORK_INSTRUCTIONS  # VOICE-AGENT-218
+        + " " + GROUP_WORKS_INSTRUCTIONS  # VOICE-AGENT-225
         # VOICE-AGENT-143: recomputed on every typed turn, so the text path is always exact.
         + " " + current_date_instructions()
     )

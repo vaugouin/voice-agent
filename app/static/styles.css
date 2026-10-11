@@ -2039,6 +2039,32 @@ button.detailVisualCard:hover {
   padding: 8px;
 }
 
+/* VOICE-AGENT-225: on a group's Movies / TV shows rails, how many members took part ("5 of 6")
+   and a star when the group itself is credited. Both sit inside the card, so a tap opens it. */
+.detailVisualMedia.hasGroupBadge {
+  position: relative;
+}
+.groupMemberBadge,
+.groupCreditedMark {
+  position: absolute;
+  top: 6px;
+  padding: 2px 6px;
+  border-radius: 999px;
+  background: rgb(0 0 0 / 72%);
+  color: #ffffff;
+  font-size: 0.72rem;
+  font-weight: 600;
+  line-height: 1.3;
+  white-space: nowrap;
+}
+.groupMemberBadge {
+  left: 6px;
+}
+.groupCreditedMark {
+  right: 6px;
+  color: #f5c518;
+}
+
 /* VOICE-AGENT-070: video rail — wider 16:9 cards + play badge + inline player modal */
 .videoCard {
   flex: 0 0 220px;

@@ -4049,6 +4049,10 @@ function buildDetailVisualCard(item, kind = "poster") {
     media.append(fallback);
     applySyntheticLogo(media, null, title, synthetic);
   }
+  // VOICE-AGENT-225: only a group's work rows carry MEMBER_COUNT / IS_GROUP_CREDITED.
+  if (item && (item.MEMBER_COUNT !== undefined || item.IS_GROUP_CREDITED !== undefined)) {
+    appendGroupWorkBadges(media, item);
+  }
 
   const text = document.createElement("div");
   text.className = "detailVisualText";
@@ -4591,7 +4595,9 @@ function appendMixedVisualSections(parent, record, { skip = [] } = {}) {
   if (!skipped.has("series")) {
     appendVisualRail(parent, "Series", record.series, { kind: "poster", collectionName: "series" });
   }
-  appendVisualRail(parent, "People", record.persons, { kind: "profile", collectionName: "persons" });
+  if (!skipped.has("persons")) {
+    appendVisualRail(parent, "People", record.persons, { kind: "profile", collectionName: "persons" });
+  }
   appendVisualRail(parent, "Awards", record.awards, { kind: "poster", collectionName: "awards" });
   appendVisualRail(parent, "Nominations", record.nominations, { kind: "poster", collectionName: "nominations" });
   appendVisualRail(parent, "Collections", record.collections, { kind: "poster", collectionName: "collections" });
@@ -4677,6 +4683,75 @@ function appendSourceWorkSheet(body, metrics, record) {
     kind: "poster",
     collectionName: "series",
   });
+}
+
+// VOICE-AGENT-225, API FASTAPI-TEXT2SQL-325. A group's page: its members first, then the films
+// and series the group made, paged like the person credits (collection=movies / =series). Each
+// work card carries a "N of M" badge (MEMBER_COUNT of the group's members) and a mark when the
+// group itself is credited (IS_GROUP_CREDITED). The two rails are simply absent while the API
+// returns empty lists (tables not built yet). The rest of the mixed rails follow unchanged.
+function appendGroupSheet(body, record) {
+  appendVisualRail(body, uiText("Members", "Membres"), record.persons, { kind: "profile", collectionName: "persons" });
+  appendVisualRail(body, uiText("Movies", "Films"), record.movies, { kind: "poster", collectionName: "movies" });
+  appendVisualRail(body, uiText("TV shows", "Séries"), record.series, { kind: "poster", collectionName: "series" });
+  appendMixedVisualSections(body, record, { skip: ["movies", "series", "persons"] });
+}
+
+// The group's member count for the "N of M" badge: PERSON_COUNT when the record carries it,
+// else the total of the paged members collection. 0 means unknown ("N members" then).
+function groupMemberTotal() {
+  const detail = currentDetailState?.entity === "group" ? currentDetailState.detail : null;
+  if (!detail) {
+    return 0;
+  }
+  const count = Number(detail.PERSON_COUNT || 0);
+  if (Number.isFinite(count) && count > 0) {
+    return count;
+  }
+  const meta = detailCollectionPagination("persons");
+  if (meta && meta.total > 0) {
+    return meta.total;
+  }
+  return Array.isArray(detail.persons) ? detail.persons.length : 0;
+}
+
+function groupMemberBadgeText(item) {
+  const count = Number(item?.MEMBER_COUNT);
+  if (!Number.isFinite(count) || count <= 0) {
+    return "";
+  }
+  const total = groupMemberTotal();
+  if (total >= count) {
+    return uiText(`${count} of ${total}`, `${count} sur ${total}`);
+  }
+  return count === 1 ? uiText("1 member", "1 membre") : uiText(`${count} members`, `${count} membres`);
+}
+
+function appendGroupWorkBadges(media, item) {
+  const badgeText = groupMemberBadgeText(item);
+  const credited = item?.IS_GROUP_CREDITED === 1 || item?.IS_GROUP_CREDITED === true || item?.IS_GROUP_CREDITED === "1";
+  if (!badgeText && !credited) {
+    return;
+  }
+  media.classList.add("hasGroupBadge");
+  if (badgeText) {
+    const badge = document.createElement("span");
+    badge.className = "groupMemberBadge";
+    badge.textContent = badgeText;
+    if (item.MEMBER_NAMES) {
+      badge.title = String(item.MEMBER_NAMES);
+    }
+    media.append(badge);
+  }
+  if (credited) {
+    const mark = document.createElement("span");
+    mark.className = "groupCreditedMark";
+    mark.textContent = "★";
+    const label = uiText("Credited as the group", "Crédité au nom du groupe");
+    mark.title = label;
+    mark.setAttribute("aria-label", label);
+    media.append(mark);
+  }
 }
 
 function hasWikipediaContent(record) {
@@ -5070,11 +5145,13 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     appendChipStrip(body, "Genres", (record.genres || []).map((genre) => genre && genre.GENRE_NAME));
     appendChipStrip(body, "Spoken languages", (record.spoken_languages || []).map(formatLanguageCode));
     appendChipStrip(body, "Production countries", (record.production_countries || []).map((code) => ({ text: countryFlag(code), title: countryName(code) })));
-    appendBasedOnRail(body, record); // VOICE-AGENT-218
     if (!appendVisualRail(body, "Cast", castCredits, { kind: "profile", collectionName: "cast" })) {
       appendList(body, "Cast", namesFrom(castCredits, "PERSON_NAME", Infinity));
     }
     appendVisualRail(body, "Crew", crewCredits, { kind: "profile", collectionName: "crew" });
+    // VOICE-AGENT-218: after Crew, not above Cast. One or two cards would push every rail down,
+    // and the author is often already credited in Crew (Novel, Writer), so the source reads as its follow-up.
+    appendBasedOnRail(body, record);
     appendVisualRail(body, "Technicals", record.technicals, { kind: "poster", collectionName: "technicals" });
     appendVisualRail(body, record.collection_name || "Collection", record.collection_movies, { kind: "poster", collectionName: "collection_movies" });
     appendVisualRail(body, "Similar", record.similar, { kind: "poster", collectionName: "similar" });
@@ -5104,12 +5181,14 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     appendChipStrip(body, "Genres", (record.genres || []).map((genre) => genre && genre.GENRE_NAME));
     appendChipStrip(body, "Spoken languages", (record.spoken_languages || []).map(formatLanguageCode));
     appendChipStrip(body, "Production countries", (record.production_countries || []).map((code) => ({ text: countryFlag(code), title: countryName(code) })));
-    appendBasedOnRail(body, record); // VOICE-AGENT-218
     appendVisualRail(body, "Seasons", seasonRailItems(record.seasons, record.ID_SERIE), { kind: "poster", collectionName: "seasons" });
     if (!appendVisualRail(body, "Cast", castCredits, { kind: "profile", collectionName: "cast" })) {
       appendList(body, "Cast", namesFrom(castCredits, "PERSON_NAME", Infinity));
     }
     appendVisualRail(body, "Crew", crewCredits, { kind: "profile", collectionName: "crew" });
+    // VOICE-AGENT-218: after Crew, not above Cast. One or two cards would push every rail down,
+    // and the author is often already credited in Crew (Novel, Writer), so the source reads as its follow-up.
+    appendBasedOnRail(body, record);
     // FASTAPI-152: cross-type T2S collection rail — a collection can hold both films and
     // series (e.g. Star Trek); each card routes to the right detail by its own ID_MOVIE /
     // ID_SERIE (detailRequestFromRecord), so movies and series mix in one chronological rail.
@@ -5165,9 +5244,9 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     // technical / genre / group / death / award / nomination. Every tile is skip-empty, so each
     // entity surfaces only the fields its own table carries (VOICE-AGENT-092).
     appendMetric(metrics, "Type", firstValue(record.COLLECTION_TYPE, record.TOPIC_TYPE, record.LIST_TYPE, record.MOVEMENT_TYPE, record.TECHNICAL_TYPE ? prettyLabel(record.TECHNICAL_TYPE) : "", record.GROUP_TYPE, record.DEATH_TYPE, record.AWARD_TYPE, record.NOMINATION_TYPE, record.LOCATION_TYPE ? prettyLabel(record.LOCATION_TYPE) : "", record.INSTANCE_OF));
-    appendMetric(metrics, "Movies", record.MOVIE_COUNT);
-    appendMetric(metrics, "Series", record.SERIE_COUNT);
-    appendMetric(metrics, "Persons", record.PERSON_COUNT);
+    appendMetric(metrics, "Movies", firstValue(record.MOVIE_COUNT, record.MOVIE_WORK_COUNT));  // MOVIE_WORK_COUNT: group (VOICE-AGENT-225)
+    appendMetric(metrics, "Series", firstValue(record.SERIE_COUNT, record.SERIE_WORK_COUNT));
+    appendMetric(metrics, record.ID_GROUP ? uiText("Members", "Membres") : "Persons", record.PERSON_COUNT);
     appendMetric(metrics, "IMDb", formatRating(record.IMDB_RATING || record.IMDB_RATING_WEIGHTED));
     appendMetric(metrics, "Popularity", formatRating(record.POPULARITY));           // company/collection/topic/list/movement/technical/group
     appendMetric(metrics, "Country", countryFlag(record.ORIGIN_COUNTRY));            // company/network
@@ -5191,6 +5270,8 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
       // must not draw the mixed pair on top of them.
       appendLocationRoleRails(body, record);
       appendMixedVisualSections(body, record, { skip: ["movies", "series"] });
+    } else if (record.ID_GROUP) {
+      appendGroupSheet(body, record); // VOICE-AGENT-225
     } else {
       appendMixedVisualSections(body, record);
     }
@@ -5529,6 +5610,7 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
       page,
       rows_per_page: rowsPerPage,
       has_more: pagination.has_more,
+      group_name: groupNameFromRows(rows), // VOICE-AGENT-225
     };
 
     if (rows.length === 1) {
@@ -5588,6 +5670,7 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
     page,
     rows_per_page: rowsPerPage,
     has_more: pagination.has_more,
+    group_name: groupNameFromRows(rows), // VOICE-AGENT-225
   };
   // VOICE-AGENT-108: remember the same-name cluster of the fresh result (page 1 only) so a
   // click on a candidate card resolves the disambiguation. Cleared on a non-ambiguous result.
@@ -10617,25 +10700,94 @@ function personInFocusName() {
   return detail?.PERSON_NAME || "";
 }
 
-function returnUnresolvedPronounCall(item, args, pronoun) {
-  const personOnScreen = personInFocusName();
+// VOICE-AGENT-225. The same guard for a group: on 2026-10-11 "And which movie did they make
+// together?" after "Who are the members of the Beatles?" reached the API as is and came back
+// no_sql ("Which people do you mean?"). "they" is far too common to return on its own, so the
+// plural pronouns are only checked when a group is in focus, found in this order:
+//   1. a group page on screen (its GROUP_NAME, the strongest signal);
+//   2. a group record among the rows of the last search on screen (GROUP_NAME on a row);
+//   3. a group word in the previous search ("members of the Beatles", "the band Queen"), in
+//      which case the name is not known here and the model reads it from that search.
+const FOLLOW_UP_GROUP_PRONOUNS = {
+  en: new Set(LEXICONS.follow_up_group_pronouns_en || []),
+  fr: new Set(LEXICONS.follow_up_group_pronouns_fr || []),
+};
+const GROUP_SUBJECT_WORDS = new Set(LEXICONS.group_subject_words || []);
+
+function groupNameFromRows(rows) {
+  for (const row of Array.isArray(rows) ? rows : []) {
+    const record = row?.data || row;
+    if (record && typeof record === "object" && record.ID_GROUP && record.GROUP_NAME) {
+      return String(record.GROUP_NAME);
+    }
+  }
+  return "";
+}
+
+function groupInFocus() {
+  if (!resultsPanel.hidden && currentDetailState?.entity === "group") {
+    const detail = currentDetailState.detail || {};
+    return { name: String(detail.GROUP_NAME || ""), id: detail.ID_GROUP || null, source: "screen" };
+  }
+  if (!resultsPanel.hidden && currentSearchState?.group_name) {
+    return { name: currentSearchState.group_name, id: null, source: "search_rows" };
+  }
+  const previousQuery = String(lastToolArgs?.query || "");
+  if (previousQuery && foldedWords(previousQuery).some((word) => GROUP_SUBJECT_WORDS.has(word))) {
+    return { name: "", id: null, source: "previous_search" };
+  }
+  return null;
+}
+
+function unresolvedGroupPronounInQuery(query, uiLanguage, group) {
+  if (!group) {
+    return "";
+  }
+  // A query that already names the group is resolved, whatever pronoun it also holds.
+  if (group.name) {
+    const nameWords = foldedWords(group.name).filter((word) => word !== "the" && word !== "les");
+    const queryWords = new Set(foldedWords(query));
+    if (nameWords.length && nameWords.every((word) => queryWords.has(word))) {
+      return "";
+    }
+  }
+  const language = normalizeUiLanguage(uiLanguage) === "fr" ? "fr" : "en";
+  const pronouns = FOLLOW_UP_GROUP_PRONOUNS[language];
+  return foldedWords(query).find((word) => pronouns.has(word)) || "";
+}
+
+function returnUnresolvedPronounCall(item, args, pronoun, group = null) {
+  const personOnScreen = group ? "" : personInFocusName();
   const previousSearch = String(lastToolArgs?.query || "").slice(0, 300);
+  const groupLabel = group?.name || "the group of the previous search";
+  const groupExample = group?.name || "The Beatles";
   const output = {
     error: "unresolved_pronoun",
     pronoun,
     person_on_screen: personOnScreen || null,
+    group_in_focus: group ? { name: group.name || null, id_group: group.id, source: group.source } : null,
     previous_search: previousSearch || null,
-    note: `Not searched: the search is stateless and cannot know who "${pronoun}" is. Call `
-      + "query_text2sql again with the same question, the pronoun replaced by the full name of the "
-      + "person it refers to (the person on screen, else the last person named in this conversation). "
-      + "If you cannot tell who is meant, ask the user in one short sentence. Say nothing about this "
-      + "step to the user.",
+    note: group
+      ? `Not searched: the search is stateless and cannot know who "${pronoun}" are. They are most `
+        + `likely ${groupLabel}. If the question is which movies or series they made (together), `
+        + "answer from that group's detail movies and series (get_group_detail; only MEMBER_SHARE = 1 "
+        + "when it must be all of them) without searching. Otherwise call query_text2sql again with "
+        + `the pronoun replaced by the group's full name, for example "Which movies did ${groupExample} `
+        + "make together?\". If you cannot tell who is meant, ask the user in one short sentence. "
+        + "Say nothing about this step to the user."
+      : `Not searched: the search is stateless and cannot know who "${pronoun}" is. Call `
+        + "query_text2sql again with the same question, the pronoun replaced by the full name of the "
+        + "person it refers to (the person on screen, else the last person named in this conversation). "
+        + "If you cannot tell who is meant, ask the user in one short sentence. Say nothing about this "
+        + "step to the user.",
   };
   clientLog("pronoun_query_returned", {
     call_id: item.call_id,
     query: String(args.query || "").slice(0, 300),
     pronoun,
     person_on_screen: personOnScreen || null,
+    group_in_focus: group?.name || null,
+    group_source: group?.source || null,
     previous_search: previousSearch || null,
   });
   awaitingToolResponse = true;
@@ -10690,10 +10842,13 @@ async function handleFunctionCall(item) {
     ? detectUiLanguageFromText(lastUserTranscript || args.query)
     : normalizeUiLanguage(activeUiLanguage || currentSearchState?.ui_language || "en");
   if (item.name === "query_text2sql" && pronounGuardTranscript !== lastUserTranscript) {
-    const pronoun = unresolvedPronounInQuery(args.query, args.ui_language);
+    // VOICE-AGENT-225: a group's "they" first, then a person's "he" (VOICE-AGENT-217).
+    const group = groupInFocus();
+    const groupPronoun = unresolvedGroupPronounInQuery(args.query, args.ui_language, group);
+    const pronoun = groupPronoun || unresolvedPronounInQuery(args.query, args.ui_language);
     if (pronoun) {
       pronounGuardTranscript = lastUserTranscript;
-      returnUnresolvedPronounCall(item, args, pronoun);
+      returnUnresolvedPronounCall(item, args, pronoun, groupPronoun ? group : null);
       return;
     }
   }
