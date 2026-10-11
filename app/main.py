@@ -635,7 +635,11 @@ DETAIL_ENTITY_CONFIG = {
             "nominations, posters, backdrops, and based_on: the works it is adapted from "
             "(novel, manga, play, game, tale, or an earlier film or series), each with "
             "ID_SOURCE_WORK, SOURCE_WORK_NAME, SOURCE_WORK_TYPE, SOURCE_WORK_FORM and "
-            "SOURCE_WORK_YEAR. An empty based_on means no source is recorded."
+            "SOURCE_WORK_YEAR. An empty based_on means no source is recorded. It also "
+            "carries locations: the places linked to the movie, each with ID_LOCATION, "
+            "LOCATION_NAME, LOCATION_TYPE and LOCATION_ROLE, either 'narrative' (the story "
+            "is set there) or 'filming' (it was shot there), narrative rows first. An empty "
+            "locations list means no place is recorded."
         ),
     },
     "serie": {
@@ -650,7 +654,10 @@ DETAIL_ENTITY_CONFIG = {
             "Wikidata/IMDb IDs, cast, crew, genre codes, companies, networks, "
             "production countries, spoken languages, topics, lists, collections, "
             "movements, awards, nominations, posters, backdrops, and based_on (the works "
-            "it is adapted from, same shape as on get_movie_detail). It lists the "
+            "it is adapted from, same shape as on get_movie_detail), and locations (the "
+            "places linked to the series, each with ID_LOCATION, LOCATION_NAME, "
+            "LOCATION_TYPE and LOCATION_ROLE, 'narrative' where the story is set or "
+            "'filming' where it was shot, same shape as on get_movie_detail). It lists the "
             "SEASONS but NOT the individual episodes: for anything about a specific "
             "episode, call get_season_detail."
         ),
@@ -1808,6 +1815,24 @@ SOURCE_WORK_INSTRUCTIONS = (
     "with get_source_work_detail and its ID_SOURCE_WORK."
 )
 
+# VOICE-AGENT-227, both modes: the detail field that answers "where was it filmed?" and "where
+# does the story take place?". On 2026-10-11 "where does its story take place?" about Game of
+# Thrones went to ask_about_record without a record (no_record), then to Wikipedia prose, while
+# the API now returns the places on the sheet itself (FASTAPI-TEXT2SQL-329), split by role.
+LOCATION_INSTRUCTIONS = (
+    "Movie and series details carry locations, the places linked to the title, each with "
+    "LOCATION_ROLE: 'narrative' where the story is set, 'filming' where it was shot. When a "
+    "movie or series is on screen or was the last title discussed and the user asks where it "
+    "was filmed or shot, or where its story takes place or is set, answer from that title's "
+    "locations, calling get_movie_detail or get_series_detail with its id if you do not have "
+    "them yet. Never call query_text2sql for it, and do not use ask_about_record or Wikipedia "
+    "prose for it while locations has rows of the role asked. Answer only the role that was "
+    "asked: a filming place is not where the story happens, and the reverse. If no row of that "
+    "role is present, say the catalogue records none, and only then fall back on "
+    "ask_about_record. To say more about one place, call get_location_detail with its "
+    "ID_LOCATION."
+)
+
 # VOICE-AGENT-225, both modes: a group's films and series are in its detail. On 2026-10-11
 # "And which movie did they make together?" after "Who are the members of the Beatles?" went to
 # query_text2sql as is and came back no_sql ("Which people do you mean?"). The API now returns
@@ -2326,6 +2351,7 @@ def realtime_session_config(
         + " " + PLAY_TRAILER_INSTRUCTIONS  # VOICE-AGENT-207
         + " " + READ_BASED_ON_INSTRUCTIONS  # VOICE-AGENT-218
         + " " + SOURCE_WORK_INSTRUCTIONS  # VOICE-AGENT-218
+        + " " + LOCATION_INSTRUCTIONS  # VOICE-AGENT-227
         + " " + GROUP_WORKS_INSTRUCTIONS  # VOICE-AGENT-225
         + " " + RECOVERY_INSTRUCTIONS
         + " " + RESULT_COUNT_INSTRUCTIONS
@@ -3280,6 +3306,7 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         # model thinks, but the model still chooses the tools for every turn after that.
         + " " + FOLLOW_UP_ROUTING_INSTRUCTIONS
         + " " + SOURCE_WORK_INSTRUCTIONS  # VOICE-AGENT-218
+        + " " + LOCATION_INSTRUCTIONS  # VOICE-AGENT-227
         + " " + GROUP_WORKS_INSTRUCTIONS  # VOICE-AGENT-225
         # VOICE-AGENT-143: recomputed on every typed turn, so the text path is always exact.
         + " " + current_date_instructions()

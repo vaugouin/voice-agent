@@ -3251,7 +3251,8 @@ function visualSubtitle(item) {
     item.TOPIC_TYPE,
     item.COLLECTION_TYPE,
     item.LIST_TYPE,
-    item.MOVEMENT_TYPE
+    item.MOVEMENT_TYPE,
+    item.LOCATION_TYPE ? prettyLabel(item.LOCATION_TYPE) : "" // VOICE-AGENT-227, the "Set in" / "Filmed in" cards
   );
 }
 
@@ -4652,6 +4653,27 @@ function appendBasedOnRail(parent, record) {
   });
 }
 
+// VOICE-AGENT-227. The reverse of appendLocationRoleRails: on a movie or series sheet, the places
+// from its `locations` collection (FASTAPI-TEXT2SQL-329), one rail per LOCATION_ROLE, "Set in"
+// before "Filmed in" as the API orders them. Each card opens the location (ID_LOCATION in
+// detailRequestFromRecord). Both rails share the one collection, so a page loaded later is split
+// between them by appendDetailRailItems on data-detail-role, and `allowEmpty` keeps a rail
+// whose half of page 1 came back empty while later pages may still fill it.
+function appendTitleLocationRails(parent, record) {
+  const rails = [
+    ["narrative", uiText("Set in", "Lieux de l'histoire")],
+    ["filming", uiText("Filmed in", "Lieux de tournage")],
+  ];
+  rails.forEach(([role, title]) => {
+    appendVisualRail(parent, title, locationRoleItems(record?.locations, role), {
+      kind: "poster",
+      collectionName: "locations",
+      role,
+      allowEmpty: detailCollectionHasUnloadedPages("locations"),
+    });
+  });
+}
+
 // VOICE-AGENT-218. The source-work sheet: what kind of work, when, how often adapted, then the
 // film or series it IS when it is one (source_entity), then its adaptations in two rails paged
 // like the person credits (collection=movies / collection=series).
@@ -5152,6 +5174,7 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     // VOICE-AGENT-218: after Crew, not above Cast. One or two cards would push every rail down,
     // and the author is often already credited in Crew (Novel, Writer), so the source reads as its follow-up.
     appendBasedOnRail(body, record);
+    appendTitleLocationRails(body, record); // VOICE-AGENT-227
     appendVisualRail(body, "Technicals", record.technicals, { kind: "poster", collectionName: "technicals" });
     appendVisualRail(body, record.collection_name || "Collection", record.collection_movies, { kind: "poster", collectionName: "collection_movies" });
     appendVisualRail(body, "Similar", record.similar, { kind: "poster", collectionName: "similar" });
@@ -5189,6 +5212,7 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     // VOICE-AGENT-218: after Crew, not above Cast. One or two cards would push every rail down,
     // and the author is often already credited in Crew (Novel, Writer), so the source reads as its follow-up.
     appendBasedOnRail(body, record);
+    appendTitleLocationRails(body, record); // VOICE-AGENT-227
     // FASTAPI-152: cross-type T2S collection rail — a collection can hold both films and
     // series (e.g. Star Trek); each card routes to the right detail by its own ID_MOVIE /
     // ID_SERIE (detailRequestFromRecord), so movies and series mix in one chronological rail.
@@ -9868,7 +9892,7 @@ const DETAIL_SHED_STEPS = [
   {
     label: "media+caps",
     drop: DETAIL_MEDIA_LISTS,
-    cap: { cast: 12, crew: 8, topics: 6, similar: 12, recommendations: 12, lists: 8, movements: 6 },
+    cap: { cast: 12, crew: 8, topics: 6, similar: 12, recommendations: 12, lists: 8, movements: 6, locations: 20 },
   },
   // VOICE-AGENT-148: `similar` and `recommendations` are what the front has just drawn as
   // cards, so a model that cannot see them ends up denying what is on screen. They are also
@@ -9877,11 +9901,14 @@ const DETAIL_SHED_STEPS = [
   {
     label: "recos",
     drop: [...DETAIL_MEDIA_LISTS, "cast", "crew", "topics", "lists", "movements"],
-    cap: { similar: 8, recommendations: 8 },
+    cap: { similar: 8, recommendations: 8, locations: 12 },
   },
   {
     label: "essentials",
     drop: [...DETAIL_MEDIA_LISTS, "cast", "crew", "topics", "lists", "movements", "similar", "recommendations"],
+    // VOICE-AGENT-227: capped, never dropped. Narrative rows come first, so the cap keeps
+    // where the story is set and the first filming places.
+    cap: { locations: 8 },
   },
 ];
 
