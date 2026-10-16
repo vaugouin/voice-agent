@@ -1492,6 +1492,15 @@ def compact_wikipedia_content(
     return compact_sections
 
 
+# The six Wikipedia mention lists of the detail endpoints (fastapi-text2sql, 2026-10-16): the
+# persons, movies and series an entity's article names, and those whose article names it. They
+# feed two rails in the browser and never reach a model, like WIKIPEDIA_MENTION_KEYS in app.js.
+WIKIPEDIA_MENTION_KEYS = frozenset({
+    "mentions_persons", "mentions_movies", "mentions_series",
+    "mentioned_in_persons", "mentioned_in_movies", "mentioned_in_series",
+})
+
+
 def compact_detail_for_model(
     output: dict[str, Any], *, verbose: bool = False, intent_text: Any = None
 ) -> dict[str, Any]:
@@ -1500,7 +1509,7 @@ def compact_detail_for_model(
         return output
     compact_detail = {
         key: value for key, value in detail.items()
-        if key not in {"wikipedia_content"}
+        if key != "wikipedia_content" and key not in WIKIPEDIA_MENTION_KEYS
     }
 
     return {
@@ -3721,7 +3730,7 @@ def deep_answer_material(detail_output: dict[str, Any], question: str) -> dict[s
     detail = detail_output.get("detail") if isinstance(detail_output.get("detail"), dict) else {}
     record: dict[str, Any] = {}
     for key, value in detail.items():
-        if key == "wikipedia_content" or key in DEEP_ANSWER_MEDIA_KEYS:
+        if key == "wikipedia_content" or key in DEEP_ANSWER_MEDIA_KEYS or key in WIKIPEDIA_MENTION_KEYS:
             continue
         if isinstance(value, list) and len(value) > DEEP_ANSWER_MAX_LIST_ITEMS:
             record[key] = value[:DEEP_ANSWER_MAX_LIST_ITEMS]

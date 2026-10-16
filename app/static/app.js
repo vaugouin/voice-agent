@@ -4624,6 +4624,38 @@ function appendMixedVisualSections(parent, record, { skip = [] } = {}) {
       appendMixedRail(parent, record, key);
     }
   });
+  appendWikipediaMentionRails(parent, record);
+}
+
+// The persons, movies and series linked with this entity through Wikipedia articles, from the
+// six mention lists every Wikipedia-carrying detail endpoint returns since 2026-10-16
+// (mentions_* and mentioned_in_*, read from T_WC_WIKIPEDIA_PAGE_LANG_LINK). Two rails, each
+// mixing the three kinds: what this page's article names, in the order the article names them
+// (MENTION_ORDER), then the pages whose own article names this one, most popular first. The
+// API pages each list (50 rows by default); the rails show that first page only, so they carry
+// no collectionName. Both stay absent while the crawler's backfill has not reached the article.
+// The lists never reach the model: compactDetailForModel drops them.
+const WIKIPEDIA_MENTION_KEYS = [
+  "mentions_persons", "mentions_movies", "mentions_series",
+  "mentioned_in_persons", "mentioned_in_movies", "mentioned_in_series",
+];
+
+function wikipediaMentionItems(record, prefix) {
+  return ["persons", "movies", "series"].flatMap((suffix) => {
+    const items = record?.[`${prefix}_${suffix}`];
+    return Array.isArray(items) ? items : [];
+  });
+}
+
+function appendWikipediaMentionRails(parent, record) {
+  const forward = wikipediaMentionItems(record, "mentions")
+    .slice()
+    .sort((a, b) => (Number(a.MENTION_ORDER) || 0) - (Number(b.MENTION_ORDER) || 0));
+  const backward = wikipediaMentionItems(record, "mentioned_in")
+    .slice()
+    .sort((a, b) => (Number(b.POPULARITY) || 0) - (Number(a.POPULARITY) || 0));
+  appendVisualRail(parent, uiText("In the Wikipedia article", "Cités dans l'article Wikipédia"), forward, { kind: "poster" });
+  appendVisualRail(parent, uiText("Mentioned in their Wikipedia articles", "Cité dans leurs articles Wikipédia"), backward, { kind: "poster" });
 }
 
 // VOICE-AGENT-230. One order for the movie and series sheets, from the work itself outwards,
@@ -4752,6 +4784,7 @@ function appendSourceWorkSheet(body, metrics, record) {
     kind: "poster",
     collectionName: "series",
   });
+  appendWikipediaMentionRails(body, record);
 }
 
 // VOICE-AGENT-225, API FASTAPI-TEXT2SQL-325. A group's page: its members first, then the films
@@ -5142,6 +5175,7 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
       })),
       { kind: "poster" }
     );
+    appendWikipediaMentionRails(body, record);
   } else if (record.ID_SEASON || String(record.CONTENT_TYPE || "").toLowerCase() === "season") {
     const crewCredits = dedupePersonCrewCredits(record.crew);
     const castCredits = dedupePersonCastCredits(record.cast);
@@ -5179,6 +5213,7 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
       appendList(body, "Cast", namesFrom(castCredits, "PERSON_NAME", Infinity));
     }
     appendVisualRail(body, "Crew", crewCredits, { kind: "profile", collectionName: "crew" });
+    appendWikipediaMentionRails(body, record);
   } else if (record.ID_MOVIE || String(record.CONTENT_TYPE || "").toLowerCase() === "movie") {
     const crewCredits = dedupePersonCrewCredits(record.crew);
     const castCredits = dedupePersonCastCredits(record.cast);
@@ -9833,6 +9868,9 @@ function compactDetailForModel(output, fallbackEntity, { verbose = false } = {})
     return output;
   }
   const { wikipedia_content: _wikipediaContent, ...compactDetail } = detail;
+  // The Wikipedia mention lists feed two rails only: up to 300 cards the model has no use
+  // for, and an amount the 16 KB data channel cannot carry.
+  WIKIPEDIA_MENTION_KEYS.forEach((key) => { delete compactDetail[key]; });
   return {
     // VOICE-AGENT-149: a second whitelist on the same path, and the one that matters most.
     // an episode sheet is exactly where the air dates are. Dropping it here would have made
