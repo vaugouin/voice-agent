@@ -115,6 +115,7 @@ Pipeline stages:
 - WebRTC reconnect logic is deliberately conservative: disconnected state gets a grace watchdog; failed state reconnects quickly; self-healed connections should not be torn down.
 - Keepalive behavior is part of connection stability. Be careful when touching Worker fallback, data-channel no-op sends, visibility/focus keepalives, or reconnect timers.
 - The text input remains enabled in all current states. If that changes, update both the code and `UI.md`.
+- Wikipedia images in 2:3 frames (VOICE-AGENT-234): `fitWikipediaImage(frame, img)` is hooked in `buildCardMedia`, `buildDetailVisualCard` and `buildSingleImageViewer`. When the loaded image is on wikimedia.org / wikipedia.org and more than 5% away from 2:3, it puts `.t2s-media-fit` on the frame (`object-fit: contain`, 4% padding, frame's dark background). It re-checks on every load, so a synthetic logo master swapped in by `applySyntheticLogo` drops the class. A new image builder with a Wikipedia fallback must call it too. tmdb-front does the same (TMDB-FRONT-105).
 
 ## Verification Discipline
 

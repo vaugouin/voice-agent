@@ -2556,6 +2556,31 @@ function imageUrl(path, size = "w342") {
   return tmdbImage(value, size);
 }
 
+// VOICE-AGENT-234 (2026-10-18): a Wikipedia lead image has any shape (a landscape skyline, a
+// square globe) and object-fit: cover cropped it to fill the 2:3 frame; Los Angeles lost half
+// the Hollywood sign. Once loaded, an image from wikimedia.org / wikipedia.org more than 5%
+// away from 2:3 puts .t2s-media-fit on its frame: shown whole, on the frame's dark background,
+// like the padded logos. A true 2:3 image keeps the full-bleed cover; TMDb images, the
+// synthetic masters and the fallbacks are never touched. Same rule as tmdb-front
+// (TMDB-FRONT-105), same class name.
+const WIKI_IMAGE_URL_RE = /^https?:\/\/[^/]*(wikimedia|wikipedia)\.org\//i;
+
+function fitWikipediaImage(frame, img) {
+  if (!frame || !img) {
+    return;
+  }
+  const check = () => {
+    const isWiki = WIKI_IMAGE_URL_RE.test(img.currentSrc || img.src || "");
+    const w = img.naturalWidth;
+    const h = img.naturalHeight;
+    frame.classList.toggle("t2s-media-fit", Boolean(isWiki && w && h && Math.abs(w / h - 2 / 3) > (2 / 3) * 0.05));
+  };
+  img.addEventListener("load", check);
+  if (img.complete && img.naturalWidth) {
+    check();
+  }
+}
+
 function appendText(parent, className, text) {
   if (!text) {
     return;
@@ -2665,6 +2690,7 @@ function buildCardMedia(title, imageUrl, synthetic = null) {
     img.src = imageUrl;
     setImageText(img, title);
     media.append(img);
+    fitWikipediaImage(media, img);
     applySyntheticLogo(media, img, title, synthetic);
   } else {
     const fallback = document.createElement("div");
@@ -3949,6 +3975,7 @@ function buildSingleImageViewer(record, path, kind = "poster") {
       : (TMDB_DEFAULT_SIZE[kind] || TMDB_DEFAULT_SIZE.poster);
     img.src = imageUrl(path, size) || "";
   };
+  fitWikipediaImage(viewer, img);
   render();
   setImageText(img, titleForRecord(record));
   const zoom = attachImageZoom(viewer, img);
@@ -4042,6 +4069,7 @@ function buildDetailVisualCard(item, kind = "poster") {
     img.src = src;
     setImageText(img, title);
     media.append(img);
+    fitWikipediaImage(media, img);
     applySyntheticLogo(media, img, title, synthetic);
   } else {
     const fallback = document.createElement("div");

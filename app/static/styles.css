@@ -2033,6 +2033,17 @@ button.detailVisualCard:hover {
   object-fit: cover;
 }
 
+/* VOICE-AGENT-234: a Wikipedia image more than 5% away from 2:3 is shown whole on the frame's
+   dark background instead of cropped (fitWikipediaImage in app.js). Result cards, rail cards
+   and the detail panel image; fullscreen already uses contain and keeps its own rule. */
+.search-poster-card .t2s-media-fit img,
+.detailVisualMedia.t2s-media-fit img,
+.personPortraitViewer.t2s-media-fit:not(.isFullscreen) img {
+  box-sizing: border-box;
+  object-fit: contain;
+  padding: 4%;
+}
+
 .detailVisualText {
   display: grid;
   gap: 2px;
