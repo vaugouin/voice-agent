@@ -11,6 +11,13 @@ Pulls NEW and NEWER files from the VPS down into the local copy, over SFTP
     realigned locally instead, so an external tool touching the mirror can't cause
     an endless re-copy loop. Use --strict-mtime for the old timestamp-trusting
     behavior.
+  * Same size but a newer remote: the content is checked before the realign, for
+    files up to --verify-max-size (1 MiB by default). The remote file is fetched and
+    compared byte for byte; if it differs it replaces the local copy (counted as
+    updated, reason "same-size-changed"). Without this, a same-size edit (an
+    evaluation JSON whose only change is a timestamp of the same length) was
+    realigned and lost, and --strict-mtime could no longer catch it afterwards since
+    the dates then matched (VOICE-AGENT-233, 2026-10-18: 111 files missed).
   * Creates any missing local directories.
   * By default NEVER deletes anything locally: files removed on the VPS stay in
     the mirror. Opt in with VPS_DELETE=true in .env to also remove local files and
@@ -122,6 +129,11 @@ MTIME_TOLERANCE = 2.0
 # Suffix for partial downloads so an interrupted transfer is never mistaken for a
 # complete file on the next run.
 PART_SUFFIX = ".part-sync"
+
+# Same size, newer remote: files up to this size are fetched and compared before
+# the mtime is realigned (VOICE-AGENT-233). Larger ones keep the plain realign, so a
+# backup tool touching a multi-GB store does not trigger a full download. 0 = off.
+DEFAULT_VERIFY_MAX_BYTES = 1024 * 1024
 
 # Network timeouts (seconds). Generous so a large directory listing or a slow
 # transfer over a high-latency link does not abort mid-run. The SFTP channel
@@ -506,9 +518,10 @@ def should_copy(remote_attr, local_path: str,
     alone can no longer trigger a needless re-download.
 
     Pass ``strict_mtime=True`` (CLI ``--strict-mtime``) to restore the old,
-    timestamp-trusting behavior — useful only if you ever expect a genuine
-    content edit that keeps the exact same byte size (rare for text/scripts),
-    since size-first would otherwise not notice it.
+    timestamp-trusting behavior. A same-size edit is no longer rare (an evaluation
+    JSON whose only change is a timestamp of the same length): sync_dir therefore
+    verifies the content of "mtime-drift" files up to --verify-max-size before it
+    realigns them (VOICE-AGENT-233).
     """
     if not os.path.exists(local_path):
         return True, "new"
@@ -566,6 +579,47 @@ def copy_file(session, remote_path: str, local_path: str, remote_attr, stats: St
             except OSError:
                 pass
         print(f"  !! FAILED: {remote_path}  ({exc})", file=sys.stderr)
+
+
+def verify_same_size(session, remote_path: str, local_path: str, remote_attr,
+                     stats: Stats, log: CopyLog) -> bool:
+    """Same size, newer remote: fetch the remote file and compare it byte for byte.
+
+    If the content differs, the fetched file replaces the local copy (with the
+    remote mtime) and True is returned. If it is identical, the download is
+    dropped and False is returned; the caller then realigns the mtime as before.
+    On a transfer error the local file is left untouched and _VerifyFailed is
+    raised, so the caller skips the realign and the file is re-examined next run.
+    """
+    tmp = local_path + PART_SUFFIX
+    try:
+        session.get(remote_path, tmp)
+        with open(tmp, "rb") as fr, open(local_path, "rb") as fl:
+            same = fr.read() == fl.read()
+        if same:
+            os.remove(tmp)
+            return False
+        os.replace(tmp, local_path)
+        mtime = remote_attr.st_mtime or time.time()
+        os.utime(local_path, (mtime, mtime))
+        stats.bytes_copied += remote_attr.st_size or 0
+        stats.copied_newer += 1
+        log.record(remote_path, local_path, remote_attr.st_mtime)
+        print(f"  COPIED (same-size-changed): {remote_path}  [{human(remote_attr.st_size or 0)}]")
+        return True
+    except (PermissionError, IOError, OSError) as exc:
+        stats.failed += 1
+        if os.path.exists(tmp):
+            try:
+                os.remove(tmp)
+            except OSError:
+                pass
+        print(f"  !! verify FAILED: {remote_path}  ({exc})", file=sys.stderr)
+        raise _VerifyFailed() from exc
+
+
+class _VerifyFailed(Exception):
+    """Raised by verify_same_size so the caller skips the realign."""
 
 
 def _force_remove(func, path, _exc) -> None:
@@ -629,7 +683,8 @@ def delete_extraneous(remote_dir: str, local_dir: str, remote_names: set[str],
 def sync_dir(session, remote_dir: str, local_dir: str, stats: Stats,
              excludes: list[str], follow_symlinks: bool, dry_run: bool,
              other_roots: set[str], log: CopyLog, strict_mtime: bool = False,
-             delete: bool = False) -> None:
+             delete: bool = False,
+             verify_max_bytes: int = DEFAULT_VERIFY_MAX_BYTES) -> None:
     try:
         entries = session.listdir_attr(remote_dir)
     except (PermissionError, IOError, OSError) as exc:
@@ -665,25 +720,38 @@ def sync_dir(session, remote_dir: str, local_dir: str, stats: Stats,
 
         if stat.S_ISDIR(mode) or (stat.S_ISLNK(mode) and follow_symlinks):
             sync_dir(session, remote_path, local_path, stats, excludes,
-                     follow_symlinks, dry_run, other_roots, log, strict_mtime, delete)
+                     follow_symlinks, dry_run, other_roots, log, strict_mtime, delete,
+                     verify_max_bytes)
         elif stat.S_ISREG(mode):
             do_copy, reason = should_copy(attr, local_path, strict_mtime)
             if do_copy:
                 copy_file(session, remote_path, local_path, attr, stats, reason, dry_run, log)
             elif reason == "mtime-drift":
-                # Same byte size, only the local timestamp drifted (e.g. another
-                # tool touched the mirror). Realign the local mtime to the remote
-                # so this file isn't re-evaluated forever — no re-download.
+                # Same byte size, newer remote. Up to verify_max_bytes, check the
+                # content first (VOICE-AGENT-233): a same-size edit is copied, not
+                # realigned away. Otherwise, or if identical, realign the local mtime
+                # to the remote so this file isn't re-evaluated forever.
+                blnverify = 0 < (attr.st_size or 0) <= verify_max_bytes
                 if dry_run:
-                    print(f"  ~ WOULD realign mtime (same size): {remote_path}")
-                else:
+                    if blnverify:
+                        print(f"  ~ WOULD verify content (same size, newer remote): {remote_path}")
+                    else:
+                        print(f"  ~ WOULD realign mtime (same size): {remote_path}")
+                    stats.reconciled += 1
+                    continue
+                if blnverify:
                     try:
-                        m = attr.st_mtime or time.time()
-                        os.utime(local_path, (m, m))
-                        print(f"  ~ mtime realigned (same size): {remote_path}")
-                    except OSError as exc:
-                        print(f"  !! mtime realign failed: {remote_path} ({exc})",
-                              file=sys.stderr)
+                        if verify_same_size(session, remote_path, local_path, attr, stats, log):
+                            continue
+                    except _VerifyFailed:
+                        continue
+                try:
+                    m = attr.st_mtime or time.time()
+                    os.utime(local_path, (m, m))
+                    print(f"  ~ mtime realigned (same size): {remote_path}")
+                except OSError as exc:
+                    print(f"  !! mtime realign failed: {remote_path} ({exc})",
+                          file=sys.stderr)
                 stats.reconciled += 1
             else:
                 stats.skipped += 1
@@ -876,6 +944,11 @@ def main() -> int:
                    help="Re-copy a same-size file whenever the remote mtime is newer "
                         "(legacy behavior). Default is size-first: a timestamp-only "
                         "drift realigns the local mtime instead of re-downloading.")
+    p.add_argument("--verify-max-size", type=int, default=DEFAULT_VERIFY_MAX_BYTES,
+                   metavar="BYTES",
+                   help="Same size but newer remote: fetch and compare files up to this "
+                        "size before realigning the mtime, so a same-size edit is copied "
+                        f"(default {DEFAULT_VERIFY_MAX_BYTES}; 0 turns the check off).")
     p.add_argument("--dry-run", action="store_true",
                    help="Report what would be copied (and deleted) without writing anything")
     args = p.parse_args()
@@ -1007,7 +1080,7 @@ def main() -> int:
                 sync_dir(session, remote_root, sp.local, stats, excludes,
                          follow_symlinks=args.follow_symlinks, dry_run=args.dry_run,
                          other_roots=other_roots, log=log, strict_mtime=args.strict_mtime,
-                         delete=sp.delete)
+                         delete=sp.delete, verify_max_bytes=args.verify_max_size)
             except Exception as exc:  # noqa: BLE001 — isolate a root failure so the
                 # remaining roots still sync (e.g. a reconnect that ultimately failed).
                 stats.failed += 1
