@@ -4732,10 +4732,10 @@ function appendLocationRoleRails(parent, record) {
   // after the series ones. 440 places are cited by episodes only, so without them their sheet
   // had no rail at all. Bilingual from the start; VOICE-AGENT-231 does the four titles above.
   const rails = [
-    ["movies", "filming", "Movies filmed here"],
-    ["movies", "narrative", "Movies set here"],
-    ["series", "filming", "TV shows filmed here"],
-    ["series", "narrative", "TV shows set here"],
+    ["movies", "filming", uiText("Movies filmed here", "Films tournés ici")],
+    ["movies", "narrative", uiText("Movies set here", "Films qui s'y déroulent")],
+    ["series", "filming", uiText("TV shows filmed here", "Séries TV tournées ici")],
+    ["series", "narrative", uiText("TV shows set here", "Séries TV qui s'y déroulent")],
     ["episodes", "filming", uiText("Episodes filmed here", "Épisodes tournés ici")],
     ["episodes", "narrative", uiText("Episodes set here", "Épisodes qui s'y déroulent")],
   ];
