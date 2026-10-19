@@ -699,8 +699,9 @@ DETAIL_ENTITY_CONFIG = {
             "Get one episode of a TV series by ID_SERIE, SEASON_NUMBER and "
             "EPISODE_NUMBER, including its title, overview, air date (DAT_AIR), "
             "runtime and rating, its parent season and series, cast, crew, still "
-            "images, and Wikipedia detail when available. Use it when the user names "
-            "one episode; to browse or compare the episodes of a season, call "
+            "images, the places linked to that episode (locations, with LOCATION_ROLE "
+            "'narrative' or 'filming'), and Wikipedia detail when available. Use it when "
+            "the user names one episode; to browse or compare the episodes of a season, call "
             "get_season_detail instead, which returns them all in one call."
         ),
     },
@@ -871,12 +872,14 @@ DETAIL_ENTITY_CONFIG = {
         "id_param": "id",
         "id_type": "integer",
         "description": (
-            "Get all fields for a location by ID_LOCATION, plus the movies and TV series "
-            "linked to it. Every related row carries LOCATION_ROLE, either 'filming' (it "
+            "Get all fields for a location by ID_LOCATION, plus the movies, TV series and "
+            "TV episodes linked to it (movies, series, episodes; MOVIE_COUNT, SERIE_COUNT, "
+            "EPISODE_COUNT). Every related row carries LOCATION_ROLE, either 'filming' (it "
             "was shot there) or 'narrative' (the story happens there). These are different "
             "facts about the same place: answer the one that was asked and never merge the "
-            "two counts or the two lists. LOCATION_TYPE says what kind of place it is (city, "
-            "country, region, island, structure, nature, fiction)."
+            "two roles. An episode row names its series (SERIE_TITLE), SEASON_NUMBER and "
+            "EPISODE_NUMBER; some places are linked to episodes only. LOCATION_TYPE says what "
+            "kind of place it is (city, country, region, island, structure, nature, fiction)."
         ),
     },
     # VOICE-AGENT-218, API FASTAPI-TEXT2SQL-323: the work a movie or series is adapted from.
@@ -1839,7 +1842,10 @@ LOCATION_INSTRUCTIONS = (
     "asked: a filming place is not where the story happens, and the reverse. If no row of that "
     "role is present, say the catalogue records none, and only then fall back on "
     "ask_about_record. To say more about one place, call get_location_detail with its "
-    "ID_LOCATION."
+    "ID_LOCATION. An episode detail carries its own locations the same way, often none: for a "
+    "named episode answer from them, and fall back on the series' locations saying so. A "
+    "location detail lists, besides movies and series, the episodes filmed or set there "
+    "(episodes, each with its series, season and episode number)."
 )
 
 # VOICE-AGENT-225, both modes: a group's films and series are in its detail. On 2026-10-11

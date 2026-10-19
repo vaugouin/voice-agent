@@ -4276,6 +4276,10 @@ function detailRailDisplayItems(collectionName, items, detail = currentDetailSta
     return seasonRailItems(items, detail?.ID_SERIE);
   }
   if (collectionName === "episodes") {
+    // VOICE-AGENT-232: a location's episodes span many series and carry their own keys.
+    if (detail?.ID_LOCATION && !detail?.ID_EPISODE) {
+      return locationEpisodeRailItems(items);
+    }
     return episodeRailItems(items, detail?.ID_SERIE, detail?.SEASON_NUMBER);
   }
   if (collectionName === "crew") {
@@ -4724,14 +4728,20 @@ function appendTitleSheetRails(body, record, { castCredits, crewCredits, seasons
 // would drop the only thing that separates "filmed in Paris" from "set in Paris", which is the
 // question people actually ask. One rail per role, same wording as the tmdb-front page.
 function appendLocationRoleRails(parent, record) {
+  // VOICE-AGENT-232: the episodes rails (FASTAPI-TEXT2SQL-334, T_WC_T2S_EPISODE_LOCATION) come
+  // after the series ones. 440 places are cited by episodes only, so without them their sheet
+  // had no rail at all. Bilingual from the start; VOICE-AGENT-231 does the four titles above.
   const rails = [
     ["movies", "filming", "Movies filmed here"],
     ["movies", "narrative", "Movies set here"],
     ["series", "filming", "TV shows filmed here"],
     ["series", "narrative", "TV shows set here"],
+    ["episodes", "filming", uiText("Episodes filmed here", "Épisodes tournés ici")],
+    ["episodes", "narrative", uiText("Episodes set here", "Épisodes qui s'y déroulent")],
   ];
   rails.forEach(([collectionName, role, title]) => {
-    const items = locationRoleItems(record[collectionName], role);
+    const rows = collectionName === "episodes" ? locationEpisodeRailItems(record.episodes) : record[collectionName];
+    const items = locationRoleItems(rows, role);
     appendVisualRail(parent, title, items, {
       kind: "poster",
       collectionName,
@@ -4743,6 +4753,27 @@ function appendLocationRoleRails(parent, record) {
 
 function locationRoleItems(items, role) {
   return (Array.isArray(items) ? items : []).filter((item) => detailItemRole(item) === role);
+}
+
+// VOICE-AGENT-232. An episode card on a location sheet comes from many series, so unlike the
+// season rail it must name its series: "The West Wing / S01E10 / 1999" under the episode
+// title. The image is the series poster (POSTER_PATH, 2:3) the API puts on each row, which
+// visualImage picks before the landscape STILL_PATH. ID_EPISODE, ID_SERIE, SEASON_NUMBER and
+// EPISODE_NUMBER are on the row, so detailRequestFromRecord opens the episode.
+function locationEpisodeRailItems(items) {
+  return (Array.isArray(items) ? items : [])
+    .filter((item) => item && typeof item === "object")
+    .map((item) => {
+      const code = item.SEASON_NUMBER !== null && item.SEASON_NUMBER !== undefined &&
+        item.EPISODE_NUMBER !== null && item.EPISODE_NUMBER !== undefined
+        ? `S${String(item.SEASON_NUMBER).padStart(2, "0")}E${String(item.EPISODE_NUMBER).padStart(2, "0")}`
+        : "";
+      return {
+        ...item,
+        EPISODE_TITLE: firstValue(item.EPISODE_TITLE, code, "Episode"),
+        EPISODE_SUBTITLE: uniqueNonEmpty([item.SERIE_TITLE, code, item.AIR_YEAR]).join(" / "),
+      };
+    });
 }
 
 // VOICE-AGENT-218. "Based on" on a movie or series sheet: one card per source work, shown only
@@ -5194,6 +5225,9 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
       appendList(body, "Cast", namesFrom(castCredits, "PERSON_NAME", Infinity));
     }
     appendVisualRail(body, "Crew", crewCredits, { kind: "profile", collectionName: "crew" });
+    // VOICE-AGENT-232: the episode's own places (FASTAPI-TEXT2SQL-334), same rails as a series
+    // sheet. Usually absent: most episodes have no place of their own.
+    appendTitleLocationRails(body, record);
     appendVisualRail(
       body,
       "Stills",
@@ -5353,6 +5387,9 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
     appendMetric(metrics, "Type", firstValue(record.COLLECTION_TYPE, record.TOPIC_TYPE, record.LIST_TYPE, record.MOVEMENT_TYPE, record.TECHNICAL_TYPE ? prettyLabel(record.TECHNICAL_TYPE) : "", record.GROUP_TYPE, record.DEATH_TYPE, record.AWARD_TYPE, record.NOMINATION_TYPE, record.LOCATION_TYPE ? prettyLabel(record.LOCATION_TYPE) : "", record.INSTANCE_OF));
     appendMetric(metrics, "Movies", firstValue(record.MOVIE_COUNT, record.MOVIE_WORK_COUNT));  // MOVIE_WORK_COUNT: group (VOICE-AGENT-225)
     appendMetric(metrics, "Series", firstValue(record.SERIE_COUNT, record.SERIE_WORK_COUNT));
+    if (record.ID_LOCATION) {
+      appendMetric(metrics, uiText("Episodes", "Épisodes"), record.EPISODE_COUNT); // VOICE-AGENT-232
+    }
     appendMetric(metrics, record.ID_GROUP ? uiText("Members", "Membres") : "Persons", record.PERSON_COUNT);
     appendMetric(metrics, "IMDb", formatRating(record.IMDB_RATING || record.IMDB_RATING_WEIGHTED));
     appendMetric(metrics, "Popularity", formatRating(record.POPULARITY));           // company/collection/topic/list/movement/technical/group
