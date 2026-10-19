@@ -70,6 +70,7 @@ ENABLE_SPOKEN_SUBTITLES=false
 ENABLE_USER_TRANSCRIPT_SUBTITLES=false
 AGENT_SOUL=default
 AGENT_TIMEZONE=Europe/Paris
+LOG_TIMEZONE=Europe/Paris
 REALTIME_TRANSCRIPTION_LANGUAGE=
 TRANSCRIPTION_LANGUAGES=en,fr
 
@@ -716,6 +717,8 @@ Client diagnostics are written to:
 ```text
 logs/client.log
 ```
+
+The file is in fact one per day, `logs/client-YYYYMMDD.log`. Each entry's `ts` is written in `LOG_TIMEZONE` (default `Europe/Paris`) with its offset, for example `2026-10-19T14:59:02+02:00`, and the day is cut at midnight in that zone (VOICE-AGENT-226). Files written before the 1.2.30 restart carry UTC stamps (`+00:00`) and are cut at UTC midnight, and the switch day's file mixes both: read the offset of each line rather than assume one zone.
 
 Logged signals include:
 

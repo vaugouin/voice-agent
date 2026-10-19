@@ -22,9 +22,14 @@ load_dotenv()
 
 ROOT = Path(__file__).resolve().parent
 STATIC_DIR = ROOT / "static"
-# Client log is rotated per (UTC) day: logs/client-YYYYMMDD.log (dated at write time in
-# write_client_log, matching each entry's UTC `ts`).
+# Client log is rotated per Paris day: logs/client-YYYYMMDD.log (dated at write time in
+# write_client_log, matching each entry's `ts`, written in LOG_TIMEZONE with its offset,
+# VOICE-AGENT-226). Files written before the 1.2.30 restart carry UTC `+00:00` stamps and
+# are cut at UTC midnight: a reader must parse the offset of each line, never assume a zone.
 CLIENT_LOG_DIR = ROOT.parent / "logs"
+# One clock for the T2S stack (DEPLOYMENT-015): every human-read date in Europe/Paris with
+# its offset. Never a fixed +02:00, the zone itself, so the offset follows summer time.
+LOG_TIMEZONE_NAME = (os.getenv("LOG_TIMEZONE") or "Europe/Paris").strip() or "Europe/Paris"
 
 
 def _read_app_version() -> str:
@@ -4437,6 +4442,19 @@ HARNESS_LOG_EVENTS = frozenset({
 })
 
 
+def log_now() -> datetime:
+    """Current time in LOG_TIMEZONE (default Europe/Paris), aware, for the client log.
+
+    `isoformat()` then writes the offset of the day (`+02:00` in summer, `+01:00` in winter)
+    and `strftime('%Y%m%d')` cuts the daily file at Paris midnight. Falls back to UTC when
+    the zone cannot be loaded, like `agent_now()`: a log line must never be lost to a clock.
+    """
+    try:
+        return datetime.now(ZoneInfo(LOG_TIMEZONE_NAME))
+    except Exception:
+        return datetime.now(timezone.utc)
+
+
 def write_client_log(event: str, data: dict[str, Any], level: str = "info") -> None:
     """Append one JSONL entry to client.log, same shape as the browser /client-log
     route. Used server-side so the typed /text-chat path also records the
@@ -4447,7 +4465,7 @@ def write_client_log(event: str, data: dict[str, Any], level: str = "info") -> N
     """
     if event not in HARNESS_LOG_EVENTS:
         return
-    now = datetime.now(timezone.utc)
+    now = log_now()
     entry = {
         "ts": now.isoformat(),
         "version": APP_VERSION,
