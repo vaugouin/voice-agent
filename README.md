@@ -78,6 +78,7 @@ TEXT2SQL_BASE_URL=http://your_host:8000
 TEXT2SQL_API_KEY_NAME=X-API-Key
 TEXT2SQL_API_KEY_VALUE=your_api_key_value
 TEXT2SQL_ROWS_PER_PAGE=50
+TEXT2SQL_TIMEOUT_SECONDS=90
 ```
 
 Do not bake `.env` into the Docker image or commit it to git. `.dockerignore` and `.gitignore` exclude local secrets and runtime logs. Provide secrets at runtime with `--env-file`.
@@ -559,6 +560,7 @@ Pagination behavior:
 - First page is shown immediately.
 - Infinite scroll loads additional pages while `has_more` is true.
 - `TEXT2SQL_ROWS_PER_PAGE` controls the page size.
+- `TEXT2SQL_TIMEOUT_SECONDS` (default 90) is how long one `/search/text2sql` call may take. A timeout after the request was sent is not retried, since the API keeps working on it; only connection failures, connect timeouts and 5xx are retried, up to three attempts.
 - A `Load more` button remains available if automatic loading stops.
 - Entity-detail rail pagination is independent from text2sql search pagination. Detail rails use the upstream detail response's top-level `pagination` map and load targeted collection pages through `collection`, `page`, and `rows_per_page` query parameters.
 

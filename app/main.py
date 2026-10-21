@@ -2914,7 +2914,7 @@ async def _post_text2sql_with_retry(
     *,
     retries: int = 3,
     backoff: float = 1.5,
-    timeout: float = 30.0,
+    timeout: float | None = None,
 ) -> httpx.Response:
     """POST to the text2sql API, retrying transient 5xx and transport errors.
 
@@ -2923,7 +2923,15 @@ async def _post_text2sql_with_retry(
     httpx transport errors with linear backoff; 4xx and a final 5xx fall through to
     the caller's normal status handling. Raises HTTPException(502) only when transport
     keeps failing after every attempt.
+
+    A timeout once the request has been sent (read, write, pool) is never retried: the
+    API keeps working on the abandoned request, so a retry would double the load at the
+    very moment it is saturated (LOAD-TESTING-007). Only a connect timeout, where nothing
+    reached the API, is retried. The timeout defaults to ``TEXT2SQL_TIMEOUT_SECONDS``
+    (90 s), above the API's single-user p99 of 36 s.
     """
+    if timeout is None:
+        timeout = float(os.getenv("TEXT2SQL_TIMEOUT_SECONDS", "90"))
     last_exc: Exception | None = None
     for attempt in range(1, retries + 1):
         async with httpx.AsyncClient(timeout=timeout) as client:
@@ -2931,8 +2939,9 @@ async def _post_text2sql_with_retry(
                 response = await client.post(url, json=request_json, headers=headers)
             except httpx.HTTPError as exc:
                 last_exc = exc
-                if attempt >= retries:
-                    raise HTTPException(status_code=502, detail=str(exc)) from exc
+                sent = isinstance(exc, httpx.TimeoutException) and not isinstance(exc, httpx.ConnectTimeout)
+                if sent or attempt >= retries:
+                    raise HTTPException(status_code=502, detail=str(exc) or type(exc).__name__) from exc
                 await asyncio.sleep(backoff * attempt)
                 continue
         if response.status_code >= 500 and attempt < retries:
