@@ -2945,3 +2945,320 @@ body.lookPreviewOpen {
 .menuPersona[hidden] {
   display: none;
 }
+
+/* VOICE-AGENT-235: cinema mode. The page opened with ?cinema=<slug> hides the live app (<main>)
+   and plays a scripted two-voice episode on this stage: a brick (frame, two frames, title card,
+   quotation) in the middle, the spoken line at the bottom, the player controls at the top.
+   Bricks crossfade; a frame drifts in slowly (Ken Burns); both stop under reduced motion. */
+
+body.cinemaMode {
+  overflow: hidden;
+  background: #000;
+}
+
+body.cinemaMode main {
+  display: none;
+}
+
+.cinemaStage {
+  position: fixed;
+  inset: 0;
+  z-index: 1300;
+  display: grid;
+  grid-template-rows: auto 1fr auto;
+  background: #000;
+  color: var(--text-primary);
+}
+
+.cinemaStage[hidden] {
+  display: none;
+}
+
+.cinemaProgress {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: rgb(255 255 255 / 12%);
+}
+
+.cinemaProgressBar {
+  height: 100%;
+  width: 0;
+  background: var(--accent-primary);
+  transition: width 240ms linear;
+}
+
+.cinemaControls {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 12px 18px 6px;
+  font-size: 0.95rem;
+  color: var(--text-secondary);
+}
+
+.cinemaPlayButton {
+  min-width: 96px;
+  padding: 8px 14px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.cinemaPlayButton:hover {
+  border-color: var(--accent-primary);
+}
+
+.cinemaClock {
+  font-variant-numeric: tabular-nums;
+}
+
+.cinemaTitle {
+  margin-left: auto;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.cinemaBrick {
+  position: relative;
+  overflow: hidden;
+  min-height: 0;
+}
+
+.cinemaBrickItem {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: 2vh 4vw;
+  animation: cinemaBrickIn 700ms ease-out both;
+}
+
+.cinemaBrickItem.isInstant {
+  animation: none;
+}
+
+.cinemaBrickItem.isLeaving {
+  animation: cinemaBrickOut 500ms ease-in both;
+  pointer-events: none;
+}
+
+.cinemaFrame {
+  margin: 0;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+  justify-items: center;
+  gap: 12px;
+  max-width: 100%;
+  max-height: 100%;
+  min-height: 0;
+}
+
+.cinemaFrameMedia {
+  overflow: hidden;
+  border-radius: 6px;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 55%);
+  min-height: 0;
+  display: grid;
+  place-items: center;
+}
+
+.cinemaFrameMedia img {
+  display: block;
+  max-width: 100%;
+  max-height: calc(100vh - 230px);
+  object-fit: contain;
+  animation: cinemaKenBurns 26s ease-in-out both;
+}
+
+.cinemaFrame figcaption,
+.cinemaSplitCaption,
+.cinemaTitleCaption {
+  color: var(--text-secondary);
+  font-size: clamp(0.95rem, 1.6vw, 1.15rem);
+  text-align: center;
+}
+
+.cinemaSplitWrapper {
+  display: grid;
+  gap: 14px;
+  justify-items: center;
+  width: 100%;
+  min-height: 0;
+}
+
+.cinemaSplit {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+  width: 100%;
+  align-items: end;
+}
+
+.cinemaSplit .cinemaFrameMedia img {
+  max-height: calc(100vh - 260px);
+  animation: none;
+}
+
+.cinemaTitleCard {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 36px;
+  max-width: 100%;
+}
+
+.cinemaTitleCard img {
+  height: min(62vh, 560px);
+  max-width: 28vw;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 55%);
+}
+
+.cinemaTitleText {
+  display: grid;
+  gap: 18px;
+  max-width: 36vw;
+}
+
+.cinemaTitleName {
+  font-size: clamp(1.3rem, 2.6vw, 2.2rem);
+  font-weight: 700;
+  line-height: 1.15;
+}
+
+.cinemaTitleMeta {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: clamp(0.95rem, 1.5vw, 1.15rem);
+}
+
+.cinemaQuote {
+  margin: 0;
+  max-width: 72vw;
+  font-size: clamp(1.5rem, 3.4vw, 3rem);
+  font-weight: 700;
+  line-height: 1.25;
+  text-align: center;
+}
+
+.cinemaQuote p {
+  margin: 0;
+}
+
+.cinemaQuote footer {
+  margin-top: 20px;
+  font-size: 0.5em;
+  font-weight: 400;
+  color: var(--text-secondary);
+}
+
+.cinemaLine {
+  margin: 10px auto 26px;
+  max-width: min(1100px, calc(100vw - 32px));
+  padding: 12px 20px;
+  border-radius: 8px;
+  border-left: 4px solid var(--accent-primary);
+  background: rgb(0 0 0 / 78%);
+  box-shadow: 0 14px 34px rgb(0 0 0 / 42%);
+  font-size: clamp(1rem, 2vw, 1.3rem);
+  font-weight: 600;
+  line-height: 1.35;
+  text-align: center;
+}
+
+.cinemaLine[hidden] {
+  display: none;
+}
+
+.cinemaLine.isCandide {
+  border-left-color: var(--accent-secondary);
+}
+
+.cinemaSpeaker {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 0.72em;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--accent-primary);
+}
+
+.cinemaLine.isCandide .cinemaSpeaker {
+  color: var(--accent-secondary);
+}
+
+@keyframes cinemaBrickIn {
+  from {
+    opacity: 0;
+    transform: scale(0.985);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+@keyframes cinemaBrickOut {
+  to {
+    opacity: 0;
+  }
+}
+
+@keyframes cinemaKenBurns {
+  from {
+    transform: scale(1);
+  }
+
+  to {
+    transform: scale(1.06);
+  }
+}
+
+@media (max-width: 760px) {
+  .cinemaTitleCard {
+    flex-direction: column;
+    gap: 14px;
+  }
+
+  .cinemaTitleCard img {
+    height: min(40vh, 320px);
+    max-width: 60vw;
+  }
+
+  .cinemaTitleText {
+    max-width: 90vw;
+    text-align: center;
+  }
+
+  .cinemaSplit {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .cinemaSplit .cinemaFrameMedia img {
+    max-height: calc(45vh - 80px);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cinemaBrickItem,
+  .cinemaBrickItem.isLeaving,
+  .cinemaFrameMedia img {
+    animation: none;
+  }
+
+  .cinemaProgressBar {
+    transition: none;
+  }
+}

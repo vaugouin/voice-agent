@@ -141,6 +141,23 @@
         <div id="log" hidden></div>
       </section>
     </main>
+    <!-- VOICE-AGENT-235: cinema mode. Shown only when the page is opened with ?cinema=<slug>:
+         body.cinemaMode hides <main> and this stage plays the episode built by
+         tools/build-cinema-assets.py (timeline.json, episode.mp3, frames, posters). It sits
+         outside <main> like the overlays below, so the compact results mode never affects it. -->
+    <section id="cinemaStage" class="cinemaStage" hidden aria-label="Cinema mode">
+      <div class="cinemaProgress" aria-hidden="true"><div id="cinemaProgressBar" class="cinemaProgressBar"></div></div>
+      <div class="cinemaControls">
+        <button id="cinemaPlayButton" class="cinemaPlayButton" type="button" aria-label="Play">&#x25B6; Play</button>
+        <span id="cinemaClock" class="cinemaClock">00:00 / 00:00</span>
+        <span id="cinemaTitle" class="cinemaTitle"></span>
+      </div>
+      <div id="cinemaBrick" class="cinemaBrick"></div>
+      <div id="cinemaLine" class="cinemaLine" aria-live="polite" hidden>
+        <span id="cinemaSpeaker" class="cinemaSpeaker"></span><span id="cinemaText"></span>
+      </div>
+      <audio id="cinemaAudio" preload="auto"></audio>
+    </section>
     <div id="subtitleOverlay" class="subtitleOverlay" aria-live="polite" hidden></div>
     <!-- VOICE-AGENT-121: the active persona's portrait, shown while the agent speaks. It sits
          OUTSIDE <main> like the subtitle overlay above, because the compact results mode hides

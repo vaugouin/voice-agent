@@ -575,6 +575,14 @@ async def static_root_redirect() -> RedirectResponse:
 
 app.mount("/static", StaticFiles(directory=STATIC_DIR), name="static")
 
+# VOICE-AGENT-235: the cinema folder (scenarios, and the assets built by
+# tools/build-cinema-assets.py) is served when present. It lives beside `app`, not inside it,
+# because the frames and audio are built, not committed, and the Docker image does not carry
+# them: without the folder the mount is simply absent and `?cinema=` reports the missing build.
+CINEMA_DIR = ROOT.parent / "cinema"
+if CINEMA_DIR.is_dir():
+    app.mount("/cinema", StaticFiles(directory=CINEMA_DIR), name="cinema")
+
 
 class Text2SqlRequest(BaseModel):
     query: str

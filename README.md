@@ -524,6 +524,10 @@ On the first cold page load, the app shows a full-screen splash before the sampl
 - The showcase is dismissed on the first real interaction — typing a question, starting a voice session, or any rendered result/detail — and does not reappear for the rest of the session. **New conversation** returns to the launch state and brings the showcase back.
 - `prefers-reduced-motion` is honored: the animations stop and the showcase becomes a static, manually scrollable list. If the samples request fails, the app silently skips the showcase and the rest of the UI is unaffected.
 
+## Cinema Mode
+
+A scripted two-voice episode about the database, played by the app instead of a live conversation (VOICE-AGENT-235, the first step of APP-IDEAS-010). The scenario is a JSON file in `cinema/scenarios/` where every factual line names its source in the API sheets or in a film's subtitles; `uv run tools/build-cinema-assets.py cinema/scenarios/<slug>.json` builds the frames (from the film copies on the NAS), the posters, the voices (OpenAI text-to-speech) and the timeline into `cinema/assets/<slug>/`. Open `/?cinema=<slug>` to play it: the stage shows a brick per line (a frame at a timecode, two frames side by side, a title card, a quotation) under the spoken line, in step with the audio. See `cinema/README.md` for the format.
+
 ## Frontend Result Display
 
 When a text2sql result arrives, the app renders result cards in the UI in addition to the spoken answer.

@@ -7,12 +7,21 @@ Design: `~/Nestor/projets/t2s-backlog/app-ideas-010-generated-podcast-video.md`.
 ## Files
 
 - `scenarios/<slug>.json`: the scenario, committed. Written by hand or by Claude from the test sheet of the pair; every factual line carries its source.
-- `assets/<slug>/`: frames and audio built from the scenario (`tools/build-cinema-assets.py`, to come). **Not committed**: frames come from the film copies on the NAS, audio is rebuilt from the scenario.
+- `assets/<slug>/`: built from the scenario by `uv run tools/build-cinema-assets.py cinema/scenarios/<slug>.json`. **Not committed**: frames come from the film copies on the NAS, audio is rebuilt from the scenario.
+  - `frames/<movie_id>-<HHhMMmSSs>.jpg`: one frame per `quoted_frame` / `split_frames` brick, ffmpeg on the copy named in `meta.copies`, 1920 px wide.
+  - `images/poster-<movie_id>.jpg`, `images/cover-<source_work_id>.jpg`: the title-card pictures (TMDb `poster_path`, Wikipedia `cover_url` from `meta`).
+  - `audio/<beat>.wav`: one line per beat, OpenAI `gpt-4o-mini-tts` with the `voice` and `instructions` of `meta.voices`; `audio/gap-<ms>.wav` the silences (350 ms between lines, plus `pause_after_ms`).
+  - `episode.wav` / `episode.mp3`: the lines and silences concatenated; `timeline.json`: the scenario with `start_ms` / `duration_ms` per beat and the asset path of each brick, what the player reads; `transcript.txt`: `[MM:SS] voice: line` on the real durations.
+  - Idempotent: an asset on disk is kept unless `--force`; `--only frames|images|audio|timeline` runs one step. A changed line needs its wav deleted or `--force`.
+
+## Playing an episode
+
+Open the app with `?cinema=<slug>` (for example `http://127.0.0.1:3000/?cinema=yojimbo-fistful`): the live app is hidden, the stage loads `assets/<slug>/timeline.json` and `episode.mp3` (served by the `/cinema` mount when the folder exists), shows the first brick and waits for Play. `&autoplay=1` tries to start at once (browsers may block it). Space or K plays and pauses, the arrow keys seek by five seconds, Home restarts. Bricks follow the audio clock, so pause and seek keep them in step; the scheduler mirrors the spoken-card cue engine of the live app (one timer, a sorted queue). A `hold` brick keeps the previous picture.
 
 ## The scenario contract (`version: 1`)
 
 ```
-meta        id, title, language, target_minutes, voices {candide, expert}, works[], source_works[], copies{}, fetched
+meta        id, title, language, target_minutes (indicative only: no cap, the longer the better), length_policy, voices {candide, expert}, works[], source_works[], copies{}, fetched
 beats[]     id, voice (candide | expert), track (fact | performance), text, source, brick, pause_after_ms
 ```
 

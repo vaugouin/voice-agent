@@ -1565,6 +1565,16 @@ Visual affordances:
 
 `showToast(label, icon)` in `app/static/app.js` is the reusable entry point; the shortcut handler and any future caller can surface a transient status the same way.
 
+## Cinema Mode (VOICE-AGENT-235)
+
+- Trigger: the page URL carries `?cinema=<slug>` (letters, digits, dashes). Nothing else changes the mode: no button opens it, and a page without the parameter never shows the stage.
+- DOM: `#cinemaStage` (outside `<main>`, like the overlays) with `#cinemaPlayButton`, `#cinemaClock`, `#cinemaTitle`, the progress bar, `#cinemaBrick`, `#cinemaLine` (`#cinemaSpeaker` + `#cinemaText`) and the `#cinemaAudio` element. `body.cinemaMode` hides `<main>` entirely: no controls, no results panel, no status row, no launch splash or showcase, no Realtime session.
+- States: *loading* (title reads "Loading the episode…"), *not built* (title explains that `tools/build-cinema-assets.py` has to run; nothing else is shown), *ready* (first brick and first line on screen, button "▶ Play", clock `00:00 / MM:SS`), *playing* (button "❚❚ Pause", progress bar grows, bricks and lines change on their `start_ms`), *paused* (button "▶ Play", picture frozen), *ended* (button "↻ Replay", last brick stays).
+- Bricks: `title_card` (posters or cover with title, year, director, runtime), `quoted_frame` (one frame with its caption, slow zoom), `split_frames` (two frames side by side, captions aligned at the bottom), `quote_card` (large quotation and attribution), `hold` (the previous brick stays). A new brick crossfades over the old one; under `prefers-reduced-motion` there is no crossfade and no zoom.
+- The line: the speaker label and the text of the current beat; teal left border and label for the candide, purple for the expert.
+- Keys (capture phase, so the app shortcuts T / M / L / N do nothing here): Space or K play/pause, ArrowLeft / ArrowRight seek five seconds, Home restarts. Seeking rebuilds the cue queue from the audio clock and repaints the beat under the playhead.
+- Logging: `cinema_loaded`, `cinema_play`, `cinema_pause`, `cinema_ended`, `cinema_load_failed`, `cinema_audio_error`, `cinema_play_blocked`.
+
 ## State Summary
 
 | State | Start | Stop | Mic toggle | Look | Text input | Status row | Results panel | Header | New conversation | Subtitles |

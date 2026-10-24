@@ -12905,13 +12905,427 @@ window.addEventListener("unhandledrejection", (event) => {
   clientLog("unhandled_rejection", { reason: String(event.reason) }, "error");
 });
 
+// ---------------------------------------------------------------------------------------------
+// VOICE-AGENT-235 (APP-IDEAS-010): cinema mode. A scripted two-voice episode, built offline by
+// tools/build-cinema-assets.py into cinema/assets/<slug>/ (timeline.json, episode.mp3, frames,
+// posters), played here when the page is opened with `?cinema=<slug>`. The live app stays
+// untouched: body.cinemaMode hides <main>, the stage takes the viewport, no session starts.
+//
+// The cue scheduler has the shape of the spoken-card engine above (scheduleNextSpokenAudioHighlightCue):
+// a sorted queue, one timer at a time, the next cue armed when the previous one fires, the due
+// time compared with an elapsed time. Two deliberate differences, which is why it is a sibling
+// and not a parameter of that function: the clock is the episode's <audio> element
+// (currentTime and playbackRate), not Date.now(), so pause and seek keep the bricks in step with
+// the voice; and a cue applies a brick and a spoken line, not a result-card index.
+const CINEMA_CUE_MIN_DELAY_MS = 40;
+const CINEMA_BRICK_LEAVE_MS = 520;
+const CINEMA_SEEK_STEP_S = 5;
+const cinemaStage = document.getElementById("cinemaStage");
+const cinemaBrick = document.getElementById("cinemaBrick");
+const cinemaLine = document.getElementById("cinemaLine");
+const cinemaSpeaker = document.getElementById("cinemaSpeaker");
+const cinemaText = document.getElementById("cinemaText");
+const cinemaPlayButton = document.getElementById("cinemaPlayButton");
+const cinemaClock = document.getElementById("cinemaClock");
+const cinemaTitle = document.getElementById("cinemaTitle");
+const cinemaProgressBar = document.getElementById("cinemaProgressBar");
+const cinemaAudio = document.getElementById("cinemaAudio");
+let cinemaState = null;
+
+function cinemaSlugFromUrl() {
+  const params = new URLSearchParams(window.location.search);
+  const slug = String(params.get("cinema") || "").trim();
+  return /^[a-z0-9][a-z0-9-]{0,80}$/i.test(slug) ? slug : "";
+}
+
+function cinemaAssetUrl(slug, path) {
+  return appUrl(`cinema/assets/${slug}/${String(path).replace(/^\/+/, "")}`);
+}
+
+function cinemaFormatClock(ms) {
+  const total = Math.max(0, Math.floor((Number(ms) || 0) / 1000));
+  return `${String(Math.floor(total / 60)).padStart(2, "0")}:${String(total % 60).padStart(2, "0")}`;
+}
+
+function cinemaClearTimer() {
+  if (cinemaState?.timer) {
+    clearTimeout(cinemaState.timer);
+    cinemaState.timer = null;
+  }
+}
+
+// One timer, armed on the audio clock. Mirrors scheduleNextSpokenAudioHighlightCue.
+function cinemaScheduleNextCue() {
+  const state = cinemaState;
+  if (!state || state.timer || !state.queue.length || cinemaAudio.paused) {
+    return;
+  }
+  const cue = state.queue[0];
+  const elapsedMs = cinemaAudio.currentTime * 1000;
+  const rate = cinemaAudio.playbackRate > 0 ? cinemaAudio.playbackRate : 1;
+  const delayMs = Math.max(CINEMA_CUE_MIN_DELAY_MS, (cue.atMs - elapsedMs) / rate);
+  state.timer = window.setTimeout(() => {
+    state.timer = null;
+    const nextCue = state.queue.shift();
+    if (nextCue) {
+      applyCinemaCue(nextCue);
+    }
+    cinemaScheduleNextCue();
+  }, delayMs);
+}
+
+// After play, seek or rate change: rebuild the queue from the clock, show the beat under the
+// playhead (its brick resolved through any `hold`), and arm the next cue.
+function cinemaResyncQueue() {
+  const state = cinemaState;
+  if (!state) {
+    return;
+  }
+  cinemaClearTimer();
+  const nowMs = cinemaAudio.currentTime * 1000;
+  state.queue = state.cues.filter((cue) => cue.atMs > nowMs);
+  let current = null;
+  for (const cue of state.cues) {
+    if (cue.atMs <= nowMs) {
+      current = cue;
+    }
+  }
+  if (current && current.index !== state.currentIndex) {
+    applyCinemaCue(current, { instant: true });
+  }
+  cinemaScheduleNextCue();
+}
+
+// A `hold` brick keeps the previous picture: walk back to the last beat that set one.
+function cinemaBrickIndexFor(index) {
+  const beats = cinemaState.timeline.beats;
+  for (let i = index; i >= 0; i -= 1) {
+    if (beats[i].brick && beats[i].brick.type !== "hold") {
+      return i;
+    }
+  }
+  return 0;
+}
+
+function applyCinemaCue(cue, { instant = false } = {}) {
+  const state = cinemaState;
+  const beat = cue.beat;
+  state.currentIndex = cue.index;
+  const candide = beat.voice === "candide";
+  cinemaSpeaker.textContent = candide ? "Candide" : "Expert";
+  cinemaLine.classList.toggle("isCandide", candide);
+  cinemaLine.classList.toggle("isExpert", !candide);
+  cinemaText.textContent = beat.text || "";
+  cinemaLine.hidden = !beat.text;
+  const brickIndex = cinemaBrickIndexFor(cue.index);
+  if (brickIndex !== state.displayedBrickIndex) {
+    state.displayedBrickIndex = brickIndex;
+    renderCinemaBrick(state.timeline.beats[brickIndex].brick, { instant });
+  }
+}
+
+function cinemaWork(movieId) {
+  return (cinemaState.timeline.meta.works || []).find((work) => work.movie_id === movieId) || null;
+}
+
+function cinemaSourceWork(sourceWorkId) {
+  return (cinemaState.timeline.meta.source_works || []).find((work) => work.source_work_id === sourceWorkId) || null;
+}
+
+function cinemaElement(tag, className, text) {
+  const element = document.createElement(tag);
+  if (className) {
+    element.className = className;
+  }
+  if (text !== undefined && text !== null) {
+    element.textContent = text;
+  }
+  return element;
+}
+
+function cinemaImage(path, alt) {
+  const img = document.createElement("img");
+  img.src = cinemaAssetUrl(cinemaState.slug, path);
+  img.alt = alt || "";
+  img.decoding = "async";
+  return img;
+}
+
+function buildCinemaFrame(spec, caption) {
+  const figure = cinemaElement("figure", "cinemaFrame");
+  const media = cinemaElement("div", "cinemaFrameMedia");
+  const work = cinemaWork(spec.movie_id);
+  media.appendChild(cinemaImage(spec.image, work ? `${work.title}, ${spec.timecode}` : spec.timecode));
+  figure.appendChild(media);
+  const text = caption ?? spec.caption;
+  if (text) {
+    figure.appendChild(cinemaElement("figcaption", "", text));
+  }
+  return figure;
+}
+
+function buildCinemaTitleCard(brick) {
+  const card = cinemaElement("div", "cinemaTitleCard");
+  const ids = Array.isArray(brick.movie_id) ? brick.movie_id : brick.movie_id ? [brick.movie_id] : [];
+  const texts = [];
+  for (const movieId of ids) {
+    const work = cinemaWork(movieId);
+    const poster = (brick.images || []).find((path) => path.endsWith(`poster-${movieId}.jpg`));
+    if (poster) {
+      card.appendChild(cinemaImage(poster, work ? `${work.title} poster` : "poster"));
+    }
+    if (work) {
+      const meta = [work.year, work.director, work.runtime ? `${work.runtime} min` : ""].filter(Boolean).join(" · ");
+      texts.push({ title: work.title, meta });
+    }
+  }
+  if (brick.source_work_id) {
+    const work = cinemaSourceWork(brick.source_work_id);
+    const cover = (brick.images || []).find((path) => path.endsWith(`cover-${brick.source_work_id}.jpg`));
+    if (cover) {
+      card.appendChild(cinemaImage(cover, work ? `${work.name} cover` : "cover"));
+    }
+    if (work) {
+      texts.push({ title: work.name, meta: [work.author, work.year].filter(Boolean).join(" · ") });
+    }
+  }
+  const textBlock = cinemaElement("div", "cinemaTitleText");
+  for (const item of texts) {
+    const line = cinemaElement("div", "cinemaTitleWork");
+    line.appendChild(cinemaElement("div", "cinemaTitleName", item.title));
+    if (item.meta) {
+      line.appendChild(cinemaElement("div", "cinemaTitleMeta", item.meta));
+    }
+    textBlock.appendChild(line);
+  }
+  if (brick.caption) {
+    textBlock.appendChild(cinemaElement("div", "cinemaTitleCaption", brick.caption));
+  }
+  if (textBlock.childNodes.length) {
+    card.appendChild(textBlock);
+  }
+  return card;
+}
+
+function buildCinemaBrick(brick) {
+  switch (brick.type) {
+    case "title_card":
+      return buildCinemaTitleCard(brick);
+    case "quoted_frame":
+      return buildCinemaFrame(brick);
+    case "split_frames": {
+      const wrapper = cinemaElement("div", "cinemaSplitWrapper");
+      const split = cinemaElement("div", "cinemaSplit");
+      split.appendChild(buildCinemaFrame(brick.left));
+      split.appendChild(buildCinemaFrame(brick.right));
+      wrapper.appendChild(split);
+      if (brick.caption) {
+        wrapper.appendChild(cinemaElement("div", "cinemaSplitCaption", brick.caption));
+      }
+      return wrapper;
+    }
+    case "quote_card": {
+      const quote = cinemaElement("blockquote", "cinemaQuote");
+      quote.appendChild(cinemaElement("p", "", `“${brick.text}”`));
+      if (brick.attribution) {
+        quote.appendChild(cinemaElement("footer", "", brick.attribution));
+      }
+      return quote;
+    }
+    default:
+      return cinemaElement("div", "cinemaUnknownBrick", brick.type || "");
+  }
+}
+
+// Crossfade: the new brick enters over the old one, which fades out and is removed.
+function renderCinemaBrick(brick, { instant = false } = {}) {
+  const item = cinemaElement("div", `cinemaBrickItem cinemaBrickItem-${brick.type}`);
+  item.appendChild(buildCinemaBrick(brick));
+  const previous = Array.from(cinemaBrick.children);
+  if (instant) {
+    item.classList.add("isInstant");
+    previous.forEach((node) => node.remove());
+  } else {
+    previous.forEach((node) => {
+      node.classList.add("isLeaving");
+      window.setTimeout(() => node.remove(), CINEMA_BRICK_LEAVE_MS);
+    });
+  }
+  cinemaBrick.appendChild(item);
+}
+
+function preloadCinemaImages(timeline, slug) {
+  const paths = new Set();
+  for (const beat of timeline.beats) {
+    const brick = beat.brick || {};
+    if (brick.image) {
+      paths.add(brick.image);
+    }
+    for (const side of [brick.left, brick.right]) {
+      if (side?.image) {
+        paths.add(side.image);
+      }
+    }
+    for (const path of brick.images || []) {
+      paths.add(path);
+    }
+  }
+  for (const path of paths) {
+    const img = new Image();
+    img.decoding = "async";
+    img.src = cinemaAssetUrl(slug, path);
+  }
+}
+
+function updateCinemaClock() {
+  const duration = Number.isFinite(cinemaAudio.duration) ? cinemaAudio.duration * 1000 : cinemaState?.timeline.duration_ms || 0;
+  const current = cinemaAudio.currentTime * 1000;
+  cinemaClock.textContent = `${cinemaFormatClock(current)} / ${cinemaFormatClock(duration)}`;
+  cinemaProgressBar.style.width = duration ? `${Math.min(100, (current / duration) * 100)}%` : "0%";
+}
+
+function updateCinemaPlayButton() {
+  const ended = cinemaAudio.ended;
+  const label = ended ? "↻ Replay" : cinemaAudio.paused ? "▶ Play" : "❚❚ Pause";
+  cinemaPlayButton.textContent = label;
+  cinemaPlayButton.setAttribute("aria-label", ended ? "Replay" : cinemaAudio.paused ? "Play" : "Pause");
+}
+
+function toggleCinemaPlayback() {
+  if (!cinemaState) {
+    return;
+  }
+  if (cinemaAudio.ended) {
+    cinemaAudio.currentTime = 0;
+  }
+  if (cinemaAudio.paused) {
+    cinemaAudio.play().catch((error) => {
+      log("cinema play blocked", error.message);
+      clientLog("cinema_play_blocked", { slug: cinemaState.slug, error: error.message }, "warn");
+    });
+  } else {
+    cinemaAudio.pause();
+  }
+}
+
+function cinemaSeekBy(seconds) {
+  if (!cinemaState || !Number.isFinite(cinemaAudio.duration)) {
+    return;
+  }
+  cinemaAudio.currentTime = Math.min(cinemaAudio.duration, Math.max(0, cinemaAudio.currentTime + seconds));
+}
+
+function wireCinemaControls() {
+  cinemaPlayButton.addEventListener("click", toggleCinemaPlayback);
+  cinemaAudio.addEventListener("play", () => {
+    cinemaStage.classList.add("isPlaying");
+    cinemaResyncQueue();
+    updateCinemaPlayButton();
+    clientLog("cinema_play", { slug: cinemaState.slug, at_ms: Math.round(cinemaAudio.currentTime * 1000) });
+  });
+  cinemaAudio.addEventListener("pause", () => {
+    cinemaClearTimer();
+    cinemaStage.classList.remove("isPlaying");
+    updateCinemaPlayButton();
+    if (!cinemaAudio.ended) {
+      clientLog("cinema_pause", { slug: cinemaState.slug, at_ms: Math.round(cinemaAudio.currentTime * 1000) });
+    }
+  });
+  cinemaAudio.addEventListener("seeked", () => {
+    cinemaResyncQueue();
+    updateCinemaClock();
+  });
+  cinemaAudio.addEventListener("ratechange", cinemaResyncQueue);
+  cinemaAudio.addEventListener("timeupdate", updateCinemaClock);
+  cinemaAudio.addEventListener("loadedmetadata", updateCinemaClock);
+  cinemaAudio.addEventListener("ended", () => {
+    cinemaClearTimer();
+    cinemaStage.classList.add("isEnded");
+    updateCinemaPlayButton();
+    clientLog("cinema_ended", { slug: cinemaState.slug, duration_ms: Math.round(cinemaAudio.duration * 1000) });
+  });
+  cinemaAudio.addEventListener("error", () => {
+    cinemaTitle.textContent = `Audio unavailable: build the episode with tools/build-cinema-assets.py`;
+    clientLog("cinema_audio_error", { slug: cinemaState.slug }, "error");
+  });
+  // Capture phase and stop: in cinema mode the app's own shortcuts (T, M, L, N) must not start a
+  // session or open a menu, and Space / arrows belong to the player.
+  document.addEventListener(
+    "keydown",
+    (event) => {
+      if (!cinemaState || event.metaKey || event.ctrlKey || event.altKey) {
+        return;
+      }
+      event.stopImmediatePropagation();
+      if (event.key === " " || event.key === "k") {
+        event.preventDefault();
+        toggleCinemaPlayback();
+      } else if (event.key === "ArrowRight") {
+        event.preventDefault();
+        cinemaSeekBy(CINEMA_SEEK_STEP_S);
+      } else if (event.key === "ArrowLeft") {
+        event.preventDefault();
+        cinemaSeekBy(-CINEMA_SEEK_STEP_S);
+      } else if (event.key === "Home") {
+        event.preventDefault();
+        cinemaAudio.currentTime = 0;
+      }
+    },
+    true,
+  );
+}
+
+async function initCinemaMode(slug) {
+  document.body.classList.add("cinemaMode");
+  cinemaStage.hidden = false;
+  cinemaTitle.textContent = "Loading the episode…";
+  let timeline;
+  try {
+    const response = await fetch(cinemaAssetUrl(slug, "timeline.json"), { cache: "no-cache" });
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
+    }
+    timeline = await response.json();
+    if (!Array.isArray(timeline.beats) || !timeline.beats.length) {
+      throw new Error("no beats");
+    }
+  } catch (error) {
+    cinemaTitle.textContent = `Episode "${slug}" is not built (${error.message}): run tools/build-cinema-assets.py.`;
+    clientLog("cinema_load_failed", { slug, error: error.message }, "error");
+    return;
+  }
+  const cues = timeline.beats.map((beat, index) => ({ index, atMs: Math.max(0, Number(beat.start_ms) || 0), beat }));
+  cues.sort((a, b) => a.atMs - b.atMs || a.index - b.index);
+  cinemaState = { slug, timeline, cues, queue: [], timer: null, currentIndex: null, displayedBrickIndex: null };
+  cinemaTitle.textContent = timeline.meta?.title || slug;
+  document.title = `${timeline.meta?.title || slug} · cinema`;
+  cinemaAudio.src = cinemaAssetUrl(slug, "episode.mp3");
+  preloadCinemaImages(timeline, slug);
+  wireCinemaControls();
+  applyCinemaCue(cues[0], { instant: true });
+  cinemaState.queue = cues.slice(1);
+  updateCinemaClock();
+  updateCinemaPlayButton();
+  clientLog("cinema_loaded", { slug, beats: cues.length, duration_ms: timeline.duration_ms || null });
+  const params = new URLSearchParams(window.location.search);
+  if (parseUrlBooleanFlag(params.get("autoplay")) === true) {
+    cinemaAudio.play().catch((error) => log("cinema autoplay blocked", error.message));
+  }
+}
+
 // VOICE-AGENT-121: resolve the active persona once per page load and preload its portrait, so
 // the badge is ready before the first word instead of decoding an image mid-answer.
 void loadActivePersona();
 
-// On cold load, play the launch title before handing off to the sample showcase.
-runLaunchSplash().catch((error) => {
-  log("launch splash error", error.message);
-  hideLaunchSplash();
-  void maybeShowLaunchShowcase();
-});
+// On cold load, play the launch title before handing off to the sample showcase. With
+// ?cinema=<slug> (VOICE-AGENT-235) the episode takes the page instead: no splash, no showcase.
+const cinemaSlug = cinemaSlugFromUrl();
+if (cinemaSlug) {
+  void initCinemaMode(cinemaSlug);
+} else {
+  runLaunchSplash().catch((error) => {
+    log("launch splash error", error.message);
+    hideLaunchSplash();
+    void maybeShowLaunchShowcase();
+  });
+}
