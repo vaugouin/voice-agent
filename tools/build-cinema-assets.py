@@ -1,6 +1,6 @@
 # /// script
 # requires-python = ">=3.11"
-# dependencies = ["httpx", "python-dotenv"]
+# dependencies = ["httpx", "python-dotenv", "faster-whisper"]
 # ///
 """Build the assets of a cinema-mode scenario (VOICE-AGENT-235): frames, images, voices, timeline.
 
@@ -18,6 +18,13 @@ Reads `cinema/scenarios/<slug>.json` and writes `cinema/assets/<slug>/` (git-ign
     audio/<beat>.wav, <beat>.json        one line per beat, OpenAI text-to-speech, pitched down by ffmpeg when
                                          the voice asks for it (`pitch_semitones`), with the signature of what
                                          was synthesized (voice, instructions, delivery, text, pitch)
+    audio/x-<beat>.wav, x-<beat>.json    with `meta.tts.provider = "gemini"` (or `--tts gemini`): one Gemini
+                                         multi-speaker request per exchange (a run of consecutive lines under
+                                         1800 characters, both voices in one take, laughs and backchannels from
+                                         `beat.speech`), named after its first line; faster-whisper then hears
+                                         where each line starts and the exchange is cut into the per-line wavs
+    audio/exchanges.json                 per line: its exchange and its bounds in it (the timeline glues the
+                                         lines of one exchange without inserting a gap)
     audio/gap-<ms>.wav                   the silences between lines
     episode.wav, episode.mp3             the lines and silences concatenated; the mp3 at a constant bitrate,
                                          so that a seek in the browser lands where the timeline says
@@ -32,8 +39,10 @@ Usage, from the repo root:
 
 Idempotent: a frame or an image already on disk is kept unless `--force`. A line is synthesized again
 only when its text, voice, instructions or delivery changed since the last build (the signature next to
-the wav), or with `--force`. Reads OPENAI_API_KEY from the environment or the repo's `.env`. Needs ffmpeg
-and ffprobe on PATH.
+the wav), or with `--force`; a Gemini exchange is synthesized again when any of its lines changed. Reads
+OPENAI_API_KEY (and GEMINI_API_KEY for the Gemini provider) from the environment or the repo's `.env`.
+Needs ffmpeg and ffprobe on PATH. Gemini 3.8 Flash TTS output is billed per second of audio (about
+1.4 cents a minute in 2026, see ai.google.dev/gemini-api/docs/pricing).
 """
 from __future__ import annotations
 
@@ -56,6 +65,10 @@ from dotenv import load_dotenv
 ROOT = Path(__file__).resolve().parent.parent
 TTS_URL = "https://api.openai.com/v1/audio/speech"
 TTS_MODEL = "gpt-4o-mini-tts"
+GEMINI_URL = "https://generativelanguage.googleapis.com/v1beta/interactions"
+GEMINI_MODEL = "gemini-3.8-flash-tts"
+EXCHANGE_MAX_CHARS = 1800   # one Gemini request carries one exchange: a run of consecutive lines under this size
+WHISPER_MODEL = "small"     # faster-whisper model that recovers the line boundaries inside an exchange
 GAP_MS = 350
 MP3_BITRATE = "128k"
 FRAME_MAX_WIDTH = 2560
@@ -366,6 +379,286 @@ def line_signature(voice: str, instructions: str, text: str, pitch: float = 0.0)
     return hashlib.sha1("\x1f".join(parts).encode("utf-8")).hexdigest()
 
 
+# --------------------------------------------------------------------------- Gemini: one request per exchange
+
+def tts_provider(scenario: dict, override: str | None) -> str:
+    """`openai` (one request per line) or `gemini` (one multi-speaker request per exchange)."""
+    if override:
+        return override
+    return (scenario["meta"].get("tts") or {}).get("provider", "openai")
+
+
+def gemini_voice(meta: dict, name: str) -> str:
+    entry = meta["voices"][name]
+    voice = entry.get("gemini_voice") if isinstance(entry, dict) else None
+    if not voice:
+        sys.exit(f"meta.voices.{name}.gemini_voice is not set (a Gemini prebuilt voice name, e.g. Algenib)")
+    return voice
+
+
+def speech_text(beat: dict) -> str:
+    """What the voice says: `speech` (with inline vocal tags and |backchannels|) when present, else the clean text."""
+    return (beat.get("speech") or beat["text"]).strip()
+
+
+def group_exchanges(beats: list[dict]) -> list[list[dict]]:
+    """Consecutive lines grouped into exchanges, each under EXCHANGE_MAX_CHARS, cut at a line that asks for a
+    pause (`pause_after_ms`, the end of a segment) when the exchange has grown past half the size."""
+    exchanges: list[list[dict]] = []
+    current: list[dict] = []
+    size = 0
+    for beat in beats:
+        text = speech_text(beat)
+        if current and size + len(text) > EXCHANGE_MAX_CHARS:
+            exchanges.append(current)
+            current, size = [], 0
+        current.append(beat)
+        size += len(text)
+        if beat.get("pause_after_ms") and size > EXCHANGE_MAX_CHARS // 2:
+            exchanges.append(current)
+            current, size = [], 0
+    if current:
+        exchanges.append(current)
+    return exchanges
+
+
+def exchange_signature(model: str, speakers: dict, beats: list[dict]) -> str:
+    parts = [model, json.dumps(speakers, sort_keys=True)]
+    for beat in beats:
+        parts += [beat["voice"], (beat.get("delivery") or "").strip(), speech_text(beat)]
+    return hashlib.sha1("\x1f".join(parts).encode("utf-8")).hexdigest()
+
+
+def synthesize_gemini(client: httpx.Client, model: str, speakers: dict, beats: list[dict], out: Path) -> dict:
+    """One multi-speaker request for a whole exchange; the wav (24 kHz mono PCM) is written to `out`.
+
+    Each line is a text item annotated with its speaker and its delivery as the turn's `style`; vocal
+    tags (<laugh>, <short pause>) and |backchannels| stay inline in the text. Returns the usage block."""
+    content = []
+    for beat in beats:
+        annotation = {"type": "speech_metadata", "speaker": beat["voice"]}
+        if (beat.get("delivery") or "").strip():
+            annotation["style"] = beat["delivery"].strip()
+        content.append({"type": "text", "text": speech_text(beat), "annotations": [annotation]})
+    payload = {
+        "model": model,
+        "input": [{"type": "user_input", "content": content}],
+        "response_format": {"type": "audio"},
+        "generation_config": {"speech_config": {"speakers": [{"speaker": role, "voice": voice}
+                                                              for role, voice in speakers.items()]}},
+    }
+    for attempt in range(3):
+        response = client.post(GEMINI_URL, json=payload)
+        if response.status_code == 200:
+            body = response.json()
+            audio = [c for step in body.get("steps", []) if step.get("type") == "model_output"
+                     for c in step.get("content", []) if c.get("type") == "audio"]
+            if not audio:
+                sys.exit(f"Gemini returned no audio for {out.name}: {json.dumps(body)[:300]}")
+            import base64
+            out.write_bytes(base64.b64decode(audio[-1]["data"]))
+            return body.get("usage") or {}
+        if response.status_code in (402, 403):
+            sys.exit(f"Gemini refused the request: HTTP {response.status_code} {response.text[:300]}")
+        wait = 2 ** attempt
+        print(f"  gemini retry in {wait}s: HTTP {response.status_code} {response.text[:160]}")
+        time.sleep(wait)
+    sys.exit(f"Gemini text-to-speech failed for {out.name}")
+
+
+_WORD = re.compile(r"[^a-z0-9']+")
+
+
+def _norm_words(text: str) -> list[str]:
+    """Words of a line as the recognizer will hear them: lowercase, no tags, no backchannels, no punctuation."""
+    text = re.sub(r"<[^>]*>", " ", text)
+    text = re.sub(r"\|[^|]*\|", " ", text)
+    return [w for w in _WORD.split(text.lower()) if w]
+
+
+def transcribe_words(wav: Path) -> list[tuple[str, float, float]]:
+    """(word, start s, end s) of everything heard in the wav, by faster-whisper on the CPU."""
+    os.environ.setdefault("CT2_USE_MKL", "0")  # the MKL build of CTranslate2 fails to allocate on this Windows box
+    try:
+        import numpy as np
+        from faster_whisper import WhisperModel
+    except ImportError:
+        sys.exit("faster-whisper is not installed (uv adds it from the script header; else pip install faster-whisper)")
+    # the samples are read here, not by faster-whisper's PyAV decoder (its keyword arguments moved between versions)
+    info = wav_info(wav)
+    if not info:
+        sys.exit(f"{wav} is not a plain PCM wav")
+    rate, channels, _duration = info
+    raw = wav.read_bytes()
+    pos, data_offset = 12, None
+    while pos + 8 <= len(raw):
+        chunk_id, size = raw[pos:pos + 4], struct.unpack_from("<I", raw, pos + 4)[0]
+        if chunk_id == b"data":
+            data_offset = pos + 8
+            break
+        pos += 8 + size + (size & 1)
+    samples = np.frombuffer(raw[data_offset:], dtype="<i2").astype(np.float32) / 32768.0
+    if channels > 1:
+        samples = samples.reshape(-1, channels).mean(axis=1)
+    if rate != 16000:
+        positions = np.arange(0, len(samples), rate / 16000.0)
+        samples = np.interp(positions, np.arange(len(samples)), samples).astype(np.float32)
+    model = WhisperModel(WHISPER_MODEL, device="cpu", compute_type="int8")
+    segments, _info = model.transcribe(samples, language="en", word_timestamps=True, beam_size=5,
+                                       condition_on_previous_text=False)
+    words: list[tuple[str, float, float]] = []
+    for segment in segments:
+        for word in segment.words or []:
+            for token in _norm_words(word.word):
+                words.append((token, float(word.start), float(word.end)))
+    return words
+
+
+def align_exchange(words: list[tuple[str, float, float]], beats: list[dict], total_ms: int) -> list[dict]:
+    """Where each line starts inside the exchange.
+
+    The expected words of all the lines, in order, are aligned with the words heard by the longest common
+    subsequence (monotonic, so a common opening like "And it..." cannot jump to an earlier line). A line
+    starts at the first of its words that was heard ('heard'); a line none of whose words were heard gets
+    a share of the time between its neighbours proportional to its word count ('estimated')."""
+    expected: list[tuple[int, str]] = []  # (line index, word)
+    for idx, beat in enumerate(beats):
+        expected += [(idx, w) for w in _norm_words(beat["text"])]
+    n, m = len(expected), len(words)
+    # LCS table, then the backtrace gives the matched pairs
+    table = [[0] * (m + 1) for _ in range(n + 1)]
+    for i in range(n - 1, -1, -1):
+        row, below = table[i], table[i + 1]
+        wi = expected[i][1]
+        for j in range(m - 1, -1, -1):
+            row[j] = below[j + 1] + 1 if wi == words[j][0] else max(below[j], row[j + 1])
+    matched: dict[int, int] = {}  # line index -> index of its first heard word
+    i = j = 0
+    while i < n and j < m:
+        if expected[i][1] == words[j][0]:
+            matched.setdefault(expected[i][0], j)
+            i += 1
+            j += 1
+        elif table[i + 1][j] >= table[i][j + 1]:
+            i += 1
+        else:
+            j += 1
+    starts: list[int | None] = [round(words[matched[idx]][1] * 1000) if idx in matched else None for idx in range(len(beats))]
+    confidence = ["heard" if s is not None else "estimated" for s in starts]
+    starts[0] = 0
+    # a line heard before the previous one (a word matched out of place) is treated as not heard
+    for idx in range(1, len(beats)):
+        if starts[idx] is not None and any(s is not None and s > starts[idx] for s in starts[:idx]):
+            starts[idx], confidence[idx] = None, "estimated"
+    # the lines that were not heard share the time between their heard neighbours
+    idx = 0
+    count = len(beats)
+    while idx < count:
+        if starts[idx] is not None:
+            idx += 1
+            continue
+        end = idx
+        while end < count and starts[end] is None:
+            end += 1
+        left_ms = starts[idx - 1]
+        right_ms = total_ms if end >= count else starts[end]
+        span = list(range(idx - 1, end))
+        weights = [max(1, len(_norm_words(beats[k]["text"]))) for k in span]
+        acc = left_ms
+        for k, weight in zip(span, weights):
+            if k != idx - 1:
+                starts[k] = round(acc)
+            acc += (right_ms - left_ms) * weight / sum(weights)
+        idx = end
+    bounds: list[dict] = []
+    for idx in range(count):
+        start_ms = starts[idx]
+        end_ms = starts[idx + 1] if idx + 1 < count else total_ms
+        bounds.append({"start_ms": start_ms, "end_ms": max(end_ms, start_ms + 200), "confidence": confidence[idx]})
+    return bounds
+
+
+def slice_wav(src: Path, start_ms: int, end_ms: int, out: Path) -> None:
+    """Cut [start_ms, end_ms) of a PCM wav into a new wav, by bytes: no ffmpeg launch per line."""
+    info = wav_info(src)
+    if not info:
+        sys.exit(f"{src} is not a plain PCM wav")
+    rate, channels, _duration = info
+    with src.open("rb") as handle:
+        head = handle.read(4096)
+    pos, bits, data_offset = 12, 16, None
+    while pos + 8 <= len(head):
+        chunk_id, size = head[pos:pos + 4], struct.unpack_from("<I", head, pos + 4)[0]
+        if chunk_id == b"fmt ":
+            bits = struct.unpack_from("<H", head, pos + 22)[0]
+        elif chunk_id == b"data":
+            data_offset = pos + 8
+            break
+        pos += 8 + size + (size & 1)
+    frame_size = channels * bits // 8
+    first = data_offset + (start_ms * rate // 1000) * frame_size
+    last = data_offset + (end_ms * rate // 1000) * frame_size
+    with src.open("rb") as handle:
+        handle.seek(first)
+        data = handle.read(max(0, last - first))
+    header = b"RIFF" + struct.pack("<I", 36 + len(data)) + b"WAVE" + b"fmt " + struct.pack("<IHHIIHH", 16, 1, channels, rate, rate * frame_size, frame_size, bits)
+    out.write_bytes(header + b"data" + struct.pack("<I", len(data)) + data)
+
+
+def build_audio_gemini(scenario: dict, assets: Path, force: bool) -> None:
+    """Voices by Gemini, one multi-speaker request per exchange, then the exchange wav cut into one wav per
+    line at the boundaries faster-whisper hears. `audio/exchanges.json` records, per line, its exchange and
+    where it sits in it: the timeline keeps the lines of one exchange glued (no inserted gap)."""
+    load_dotenv(ROOT / ".env")
+    api_key = os.getenv("GEMINI_API_KEY")
+    if not api_key:
+        sys.exit("GEMINI_API_KEY is not set (environment or .env)")
+    meta = scenario["meta"]
+    model = (meta.get("tts") or {}).get("model") or GEMINI_MODEL
+    speakers = {role: gemini_voice(meta, role) for role in meta["voices"]}
+    audio_dir = assets / "audio"
+    audio_dir.mkdir(parents=True, exist_ok=True)
+    index_path = audio_dir / "exchanges.json"
+    index = json.loads(index_path.read_text(encoding="utf-8")) if index_path.exists() else {}
+    exchanges = group_exchanges(scenario["beats"])
+    print(f"  gemini       {len(exchanges)} exchanges for {len(scenario['beats'])} lines, model {model}, voices {speakers}")
+    with httpx.Client(headers={"x-goog-api-key": api_key, "Content-Type": "application/json"}, timeout=300) as client:
+        for beats in exchanges:
+            key = beats[0]["id"]
+            wav = audio_dir / f"x-{key}.wav"
+            sidecar = wav.with_suffix(".json")
+            signature = exchange_signature(model, speakers, beats)
+            previous = json.loads(sidecar.read_text(encoding="utf-8")) if sidecar.exists() else {}
+            lines_ok = all((audio_dir / f"{b['id']}.wav").exists() for b in beats)
+            if wav.exists() and lines_ok and not force and previous.get("signature") == signature:
+                continue
+            started = time.monotonic()
+            usage = synthesize_gemini(client, model, speakers, beats, wav)
+            info = wav_info(wav)
+            if not info:
+                sys.exit(f"{wav.name}: not a PCM wav")
+            total_ms = info[2]
+            words = transcribe_words(wav)
+            bounds = align_exchange(words, beats, total_ms)
+            heard = sum(1 for b in bounds if b["confidence"] == "heard")
+            for beat, bound in zip(beats, bounds):
+                out = audio_dir / f"{beat['id']}.wav"
+                slice_wav(wav, bound["start_ms"], bound["end_ms"], out)
+                out.with_suffix(".json").write_text(json.dumps({
+                    "signature": signature, "model": model, "voice": speakers[beat["voice"]], "exchange": key,
+                    "start_in_exchange_ms": bound["start_ms"], "end_in_exchange_ms": bound["end_ms"],
+                    "confidence": bound["confidence"], "delivery": beat.get("delivery", ""),
+                    "speech": speech_text(beat), "text": beat["text"]}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+                index[beat["id"]] = {"exchange": key, "start_ms": bound["start_ms"], "end_ms": bound["end_ms"],
+                                     "confidence": bound["confidence"]}
+            sidecar.write_text(json.dumps({"signature": signature, "model": model, "speakers": speakers,
+                                           "lines": [b["id"] for b in beats], "duration_ms": total_ms,
+                                           "usage": usage}, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            index_path.write_text(json.dumps(index, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+            print(f"  exchange     {wav.name}  {len(beats)} lines, {fmt_ms(total_ms)}, {heard}/{len(beats)} boundaries heard"
+                  f"  ({time.monotonic() - started:.1f}s)")
+
+
 def synthesize(client: httpx.Client, text: str, voice: str, instructions: str, out: Path) -> None:
     payload = {"model": TTS_MODEL, "voice": voice, "input": text, "response_format": "wav"}
     if instructions:
@@ -429,11 +722,14 @@ def build_timeline(scenario: dict, assets: Path) -> dict:
     first = audio_dir / f"{scenario['beats'][0]['id']}.wav"
     rate, channels = probe_audio_format(first)
     frames = load_frame_index(assets)
+    index_path = audio_dir / "exchanges.json"
+    exchanges = json.loads(index_path.read_text(encoding="utf-8")) if index_path.exists() else {}
     concat_lines: list[str] = []
     cursor = 0
     timeline = {"version": scenario["version"], "meta": scenario["meta"], "assets_dir": str(assets), "beats": []}
     transcript: list[str] = []
-    for beat in scenario["beats"]:
+    beats = scenario["beats"]
+    for i, beat in enumerate(beats):
         wav = audio_dir / f"{beat['id']}.wav"
         duration = probe_duration_ms(wav)
         entry = dict(beat)
@@ -441,14 +737,20 @@ def build_timeline(scenario: dict, assets: Path) -> dict:
         entry["duration_ms"] = duration
         entry["audio"] = str(wav.relative_to(assets)).replace("\\", "/")
         entry["brick"] = resolve_brick(beat["brick"], scenario, assets, frames)
+        if beat["id"] in exchanges:
+            entry["exchange"] = exchanges[beat["id"]]["exchange"]
         timeline["beats"].append(entry)
         transcript.append(f"[{fmt_ms(cursor)}] {beat['voice'].capitalize():<8} {beat['text']}")
         concat_lines.append(f"file '{wav.as_posix()}'")
         cursor += duration
-        pause = GAP_MS + int(beat.get("pause_after_ms", 0))
-        gap = silence(audio_dir, pause, rate, channels)
-        concat_lines.append(f"file '{gap.as_posix()}'")
-        cursor += pause
+        # lines cut from one Gemini exchange are glued back as synthesized: the natural pause is already in the audio
+        same_exchange = (i + 1 < len(beats) and beat["id"] in exchanges and beats[i + 1]["id"] in exchanges
+                         and exchanges[beat["id"]]["exchange"] == exchanges[beats[i + 1]["id"]]["exchange"])
+        pause = 0 if same_exchange else GAP_MS + int(beat.get("pause_after_ms", 0))
+        if pause:
+            gap = silence(audio_dir, pause, rate, channels)
+            concat_lines.append(f"file '{gap.as_posix()}'")
+            cursor += pause
     timeline["duration_ms"] = cursor
     transcript.append(f"[{fmt_ms(cursor)}] END")
     concat_file = audio_dir / "concat.txt"
@@ -516,6 +818,8 @@ def main() -> int:
     parser.add_argument("--only", choices=["frames", "images", "audio", "timeline"], action="append", default=[])
     parser.add_argument("--force", action="store_true", help="rebuild assets already on disk")
     parser.add_argument("--no-crop", action="store_true", help="keep the black bars of letterboxed copies")
+    parser.add_argument("--tts", choices=["openai", "gemini"], default=None,
+                        help="voice provider (default: meta.tts.provider of the scenario, else openai)")
     args = parser.parse_args()
     for tool in ("ffmpeg", "ffprobe"):
         if not shutil.which(tool):
@@ -531,7 +835,14 @@ def main() -> int:
     if "images" in steps:
         build_images(scenario, assets, args.force)
     if "audio" in steps:
-        build_audio(scenario, assets, args.force)
+        provider = tts_provider(scenario, args.tts)
+        if provider == "gemini":
+            build_audio_gemini(scenario, assets, args.force)
+        else:
+            index_path = assets / "audio" / "exchanges.json"
+            if index_path.exists():
+                index_path.unlink()  # lines synthesized one by one: the timeline inserts its gaps again
+            build_audio(scenario, assets, args.force)
     if "timeline" in steps:
         timeline = build_timeline(scenario, assets)
         print(f"timeline: {len(timeline['beats'])} beats, {fmt_ms(timeline['duration_ms'])} total, episode.mp3 and transcript.txt written")
