@@ -87,7 +87,33 @@ def main() -> int:
         browser.close()
     index_path.write_text(json.dumps(index, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     print(f"{args.slug}: {done} stills rendered, {len(index)} in {stills}", flush=True)
+    if args.mp4:
+        render_mp4(assets, timeline, stills)
     return 0
+
+
+def render_mp4(assets: Path, timeline: dict, stills: Path) -> None:
+    """The direct render of VOICE-AGENT-235 step 5: each still held from its beat's start to the next one's,
+    the episode audio underneath, H.264 at the stills' size. A still missing for a beat is an error."""
+    import subprocess
+    beats = timeline["beats"]
+    lines = []
+    for i, beat in enumerate(beats):
+        still = stills / f"{beat['id']}.png"
+        if not still.exists():
+            sys.exit(f"no still for {beat['id']}: run the renderer on every beat first")
+        end_ms = beats[i + 1]["start_ms"] if i + 1 < len(beats) else timeline["duration_ms"]
+        lines.append(f"file '{still.as_posix()}'\nduration {max(0.04, (end_ms - beat['start_ms']) / 1000):.3f}")
+    lines.append(f"file '{(stills / beats[-1]['id']).as_posix()}.png'")  # concat demuxer: repeat the last still
+    concat = stills / "concat.txt"
+    concat.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    out = assets / "episode.mp4"
+    started = time.monotonic()
+    subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", str(concat),
+                    "-i", str(assets / "episode.mp3"), "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-preset", "medium",
+                    "-crf", "20", "-r", "25", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k", "-shortest",
+                    "-movflags", "+faststart", str(out)], check=True)
+    print(f"episode.mp4: {out.stat().st_size / 1e6:.0f} MB in {time.monotonic() - started:.0f}s", flush=True)
 
 
 if __name__ == "__main__":
