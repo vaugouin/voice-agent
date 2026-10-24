@@ -133,6 +133,12 @@ Pipeline stages:
 - **Config precedence (VOICE-AGENT-176):** `load_dotenv()` in `app/main.py` never overwrites a variable already present in the process, so anything set before import wins over `.env`: `python -m app` (`app/__main__.py`, the local launcher with `--no-subtitles`, `--env KEY=VALUE`, `--show-config`) and `docker run -e KEY=VALUE` (beats `--env-file`). The launcher records the keys it overrode in `VOICE_AGENT_CLI_OVERRIDES`, read only by the third startup banner line (`_log_subtitle_startup`). Do not switch to `load_dotenv(override=True)`: it would silently disable both mechanisms. Per-session URL overrides (`?spokenSubtitles=`, `?userTranscriptSubtitles=`, `?soul=`, `?voice=`) sit above all of that for one session. Exception: the persona chosen in Settings (VOICE-AGENT-215, `localStorage` key `voiceAgent.soul`) sits above `?soul=` itself, because the installed Edge app ignores the URL of its shortcuts. Persona intros (`app/static/souls/<slug>.mp3`) are recorded from each persona's `intro:` front-matter line by `uv run tools/generate-soul-intros.py` (`--force` to re-record); re-run it after changing an `intro:` or `voice:` line.
 - Pass secrets (e.g. the OpenAI API key, text2SQL API config) at runtime via env vars / an env file; do not bake them into the image.
 
+## Cinema mode: scripted two-voice episodes (VOICE-AGENT-235, APP-IDEAS-010)
+
+- `cinema/scenarios/<slug>.json` is an episode: one beat per spoken line, two voices (candide, expert), a visual brick per beat, and a `source` on every fact line (sheet segment with verbatim quote, structured field, `based_on` edge, or a subtitle line with its timecode and copy). The contract is `cinema/README.md`. The app does not read these files yet: the asset build (frames from the NAS copies, OpenAI TTS audio, the timeline) and the player come next.
+- A fact line is checked against the sheets and the subtitles before it ships; a beat that only stages the dialogue is `track: performance` with `source: none`. Keep that split: the generator may rewrite performance lines, never a fact line without re-checking its source.
+- Frames and audio under `cinema/assets/` are built, not committed (film frames must not land in the public repo).
+
 ## Backlog (Nestor second-brain)
 
 The prioritized, agent-ready implementation backlog for this repo lives in the **Nestor**

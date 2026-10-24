@@ -14,3 +14,4 @@ uvicorn.out.log
 
 .claude/
 .agents/
+cinema/assets/

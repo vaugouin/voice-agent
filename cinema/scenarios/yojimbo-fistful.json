@@ -1,0 +1,333 @@
+{
+  "version": 1,
+  "meta": {
+    "id": "yojimbo-fistful",
+    "title": "It is my film: Yojimbo and A Fistful of Dollars",
+    "language": "en",
+    "target_minutes": 5,
+    "angle": "a work and its remake, and the lawsuit between them",
+    "voices": { "candide": "nova", "expert": "onyx" },
+    "works": [
+      { "movie_id": 11878, "title": "Yojimbo", "original_title": "用心棒", "year": 1961, "imdb": "tt0055630", "director": "Akira Kurosawa", "runtime": 110, "black_and_white": true },
+      { "movie_id": 391, "title": "A Fistful of Dollars", "original_title": "Per un pugno di dollari", "year": 1964, "imdb": "tt0058461", "director": "Sergio Leone", "runtime": 99, "color_technology": "technicolor", "film_technology": "techniscope" }
+    ],
+    "source_works": [
+      { "source_work_id": 6848, "name": "Red Harvest", "type": "literary", "author": "Dashiell Hammett", "year": 1929 },
+      { "source_work_id": 7219, "name": "Yojimbo", "type": "screen", "year": 1961, "movie_id": 11878 }
+    ],
+    "copies": {
+      "yojimbo-1080p": {
+        "movie_id": 11878,
+        "file": "T:\\public\\video\\HDFilms\\Yojimbo 1961 JAPANESE 1080p BluRay x265.mp4",
+        "duration": "01:50:52",
+        "subtitle": "T:\\prive\\subs-test\\yojimbo-the-bodyguard\\yojimbo-the-bodyguard_english-869216\\Yojimbo Criterion Blu Ray 2010 English.srt",
+        "subtitle_language": "en",
+        "note": "English subtitles translate the Japanese; the original words are only on the audio track."
+      },
+      "fistful-4k": {
+        "movie_id": 391,
+        "file": "T:\\public\\video\\4KFilms\\A Fistful Of Dollars 1964 2160p 4K BluRay x265 10bit AAC5 1-YTS MX.mkv",
+        "duration": "01:39:47",
+        "subtitle": "T:\\prive\\subs-test\\a-fistful-of-dollars-per-un-pugno-di-dollari\\a-fistful-of-dollars-per-un-pugno-di-dollari_english-3123515\\A.Fistful.of.Dollars.1964.BluRay.1h.39m.47s.Kino.Lorber.English.srt",
+        "subtitle_language": "en",
+        "note": "Kino Lorber subtitle, 23.976 fps, same duration as the copy. PAL subtitles of this film run 4 % faster and must not be used with it."
+      }
+    },
+    "fetched": {
+      "api": "http://www.vaugouin.com:8187",
+      "endpoints": ["/movies/11878", "/movies/391", "/sourceworks/6848", "/sourceworks/7219"],
+      "date": "2026-10-23",
+      "subtitles_and_frames_verified": "2026-10-24"
+    }
+  },
+  "beats": [
+    {
+      "id": "b01", "voice": "expert", "track": "performance",
+      "text": "Two films, three years apart. A nameless samurai walks into a town at war with itself. A nameless gunman does exactly the same. And one director wrote the other a letter.",
+      "source": { "type": "none" },
+      "brick": { "type": "title_card", "movie_id": [11878, 391], "caption": "1961 · 1964" },
+      "pause_after_ms": 600
+    },
+    {
+      "id": "b02", "voice": "candide", "track": "performance",
+      "text": "Let's get it out of the way. Leone copied Kurosawa. End of story?",
+      "source": { "type": "none" },
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b03", "voice": "expert", "track": "fact",
+      "text": "Here is the letter, in full. Signor Leone, I have just had the chance to see your film. It is a very fine film, but it is my film. Since Japan is a signatory of the Berne Convention on the international copyright, you must pay me.",
+      "source": { "type": "fiche", "ref": "movies/391", "segment": "Intro", "quote": "Signor Leone, I have just had the chance to see your film. It is a very fine film, but it is my film. Since Japan is a signatory of the Berne Convention on the international copyright, you must pay me." },
+      "brick": { "type": "quote_card", "text": "It is a very fine film, but it is my film.", "attribution": "Akira Kurosawa to Sergio Leone" },
+      "pause_after_ms": 800
+    },
+    {
+      "id": "b04", "voice": "candide", "track": "performance",
+      "text": "That is a lawyer's letter. Did he pay?",
+      "source": { "type": "none" },
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b05", "voice": "expert", "track": "fact",
+      "text": "Toho sued. Leone ignored the lawsuit, then settled out of court: fifteen percent of the worldwide receipts and over one hundred thousand dollars. Kurosawa earned more money from this settlement than from Yojimbo.",
+      "source": [
+        { "type": "fiche", "ref": "movies/391", "segment": "Legal dispute", "quote": "Leone ignored the resulting lawsuit, but eventually settled out of court, reportedly for 15% of the worldwide receipts of A Fistful of Dollars and over $100,000." },
+        { "type": "fiche", "ref": "movies/391", "segment": "Intro", "quote": "Kurosawa earned more money from this settlement than from Yojimbo." }
+      ],
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b06", "voice": "candide", "track": "performance",
+      "text": "More from the lawsuit than from his own film?",
+      "source": { "type": "none" },
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b07", "voice": "expert", "track": "fact",
+      "text": "The film cost two hundred thousand dollars. It sold nearly fifteen million tickets in Italy alone and grossed more than nineteen point nine million dollars worldwide.",
+      "source": [
+        { "type": "field", "ref": "movies/391", "field": "BUDGET", "value": 200000 },
+        { "type": "fiche", "ref": "movies/391", "segment": "Release and reception - Box office", "quote": "It sold admissions of 14,797,275 ticket sales in Italy." },
+        { "type": "fiche", "ref": "movies/391", "segment": "Release and reception - Box office", "quote": "totaling more than $19.9 million grossed worldwide" }
+      ],
+      "brick": { "type": "title_card", "movie_id": 391, "caption": "Budget $200,000 · 14,797,275 admissions in Italy · $19.9M worldwide" }
+    },
+    {
+      "id": "b08", "voice": "candide", "track": "performance",
+      "text": "Fine. But was it really a copy, or just the same kind of story?",
+      "source": { "type": "none" },
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b09", "voice": "expert", "track": "fact",
+      "text": "Same opening. An innkeeper explains the war to the stranger: Gonji, with the bosses Ushitora and Seibei; Silvanito, with the Rojos and the Baxters.",
+      "source": [
+        { "type": "fiche", "ref": "movies/11878", "segment": "Plot", "quote": "The owner Gonji advises the rōnin to leave, and tells him that the two warring bosses, Ushitora and Seibei, are fighting over the lucrative gambling trade run by Seibei." },
+        { "type": "fiche", "ref": "movies/391", "segment": "Plot", "quote": "Silvanito, the town's innkeeper, tells the Stranger about a feud between two smuggler families vying to gain control of the town" },
+        { "type": "subtitle", "movie_id": 391, "copy": "fistful-4k", "timecode": "00:31:56", "line": "The Baxters on one side. The Rojos on the other." }
+      ],
+      "brick": { "type": "quoted_frame", "movie_id": 391, "copy": "fistful-4k", "timecode": "00:31:57", "caption": "“The Baxters on one side. The Rojos on the other.” (00:31:56)" }
+    },
+    {
+      "id": "b10", "voice": "expert", "track": "fact",
+      "text": "Same demonstration: the samurai kills three of Ushitora's men to get hired, the gunman shoots the four men who insulted him on his way in.",
+      "source": [
+        { "type": "fiche", "ref": "movies/11878", "segment": "Plot" },
+        { "type": "fiche", "ref": "movies/391", "segment": "Plot", "quote": "He demonstrates his deadliness to both sides by shooting to death with ease the four men who insulted him as he entered town." }
+      ],
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b11", "voice": "candide", "track": "performance",
+      "text": "And the names? The samurai has one, doesn't he?",
+      "source": { "type": "none" },
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b12", "voice": "expert", "track": "fact",
+      "text": "He makes one up, looking at a mulberry field: Kuwabatake Sanjuro, mulberry field, thirty years old. The sheet calls him an early man with no name. Leone's stranger gets even less: the sheet only ever calls him the Stranger, and one line of the film calls him Joe.",
+      "source": [
+        { "type": "fiche", "ref": "movies/11878", "segment": "Production - Writing", "quote": "When asked his name, the samurai calls himself \"Kuwabatake Sanjuro\", which he seems to make up while looking at a mulberry field by the town." },
+        { "type": "subtitle", "movie_id": 11878, "copy": "yojimbo-1080p", "timecode": "00:24:23", "line": "Sanjuro Kuwabatake... (30-year-old Mulberry Field)" },
+        { "type": "fiche", "ref": "movies/391", "segment": "Plot", "quote": "An unnamed stranger arrives at the little frontier town of San Miguel." },
+        { "type": "subtitle", "movie_id": 391, "copy": "fistful-4k", "timecode": "00:32:24", "line": "Joe, I have prepared the wagon" }
+      ],
+      "brick": { "type": "quoted_frame", "movie_id": 11878, "copy": "yojimbo-1080p", "timecode": "00:24:24", "caption": "“Sanjuro Kuwabatake... (30-year-old Mulberry Field)” (00:24:23)" }
+    },
+    {
+      "id": "b13", "voice": "expert", "track": "fact",
+      "text": "Then the beats line up. A lie planted in both camps. A woman handed over for a debt, Nui or Marisol, freed and sent away with money. The hero found out, beaten, escaping in a coffin, and coming back because the innkeeper has been taken.",
+      "source": [
+        { "type": "fiche", "ref": "movies/11878", "segment": "Plot" },
+        { "type": "fiche", "ref": "movies/391", "segment": "Plot" }
+      ],
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b14", "voice": "candide", "track": "performance",
+      "text": "So it is the same film with hats.",
+      "source": { "type": "none" },
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b15", "voice": "expert", "track": "fact",
+      "text": "Not quite. Leone drops the official whose arrival stops the first battle, the mayor going mad, and the farmer's son who closes the story. He adds the massacre of a gold escort, the Baxter house burning with everyone inside, and the steel plate under the poncho.",
+      "source": [
+        { "type": "fiche", "ref": "movies/11878", "segment": "Plot" },
+        { "type": "fiche", "ref": "movies/391", "segment": "Plot" }
+      ],
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b16", "voice": "candide", "track": "performance",
+      "text": "The steel plate. That is the scene everyone remembers.",
+      "source": { "type": "none" },
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b17", "voice": "expert", "track": "fact",
+      "text": "And it is Leone's. In Yojimbo the duel is a pistol against a sword. Leone keeps the idea, Ramón's Winchester against a man who seems unarmed, and adds the armor. Ramón had said it himself: when you want to kill a man, you must shoot for his heart.",
+      "source": [
+        { "type": "fiche", "ref": "movies/11878", "segment": "Plot" },
+        { "type": "fiche", "ref": "movies/391", "segment": "Plot" },
+        { "type": "subtitle", "movie_id": 391, "copy": "fistful-4k", "timecode": "00:58:26", "line": "When you want to kill a man, you must shoot for his heart." }
+      ],
+      "brick": { "type": "quoted_frame", "movie_id": 391, "copy": "fistful-4k", "timecode": "00:58:27", "caption": "“When you want to kill a man, you must shoot for his heart.” (00:58:26)" }
+    },
+    {
+      "id": "b18", "voice": "candide", "track": "performance",
+      "text": "Now the part I do not get. Kurosawa says it is my film. Where did Kurosawa get it?",
+      "source": { "type": "none" },
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b19", "voice": "expert", "track": "fact",
+      "text": "From Dashiell Hammett, by his own account: he named The Glass Key, the 1942 film noir made from Hammett's 1931 novel.",
+      "source": { "type": "fiche", "ref": "movies/11878", "segment": "Production - Writing", "quote": "Kurosawa stated that a major source for the plot was the 1942 film noir classic The Glass Key, an adaptation of Dashiell Hammett's 1931 novel of the same name." },
+      "brick": { "type": "title_card", "source_work_id": 6848, "caption": "Red Harvest, Dashiell Hammett, 1929" }
+    },
+    {
+      "id": "b20", "voice": "expert", "track": "fact",
+      "text": "But the database links Yojimbo to another Hammett novel, Red Harvest: a nameless detective in a mining town run by rival gangs, setting them against each other. And the text is careful. Desser and Farber say Red Harvest was the inspiration; Donald Richie calls the resemblance coincidental.",
+      "source": [
+        { "type": "graph", "ref": "movies/11878.based_on", "value": 6848 },
+        { "type": "fiche", "ref": "sourceworks/6848", "segment": "Plot" },
+        { "type": "fiche", "ref": "movies/11878", "segment": "Production - Writing", "quote": "Kurosawa scholar David Desser, and film critic Manny Farber claim that Red Harvest was the inspiration for the film; however, Donald Richie and other scholars believe the similarities are coincidental." }
+      ],
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b21", "voice": "candide", "track": "performance",
+      "text": "So the database says yes and the page says maybe.",
+      "source": { "type": "none" },
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b22", "voice": "expert", "track": "performance",
+      "text": "Both are true. The graph records the lineage, the text records the argument about it. You get both.",
+      "source": { "type": "none" },
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b23", "voice": "expert", "track": "fact",
+      "text": "Leone used exactly that. His defense named three sources: Yojimbo, Red Harvest, and most of all Goldoni's play, Servant of Two Masters, a man playing two camps against each other, which rooted the story in Italian culture. And then: Kurosawa's Yojimbo was inspired by an American novel of the series-noire so I was really taking the story back home again.",
+      "source": [
+        { "type": "fiche", "ref": "movies/391", "segment": "Legal dispute", "quote": "Partly derived from Kurosawa's samurai film Yojimbo, partly from Dashiell Hammett's novel Red Harvest (1929), but most of all from Carlo Goldoni's eighteenth-century play Servant of Two Masters [sic]." },
+        { "type": "fiche", "ref": "movies/391", "segment": "Legal dispute", "quote": "Kurosawa's Yojimbo was inspired by an American novel of the series-noire so I was really taking the story back home again." }
+      ],
+      "brick": { "type": "quote_card", "text": "I was really taking the story back home again.", "attribution": "Sergio Leone" }
+    },
+    {
+      "id": "b24", "voice": "candide", "track": "performance",
+      "text": "Cheeky. Give me one line that is pure Leone, then.",
+      "source": { "type": "none" },
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b25", "voice": "expert", "track": "fact",
+      "text": "The mule. Fourteen minutes in, after the Baxter men have shot at his mule and laughed, the stranger walks back: you see, my mule don't like people laughing. There is no mule in Yojimbo.",
+      "source": [
+        { "type": "subtitle", "movie_id": 391, "copy": "fistful-4k", "timecode": "00:14:53", "line": "You see, my mule don't like people laughing." },
+        { "type": "fiche", "ref": "movies/11878", "segment": "Plot" }
+      ],
+      "brick": { "type": "quoted_frame", "movie_id": 391, "copy": "fistful-4k", "timecode": "00:14:55", "caption": "“You see, my mule don't like people laughing.” (00:14:53)" }
+    },
+    {
+      "id": "b26", "voice": "candide", "track": "performance",
+      "text": "Did Eastwood know what he was getting into?",
+      "source": { "type": "none" },
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b27", "voice": "expert", "track": "fact",
+      "text": "Better than anyone. Years earlier, in a Los Angeles theater on Western Avenue, he had watched Yojimbo thinking it would make a great western if only someone had nerve enough to do it. When the script reached him, about five or ten pages in he recognized it as an obvious rip-off of Yojimbo. He found that ironic.",
+      "source": { "type": "fiche", "ref": "movies/391", "segment": "Development", "quote": "A few years later, after someone handed him the script for A Fistful of Dollars, \"about five or 10 pages in\" he \"recognized it as an obvious rip-off\" of Yojimbo, which he found ironic." },
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b28", "voice": "candide", "track": "performance",
+      "text": "And who actually wrote it?",
+      "source": { "type": "none" },
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b29", "voice": "expert", "track": "fact",
+      "text": "Nobody agrees. The historian Roberto Curti calls the accounts contradictory and difficult to decipher: Valerii, Bolzoni, Tessari, Di Leo each claim a share, and Leone suggested he wrote the whole screenplay himself. The working title was Il Magnifico Straniero, the magnificent stranger.",
+      "source": { "type": "fiche", "ref": "movies/391", "segment": "Development" },
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b30", "voice": "candide", "track": "performance",
+      "text": "And when the Americans finally saw it?",
+      "source": { "type": "none" },
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b31", "voice": "expert", "track": "fact",
+      "text": "Late. Distributors feared being sued by Kurosawa, so it reached American cinemas on the eighteenth of January 1967. Bosley Crowther, in the New York Times, called Eastwood a morbid, amusing, campy fraud. Philip French found the film totally devoid of human feeling.",
+      "source": [
+        { "type": "fiche", "ref": "movies/391", "segment": "Release and reception - Box office", "quote": "The release of the film was delayed in the United States, because distributors feared being sued by Kurosawa. As a result, it was not shown in American cinemas until 18 January 1967." },
+        { "type": "fiche", "ref": "movies/391", "segment": "Release and reception - Critical response", "quote": "He is a morbid, amusing, campy fraud." },
+        { "type": "fiche", "ref": "movies/391", "segment": "Release and reception - Critical response", "quote": "A Fistful of Dollars looks awful, has a flat dead soundtrack, and is totally devoid of human feeling." }
+      ],
+      "brick": { "type": "quote_card", "text": "He is a morbid, amusing, campy fraud.", "attribution": "Bosley Crowther, The New York Times, 1967" }
+    },
+    {
+      "id": "b32", "voice": "candide", "track": "performance",
+      "text": "Ouch. Did anyone learn the lesson?",
+      "source": { "type": "none" },
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b33", "voice": "expert", "track": "fact",
+      "text": "Three decades later. Last Man Standing, Walter Hill's 1996 remake with Bruce Willis, is official: Kurosawa and Kikushima are in its credits for the original story.",
+      "source": { "type": "fiche", "ref": "movies/11878", "segment": "Legacy", "quote": "Last Man Standing (1996), a Prohibition-era action film directed by Walter Hill and starring Bruce Willis, is an official remake of Yojimbo: both Kikushima and Kurosawa specifically listed in this movie's credits as having provided the original story." },
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b34", "voice": "expert", "track": "fact",
+      "text": "And the loop closes on Eastwood. In the early 1970s Bertolucci prepared his own Red Harvest, and for the detective he considered Redford, Nicholson, and Clint Eastwood, who had played the Op-inspired Man with No Name. It was never made.",
+      "source": { "type": "fiche", "ref": "sourceworks/6848", "segment": "Adaptations", "quote": "For the role of the Op he considered Robert Redford, Jack Nicholson (who had played a hard-boiled detective in Roman Polanski's neo-noir film Chinatown), and Clint Eastwood (who had played the Op-inspired \"Man with No Name\" in Sergio Leone's Dollars Trilogy)." },
+      "brick": { "type": "title_card", "source_work_id": 6848, "caption": "Bertolucci's Red Harvest, never made" }
+    },
+    {
+      "id": "b35", "voice": "candide", "track": "performance",
+      "text": "The man who played the copy, asked to play the original of the original.",
+      "source": { "type": "none" },
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b36", "voice": "expert", "track": "fact",
+      "text": "Two men leave two towns. Sanjuro: see ya around. Joe: so long. One hundred and ten minutes in black and white; ninety-nine in Technicolor and Techniscope.",
+      "source": [
+        { "type": "subtitle", "movie_id": 11878, "copy": "yojimbo-1080p", "timecode": "01:50:31", "line": "See ya around." },
+        { "type": "subtitle", "movie_id": 391, "copy": "fistful-4k", "timecode": "01:38:34", "line": "So long." },
+        { "type": "field", "ref": "movies/11878", "field": "RUNTIME", "value": 110 },
+        { "type": "field", "ref": "movies/11878", "field": "IS_BLACK_AND_WHITE", "value": 1 },
+        { "type": "field", "ref": "movies/391", "field": "RUNTIME", "value": 99 },
+        { "type": "field", "ref": "movies/391", "field": "COLOR_TECHNOLOGY", "value": "technicolor" },
+        { "type": "field", "ref": "movies/391", "field": "FILM_TECHNOLOGY", "value": "techniscope" }
+      ],
+      "brick": {
+        "type": "split_frames",
+        "left": { "movie_id": 11878, "copy": "yojimbo-1080p", "timecode": "01:50:31", "caption": "“See ya around.” (01:50:31)" },
+        "right": { "movie_id": 391, "copy": "fistful-4k", "timecode": "01:38:35", "caption": "“So long.” (01:38:34)" },
+        "caption": "Two farewells"
+      },
+      "pause_after_ms": 800
+    },
+    {
+      "id": "b37", "voice": "candide", "track": "performance",
+      "text": "And the letter?",
+      "source": { "type": "none" },
+      "brick": { "type": "hold" }
+    },
+    {
+      "id": "b38", "voice": "expert", "track": "performance",
+      "text": "The letter stands. A very fine film, but my film. The steel plate, though, is Leone's.",
+      "source": { "type": "none" },
+      "brick": { "type": "quote_card", "text": "It is a very fine film, but it is my film.", "attribution": "Akira Kurosawa" },
+      "pause_after_ms": 1500
+    }
+  ]
+}
