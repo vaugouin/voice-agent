@@ -3102,10 +3102,18 @@ function sourceWorkAdaptationCount(record) {
 
 function detailRequestFromRecord(record) {
   const type = String(record.CONTENT_TYPE || "").toLowerCase();
-  // VOICE-AGENT-218: first, for the same reason as in cardSpecFromRecord. A based_on item or a
-  // source_work search row whose source is a film carries ID_MOVIE, and would otherwise open
-  // the film instead of the source work.
+  // VOICE-AGENT-218: tested first, for the same reason as in cardSpecFromRecord (a based_on item
+  // or a source_work search row keeps the source-work card look). But when the source IS itself a
+  // catalogue film or series (ID_MOVIE / ID_SERIE set), the click opens that richer sheet, which
+  // now carries the adaptation rails this source-work view used to hold. ID_SOURCE_WORK only when
+  // the source is a book, play or other off-screen work. Mirrors tmdb-front's "Based on" routing.
   if (isSourceWorkRecord(record)) {
+    if (record.ID_MOVIE) {
+      return { toolName: "get_movie_detail", id: record.ID_MOVIE };
+    }
+    if (record.ID_SERIE) {
+      return { toolName: "get_series_detail", id: record.ID_SERIE };
+    }
     return { toolName: "get_source_work_detail", id: record.ID_SOURCE_WORK };
   }
   if (record.ID_EPISODE || type === "episode") {
@@ -4709,6 +4717,17 @@ function appendTitleSheetRails(body, record, { castCredits, crewCredits, seasons
   appendMixedRail(body, record, "awards");
   appendMixedRail(body, record, "nominations");
   appendBasedOnRail(body, record); // VOICE-AGENT-218
+  // The reverse of "Based on": when this film / series is itself a source work, the works adapted
+  // from it (API adapted_movies / adapted_series on /movies/{id} & /series/{id}). The same
+  // two rails the source-work sheet carries, now on the title sheet the "Based on" link opens.
+  appendVisualRail(body, uiText("Movies adapted from this work", "Films adaptés de cette œuvre"), record.adapted_movies, {
+    kind: "poster",
+    collectionName: "adapted_movies",
+  });
+  appendVisualRail(body, uiText("TV shows adapted from this work", "Séries TV adaptées de cette œuvre"), record.adapted_series, {
+    kind: "poster",
+    collectionName: "adapted_series",
+  });
   appendTitleLocationRails(body, record); // VOICE-AGENT-227
   appendMixedRail(body, record, "movements");
   appendMixedRail(body, record, "topics");
@@ -9936,6 +9955,11 @@ function compactDetailForModel(output, fallbackEntity, { verbose = false } = {})
   // The Wikipedia mention lists feed two rails only: up to 300 cards the model has no use
   // for, and an amount the 16 KB data channel cannot carry.
   WIKIPEDIA_MENTION_KEYS.forEach((key) => { delete compactDetail[key]; });
+  // adapted_movies / adapted_series (from the API detail) feed the two "adapted from this work" rails
+  // only. The model already learns the source relation from based_on, and a heavily adapted
+  // title (Dracula) would blow the data channel, so they stay out of the model payload.
+  delete compactDetail.adapted_movies;
+  delete compactDetail.adapted_series;
   return {
     // VOICE-AGENT-149: a second whitelist on the same path, and the one that matters most.
     // an episode sheet is exactly where the air dates are. Dropping it here would have made
