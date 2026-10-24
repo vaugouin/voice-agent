@@ -13107,12 +13107,78 @@ function buildCinemaTitleCard(brick) {
   return card;
 }
 
+// A row of portraits (TMDb profiles): the people a line names, each with a short caption
+// (a pseudonym, a credit, a refusal). A person without a photo gets their initials.
+function buildCinemaPortraits(brick) {
+  const wrapper = cinemaElement("div", "cinemaPortraitsWrapper");
+  const row = cinemaElement("div", "cinemaPortraits");
+  const people = brick.people || [];
+  for (const person of people) {
+    const figure = cinemaElement("figure", "cinemaPortrait");
+    const media = cinemaElement("div", "cinemaPortraitMedia");
+    if (person.image) {
+      media.appendChild(cinemaImage(person.image, person.name));
+    } else {
+      const initials = (person.name || "").split(/\s+/).map((part) => part[0] || "").join("").slice(0, 3).toUpperCase();
+      media.appendChild(cinemaElement("div", "cinemaPortraitInitials", initials));
+    }
+    figure.appendChild(media);
+    const caption = cinemaElement("figcaption", "");
+    caption.appendChild(cinemaElement("div", "cinemaPortraitName", person.name || ""));
+    if (person.caption) {
+      caption.appendChild(cinemaElement("div", "cinemaPortraitCaption", person.caption));
+    }
+    figure.appendChild(caption);
+    row.appendChild(figure);
+  }
+  row.dataset.count = String(people.length);
+  wrapper.appendChild(row);
+  if (brick.caption) {
+    wrapper.appendChild(cinemaElement("div", "cinemaSplitCaption", brick.caption));
+  }
+  return wrapper;
+}
+
+// A wall of posters (TMDb): the films and series a line names, title and year under each.
+function buildCinemaPosterWall(brick) {
+  const wrapper = cinemaElement("div", "cinemaPosterWallWrapper");
+  const wall = cinemaElement("div", "cinemaPosterWall");
+  const items = brick.items || [];
+  for (const item of items) {
+    const figure = cinemaElement("figure", "cinemaPoster");
+    const media = cinemaElement("div", "cinemaPosterMedia");
+    if (item.image) {
+      media.appendChild(cinemaImage(item.image, item.title ? `${item.title} poster` : "poster"));
+    }
+    figure.appendChild(media);
+    const caption = cinemaElement("figcaption", "");
+    caption.appendChild(cinemaElement("div", "cinemaPosterTitle", item.title || ""));
+    const meta = [item.year, item.kind === "tv" ? "series" : ""].filter(Boolean).join(" · ");
+    if (meta) {
+      caption.appendChild(cinemaElement("div", "cinemaPosterMeta", meta));
+    }
+    figure.appendChild(caption);
+    wall.appendChild(figure);
+  }
+  wall.dataset.count = String(items.length);
+  wrapper.appendChild(wall);
+  if (brick.caption) {
+    wrapper.appendChild(cinemaElement("div", "cinemaSplitCaption", brick.caption));
+  }
+  return wrapper;
+}
+
 function buildCinemaBrick(brick) {
   switch (brick.type) {
     case "title_card":
       return buildCinemaTitleCard(brick);
+    case "frame":
     case "quoted_frame":
       return buildCinemaFrame(brick);
+    case "portraits":
+      return buildCinemaPortraits(brick);
+    case "poster_wall":
+      return buildCinemaPosterWall(brick);
     case "split_frames": {
       const wrapper = cinemaElement("div", "cinemaSplitWrapper");
       const split = cinemaElement("div", "cinemaSplit");
@@ -13168,6 +13234,11 @@ function preloadCinemaImages(timeline, slug) {
     }
     for (const path of brick.images || []) {
       paths.add(path);
+    }
+    for (const entry of [...(brick.people || []), ...(brick.items || [])]) {
+      if (entry.image) {
+        paths.add(entry.image);
+      }
     }
   }
   for (const path of paths) {

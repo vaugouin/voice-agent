@@ -3161,6 +3161,121 @@ body.cinemaMode main {
   color: var(--text-secondary);
 }
 
+.cinemaPortraitsWrapper,
+.cinemaPosterWallWrapper {
+  display: grid;
+  gap: 18px;
+  justify-items: center;
+  width: 100%;
+  min-height: 0;
+}
+
+.cinemaPortraits {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  gap: clamp(16px, 2.6vw, 40px);
+  width: 100%;
+}
+
+.cinemaPortrait {
+  margin: 0;
+  display: grid;
+  gap: 12px;
+  justify-items: center;
+  max-width: 280px;
+}
+
+.cinemaPortraitMedia {
+  height: clamp(200px, 46vh, 420px);
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 14px;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 55%);
+  background: rgb(255 255 255 / 6%);
+  display: grid;
+  place-items: center;
+}
+
+.cinemaPortraitMedia img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cinemaPortraitInitials {
+  font-size: clamp(1.6rem, 3vw, 2.6rem);
+  font-weight: 700;
+  color: var(--text-secondary);
+}
+
+.cinemaPortraitName {
+  font-size: clamp(1rem, 1.7vw, 1.3rem);
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.cinemaPortraitCaption {
+  margin-top: 4px;
+  color: var(--text-secondary);
+  font-size: clamp(0.85rem, 1.3vw, 1.05rem);
+  text-align: center;
+}
+
+.cinemaPosterWall {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: flex-start;
+  gap: clamp(14px, 2vw, 30px);
+  width: 100%;
+}
+
+.cinemaPoster {
+  margin: 0;
+  display: grid;
+  gap: 10px;
+  justify-items: center;
+  max-width: 260px;
+}
+
+.cinemaPosterMedia {
+  height: clamp(180px, 44vh, 360px);
+  aspect-ratio: 2 / 3;
+  overflow: hidden;
+  border-radius: 8px;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 55%);
+  background: rgb(255 255 255 / 6%);
+}
+
+.cinemaPosterWall[data-count="1"] .cinemaPosterMedia,
+.cinemaPosterWall[data-count="2"] .cinemaPosterMedia {
+  height: clamp(240px, 56vh, 520px);
+}
+
+.cinemaPosterMedia img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.cinemaPosterTitle {
+  font-size: clamp(0.9rem, 1.4vw, 1.1rem);
+  font-weight: 700;
+  text-align: center;
+  line-height: 1.2;
+}
+
+.cinemaPosterMeta {
+  margin-top: 2px;
+  color: var(--text-secondary);
+  font-size: clamp(0.8rem, 1.2vw, 0.95rem);
+  text-align: center;
+}
+
 .cinemaLine {
   margin: 10px auto 26px;
   max-width: min(1100px, calc(100vw - 32px));

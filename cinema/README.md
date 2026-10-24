@@ -8,22 +8,26 @@ Design: `~/Nestor/projets/t2s-backlog/app-ideas-010-generated-podcast-video.md`.
 
 - `scenarios/<slug>.json`: the scenario, committed. Written by hand or by Claude from the test sheet of the pair; every factual line carries its source.
 - `assets/<slug>/`: built from the scenario by `uv run tools/build-cinema-assets.py cinema/scenarios/<slug>.json`. **Not committed**: frames come from the film copies on the NAS, audio is rebuilt from the scenario.
-  - `frames/<movie_id>-<HHhMMmSSs>.jpg`: one frame per `quoted_frame` / `split_frames` brick, ffmpeg on the copy named in `meta.copies`, 1920 px wide.
-  - `images/poster-<movie_id>.jpg`, `images/cover-<source_work_id>.jpg`: the title-card pictures (TMDb `poster_path`, Wikipedia `cover_url` from `meta`).
-  - `audio/<beat>.wav`: one line per beat, OpenAI `gpt-4o-mini-tts` with the `voice` and `instructions` of `meta.voices`; `audio/gap-<ms>.wav` the silences (350 ms between lines, plus `pause_after_ms`).
-  - `episode.wav` / `episode.mp3`: the lines and silences concatenated; `timeline.json`: the scenario with `start_ms` / `duration_ms` per beat and the asset path of each brick, what the player reads; `transcript.txt`: `[MM:SS] voice: line` on the real durations.
-  - Idempotent: an asset on disk is kept unless `--force`; `--only frames|images|audio|timeline` runs one step. A changed line needs its wav deleted or `--force`.
+  - `frames/<movie_id>-<HHhMMmSSs>.jpg`: one frame per `frame` / `quoted_frame` / `split_frames` brick, ffmpeg on the copy named in `meta.copies`, up to 2560 px wide, black bars cropped. The file is named after the cited timecode, but the frame taken is the **sharpest** one (ffmpeg `blurdetect`) in a window from half a second before to two and a half seconds after it: a subtitle's timecode is the start of a line, often a camera move or a cut. `frames/frames.json` keeps, per frame, the cited timecode, the one taken, the crop and the blur score; `timeline.json` carries the taken timecode as `taken`. A brick may set `"exact": true` (the cited frame itself) or `"window": [-0.5, 1.0]`.
+  - `images/poster-<movie_id>.jpg`, `images/cover-<source_work_id>.jpg`: the title-card pictures (TMDb `poster_path`, Wikipedia `cover_url` from `meta`); `images/person-<person_id>.jpg`: the portraits (TMDb profile, `h632`, from `meta.persons`); `images/wall-<movie|tv>-<id>.jpg`: the poster walls (TMDb `w500`, from `meta.related`).
+  - `audio/<beat>.wav`: one line per beat, OpenAI `gpt-4o-mini-tts` with the `voice` and `instructions` of `meta.voices`, plus the beat's own `delivery` hint appended as "This line: …"; a voice with `pitch_semitones` is then lowered by ffmpeg (`rubberband`, formants shifted). `audio/<beat>.json` is the signature of what was synthesized (model, voice, instructions, delivery, text, pitch): the next build redoes only the lines whose signature changed. `audio/gap-<ms>.wav` the silences (350 ms between lines, plus `pause_after_ms`).
+  - `episode.wav` / `episode.mp3`: the lines and silences concatenated. The mp3 is **constant bitrate** (128 kb/s): with a variable one, Chrome's seeks landed up to a second away from the time asked for near the end of a twenty-minute file, and the lines on screen no longer matched the voice. `timeline.json`: the scenario with `start_ms` / `duration_ms` per beat and the asset path of each brick, what the player reads; `transcript.txt`: `[MM:SS] voice: line` on the real durations.
+  - Idempotent: a frame or an image on disk is kept unless `--force`; a line is redone when its signature changed; `--only frames|images|audio|timeline` runs one step.
 
 ## Playing an episode
 
 Open the app with `?cinema=<slug>` (for example `http://127.0.0.1:3000/?cinema=yojimbo-fistful`): the live app is hidden, the stage loads `assets/<slug>/timeline.json` and `episode.mp3` (served by the `/cinema` mount when the folder exists), shows the first brick and waits for Play. `&autoplay=1` tries to start at once (browsers may block it). Space or K plays and pauses, the arrow keys seek by five seconds, Home restarts. Bricks follow the audio clock, so pause and seek keep them in step; the scheduler mirrors the spoken-card cue engine of the live app (one timer, a sorted queue). A `hold` brick keeps the previous picture.
 
-## The scenario contract (`version: 1`)
+## The scenario contract (`version: 2`)
 
 ```
-meta        id, title, language, target_minutes (indicative only: no cap, the longer the better), length_policy, voices {candide, expert}, works[], source_works[], copies{}, fetched
-beats[]     id, voice (candide | expert), track (fact | performance), text, source, brick, pause_after_ms
+meta        id, title, language, target_minutes (indicative only: no cap, the longer the better), length_policy,
+            voices {candide, expert: voice, instructions, pitch_semitones}, works[], source_works[], copies{},
+            persons[] (person_id, name, profile_path), related[] (kind movie|tv, id, title, year, poster_path), fetched
+beats[]     id, voice (candide | expert), track (fact | performance), text, delivery, source, brick, pause_after_ms
 ```
+
+**Voices.** `meta.voices` names the OpenAI voice of each speaker and its standing instructions (affect, pacing, intonation, emphasis: the whole persona, not one adjective). A beat's `delivery` is the direction for that one line ("Genuinely incredulous, laughing a little."), appended to the instructions when it is synthesized; it is what keeps twenty minutes from sounding read. Chosen on samples the 2026-10-24: `marin` for the candide, `cedar` lowered two semitones for the expert (the sincerity of cedar, the depth of onyx).
 
 **Two tracks.** A `fact` beat states something the database or the film attests, and its `source` says where. A `performance` beat is the staging (reactions, transitions, the hook) and carries `{"type": "none"}`. The generator may rewrite performance lines freely; it may not touch a fact line without re-checking its source.
 
@@ -37,15 +41,20 @@ beats[]     id, voice (candide | expert), track (fact | performance), text, sour
 | `subtitle` | `movie_id`, `copy`, `timecode`, `line` | a line of the subtitle synced to that copy |
 | `none` | | performance track |
 
-**Bricks** (`brick.type`), four for the prototype:
+**Bricks** (`brick.type`):
 
 | type | fields | shows |
 | --- | --- | --- |
 | `title_card` | `movie_id` or `source_work_id`, optional `caption` | poster or cover, title, year, runtime; two ids give a diptych |
-| `quoted_frame` | `movie_id`, `copy`, `timecode`, `caption` | the frame at that timecode of that copy, caption under it |
-| `split_frames` | `left`, `right` (each a `quoted_frame`), `caption` | two frames side by side |
+| `quoted_frame` | `movie_id`, `copy`, `timecode`, `caption` | the frame at that timecode of that copy, the quoted line under it |
+| `frame` | same fields | the same, with a descriptive caption instead of a quotation (the action between two lines) |
+| `split_frames` | `left`, `right` (each a frame spec), `caption` | two frames side by side |
+| `portraits` | `people[]` (`person_id`, `caption`), optional `caption` | a row of TMDb portraits with a caption under each (a pseudonym, a refusal, a credit); a person without a photo gets their initials |
+| `poster_wall` | `items[]` (`kind`, `id`), optional `caption` | the posters of the films and series a line names, title and year under each |
 | `quote_card` | `text`, `attribution` | a verbatim quotation, full screen |
 | `hold` | | keep the previous brick |
+
+A story told over several lines wants a frame every few lines, not one picture held for a minute: the Yojimbo / Fistful episode changes its picture on 44 of its 85 beats.
 
 **Copies** (`meta.copies`): the exact file each timecode refers to, with the subtitle it was read from. A timecode is only valid for its copy: PAL subtitles run 4 % faster than Blu-ray ones.
 

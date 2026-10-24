@@ -1,5 +1,5 @@
 {
-  "version": 1,
+  "version": 2,
   "meta": {
     "id": "yojimbo-fistful",
     "title": "It is my film: Yojimbo and A Fistful of Dollars",
@@ -8,12 +8,13 @@
     "angle": "a work and its remake, and the lawsuit between them",
     "voices": {
       "candide": {
-        "voice": "nova",
-        "instructions": "A curious, quick podcast co-host. Warm, informal, genuinely asking, a little impatient. Natural pace, light tone."
+        "voice": "marin",
+        "instructions": "Voice: the curious co-host of a two-voice podcast about movies. Affect: delighted, quick, a little teasing, genuinely surprised by what the expert says. Pacing: brisk and conversational, with real pauses before a question lands. Intonation: lively, rising on questions, falling on punchlines. Emphasis: stress the one word that carries the surprise. Never flat, never read aloud: you are talking to a friend across a table."
       },
       "expert": {
-        "voice": "onyx",
-        "instructions": "A calm, precise film expert. Unhurried, slightly amused, never lecturing. Quotations are read a touch slower, as if reading from the page."
+        "voice": "cedar",
+        "instructions": "Voice: the film expert of a two-voice podcast, the one who has seen everything and enjoys telling it. Affect: warm, amused, storytelling, with the pleasure of a good anecdote. Pacing: varied, speeds up on the narrative and slows down right before a reveal or a quotation; quotations are read a touch slower, as if from the page. Intonation: wide range, conversational, never a lecture, never a monotone. Emphasis: land the names and the numbers. You are telling this to a friend, not reading it.",
+        "pitch_semitones": -2
       }
     },
     "works": [
@@ -86,12 +87,186 @@
         "/sourceworks/7219"
       ],
       "date": "2026-10-23",
-      "subtitles_and_frames_verified": "2026-10-24"
+      "subtitles_and_frames_verified": "2026-10-24",
+      "tmdb_api": "2026-10-24: search/person, search/movie and search/tv for the ids, profile_path and poster_path of the portraits and poster walls"
     },
     "images": {
-      "tmdb_base": "https://image.tmdb.org/t/p/w780"
+      "tmdb_base": "https://image.tmdb.org/t/p/w780",
+      "tmdb_profile_size": "h632",
+      "tmdb_wall_size": "w500"
     },
-    "length_policy": "no cap: the longer the better, the length follows the material (decided by Philippe, 2026-10-24)"
+    "length_policy": "no cap: the longer the better, the length follows the material (decided by Philippe, 2026-10-24)",
+    "voice_note": "Chosen 2026-10-24 on samples: marin for the candide, cedar for the expert, lowered two semitones by ffmpeg (rubberband, formants shifted) to get closer to onyx's depth while keeping cedar's delivery. Previous pair: nova / onyx. Each beat may carry a `delivery` hint, appended to the voice's instructions for that line only.",
+    "persons": [
+      {
+        "person_id": 5026,
+        "name": "Akira Kurosawa",
+        "profile_path": "/g2iwSho2vJxVz7cbD1FAKAmPD6A.jpg"
+      },
+      {
+        "person_id": 4385,
+        "name": "Sergio Leone",
+        "profile_path": "/2576qoW8l9Z1nKGM10ar60aIwUu.jpg"
+      },
+      {
+        "person_id": 14276,
+        "name": "Gian Maria Volonté",
+        "profile_path": "/xPwxiUgSnvqMvPTm2TlqTUskOJ.jpg"
+      },
+      {
+        "person_id": 1259,
+        "name": "Ennio Morricone",
+        "profile_path": "/AnItysU3XsiUpAuBN7gpA1R2aNl.jpg"
+      },
+      {
+        "person_id": 190,
+        "name": "Clint Eastwood",
+        "profile_path": "/8TwdCfeOZH7ucRlfLZ6wObxa7cO.jpg"
+      },
+      {
+        "person_id": 4958,
+        "name": "Henry Fonda",
+        "profile_path": "/6wXWsqSXF3wCsGcwVqiszy6RX9X.jpg"
+      },
+      {
+        "person_id": 4960,
+        "name": "Charles Bronson",
+        "profile_path": "/w0C2Xa6PCQX83Iu2TxPjOCv8ufm.jpg"
+      },
+      {
+        "person_id": 5563,
+        "name": "James Coburn",
+        "profile_path": "/9GApjInyrVvjnTAr652C1aViPqZ.jpg"
+      },
+      {
+        "person_id": 4661,
+        "name": "Benito Stefanelli",
+        "profile_path": "/g8wrcKWLuxq3Rmtp3LXItaGVLoQ.jpg"
+      },
+      {
+        "person_id": 99511,
+        "name": "Duccio Tessari",
+        "profile_path": null
+      },
+      {
+        "person_id": 49892,
+        "name": "Fernando Di Leo",
+        "profile_path": "/yNXf5pBHBnHMRFo0jSyIniT0itY.jpg"
+      },
+      {
+        "person_id": 57639,
+        "name": "Tonino Valerii",
+        "profile_path": "/lzIrZ4YKheBXOV9RzaB4dUuA1ZJ.jpg"
+      },
+      {
+        "person_id": 67954,
+        "name": "Adriano Bolzoni",
+        "profile_path": null
+      },
+      {
+        "person_id": 4956,
+        "name": "Bernardo Bertolucci",
+        "profile_path": "/b0W7CtXxbo24sX8TPnDlLTYfc2E.jpg"
+      },
+      {
+        "person_id": 5165,
+        "name": "Dashiell Hammett",
+        "profile_path": "/d1olCdG9HltN6mScWy0S3iaHP48.jpg"
+      }
+    ],
+    "related": [
+      {
+        "kind": "movie",
+        "id": 17131,
+        "title": "The Glass Key",
+        "year": 1942,
+        "poster_path": "/wMUEEEdqKWIN9BxcSFx3dlFb7i1.jpg"
+      },
+      {
+        "kind": "movie",
+        "id": 9333,
+        "title": "Last Man Standing",
+        "year": 1996,
+        "poster_path": "/2cWqlkXaKKdl32Waep4FwCQnyH0.jpg"
+      },
+      {
+        "kind": "movie",
+        "id": 10772,
+        "title": "Django",
+        "year": 1966,
+        "poster_path": "/XO7MrV0nsDlBWLjfM5ekiGgjyt.jpg"
+      },
+      {
+        "kind": "movie",
+        "id": 46500,
+        "title": "The Warrior and the Sorceress",
+        "year": 1984,
+        "poster_path": "/8jSoWzOuuNQgeAXWGK3cB64H18I.jpg"
+      },
+      {
+        "kind": "movie",
+        "id": 10908,
+        "title": "Inferno",
+        "year": 1999,
+        "poster_path": "/n5C3PSYfjpUqBhyVWEWJQmM3Sr9.jpg"
+      },
+      {
+        "kind": "movie",
+        "id": 709,
+        "title": "Licence to Kill",
+        "year": 1989,
+        "poster_path": "/8nzJve63EXA79HGAyidZwivZrQ2.jpg"
+      },
+      {
+        "kind": "movie",
+        "id": 619,
+        "title": "The Bodyguard",
+        "year": 1992,
+        "poster_path": "/ihWF0uY1xnKqw9YK7ZHNLUZOhcO.jpg"
+      },
+      {
+        "kind": "tv",
+        "id": 73107,
+        "title": "Barry",
+        "year": 2018,
+        "poster_path": "/j1XpwD11f0BAEI7pX6UdMhUVX2F.jpg"
+      },
+      {
+        "kind": "movie",
+        "id": 11,
+        "title": "Star Wars",
+        "year": 1977,
+        "poster_path": "/fai0rspsNeJCS69wHNjOdWxcI7P.jpg"
+      },
+      {
+        "kind": "movie",
+        "id": 181808,
+        "title": "Star Wars: The Last Jedi",
+        "year": 2017,
+        "poster_path": "/kOVEVeg59E0wsnXmF9nrh6OmWII.jpg"
+      },
+      {
+        "kind": "tv",
+        "id": 2723,
+        "title": "Samurai Jack",
+        "year": 2001,
+        "poster_path": "/ddZ7Q2WZ0xAHkVXYvcEgNGFgVkw.jpg"
+      },
+      {
+        "kind": "movie",
+        "id": 11712,
+        "title": "Sanjuro",
+        "year": 1962,
+        "poster_path": "/zW47oIH3bc3ggmmmzTvKqM4Fqjk.jpg"
+      },
+      {
+        "kind": "tv",
+        "id": 60585,
+        "title": "Bosch",
+        "year": 2015,
+        "poster_path": "/vtacLvdLgW3BNUj8DrC76X39Lfi.jpg"
+      }
+    ]
   },
   "beats": [
     {
@@ -110,19 +285,21 @@
         ],
         "caption": "1961 · 1964"
       },
-      "pause_after_ms": 600
+      "pause_after_ms": 600,
+      "delivery": "Opening of the show: set the scene like a trailer, unhurried, a little mischievous on the last sentence."
     },
     {
       "id": "b02",
       "voice": "candide",
       "track": "performance",
-      "text": "Let's get it out of the way. Leone copied Kurosawa. End of story?",
+      "text": "Okay, let's get it out of the way. Leone copied Kurosawa. End of story?",
       "source": {
         "type": "none"
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Mock-impatient, teasing, as if settling a bet."
     },
     {
       "id": "b03",
@@ -140,19 +317,21 @@
         "text": "It is a very fine film, but it is my film.",
         "attribution": "Akira Kurosawa to Sergio Leone"
       },
-      "pause_after_ms": 800
+      "pause_after_ms": 800,
+      "delivery": "Read the letter as a letter: slow, courteous, with a faint smile on 'my film'."
     },
     {
       "id": "b04",
       "voice": "candide",
       "track": "performance",
-      "text": "That is a lawyer's letter. Did he pay?",
+      "text": "That is a lawyer's letter. So, did he pay?",
       "source": {
         "type": "none"
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Dry, amused, quick."
     },
     {
       "id": "b05",
@@ -174,20 +353,33 @@
         }
       ],
       "brick": {
-        "type": "hold"
-      }
+        "type": "portraits",
+        "people": [
+          {
+            "person_id": 5026,
+            "caption": "Toho sued"
+          },
+          {
+            "person_id": 4385,
+            "caption": "settled out of court"
+          }
+        ],
+        "caption": "Fifteen percent of the worldwide receipts"
+      },
+      "delivery": "Matter-of-fact, then savor the last sentence."
     },
     {
       "id": "b06",
       "voice": "candide",
       "track": "performance",
-      "text": "More from the lawsuit than from his own film?",
+      "text": "Wait. More from the lawsuit than from his own film?",
       "source": {
         "type": "none"
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Genuinely incredulous, laughing a little."
     },
     {
       "id": "b07",
@@ -218,7 +410,8 @@
         "type": "title_card",
         "movie_id": 391,
         "caption": "Budget $200,000 · 14,797,275 admissions in Italy · $19.9M worldwide"
-      }
+      },
+      "delivery": "Land the numbers one by one, with relish."
     },
     {
       "id": "b07a",
@@ -230,7 +423,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Curious, leaning in."
     },
     {
       "id": "b07b",
@@ -259,7 +453,8 @@
       ],
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Storytelling, a touch of irony on 'the worst month'."
     },
     {
       "id": "b07c",
@@ -281,22 +476,40 @@
         }
       ],
       "brick": {
-        "type": "title_card",
-        "movie_id": 391,
-        "caption": "Bob Robertson · Johnny Wels · Dan Savio"
-      }
+        "type": "portraits",
+        "people": [
+          {
+            "person_id": 4385,
+            "caption": "credited as Bob Robertson"
+          },
+          {
+            "person_id": 14276,
+            "caption": "credited as Johnny Wels"
+          },
+          {
+            "person_id": 1259,
+            "caption": "credited as Dan Savio"
+          },
+          {
+            "person_id": 190,
+            "caption": "kept his name"
+          }
+        ]
+      },
+      "delivery": "Amused at the pseudonyms, like sharing gossip."
     },
     {
       "id": "b07d",
       "voice": "candide",
       "track": "performance",
-      "text": "Bob Robertson. Right.",
+      "text": "Bob Robertson. Oh, that's good.",
       "source": {
         "type": "none"
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Delighted, repeating the name as if tasting it."
     },
     {
       "id": "b08",
@@ -308,7 +521,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Conceding, then pressing the real question."
     },
     {
       "id": "b09",
@@ -342,7 +556,8 @@
         "copy": "fistful-4k",
         "timecode": "00:31:57",
         "caption": "“The Baxters on one side. The Rojos on the other.” (00:31:56)"
-      }
+      },
+      "delivery": "Brisk, laying the parallels out like cards on a table."
     },
     {
       "id": "b10",
@@ -363,8 +578,22 @@
         }
       ],
       "brick": {
-        "type": "hold"
-      }
+        "type": "split_frames",
+        "left": {
+          "movie_id": 11878,
+          "copy": "yojimbo-1080p",
+          "timecode": "00:19:58",
+          "caption": "Three of Ushitora's men"
+        },
+        "right": {
+          "movie_id": 391,
+          "copy": "fistful-4k",
+          "timecode": "00:15:26",
+          "caption": "Four of the Baxters' men"
+        },
+        "caption": "The demonstration"
+      },
+      "delivery": "Same rhythm, a little faster."
     },
     {
       "id": "b10a",
@@ -416,19 +645,21 @@
           "caption": "“My mistake. Four coffins.” (00:16:13)"
         },
         "caption": "The coffin count"
-      }
+      },
+      "delivery": "Build to the joke; a smile in the voice on 'better make that three'."
     },
     {
       "id": "b10b",
       "voice": "candide",
       "track": "performance",
-      "text": "Same joke, one more body.",
+      "text": "Ha. Same joke, one more body.",
       "source": {
         "type": "none"
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Quick, grinning."
     },
     {
       "id": "b10c",
@@ -440,7 +671,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Nod, then land the thesis: slow down on 'the whole film in one line'."
     },
     {
       "id": "b11",
@@ -452,7 +684,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Casual, almost offhand."
     },
     {
       "id": "b12",
@@ -493,7 +726,8 @@
         "copy": "yojimbo-1080p",
         "timecode": "00:24:24",
         "caption": "“Sanjuro Kuwabatake... (30-year-old Mulberry Field)” (00:24:23)"
-      }
+      },
+      "delivery": "Enjoy the invention of the name; a pause before 'thirty years old'."
     },
     {
       "id": "b13",
@@ -510,11 +744,41 @@
           "type": "fiche",
           "ref": "movies/391",
           "segment": "Plot"
+        },
+        {
+          "type": "subtitle",
+          "movie_id": 11878,
+          "copy": "yojimbo-1080p",
+          "timecode": "00:21:03",
+          "line": "Twenty-five in advance, with room and board."
+        },
+        {
+          "type": "subtitle",
+          "movie_id": 391,
+          "copy": "fistful-4k",
+          "timecode": "00:16:42",
+          "line": "The rest when you're all done."
         }
       ],
       "brick": {
-        "type": "hold"
-      }
+        "type": "split_frames",
+        "left": {
+          "movie_id": 11878,
+          "copy": "yojimbo-1080p",
+          "timecode": "00:21:03",
+          "caption": "“Twenty-five in advance, with room and board.” (00:21:03)",
+          "type": "quoted_frame"
+        },
+        "right": {
+          "movie_id": 391,
+          "copy": "fistful-4k",
+          "timecode": "00:16:42",
+          "caption": "“The rest when you're all done.” (00:16:42)",
+          "type": "quoted_frame"
+        },
+        "caption": "Hired by both sides"
+      },
+      "delivery": "Even, listing, a light stress on each parallel."
     },
     {
       "id": "b13a",
@@ -564,7 +828,8 @@
           "caption": "“Marisol!” (00:48:59)"
         },
         "caption": "Two names called"
-      }
+      },
+      "delivery": "Narrative, warm, a touch of pity for the husband."
     },
     {
       "id": "b13b",
@@ -583,23 +848,82 @@
           "ref": "movies/391",
           "segment": "Plot",
           "quote": "the Stranger kills the guards, frees Marisol, and wrecks the house where she was held to create the appearance of an attack by the Baxters. He gives money to Marisol and urges her family to leave town."
+        },
+        {
+          "type": "subtitle",
+          "movie_id": 11878,
+          "copy": "yojimbo-1080p",
+          "timecode": "01:08:53",
+          "line": "Here's 30 ryo. I stole it from Ushitora."
+        },
+        {
+          "type": "subtitle",
+          "movie_id": 391,
+          "copy": "fistful-4k",
+          "timecode": "00:52:45",
+          "line": "Go. Go to him, Marisol."
         }
       ],
       "brick": {
-        "type": "hold"
-      }
+        "type": "split_frames",
+        "left": {
+          "movie_id": 11878,
+          "copy": "yojimbo-1080p",
+          "timecode": "01:08:53",
+          "caption": "“Here's 30 ryo. I stole it from Ushitora.” (01:08:53)",
+          "type": "quoted_frame"
+        },
+        "right": {
+          "movie_id": 391,
+          "copy": "fistful-4k",
+          "timecode": "00:52:45",
+          "caption": "“Go. Go to him, Marisol.” (00:52:45)",
+          "type": "quoted_frame"
+        },
+        "caption": "The good deed"
+      },
+      "delivery": "Narrative, then conspiratorial on Leone's touch."
     },
     {
       "id": "b13c",
       "voice": "candide",
       "track": "performance",
-      "text": "And he gets caught.",
-      "source": {
-        "type": "none"
-      },
+      "text": "And he gets caught, right?",
+      "source": [
+        {
+          "type": "subtitle",
+          "movie_id": 11878,
+          "copy": "yojimbo-1080p",
+          "timecode": "01:19:48",
+          "line": "This is the gate to hell."
+        },
+        {
+          "type": "subtitle",
+          "movie_id": 391,
+          "copy": "fistful-4k",
+          "timecode": "01:09:34",
+          "line": "You are behaving like a stubborn idiot."
+        }
+      ],
       "brick": {
-        "type": "hold"
-      }
+        "type": "split_frames",
+        "left": {
+          "movie_id": 11878,
+          "copy": "yojimbo-1080p",
+          "timecode": "01:19:48",
+          "caption": "“This is the gate to hell.” (01:19:48)",
+          "type": "quoted_frame"
+        },
+        "right": {
+          "movie_id": 391,
+          "copy": "fistful-4k",
+          "timecode": "01:09:34",
+          "caption": "“You are behaving like a stubborn idiot.” (01:09:34)",
+          "type": "quoted_frame"
+        },
+        "caption": "Caught"
+      },
+      "delivery": "Short, expecting the answer."
     },
     {
       "id": "b13d",
@@ -624,11 +948,41 @@
           "ref": "movies/391",
           "segment": "Plot",
           "quote": "With help from the local coffinmaker named Piripero, the Stranger escapes town by hiding in a coffin, and recuperates in an abandoned mine."
+        },
+        {
+          "type": "subtitle",
+          "movie_id": 11878,
+          "copy": "yojimbo-1080p",
+          "timecode": "01:30:01",
+          "line": "I know I'm quite a sight, but could you do your staring later?"
+        },
+        {
+          "type": "subtitle",
+          "movie_id": 391,
+          "copy": "fistful-4k",
+          "timecode": "01:18:12",
+          "line": "But you're not dead yet."
         }
       ],
       "brick": {
-        "type": "hold"
-      }
+        "type": "split_frames",
+        "left": {
+          "movie_id": 11878,
+          "copy": "yojimbo-1080p",
+          "timecode": "01:30:01",
+          "caption": "“I know I'm quite a sight, but could you do your staring later?” (01:30:01)",
+          "type": "quoted_frame"
+        },
+        "right": {
+          "movie_id": 391,
+          "copy": "fistful-4k",
+          "timecode": "01:18:12",
+          "caption": "“But you're not dead yet.” (01:18:12)",
+          "type": "quoted_frame"
+        },
+        "caption": "Out in a coffin"
+      },
+      "delivery": "Darker and slower on the torture, relief on the escape."
     },
     {
       "id": "b13e",
@@ -662,7 +1016,8 @@
         "copy": "yojimbo-1080p",
         "timecode": "01:40:42",
         "caption": "“It's me! Gonji's in trouble!” (01:40:41)"
-      }
+      },
+      "delivery": "Urgent on the innkeeper's capture."
     },
     {
       "id": "b14",
@@ -674,7 +1029,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Smug, teasing, wrapping it up."
     },
     {
       "id": "b15",
@@ -691,11 +1047,33 @@
           "type": "fiche",
           "ref": "movies/391",
           "segment": "Plot"
+        },
+        {
+          "type": "subtitle",
+          "movie_id": 391,
+          "copy": "fistful-4k",
+          "timecode": "01:24:06",
+          "line": "Murderers! I hope you rot in hell!"
         }
       ],
       "brick": {
-        "type": "hold"
-      }
+        "type": "split_frames",
+        "left": {
+          "movie_id": 11878,
+          "copy": "yojimbo-1080p",
+          "timecode": "01:48:55",
+          "caption": "Tazaemon, the mayor, gone mad"
+        },
+        "right": {
+          "movie_id": 391,
+          "copy": "fistful-4k",
+          "timecode": "01:24:06",
+          "caption": "“Murderers! I hope you rot in hell!” (01:24:06)",
+          "type": "quoted_frame"
+        },
+        "caption": "What Leone drops, what he adds"
+      },
+      "delivery": "Gently contradicting: 'Not quite' with a smile, then precise."
     },
     {
       "id": "b15a",
@@ -707,7 +1085,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Curious, a little impatient."
     },
     {
       "id": "b15b",
@@ -736,12 +1115,13 @@
         }
       ],
       "brick": {
-        "type": "quoted_frame",
+        "type": "frame",
         "movie_id": 11878,
         "copy": "yojimbo-1080p",
-        "timecode": "00:31:47",
-        "caption": "“An inspector from Edo is coming!” (00:31:46)"
-      }
+        "timecode": "00:32:35",
+        "caption": "Sanjuro on the watchtower, waiting for the massacre"
+      },
+      "delivery": "Explain the mechanism with pleasure, like a good plot twist."
     },
     {
       "id": "b15c",
@@ -761,11 +1141,23 @@
           "copy": "fistful-4k",
           "timecode": "00:39:08",
           "line": "Two of those soldiers got away. They are hiding out in the cemetery."
+        },
+        {
+          "type": "subtitle",
+          "movie_id": 391,
+          "copy": "fistful-4k",
+          "timecode": "00:42:28",
+          "line": "Too still to be wounded. More like dummies."
         }
       ],
       "brick": {
-        "type": "hold"
-      }
+        "movie_id": 391,
+        "copy": "fistful-4k",
+        "timecode": "00:42:28",
+        "caption": "“Too still to be wounded. More like dummies.” (00:42:28)",
+        "type": "quoted_frame"
+      },
+      "delivery": "Relish the swindle."
     },
     {
       "id": "b15d",
@@ -787,20 +1179,53 @@
         }
       ],
       "brick": {
-        "type": "hold"
-      }
+        "type": "split_frames",
+        "left": {
+          "movie_id": 11878,
+          "copy": "yojimbo-1080p",
+          "timecode": "01:49:50",
+          "caption": "The farmer's son sent home"
+        },
+        "right": {
+          "movie_id": 391,
+          "copy": "fistful-4k",
+          "timecode": "01:37:02",
+          "exact": true,
+          "caption": "Esteban's shotgun at the shutter"
+        },
+        "caption": "The last gestures"
+      },
+      "delivery": "Grave on the endings; the last sentence sharp."
     },
     {
       "id": "b16",
       "voice": "candide",
       "track": "performance",
-      "text": "The steel plate. That is the scene everyone remembers.",
-      "source": {
-        "type": "none"
-      },
+      "text": "The steel plate! That is the scene everyone remembers.",
+      "source": [
+        {
+          "type": "subtitle",
+          "movie_id": 391,
+          "copy": "fistful-4k",
+          "timecode": "01:34:49",
+          "line": "When a man with a .45 meets a man with a rifle,"
+        },
+        {
+          "type": "subtitle",
+          "movie_id": 391,
+          "copy": "fistful-4k",
+          "timecode": "01:34:53",
+          "line": "you said the man with the pistol's a dead man."
+        }
+      ],
       "brick": {
-        "type": "hold"
-      }
+        "movie_id": 391,
+        "copy": "fistful-4k",
+        "timecode": "01:34:49",
+        "caption": "“When a man with a .45 meets a man with a rifle, you said the man with the pistol's a dead man.” (01:34:49)",
+        "type": "quoted_frame"
+      },
+      "delivery": "Excited, like recognizing a favorite scene."
     },
     {
       "id": "b17",
@@ -832,7 +1257,8 @@
         "copy": "fistful-4k",
         "timecode": "00:58:27",
         "caption": "“When you want to kill a man, you must shoot for his heart.” (00:58:26)"
-      }
+      },
+      "delivery": "Admiring; read Ramón's words as a line of dialogue."
     },
     {
       "id": "b17a",
@@ -844,7 +1270,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Change of subject, decisive."
     },
     {
       "id": "b17b",
@@ -877,7 +1304,8 @@
         "copy": "fistful-4k",
         "timecode": "00:14:55",
         "caption": "The close-up as aria"
-      }
+      },
+      "delivery": "Enthusiastic about the style; 'arias' with a flourish."
     },
     {
       "id": "b17c",
@@ -908,7 +1336,8 @@
         "type": "quote_card",
         "text": "More than an actor, I needed a mask.",
         "attribution": "Sergio Leone on Clint Eastwood"
-      }
+      },
+      "delivery": "Amused at the costume story; Leone's words read as a quotation."
     },
     {
       "id": "b17d",
@@ -920,7 +1349,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Playful, the theme in the back of the mind."
     },
     {
       "id": "b17e",
@@ -951,7 +1381,8 @@
         "type": "quote_card",
         "text": "He often kept the scenes longer simply because he didn't want the music to end.",
         "attribution": "Ennio Morricone on Sergio Leone"
-      }
+      },
+      "delivery": "A music lover telling a backstage story."
     },
     {
       "id": "b17f",
@@ -966,7 +1397,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Mildly scandalized, enjoying the quarrel."
     },
     {
       "id": "b17g",
@@ -997,19 +1429,21 @@
         "type": "quote_card",
         "text": "The sound of his mind, discordant and undefeated and unserious.",
         "attribution": "Michael Wood on Masaru Sato's score, London Review of Books"
-      }
+      },
+      "delivery": "Gentle, appreciative; read the Wood quotation slowly."
     },
     {
       "id": "b18",
       "voice": "candide",
       "track": "performance",
-      "text": "Now the part I do not get. Kurosawa says it is my film. Where did Kurosawa get it?",
+      "text": "Okay, now the part I don't get. Kurosawa says it is my film. So where did Kurosawa get it?",
       "source": {
         "type": "none"
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Puzzled, sincere."
     },
     {
       "id": "b19",
@@ -1023,10 +1457,16 @@
         "quote": "Kurosawa stated that a major source for the plot was the 1942 film noir classic The Glass Key, an adaptation of Dashiell Hammett's 1931 novel of the same name."
       },
       "brick": {
-        "type": "title_card",
-        "source_work_id": 6848,
-        "caption": "Red Harvest, Dashiell Hammett, 1929"
-      }
+        "type": "poster_wall",
+        "items": [
+          {
+            "kind": "movie",
+            "id": 17131
+          }
+        ],
+        "caption": "Kurosawa named The Glass Key, 1942"
+      },
+      "delivery": "Patient, precise, like opening a dossier."
     },
     {
       "id": "b20",
@@ -1053,7 +1493,8 @@
       ],
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "A 'but' that opens a door; curious yourself."
     },
     {
       "id": "b20a",
@@ -1065,7 +1506,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Honest, a little sheepish."
     },
     {
       "id": "b20b",
@@ -1102,7 +1544,8 @@
         "type": "title_card",
         "source_work_id": 6848,
         "caption": "Black Mask, November 1927: The Cleansing of Poisonville"
-      }
+      },
+      "delivery": "Pulp energy: fast, vivid, enjoying the body count."
     },
     {
       "id": "b20c",
@@ -1139,7 +1582,8 @@
         "type": "quote_card",
         "text": "The last word in atrocity, cynicism, and horror.",
         "attribution": "André Gide on Red Harvest"
-      }
+      },
+      "delivery": "Admiring; the Gide and Time verdicts read as verdicts."
     },
     {
       "id": "b20d",
@@ -1174,19 +1618,21 @@
       ],
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "A list with momentum, each descendant a small surprise."
     },
     {
       "id": "b20e",
       "voice": "candide",
       "track": "performance",
-      "text": "So nobody has filmed the book itself.",
+      "text": "Wait, so nobody has filmed the book itself?",
       "source": {
         "type": "none"
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Surprised, almost indignant."
     },
     {
       "id": "b20f",
@@ -1201,7 +1647,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Calm, a little wistful on 'nearly a century'."
     },
     {
       "id": "b21",
@@ -1213,7 +1660,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Pleased with the formula."
     },
     {
       "id": "b22",
@@ -1225,7 +1673,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Reassuring, conclusive."
     },
     {
       "id": "b23",
@@ -1250,7 +1699,8 @@
         "type": "quote_card",
         "text": "I was really taking the story back home again.",
         "attribution": "Sergio Leone"
-      }
+      },
+      "delivery": "Enjoy Leone's cheek; Goldoni with a flourish."
     },
     {
       "id": "b23a",
@@ -1265,19 +1715,21 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Light and quick, like adding footnotes."
     },
     {
       "id": "b24",
       "voice": "candide",
       "track": "performance",
-      "text": "Cheeky. Give me one line that is pure Leone, then.",
+      "text": "Cheeky. Okay, give me one line that is pure Leone.",
       "source": {
         "type": "none"
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Grinning, challenging."
     },
     {
       "id": "b25",
@@ -1304,7 +1756,8 @@
         "copy": "fistful-4k",
         "timecode": "00:14:55",
         "caption": "“You see, my mule don't like people laughing.” (00:14:53)"
-      }
+      },
+      "delivery": "Build the scene beat by beat, a pause before the punchline."
     },
     {
       "id": "b26",
@@ -1316,7 +1769,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Curious, a bit protective of Eastwood."
     },
     {
       "id": "b27",
@@ -1330,8 +1784,15 @@
         "quote": "A few years later, after someone handed him the script for A Fistful of Dollars, \"about five or 10 pages in\" he \"recognized it as an obvious rip-off\" of Yojimbo, which he found ironic."
       },
       "brick": {
-        "type": "hold"
-      }
+        "type": "portraits",
+        "people": [
+          {
+            "person_id": 190,
+            "caption": "a theater on Western Avenue, Los Angeles"
+          }
+        ]
+      },
+      "delivery": "Fond, storytelling; enjoy 'ironic'."
     },
     {
       "id": "b27a",
@@ -1343,7 +1804,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Surprised."
     },
     {
       "id": "b27b",
@@ -1365,8 +1827,24 @@
         }
       ],
       "brick": {
-        "type": "hold"
-      }
+        "type": "portraits",
+        "people": [
+          {
+            "person_id": 4958,
+            "caption": "Leone's first choice"
+          },
+          {
+            "person_id": 4960,
+            "caption": "the script was bad"
+          },
+          {
+            "person_id": 5563,
+            "caption": "too expensive"
+          }
+        ],
+        "caption": "All turned it down"
+      },
+      "delivery": "Rattle off the list with amusement, then the twist about Once Upon a Time in the West."
     },
     {
       "id": "b27c",
@@ -1391,7 +1869,8 @@
         "type": "quote_card",
         "text": "Maybe my greatest contribution to cinema was not doing A Fistful of Dollars and recommending Clint for the part.",
         "attribution": "Richard Harrison"
-      }
+      },
+      "delivery": "Anecdotal; the quotations as quotations, Eastwood's reason with a smile."
     },
     {
       "id": "b27d",
@@ -1403,7 +1882,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Amused, practical."
     },
     {
       "id": "b27e",
@@ -1431,8 +1911,23 @@
         }
       ],
       "brick": {
-        "type": "hold"
-      }
+        "type": "portraits",
+        "people": [
+          {
+            "person_id": 4385,
+            "caption": "no English"
+          },
+          {
+            "person_id": 4661,
+            "caption": "the interpreter, uncredited"
+          },
+          {
+            "person_id": 190,
+            "caption": "no Italian"
+          }
+        ]
+      },
+      "delivery": "Backstage story; relish 'sinister'."
     },
     {
       "id": "b27f",
@@ -1444,7 +1939,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Eager."
     },
     {
       "id": "b27g",
@@ -1477,7 +1973,8 @@
         "copy": "yojimbo-1080p",
         "timecode": "00:24:24",
         "caption": "Mifune, on set at six every morning"
-      }
+      },
+      "delivery": "Affectionate, a chuckle at 'six every morning'."
     },
     {
       "id": "b28",
@@ -1489,7 +1986,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Skeptical."
     },
     {
       "id": "b29",
@@ -1502,8 +2000,32 @@
         "segment": "Development"
       },
       "brick": {
-        "type": "hold"
-      }
+        "type": "portraits",
+        "people": [
+          {
+            "person_id": 57639,
+            "caption": "claims a share"
+          },
+          {
+            "person_id": 67954,
+            "caption": "claims a share"
+          },
+          {
+            "person_id": 99511,
+            "caption": "claims a share"
+          },
+          {
+            "person_id": 49892,
+            "caption": "claims a share"
+          },
+          {
+            "person_id": 4385,
+            "caption": "the whole screenplay himself"
+          }
+        ],
+        "caption": "Who wrote it"
+      },
+      "delivery": "A shrug in the voice; list the names evenly."
     },
     {
       "id": "b30",
@@ -1515,7 +2037,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Curious."
     },
     {
       "id": "b31",
@@ -1546,7 +2069,8 @@
         "type": "quote_card",
         "text": "He is a morbid, amusing, campy fraud.",
         "attribution": "Bosley Crowther, The New York Times, 1967"
-      }
+      },
+      "delivery": "Dry on the delay; read Crowther with mock severity."
     },
     {
       "id": "b31a",
@@ -1561,7 +2085,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Brighter, quoting the praise."
     },
     {
       "id": "b31b",
@@ -1584,7 +2109,8 @@
       ],
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Amused at the television fix."
     },
     {
       "id": "b31c",
@@ -1596,7 +2122,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Curious, same tone."
     },
     {
       "id": "b31d",
@@ -1631,7 +2158,8 @@
       ],
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Deadpan on the bathroom."
     },
     {
       "id": "b31e",
@@ -1672,19 +2200,21 @@
       ],
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Satisfied, like closing a ledger."
     },
     {
       "id": "b32",
       "voice": "candide",
       "track": "performance",
-      "text": "Ouch. Did anyone learn the lesson?",
+      "text": "Ouch. Did anyone ever learn the lesson?",
       "source": {
         "type": "none"
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Wincing, then curious."
     },
     {
       "id": "b33",
@@ -1698,8 +2228,16 @@
         "quote": "Last Man Standing (1996), a Prohibition-era action film directed by Walter Hill and starring Bruce Willis, is an official remake of Yojimbo: both Kikushima and Kurosawa specifically listed in this movie's credits as having provided the original story."
       },
       "brick": {
-        "type": "hold"
-      }
+        "type": "poster_wall",
+        "items": [
+          {
+            "kind": "movie",
+            "id": 9333
+          }
+        ],
+        "caption": "Kurosawa and Kikushima in the credits"
+      },
+      "delivery": "Precise, a little triumphant on 'official'."
     },
     {
       "id": "b33a",
@@ -1739,8 +2277,35 @@
         }
       ],
       "brick": {
-        "type": "hold"
-      }
+        "type": "poster_wall",
+        "items": [
+          {
+            "kind": "movie",
+            "id": 10772
+          },
+          {
+            "kind": "movie",
+            "id": 46500
+          },
+          {
+            "kind": "movie",
+            "id": 10908
+          },
+          {
+            "kind": "movie",
+            "id": 709
+          },
+          {
+            "kind": "movie",
+            "id": 619
+          },
+          {
+            "kind": "tv",
+            "id": 73107
+          }
+        ]
+      },
+      "delivery": "Momentum, enjoy each title, a laugh on 'kinda just did Yojimbo'."
     },
     {
       "id": "b33b",
@@ -1774,8 +2339,27 @@
         }
       ],
       "brick": {
-        "type": "hold"
-      }
+        "type": "poster_wall",
+        "items": [
+          {
+            "kind": "movie",
+            "id": 11
+          },
+          {
+            "kind": "movie",
+            "id": 181808
+          },
+          {
+            "kind": "tv",
+            "id": 2723
+          },
+          {
+            "kind": "movie",
+            "id": 11712
+          }
+        ]
+      },
+      "delivery": "Light and quick; a tender note on the camellias."
     },
     {
       "id": "b33c",
@@ -1787,7 +2371,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Playful."
     },
     {
       "id": "b33d",
@@ -1801,13 +2386,16 @@
         "quote": "Crate and Barrel plan to see a double bill of Yojimbo and A Fistful of Dollars which they describe as Red Harvest adaptations"
       },
       "brick": {
-        "type": "title_card",
-        "movie_id": [
-          11878,
-          391
+        "type": "poster_wall",
+        "items": [
+          {
+            "kind": "tv",
+            "id": 60585
+          }
         ],
-        "caption": "Bosch, season 5, episode 19: a double bill"
-      }
+        "caption": "Season 5, episode 19"
+      },
+      "delivery": "Delighted at the detail."
     },
     {
       "id": "b33e",
@@ -1819,7 +2407,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Conclusive, amused."
     },
     {
       "id": "b34",
@@ -1833,10 +2422,23 @@
         "quote": "For the role of the Op he considered Robert Redford, Jack Nicholson (who had played a hard-boiled detective in Roman Polanski's neo-noir film Chinatown), and Clint Eastwood (who had played the Op-inspired \"Man with No Name\" in Sergio Leone's Dollars Trilogy)."
       },
       "brick": {
-        "type": "title_card",
-        "source_work_id": 6848,
-        "caption": "Bertolucci's Red Harvest, never made"
-      }
+        "type": "portraits",
+        "people": [
+          {
+            "person_id": 4956,
+            "caption": "his own Red Harvest, early 1970s"
+          },
+          {
+            "person_id": 190,
+            "caption": "asked to play the Op"
+          },
+          {
+            "person_id": 5165,
+            "caption": "the author"
+          }
+        ]
+      },
+      "delivery": "Slow down: this is the closing loop."
     },
     {
       "id": "b35",
@@ -1848,7 +2450,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Savor the paradox, slowly."
     },
     {
       "id": "b36",
@@ -1917,7 +2520,8 @@
         },
         "caption": "Two farewells"
       },
-      "pause_after_ms": 800
+      "pause_after_ms": 800,
+      "delivery": "Elegiac, measured; the two numbers like an epitaph."
     },
     {
       "id": "b37",
@@ -1929,7 +2533,8 @@
       },
       "brick": {
         "type": "hold"
-      }
+      },
+      "delivery": "Soft, the last question."
     },
     {
       "id": "b38",
@@ -1944,7 +2549,8 @@
         "text": "It is a very fine film, but it is my film.",
         "attribution": "Akira Kurosawa"
       },
-      "pause_after_ms": 1500
+      "pause_after_ms": 1500,
+      "delivery": "Final word: calm, warm, a smile on the steel plate."
     }
   ]
 }
