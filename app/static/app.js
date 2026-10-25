@@ -7129,37 +7129,87 @@ function syncQuestionInputUi() {
   window.setTimeout(updateSessionButtons, 0);
 }
 
+// VOICE-AGENT-236: a transient gateway failure (Cloudflare 502/503/504, or any HTML error page
+// served in place of JSON) is retried silently a few times before the user ever sees it. The raw
+// HTML body is never surfaced: on exhaustion we throw a short, clean message, not the
+// <!DOCTYPE html> Cloudflare page that used to land in the subtitle as "Text error".
+const TEXT_CHAT_MAX_RETRIES = 2;
+const TEXT_CHAT_RETRY_BASE_MS = 600;
+
+function isTransientGatewayStatus(status) {
+  // 502/503/504 are the classic proxy failures; 52x are Cloudflare's own origin-unreachable codes.
+  return status === 502 || status === 503 || status === 504 || (status >= 520 && status <= 526);
+}
+
+function looksLikeHtmlBody(rawBody) {
+  const head = String(rawBody || "").slice(0, 200).toLowerCase();
+  return head.includes("<!doctype html") || head.includes("<html");
+}
+
 async function callTextChat(message, signal, { imageRef = "" } = {}) {
   // VOICE-AGENT-118: /text-chat is a JSON POST, so the persona slug rides in the body (the
   // voice path puts it on the /session query string instead). Omitted when unset.
   const soul = soulPreference();
-  const response = await fetch(appUrl("text-chat"), {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    signal,
-    body: JSON.stringify({
-      message,
-      context: retainedContext.slice(-maxContextItems),
-      ...(soul ? { soul } : {}),
-      // VOICE-AGENT-158: a filename, never bytes. It is what makes a second question about the
-      // same photo free — the API recognizes the fingerprint and skips the reading — and what
-      // keeps the request JSON, so one endpoint serves a text question and a picture question.
-      ...(imageRef ? { image_ref: imageRef } : {}),
-    }),
+  const requestBody = JSON.stringify({
+    message,
+    context: retainedContext.slice(-maxContextItems),
+    ...(soul ? { soul } : {}),
+    // VOICE-AGENT-158: a filename, never bytes. It is what makes a second question about the
+    // same photo free, the API recognizes the fingerprint and skips the reading, and what
+    // keeps the request JSON, so one endpoint serves a text question and a picture question.
+    ...(imageRef ? { image_ref: imageRef } : {}),
   });
 
-  const rawBody = await response.text();
-  let body;
-  try {
-    body = JSON.parse(rawBody);
-  } catch {
-    body = { text: rawBody };
+  let lastStatus = 0;
+  for (let attempt = 0; attempt <= TEXT_CHAT_MAX_RETRIES; attempt += 1) {
+    const response = await fetch(appUrl("text-chat"), {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal,
+      body: requestBody,
+    });
+
+    const rawBody = await response.text();
+    let body;
+    try {
+      body = JSON.parse(rawBody);
+    } catch {
+      body = { text: rawBody };
+    }
+
+    if (response.ok) {
+      return body;
+    }
+
+    lastStatus = response.status;
+    // A 4xx or a well-formed JSON error is the server speaking on purpose: surface it unchanged,
+    // as before. Only a gateway status or a non-JSON HTML page is treated as transient.
+    const transient = isTransientGatewayStatus(response.status) || looksLikeHtmlBody(rawBody);
+    if (!transient) {
+      throw new Error(JSON.stringify(body));
+    }
+    if (attempt >= TEXT_CHAT_MAX_RETRIES || (signal && signal.aborted)) {
+      break;
+    }
+    clientLog(
+      "text_chat_retry",
+      {
+        source: "text-chat",
+        status: response.status,
+        attempt: attempt + 1,
+        ...(imageRef ? { image_ref: imageRef } : {}),
+      },
+      "warn",
+    );
+    // Linear backoff (0.6s, 1.2s): the origin was just restarting, a brief pause is enough.
+    await delay(TEXT_CHAT_RETRY_BASE_MS * (attempt + 1));
   }
 
-  if (!response.ok) {
-    throw new Error(JSON.stringify(body));
-  }
-  return body;
+  // Retries exhausted on a transient gateway failure. A clean message, never the HTML page.
+  const gatewayError = new Error("the movie service is briefly unavailable, please try again");
+  gatewayError.code = "gateway_unavailable";
+  gatewayError.status = lastStatus;
+  throw gatewayError;
 }
 
 async function callAudioTranscription(audioBlob, signal) {
