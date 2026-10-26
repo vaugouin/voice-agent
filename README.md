@@ -6,7 +6,7 @@ The app serves a minimal web UI on port `3000`. The browser creates an `RTCPeerC
 
 ## Features
 
-- OpenAI Realtime WebRTC call setup with `OPENAI_REALTIME_MODEL`, defaulting to `gpt-realtime-2`.
+- OpenAI Realtime WebRTC call setup with `OPENAI_REALTIME_MODEL`, defaulting to `gpt-realtime-2.1`.
 - Server-side `/session` endpoint using `OPENAI_API_KEY`.
 - Multipart call creation against `https://api.openai.com/v1/realtime/calls` with string fields named `sdp` and `session`.
 - Browser microphone input and model audio output through `RTCPeerConnection`.
@@ -63,7 +63,7 @@ Create `.env` from `.env.example`:
 ```text
 OPENAI_API_KEY=sk-your-key-here
 OPENAI_TEXT_MODEL=gpt-6-sol
-OPENAI_REALTIME_MODEL=gpt-realtime-2
+OPENAI_REALTIME_MODEL=gpt-realtime-2.1
 OPENAI_TRANSCRIPTION_MODEL=gpt-transcribe
 ENABLE_STRUCTURED_CARD_FOCUS=true
 ENABLE_SPOKEN_SUBTITLES=false
@@ -219,7 +219,7 @@ In other words, the model does the planning and tool selection, while the browse
 
 The server creates a session with:
 
-- model: `OPENAI_REALTIME_MODEL`, default `gpt-realtime-2`
+- model: `OPENAI_REALTIME_MODEL`, default `gpt-realtime-2.1`
 - voice: selected server-side by `AGENT_VOICE` (currently `shimmer`; falls back to `ash` if unset)
 - input transcription: `gpt-transcribe` (`gpt-4o-transcribe` until 1.2.1; OpenAI shuts it off on 2027-02-26), **language auto-detected** between the `TRANSCRIPTION_LANGUAGES` hint (`en,fr` by default) and biased with a domain lexicon
   - The session no longer pins the spoken language. Set `REALTIME_TRANSCRIPTION_LANGUAGE=en` (or any language code) to pin it again; leave it empty, the default, for auto-detection. Pinning is not neutral when the wrong language is spoken: a transcriber locked on English does not degrade, it returns a fluent and wrong English-shaped sentence, so a bilingual demo needs the empty value.

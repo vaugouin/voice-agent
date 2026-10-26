@@ -261,7 +261,7 @@ REALTIME_VOICES = {
     "cedar",
 }
 DEFAULT_REALTIME_VOICE = "ash"
-DEFAULT_REALTIME_MODEL = "gpt-realtime-2"
+DEFAULT_REALTIME_MODEL = "gpt-realtime-2.1"
 # LLM-TASKS-009: gpt-4o-transcribe is shut off by OpenAI on 2027-02-26. gpt-transcribe serves
 # both paths (the Realtime session block and the /audio/transcriptions file endpoint), which
 # gpt-live-transcribe does not: it is offered on Realtime transcription only.
