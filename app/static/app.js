@@ -8041,7 +8041,11 @@ function cancelAssistantOutput(reason = "cancelled") {
   clearSubtitleOutput();
   cancelTextChatOutput(reason);
   cancelRealtimeOutput(reason);
-  clearRemoteAudioOutput();
+  // VOICE-AGENT-207 regression: do NOT clearRemoteAudioOutput() here. That stops the live inbound
+  // WebRTC track and nulls remoteAudio.srcObject, which pc.ontrack sets only once per connection,
+  // so the session voice stays dead for good. Opening a trailer (and any other cancel) then muted
+  // the app until reconnect. Cutting the current utterance is handled by output_audio_buffer.clear
+  // in cancelRealtimeOutput(); the sink teardown belongs only in cleanupConnection().
 }
 
 function cleanupConnection() {
