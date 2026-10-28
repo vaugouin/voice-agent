@@ -1715,7 +1715,16 @@ RESULT_COUNT_INSTRUCTIONS = (
     "selection…', 'among the top matches…') or say there are at least that many. Only "
     "state an exact total when has_more is false AND it is page 1, so the whole result "
     "set fits on one page; then result_count is the true total. Never present the "
-    "first-page count as the definitive number of results."
+    "first-page count as the definitive number of results. "
+    # VOICE-AGENT-240: do not walk pages to "complete" a listing. The screen shows the
+    # first page and the user pages through it; calling page 2, 3, ... on your own only
+    # repaints the grid to the LAST page fetched, out of sync with what you say (measured
+    # on "list movies in the sight and sound list", 2026-10-26: the screen stopped on
+    # offset 100 while the answer described the top of the list).
+    "For a listing or any on-screen result set, call query_text2sql ONCE, with page 1, and "
+    "let the user ask for more: do NOT request page 2, 3, ... yourself to enumerate or "
+    "complete a list. Only pass a higher page when the user explicitly asks to see more "
+    "results."
 )
 
 # VOICE-AGENT-093. A query_text2sql result may carry a `name_ambiguity` object
@@ -2532,7 +2541,12 @@ def text_tool_definitions() -> list[dict[str, Any]]:
                     },
                     "page": {
                         "type": "integer",
-                        "description": "Result page number. Use 1 for a new query.",
+                        "description": (
+                            "Result page number, almost always 1. Use 1 for a new query "
+                            "and for any listing. Only pass a higher page when the user "
+                            "explicitly asks to see more results; never walk pages on your "
+                            "own to enumerate or complete a list (VOICE-AGENT-240)."
+                        ),
                     },
                     "question_hashed": {
                         "type": "string",
