@@ -5687,6 +5687,24 @@ function renderEntityDetailOutput(output, args = {}, { skipHistory = false } = {
   }
 }
 
+// VOICE-AGENT-241: true when `output` continues the search already on screen, i.e. the
+// SAME question (same question_hashed, or same query text when the hash is absent) at a
+// later page, so its rows must be appended to the current grid, not replace it. A new
+// query or a page-1 re-run returns false and still replaces.
+function isSearchContinuationPage(output, upstream, args) {
+  if (!currentSearchState) return false;
+  if (!resultsContent.querySelector(".search-poster-card-grid")) return false;
+  const page = Number(output.page || upstream.page || args.page || 1);
+  if (!(page > (Number(currentSearchState.page) || 1))) return false;
+  const hash = output.question_hashed || upstream.question_hashed || args.question_hashed || "";
+  if (hash && currentSearchState.question_hashed) {
+    return hash === currentSearchState.question_hashed;
+  }
+  const incoming = (args.query || upstream.question || "").trim().toLowerCase();
+  const current = (currentSearchState.query || "").trim().toLowerCase();
+  return Boolean(incoming) && incoming === current;
+}
+
 async function renderText2SqlResult(output, args, { append = false, skipHistory = false } = {}) {
   dismissLaunchShowcase();
   setConversationActive(true);
@@ -5704,6 +5722,15 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
     : Array.isArray(output.rows)
       ? output.rows
       : [];
+  // VOICE-AGENT-241: when the model walks pages of the same query in one turn (it re-sends
+  // the same question_hashed with an increasing page), each render defaults to append=false
+  // and repaints the grid, so the screen ends on the LAST page fetched (the Sight & Sound
+  // list stopped on offset 100, 2026-10-26) while the spoken/written answer describes the
+  // first. Stack those continuation pages instead of replacing. The Load more button passes
+  // append=true explicitly and is untouched.
+  if (!append && isSearchContinuationPage(output, upstream, args)) {
+    append = true;
+  }
   const outputSignature = searchPageSignature(output, args, upstream, rows);
   if (!append && isSameRenderedPageView(outputSignature)) {
     resultsPanel.hidden = false;
