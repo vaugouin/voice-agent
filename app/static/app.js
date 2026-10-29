@@ -3018,6 +3018,276 @@ function appendAggregateCard(grid, record) {
   }
 }
 
+// VOICE-AGENT-243 / -244: render a result from the API representation hint
+// (FASTAPI-TEXT2SQL-349). The unit comes from the typed column metadata, never guessed from
+// the column name, which is why formatScalarValue (its TOTAL_* -> USD rule prints a runtime as
+// "$1,178") is not used here. A shape no renderer recognises degrades to a table, never to the
+// empty "Result" page.
+function formatMinutes(value) {
+  const total = Math.round(value);
+  const minutes = new Intl.NumberFormat("en-US").format(total);
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  const hm = h > 0 ? `${h} h ${String(m).padStart(2, "0")}` : `${m} min`;
+  return `${minutes} min · ${hm}`;
+}
+
+function formatMetric(value, unit) {
+  if (value === null || value === undefined || String(value).trim() === "") {
+    return "";
+  }
+  const number = Number(value);
+  if (!Number.isFinite(number) || String(value).trim() === "") {
+    return String(value);
+  }
+  switch (unit) {
+    case "usd":
+      return new Intl.NumberFormat("en-US", {
+        style: "currency",
+        currency: "USD",
+        maximumFractionDigits: 0,
+      }).format(number);
+    case "minutes":
+      return formatMinutes(number);
+    case "years":
+      return `${new Intl.NumberFormat("en-US").format(number)} ${number === 1 ? uiText("year", "an") : uiText("years", "ans")}`;
+    case "count":
+      return new Intl.NumberFormat("en-US").format(Math.round(number));
+    case "ratio":
+      return `×${number.toFixed(number % 1 === 0 ? 0 : 1)}`;
+    default:
+      // No/unknown unit: a neutral number, NEVER currency (that was the bug).
+      return Number.isInteger(number)
+        ? new Intl.NumberFormat("en-US").format(number)
+        : new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(number);
+  }
+}
+
+function text2SqlResultColumns(upstream) {
+  return Array.isArray(upstream?.result_columns) ? upstream.result_columns : [];
+}
+
+// Choose a representation to draw. A hint, when present, is trusted, except the entity shapes
+// (entity-page, card-grid) which keep their existing renderers below. With no hint (an API
+// without -349, or Blue before redeploy), a one-row result with no entity column and at least
+// one number is still shown as a number card rather than the empty page.
+function chooseText2SqlRepresentation(upstream, rows) {
+  const rep = String(upstream?.representation || "").trim();
+  if (rep) {
+    return rep === "number-card" || rep === "stat-strip" || rep === "ranked-bars" || rep === "table"
+      ? rep
+      : "";
+  }
+  if (rows.length === 1) {
+    const record = rows[0]?.data || rows[0];
+    if (
+      record &&
+      typeof record === "object" &&
+      !cardSpecFromRecord(record) &&
+      !detailRequestFromRecord(record) &&
+      Object.values(record).some((v) => Number.isFinite(Number(v)) && String(v).trim() !== "")
+    ) {
+      return "number-card";
+    }
+  }
+  return "";
+}
+
+function renderText2SqlRepresentation(rep, container, rows, upstream) {
+  const columns = text2SqlResultColumns(upstream);
+  if (rep === "ranked-bars") {
+    return renderRankedBars(container, rows, columns);
+  }
+  if (rep === "table") {
+    return renderRawTable(container, rows, columns);
+  }
+  // number-card | stat-strip: the scalar family, one card per metric column.
+  return renderScalarCards(container, rows, columns);
+}
+
+function scalarMetricsFromRows(rows, columns) {
+  const record = rows[0]?.data || rows[0] || {};
+  const metrics = columns.filter((c) => c.role === "metric");
+  if (metrics.length) {
+    return metrics
+      .map((c) => ({ name: c.name, unit: c.unit, value: record[c.name] }))
+      .filter((m) => formatMetric(m.value, m.unit) !== "");
+  }
+  // Degraded (no column metadata): every numeric column, bare numbers.
+  return Object.entries(record)
+    .filter(([, v]) => Number.isFinite(Number(v)) && String(v).trim() !== "")
+    .map(([name, value]) => ({ name, unit: null, value }));
+}
+
+function renderScalarCards(container, rows, columns) {
+  const metrics = scalarMetricsFromRows(rows, columns);
+  if (!metrics.length) {
+    return renderRawTable(container, rows, columns);
+  }
+  const section = document.createElement("div");
+  section.className = metrics.length > 1 ? "t2sStatStrip" : "t2sNumberCardWrap";
+  metrics.forEach((m) => {
+    const card = document.createElement("div");
+    card.className = "t2sNumberCard";
+    const value = document.createElement("div");
+    value.className = "t2sNumberValue";
+    value.textContent = formatMetric(m.value, m.unit);
+    const label = document.createElement("div");
+    label.className = "t2sNumberLabel";
+    label.textContent = prettyLabel(m.name);
+    card.append(value, label);
+    section.append(card);
+  });
+  container.append(section);
+}
+
+function text2SqlLabelForRow(record, columns) {
+  const labelCol = columns.find((c) => c.role === "label");
+  if (labelCol && record[labelCol.name] != null && String(record[labelCol.name]).trim() !== "") {
+    return String(record[labelCol.name]);
+  }
+  const title = titleForRecord(record);
+  if (title && title !== "Result") {
+    return title;
+  }
+  for (const [, v] of Object.entries(record)) {
+    if (typeof v === "string" && v.trim()) {
+      return v;
+    }
+  }
+  return "";
+}
+
+function pickBarMetric(rows, columns) {
+  const metrics = columns.filter((c) => c.role === "metric");
+  if (metrics.length) {
+    return metrics[0];
+  }
+  const record0 = rows[0]?.data || rows[0] || {};
+  for (const key of Object.keys(record0)) {
+    const allNumericOrNull = rows.every((item) => {
+      const r = item?.data || item;
+      const v = r?.[key];
+      return v == null || Number.isFinite(Number(v));
+    });
+    const someNumeric = rows.some((item) => {
+      const r = item?.data || item;
+      return Number.isFinite(Number(r?.[key]));
+    });
+    if (allNumericOrNull && someNumeric) {
+      return { name: key, role: "metric", unit: null };
+    }
+  }
+  return null;
+}
+
+function buildMetricBar(value, max, unit) {
+  const body = document.createElement("div");
+  body.className = "t2sBarBody";
+  const track = document.createElement("div");
+  track.className = "t2sBarTrack";
+  const fill = document.createElement("div");
+  fill.className = "t2sBarFill";
+  const pct = Number.isFinite(value) && max > 0 ? Math.max(2, Math.round((value / max) * 100)) : 0;
+  fill.style.width = `${pct}%`;
+  track.append(fill);
+  const val = document.createElement("div");
+  val.className = "t2sBarValue";
+  val.textContent = formatMetric(value, unit);
+  body.append(track, val);
+  return body;
+}
+
+function renderRankedBars(container, rows, columns) {
+  const metric = pickBarMetric(rows, columns);
+  const records = rows.map((item) => item?.data || item).filter((r) => r && typeof r === "object");
+  if (!metric || !records.length) {
+    return renderRawTable(container, rows, columns);
+  }
+  const values = records.map((r) => Number(r[metric.name])).filter((v) => Number.isFinite(v));
+  const max = values.length ? Math.max(...values) : 0;
+  const section = document.createElement("div");
+  section.className = "search-poster-results";
+  // C7 poster ranking when every row has a poster and the set is small; C6 bars otherwise.
+  const posterSpecs = records.map((r) => cardSpecFromRecord(r));
+  const allPosters = records.length <= 12 && posterSpecs.every((s) => s && s.imageUrl);
+  if (allPosters) {
+    const grid = document.createElement("div");
+    grid.className = "search-poster-card-grid t2sPosterRanking";
+    records.forEach((r, i) => {
+      const spec = posterSpecs[i];
+      const card = document.createElement("div");
+      card.className = "search-poster-card t2sRankCard";
+      assignResultCardIndex(grid, card, { title: spec.title || "" });
+      card.append(buildCardMedia(spec.title, spec.imageUrl, spec.synthetic || null));
+      card.append(buildCardText(spec.title, spec.subtitle || ""));
+      card.append(buildMetricBar(Number(r[metric.name]), max, metric.unit));
+      grid.append(card);
+    });
+    section.append(grid);
+  } else {
+    const list = document.createElement("div");
+    list.className = "t2sBars";
+    records.forEach((r) => {
+      const row = document.createElement("div");
+      row.className = "search-poster-card t2sBar";
+      const label = text2SqlLabelForRow(r, columns);
+      assignResultCardIndex(list, row, { title: label });
+      const lab = document.createElement("div");
+      lab.className = "t2sBarLabel";
+      lab.title = label;
+      lab.textContent = label;
+      row.append(lab, buildMetricBar(Number(r[metric.name]), max, metric.unit));
+      list.append(row);
+    });
+    section.append(list);
+  }
+  container.append(section);
+}
+
+function renderRawTable(container, rows, columns) {
+  const records = rows.map((item) => item?.data || item).filter((r) => r && typeof r === "object");
+  if (!records.length) {
+    return;
+  }
+  const keys = columns.length
+    ? columns.map((c) => c.name)
+    : Array.from(records.reduce((set, r) => {
+        Object.keys(r).forEach((k) => set.add(k));
+        return set;
+      }, new Set()));
+  const unitByName = {};
+  columns.forEach((c) => {
+    unitByName[c.name] = c.unit;
+  });
+  const wrap = document.createElement("div");
+  wrap.className = "t2sTableWrap";
+  const table = document.createElement("table");
+  table.className = "t2sTable";
+  const thead = document.createElement("thead");
+  const headRow = document.createElement("tr");
+  keys.forEach((k) => {
+    const th = document.createElement("th");
+    th.textContent = prettyLabel(k);
+    headRow.append(th);
+  });
+  thead.append(headRow);
+  const tbody = document.createElement("tbody");
+  records.forEach((r) => {
+    const tr = document.createElement("tr");
+    keys.forEach((k) => {
+      const td = document.createElement("td");
+      const unit = unitByName[k];
+      td.textContent = unit ? formatMetric(r[k], unit) : r[k] == null ? "" : String(r[k]);
+      tr.append(td);
+    });
+    tbody.append(tr);
+  });
+  table.append(thead, tbody);
+  wrap.append(table);
+  container.append(wrap);
+}
+
 // VOICE-AGENT-218. Source works (FASTAPI-TEXT2SQL-320/-323): the novel, manga, play, game, tale
 // or earlier film a movie or series is adapted from. A source work row carries ID_MOVIE or
 // ID_SERIE when the source is itself a film or series of the catalogue (Scarface 1932 for
@@ -5802,6 +6072,22 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
       has_more: pagination.has_more,
       group_name: groupNameFromRows(rows), // VOICE-AGENT-225
     };
+
+    // VOICE-AGENT-243 / -244: draw the result from the API representation hint
+    // (FASTAPI-TEXT2SQL-349) when it is a scalar, a stat strip, ranked bars or the table
+    // fallback. Entity shapes (entity-page, card-grid) and hintless entity results keep the
+    // existing renderers below. This replaces the empty "Result" page a one-row aggregate used
+    // to produce.
+    const t2sRepresentation = chooseText2SqlRepresentation(upstream, rows);
+    if (t2sRepresentation) {
+      renderText2SqlRepresentation(t2sRepresentation, resultsContent, rows, upstream);
+      refreshPaginationControls();
+      markRenderedPageView(outputSignature);
+      if (!skipHistory) {
+        pushPageHistory({ type: "search", output, args });
+      }
+      return {};
+    }
 
     if (rows.length === 1) {
       const record = rows[0]?.data || rows[0];

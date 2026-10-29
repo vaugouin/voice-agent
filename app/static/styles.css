@@ -2507,6 +2507,122 @@ button.detailVisualCard:hover {
   white-space: nowrap;
 }
 
+/* VOICE-AGENT-243 / -244: representation renderers for live text2sql results. */
+.t2sNumberCardWrap,
+.t2sStatStrip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 16px 0;
+}
+.t2sNumberCard {
+  flex: 1 1 200px;
+  min-width: 180px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 22px;
+}
+.t2sNumberValue {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.1;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.t2sStatStrip .t2sNumberValue {
+  font-size: 1.6rem;
+}
+.t2sNumberLabel {
+  margin-top: 8px;
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--text-secondary);
+}
+.t2sBars {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0;
+}
+.t2sBar {
+  display: flex;
+  align-items: center;
+  gap: 14px;
+  padding: 10px 14px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.t2sBarLabel {
+  flex: 0 0 34%;
+  max-width: 34%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+}
+.t2sBarBody {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.t2sBarTrack {
+  flex: 1 1 auto;
+  height: 14px;
+  border-radius: 7px;
+  overflow: hidden;
+  background: rgba(127, 127, 127, 0.18);
+}
+.t2sBarFill {
+  height: 100%;
+  border-radius: 7px;
+  background: var(--accent-secondary);
+}
+.t2sBarValue {
+  flex: 0 0 auto;
+  white-space: nowrap;
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-variant-numeric: tabular-nums;
+}
+.t2sPosterRanking .t2sRankCard .t2sBarBody {
+  padding: 8px 10px 12px;
+}
+.t2sTableWrap {
+  overflow-x: auto;
+  margin: 12px 0;
+}
+.t2sTable {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.9rem;
+}
+.t2sTable th,
+.t2sTable td {
+  padding: 6px 10px;
+  border: 1px solid var(--border);
+  text-align: left;
+  color: var(--text-primary);
+  font-variant-numeric: tabular-nums;
+}
+.t2sTable th {
+  background: var(--bg-tertiary);
+  font-weight: 600;
+}
+@media (max-width: 768px) {
+  .t2sBarLabel {
+    flex-basis: 42%;
+    max-width: 42%;
+  }
+  .t2sNumberValue {
+    font-size: 1.6rem;
+  }
+}
+
 @keyframes launchSplashFadeOut {
   to {
     opacity: 0;
