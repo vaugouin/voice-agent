@@ -15,3 +15,8 @@ uvicorn.out.log
 .claude/
 .agents/
 cinema/assets/
+
+# Voice-layer bench (VOICE-AGENT-242): recordings of Philippe and session results stay local
+bench/audio/
+bench/audio-tts/
+bench/results/

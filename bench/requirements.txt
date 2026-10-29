@@ -1,0 +1,9 @@
+# Bench only (VOICE-AGENT-242), never in the image. The app's own pins (requirements.txt) are not
+# reused: google-genai needs httpx>=0.28.1 and the app pins 0.27.2. The bench imports app.main,
+# so its runtime deps are listed here unpinned.
+fastapi
+httpx>=0.28.1
+python-dotenv
+tzdata
+openai>=3.40
+google-genai>=2.33

@@ -1,0 +1,76 @@
+{
+  "_about": "VOICE-AGENT-242. Ten questions played in order as ONE conversation, so the follow-ups have something to follow. Taken from logs/client-*.log (user_transcript), except q10, written after the remark of VOICE-AGENT-211. Each clip is audio/<id>.wav, recorded by Philippe as he would say it to the app. `expect` drives the automatic checks of report.py (search_must_mention_any: every query_text2sql call of the turn must contain one of these words, which catches a bare follow-up, a pronoun sent as is, or a question translated before the search); the rest is judged by ear and by reading the transcripts.",
+  "questions": [
+    {
+      "id": "q01",
+      "text": "Tell me about the movie Apocalypse Now.",
+      "lang": "en",
+      "kind": "single film by title",
+      "expect": {"tools_any": ["query_text2sql", "get_movie_detail"]}
+    },
+    {
+      "id": "q02",
+      "text": "What did critics think of it?",
+      "lang": "en",
+      "kind": "follow-up with no entity (VOICE-AGENT-185)",
+      "expect": {"tools_any": ["get_movie_detail", "ask_about_record"], "search_must_mention_any": ["Apocalypse"]}
+    },
+    {
+      "id": "q03",
+      "text": "Tell me about Meryl Streep.",
+      "lang": "en",
+      "kind": "person (unambiguous, so that q04 has a clear antecedent)",
+      "expect": {"tools_any": ["query_text2sql", "get_person_detail"]}
+    },
+    {
+      "id": "q04",
+      "text": "What is her legacy?",
+      "lang": "en",
+      "kind": "pronoun follow-up (VOICE-AGENT-217)",
+      "expect": {"tools_any": ["get_person_detail", "ask_about_record"], "search_must_mention_any": ["Streep"]}
+    },
+    {
+      "id": "q05",
+      "text": "Show me the movies in the Sight and Sound list.",
+      "lang": "en",
+      "kind": "canon list, the page-walk trap (VOICE-AGENT-240)",
+      "expect": {"tools_any": ["query_text2sql"], "max_calls": {"query_text2sql": 1}}
+    },
+    {
+      "id": "q06",
+      "text": "Which films won both the Palme d'Or and the Best Picture Oscar?",
+      "lang": "en",
+      "kind": "slow API path (two awards crossed)",
+      "expect": {"tools_any": ["query_text2sql"]}
+    },
+    {
+      "id": "q07",
+      "text": "Montre-moi les films de la collection Criterion.",
+      "lang": "fr",
+      "kind": "French question (FASTAPI-TEXT2SQL-189)",
+      "expect": {"tools_any": ["query_text2sql"], "ui_language": "fr", "search_must_mention_any": ["films", "montre", "collection Criterion"]}
+    },
+    {
+      "id": "q08",
+      "text": "Now, only the dramas from the 70s.",
+      "lang": "en",
+      "kind": "back to English, refinement of the previous list",
+      "expect": {"tools_any": ["query_text2sql"], "ui_language": "en"}
+    },
+    {
+      "id": "q09",
+      "text": "Tell me about Breaking Bad.",
+      "lang": "en",
+      "kind": "barge-in: spoken over the answer to q08",
+      "barge_in": true,
+      "expect": {"tools_any": ["query_text2sql", "get_series_detail"]}
+    },
+    {
+      "id": "q10",
+      "text": "Wow, the posters look great on this screen.",
+      "lang": "en",
+      "kind": "a remark, not a question (VOICE-AGENT-211)",
+      "expect": {"no_tools": true}
+    }
+  ]
+}

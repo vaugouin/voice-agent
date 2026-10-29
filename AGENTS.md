@@ -42,6 +42,7 @@ Pipeline stages:
   - `app/static/styles.css` for responsive layout, result/detail presentation, and iOS landscape behavior.
   - `UI.md` before changing visible UI behavior.
   - `README.md` before changing human-facing behavior or configuration.
+  - `bench/` is the voice-layer bench of VOICE-AGENT-242 (not shipped in the image): it imports `app.main` and reuses `realtime_session_config`, the tool definitions and the tool executor, so changing those changes what it measures. Read `bench/AGENTS.md` before touching it.
 - For any task that asks about the text2SQL API, uses a text2SQL endpoint, changes text2SQL tool behavior, or depends on text2SQL response shapes, read the upstream API documentation first: `C:\Users\vaugo\Code\fastapi-text2sql\README.md`. Treat it as the source of truth for available endpoints, entity IDs, response fields, embedded relations, and current first-class entities.
 
 ## App version (single source of truth — BUMP ON EVERY UPDATE)
