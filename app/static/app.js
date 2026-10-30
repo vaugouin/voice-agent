@@ -3074,6 +3074,13 @@ function text2SqlResultColumns(upstream) {
 function chooseText2SqlRepresentation(upstream, rows) {
   const rep = String(upstream?.representation || "").trim();
   if (rep) {
+    // ranked-bars is honoured only for grouped aggregates. On entity rows the API emits it
+    // whenever one metric column and any ORDER BY are present, so plain lists (actors by
+    // POPULARITY, photo and poster walls by VOTE_AVERAGE) were drawn as bars; they keep the
+    // card-grid and image-wall renderers until the classifier is tightened.
+    if (rep === "ranked-bars" && String(upstream?.result_kind || "") === "entity_rows") {
+      return "";
+    }
     return rep === "number-card" || rep === "stat-strip" || rep === "ranked-bars" || rep === "table"
       ? rep
       : "";
