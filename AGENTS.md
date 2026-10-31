@@ -61,6 +61,7 @@ Pipeline stages:
 - **`play_trailer` returns its output without a response request on success** (VOICE-AGENT-207), so the model stays silent over the video; the microphone is shut by `videoModalOpen` in `canEnableMicrophone()`, never by toggling `userMicrophoneOpen`. `read_based_on`, by contrast, does request a response.
 - **Source works** (VOICE-AGENT-218): `isSourceWorkRecord()` is tested before the movie and series branches; a source that names `ID_MOVIE` / `ID_SERIE` opens that title's sheet. `compactDetailForModel` drops the `adapted_movies` / `adapted_series` rails (data-channel size).
 - A new image builder with a Wikipedia fallback must call `fitWikipediaImage()` (VOICE-AGENT-234).
+- **Result representations are shared with tmdb-front** (rule set by Philippe, 2026-10-31). The dispatch on the API hint (`representation`, `result_kind`, `result_columns`; `chooseText2SqlRepresentation()` and its renderers) is mirrored in tmdb-front (`lib/t2s-representation.inc.php`, called by `lib/text2sql-search.inc.php` on the search page `html/tmdb/index.php`; TMDB-FRONT-112). Any new or changed representation, unit format or fallback ships on both fronts in the same batch, with a twin ticket in the other repo.
 - State sources of truth: `resultsPanel.hidden` (drives compact result mode), `updateSessionButtons()` (Start/Stop), `setStatus()` (status text and dot), `renderText2SqlResult()` / `renderEntityDetailOutput()` (rendering boundaries).
 
 ## UI And Browser Verification
