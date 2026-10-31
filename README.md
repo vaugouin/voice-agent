@@ -31,7 +31,7 @@ The app serves a minimal web UI on port `3000`. The browser creates an `RTCPeerC
 - Multi-attempt reconnect (up to 5) that resumes from retained context.
 - New conversation button that clears the screen and retained context, and stops any current spoken or text answer.
 - Interruptible assistant speech with the microphone kept open while audio is playing.
-- Client diagnostics written to `logs/client.log`.
+- Client diagnostics written to `logs/client-YYYYMMDD.log`.
 - Docker deployment support behind Nginx at `/voice-agent/`.
 
 ## Project Layout
@@ -39,17 +39,28 @@ The app serves a minimal web UI on port `3000`. The browser creates an `RTCPeerC
 ```text
 app/
   main.py                 FastAPI app, Realtime session endpoint, text2sql proxy
+  __main__.py             `python -m app` launcher with command-line overrides
+  lexicons.json           Transcription vocabulary and the word lists used by the guards
   static/
     index.html            Minimal UI
     app.js                WebRTC client, Realtime event loop, tool handling
     styles.css            UI and result-card styling
+    icons/                App icon, TMDb logo, technology logos of the About screen
+    souls/                Persona portraits (.webp) and spoken intros (.mp3)
+SOUL.md                   Default persona
+souls/                    Core rules (_core.md), alternate personas, avatar notes
+cinema/                   Cinema mode scenarios and built assets (see cinema/README.md)
+tools/                    Cinema asset builder, still renderer, persona intro recorder
+bench/                    Voice bench (see bench/README.md)
+doc/logs-download/        VPS-to-PC log mirror (sync_vps_docker.py)
 UI.md                     Stateful UI behavior reference
 AGENTS.md                 Agent-facing repository instructions
-deploy/
-  nginx-voice-agent-location.conf
+VERSION                   App version and browser cache key
 logs/
-  client.log              Browser/client diagnostics
+  client-YYYYMMDD.log     Browser/client diagnostics, one file per day
 Dockerfile
+restart.sh                Rebuild and recreate the container on the VPS
+run.ps1                   Local launcher (Windows)
 .dockerignore
 .gitignore
 .env.example
@@ -65,21 +76,30 @@ OPENAI_API_KEY=sk-your-key-here
 OPENAI_TEXT_MODEL=gpt-6-sol
 OPENAI_REALTIME_MODEL=gpt-realtime-2.1
 OPENAI_TRANSCRIPTION_MODEL=gpt-transcribe
+DEEP_ANSWER_MODEL=gpt-6-sol
+DEEP_ANSWER_REASONING_EFFORT=none
 ENABLE_STRUCTURED_CARD_FOCUS=true
 ENABLE_SPOKEN_SUBTITLES=false
 ENABLE_USER_TRANSCRIPT_SUBTITLES=false
+AGENT_VOICE=ash
 AGENT_SOUL=default
 AGENT_TIMEZONE=Europe/Paris
 LOG_TIMEZONE=Europe/Paris
 REALTIME_TRANSCRIPTION_LANGUAGE=
 TRANSCRIPTION_LANGUAGES=en,fr
+REALTIME_TURN_DETECTION=semantic_vad
+REALTIME_VAD_EAGERNESS=low
 
 TEXT2SQL_BASE_URL=http://your_host:8000
 TEXT2SQL_API_KEY_NAME=X-API-Key
 TEXT2SQL_API_KEY_VALUE=your_api_key_value
 TEXT2SQL_ROWS_PER_PAGE=50
 TEXT2SQL_TIMEOUT_SECONDS=90
+
+GEMINI_API_KEY=your-gemini-key-here
 ```
+
+`.env.example` comments each key. `GEMINI_API_KEY` is used only by the cinema mode asset builder. `TEXT2SQL_COMPLEX_QUESTION` (not in the example, default `1`) lets the API retry a misunderstood question with its strong model; set it to `0` to turn that off, then recreate the container.
 
 Do not bake `.env` into the Docker image or commit it to git. `.dockerignore` and `.gitignore` exclude local secrets and runtime logs. Provide secrets at runtime with `--env-file`.
 
@@ -172,7 +192,8 @@ Server-side harness:
   - `souls/_core.md` — the **core**, injected with **every** persona: factual grounding, staying on the subject on screen, how another film may be cited (comparison only, never as a closing suggestion), and the grounded-recommendation rule (recommend only from the active title's `similar` / `recommendations` lists). Persona files must never restate, soften, or override these.
   - `SOUL.md` (repo root) — the **`default` persona**: character only.
   - `souls/<slug>.md` — the alternates. Shipped: `video-store` (video store clerk, warm and opinionated), `scholar` (erudite connector, allowed up to two comparisons), `chatterbox` (deliberately long-winded **test** persona for barge-in and recordings, not a shipping default).
-  - **Selection**, in order: `?soul=<slug>` on the page URL (the browser forwards it to `/session` for voice and in the `/text-chat` payload for text) → the `AGENT_SOUL` env default → `default`. An unknown or malformed slug falls back to the default instead of failing the turn; slugs only ever look up an already-loaded persona, so a path is never built from user input. `GET /souls` lists what this build can serve.
+  - **Selection**, in order: `?soul=<slug>` on the page URL (the browser forwards it to `/session` for voice and in the `/text-chat` payload for text) → the `AGENT_SOUL` env default → `default`. An unknown or malformed slug falls back to the default instead of failing the turn; slugs only ever look up an already-loaded persona, so a path is never built from user input. `GET /souls` lists what this build can serve. The persona chosen in Settings (VOICE-AGENT-215, `localStorage` key `voiceAgent.soul`) sits above `?soul=` itself, because the installed Edge app ignores the URL of its shortcuts.
+  - Persona intros (`app/static/souls/<slug>.mp3`) are recorded from each persona's `intro:` front-matter line by `uv run tools/generate-soul-intros.py` (`--force` to re-record); re-run it after changing an `intro:` or `voice:` line.
   - A soul file may carry optional front matter with `name` (label shown by `GET /souls` and in logs), `brevity` (`concise` by default, or `expansive` — the one dial a persona may turn: it overrides the per-surface length delta, "Keep spoken answers concise" / "You reply as concise text") and `voice` (the Realtime voice this character speaks with).
   - **One character = one file.** The persona file carries the prose, the `voice`, and — inside its HTML comment, so it is stripped before injection — the *avatar subject description* used to generate `app/static/souls/<slug>.webp`. Prose, voice and face therefore cannot drift apart. The shared image style lock and the generation notes live in `souls/_avatars.md`. Files under `souls/` whose name starts with `_` are never selectable as personas.
   - Files are loaded **once at import** (like `VERSION`), so any edit takes effect on restart; bump `VERSION` (PATCH) with it. The `Dockerfile` must keep copying `SOUL.md` **and** `souls/` into the image: without them the loaders fall back to an empty string and the agent silently runs on the operational prompt alone.
@@ -220,7 +241,7 @@ In other words, the model does the planning and tool selection, while the browse
 The server creates a session with:
 
 - model: `OPENAI_REALTIME_MODEL`, default `gpt-realtime-2.1`
-- voice: selected server-side by `AGENT_VOICE` (currently `shimmer`; falls back to `ash` if unset)
+- voice: the active persona's `voice:`, else `AGENT_VOICE`, else `ash` (see the precedence below)
 - input transcription: `gpt-transcribe` (`gpt-4o-transcribe` until 1.2.1; OpenAI shuts it off on 2027-02-26), **language auto-detected** between the `TRANSCRIPTION_LANGUAGES` hint (`en,fr` by default) and biased with a domain lexicon
   - The session no longer pins the spoken language. Set `REALTIME_TRANSCRIPTION_LANGUAGE=en` (or any language code) to pin it again; leave it empty, the default, for auto-detection. Pinning is not neutral when the wrong language is spoken: a transcriber locked on English does not degrade, it returns a fluent and wrong English-shaped sentence, so a bilingual demo needs the empty value.
   - The cinema vocabulary lives in [app/lexicons.json](app/lexicons.json) (`asr_prompt_intro`, `asr_domain_terms`, `asr_proper_nouns`). On `gpt-transcribe` the `prompt` carries only the framing sentences and the terms go in the dedicated `keywords` field; pointing `OPENAI_TRANSCRIPTION_MODEL` back at a `gpt-4o-*` or `whisper` model restores the old shape, every term inside the `prompt`, since those models refuse `keywords` and `languages`. The 2026-10-02 bench behind the change (111 clips cut from the recorded videos, four arms) is in LLM-TASKS-009 of the Nestor backlog. Without it the transcriber hears "back surface" for "box office" and "the titan song list" for "Sight and Sound". Edit `asr_proper_nouns` before a demo or a shoot to add the names that will actually be spoken; keep the list short, since an over-long prompt makes the transcriber hallucinate the terms it was primed with. The same lexicon is sent with the `/transcribe` dictation upload.
@@ -285,9 +306,11 @@ The FastAPI adapter posts to `{TEXT2SQL_BASE_URL}/search/text2sql` with:
   "rows_per_page": 50,
   "retrieve_from_cache": true,
   "store_to_cache": true,
-  "complex_question_processing": false
+  "complex_question_processing": true
 }
 ```
+
+`complex_question_processing` follows `TEXT2SQL_COMPLEX_QUESTION` (default on).
 
 If the next page is requested, the adapter can send:
 
@@ -300,7 +323,7 @@ If the next page is requested, the adapter can send:
   "rows_per_page": 50,
   "retrieve_from_cache": true,
   "store_to_cache": true,
-  "complex_question_processing": false
+  "complex_question_processing": true
 }
 ```
 
@@ -557,7 +580,7 @@ Image behavior:
 - Wikipedia images are used on primary entity detail pages for topics, collections, lists, movements, technicals, groups, deaths, awards, nominations, and locations when no TMDb poster/profile/logo is present.
 - Embedded relation rails also use `WIKIPEDIA_IMAGE_PATH`, including topics, lists, collections, movements, technicals, awards, and nominations on movie/series detail pages, plus technical siblings on technical detail pages and groups, deaths, awards, and nominations on person detail pages.
 - Search result cards, embedded relation cards, and primary detail-page poster/portrait images set both `alt` and `title` attributes from the displayed entity title, so hovering over a picture shows its text label.
-- Static frontend assets are referenced with a version query in `index.html`; bump that version when changing `app.js` or `styles.css` so browsers fetch the current UI code after deployment or reload.
+- Static frontend assets carry the app version as a query string, filled in by the server from `VERSION`; bump `VERSION` when changing `app.js` or `styles.css` so browsers fetch the current UI code (see *App version & cache busting*).
 
 Pagination behavior:
 
@@ -653,7 +676,7 @@ Three shapes of question, all handled upstream:
 
 The confirmed photo stays attached to the conversation as a thumbnail chip under the control row. Clicking it shows the photo full size; the `✕` removes it; `New conversation` releases it. Every later turn sends the same reference, and the bytes are never sent twice: the API recognises the photo by the fingerprint of its bytes, so a second question about it costs no vision call at all. The API keeps the image for thirty days so a question can be replayed from its log; past that, the reference stops designating anything and the app says so rather than breaking.
 
-The browser holds no bytes after the deposit, and none are ever written to `logs/`. What the log records is the reference, the source (`camera`, `library` or `drop`), the sizes before and after the resize, and the resize and upload times, under the `look_capture` event: once as `attached` when the photo is filed, once as `sent` when a turn spends it, carrying what triggered that turn (`typed` or `spoken`). A drop that was refused or accepted is recorded under `look_drop`.
+The browser holds no bytes after the deposit, and none are ever written to `logs/`. What the log records is the reference, the source (`camera`, `library` or `drop`), the sizes before and after the resize, and the resize and upload times, under the `look_capture` event: once as `attached` when the photo is filed, once as `sent` when a turn spends it, carrying what triggered that turn (`typed` or `spoken`). A drop that was refused or accepted is reported by the browser as `look_drop`, which the server does not keep (it is not in `HARNESS_LOG_EVENTS`).
 
 ### A photo during a spoken session
 
@@ -700,7 +723,7 @@ Every 2 seconds the client sends a no-op `session.update` (with `session.type=re
 - prevents NAT mappings (especially aggressive carrier-grade NAT) from aging out during silent periods such as post-response audio playout or in-flight tool calls,
 - keeps Firefox's ICE consent freshness check (RFC 7675, ~15s timeout) satisfied.
 
-The interval timer runs inside a dedicated Web Worker rather than on the main thread. Browser `setInterval` is throttled aggressively in background tabs and unfocused windows, sometimes enough to miss multiple 2-second fires; Worker timers are not subject to that throttling, so the cadence holds while the user is doing something else. The main thread translates each worker `tick` message into a data-channel send. If Worker creation fails (CSP, very old browsers), the code falls back to main-thread `setInterval` and logs `keepalive_started` with `mode=interval`.
+The interval timer runs inside a dedicated Web Worker rather than on the main thread. Browser `setInterval` is throttled aggressively in background tabs and unfocused windows, sometimes enough to miss multiple 2-second fires; Worker timers are not subject to that throttling, so the cadence holds while the user is doing something else. The main thread translates each worker `tick` message into a data-channel send. If Worker creation fails (CSP, very old browsers), the code falls back to main-thread `setInterval` and reports `keepalive_started` with `mode=interval` (an event the server does not keep, see *Diagnostics*).
 
 A keepalive is also sent immediately on `visibilitychange` to visible and on window `focus`, to pump a packet the moment the user returns rather than waiting for the next scheduled tick.
 
@@ -726,54 +749,11 @@ logs/client.log
 
 The file is in fact one per day, `logs/client-YYYYMMDD.log`. Each entry's `ts` is written in `LOG_TIMEZONE` (default `Europe/Paris`) with its offset, for example `2026-10-19T14:59:02+02:00`, and the day is cut at midnight in that zone (VOICE-AGENT-226). Files written before the 1.2.30 restart carry UTC stamps (`+00:00`) and are cut at UTC midnight, and the switch day's file mixes both: read the offset of each line rather than assume one zone.
 
-Logged signals include:
+At startup, `docker logs -f voice-agent` prints a `[voice-agent] version <x>` banner followed by a `[voice-agent] persona '<slug>', voice '<name>' (from <source>), N loaded, core ok|MISSING` line (VOICE-AGENT-118); an unknown `AGENT_SOUL` prints a `WARNING` line above it. Read that persona line first when persona or voice behaviour looks wrong: it settles which character is active, where its voice came from, and whether `souls/_core.md` shipped.
 
-- Realtime events
-- microphone track state
-- remote audio element state
-- WebRTC connection and ICE state
-- selected candidate stats on disconnect/failure
-- page lifecycle and visibility events
-- iOS/Safari capability snapshots
-- reconnect attempts
-- retained-context seeding
+Only the events listed in `HARNESS_LOG_EVENTS` (`app/main.py`) are written; the browser posts many more to `/client-log`, and the server drops them at write time. Kept today: tool calls and their outputs (`tool_call_start`, `tool_call_success`, `tool_call_error`, `tool_output_truncated`, `tool_output_send_error`), turns (`user_transcript`, `user_transcript_discarded`, `speech_started`, `speech_stopped`, `assistant_transcript`, `realtime_text_sent`, `text_chat_*`), Brief me and deep answers (`brief_*`, `deep_answer_*`), the guards (`pronoun_query_returned`, `meta_talk_detected`, `forced_search_render_skipped`, `forced_verbose_refetch`), the holding line, card focus and disambiguation events, `session_persona`, the splash and showcase, the Look events (`look_capture`, `look_capture_error`, `look_session_guard`, `look_voice_turn`) and `microphone_track_replaced`.
 
-Useful events:
-
-```text
-realtime_support
-webrtc_unavailable
-peer_connection_state
-peer_connection_stats
-media_track_state
-remote_audio_element
-page_lifecycle
-page_visibility
-context_seeded
-context_retained
-dictation_started
-dictation_transcribe_sent
-dictation_transcribed
-dictation_error
-look_capture
-look_capture_error
-look_drop
-realtime_text_sent
-realtime_text_error
-realtime_text_queued
-keepalive_started
-keepalive_stopped
-keepalive_send_error
-keepalive_worker_error
-keepalive_worker_unavailable
-disconnect_watchdog_check
-reconnect_scheduled
-reconnect_aborted_self_healed
-reconnect_resume_sent
-reconnect_failed
-reconnect_abandoned
-data_channel_close
-```
+Not kept: WebRTC, ICE and data-channel state (`peer_connection_state`, `peer_connection_stats`, `data_channel_close`), page lifecycle and visibility, `realtime_support`, keepalive, watchdog and reconnect events, retained-context seeding, dictation and `look_drop`. To read one of them, it has to be added to `HARNESS_LOG_EVENTS`.
 
 ## iPhone and Safari Notes
 
@@ -823,11 +803,12 @@ docker run -d \
   --name voice-agent \
   --restart unless-stopped \
   --network reverseproxy \
-  -p 3000:3000 \
   --env-file /home/debian/docker/voice-agent/.env \
   -v /home/debian/docker/voice-agent/logs:/app/logs \
   voice-agent:latest
 ```
+
+`restart.sh` runs these steps, then follows `docker logs -f voice-agent`. No host port is published: the `reverseproxy` container reaches the app by its name on the `reverseproxy` network.
 
 To override a `.env` key for one container without editing the file, add `-e KEY=VALUE` before the image name; Docker gives `-e` precedence over `--env-file`. For a recording session with no native subtitles (VOICE-AGENT-176):
 
@@ -848,12 +829,12 @@ Check the third line of `docker logs voice-agent`: `[voice-agent] subtitles defa
 The host-mounted logs folder keeps browser diagnostics outside the container:
 
 ```text
-/home/debian/docker/voice-agent/logs/client.log
+/home/debian/docker/voice-agent/logs/client-YYYYMMDD.log
 ```
 
 ## Nginx
 
-Use `deploy/nginx-voice-agent-location.conf` inside the HTTPS server block:
+The location lives in the `reverseproxy` repository (`sites-enabled/vaugouin-site.conf`), inside the HTTPS server block:
 
 ```nginx
 location = /voice-agent {
@@ -861,7 +842,11 @@ location = /voice-agent {
 }
 
 location /voice-agent/ {
-  proxy_pass http://voice-agent:3000/;
+  # Resolved per request (Docker DNS): restart.sh recreates the container with a new address.
+  resolver 127.0.0.11 valid=30s ipv6=off;
+  set $voice_agent_upstream voice-agent;
+  rewrite ^/voice-agent/(.*)$ /$1 break;
+  proxy_pass http://$voice_agent_upstream:3000;
   proxy_http_version 1.1;
 
   proxy_set_header Host $host;
@@ -907,7 +892,7 @@ container). The `Dockerfile` copies `VERSION` into the image.
 
 ### `WebRTC is unavailable`
 
-Check `logs/client.log` for `realtime_support`. Confirm:
+Check `realtime_support` (a browser event that `HARNESS_LOG_EVENTS` does not keep at present, see *Diagnostics*). Confirm:
 
 ```json
 "isSecureContext": true
@@ -926,7 +911,7 @@ Allow microphone access for the site. On iPhone, this must be done in Safari for
 
 ### Answers stop mid-sentence
 
-Check the resilience signals first:
+These signals are posted by the browser but not kept in `logs/` at present (see *Diagnostics*). Check the resilience signals first:
 
 ```text
 keepalive_started              confirms the heartbeat is running, with mode=worker or mode=interval
