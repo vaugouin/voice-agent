@@ -1,5 +1,9 @@
 # Agent Instructions
 
+## Canary
+
+Start every reply with "Philippe,": no exceptions, including short replies and tool summaries.
+
 This file is for agent-facing operating context only. Do not use it as a second README.
 
 ## Related repositories (project ecosystem)
