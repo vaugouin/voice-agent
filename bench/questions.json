@@ -55,7 +55,7 @@
       "text": "Now, only the dramas from the 70s.",
       "lang": "en",
       "kind": "back to English, refinement of the previous list",
-      "expect": {"tools_any": ["query_text2sql"], "ui_language": "en"}
+      "expect": {"tools_any": ["query_text2sql"], "ui_language": "en", "search_must_mention_any": ["Criterion"]}
     },
     {
       "id": "q09",
