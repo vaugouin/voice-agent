@@ -84,17 +84,19 @@ def run(cmd: list[str], **kw) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, check=True, capture_output=True, text=True, encoding="utf-8", errors="replace", **kw)
 
 
-def wav_info(path: Path) -> tuple[int, int, int] | None:
-    """(sample rate, channels, duration in ms) of a PCM wav, read from its header and its size.
+def wav_data_span(path: Path) -> tuple[int, int, int, int, int] | None:
+    """(rate, channels, bits, data offset, data length in bytes) of a PCM wav; None when it is not one.
 
-    Exact and instant where eighty-five ffprobe launches took ten minutes on this machine. The
-    data length is taken from the file size, not from the `data` chunk: the wavs streamed by the
-    speech API carry a placeholder length there. None when the file is not a plain PCM wav."""
+    The length is the `data` chunk's own when it is plausible, else what the file holds after the header:
+    the wavs streamed by OpenAI's speech API carry a placeholder length there, while Gemini's wavs carry
+    a true length followed by a C2PA provenance manifest (about 6 KB, `C2PA` / `jumb` chunks). Read as
+    samples, that manifest is a burst of loud noise at the end of the last line of every exchange (found
+    2026-11-01 on `yojimbo-fistful`)."""
     with path.open("rb") as handle:
         head = handle.read(4096)
     if head[:4] != b"RIFF" or head[8:12] != b"WAVE":
         return None
-    pos, rate, channels, bits, data_offset = 12, 0, 0, 0, None
+    pos, rate, channels, bits, data_offset, data_size = 12, 0, 0, 0, None, 0
     while pos + 8 <= len(head):
         chunk_id, size = head[pos:pos + 4], struct.unpack_from("<I", head, pos + 4)[0]
         if chunk_id == b"fmt ":
@@ -103,13 +105,27 @@ def wav_info(path: Path) -> tuple[int, int, int] | None:
             if audio_format not in (1, 0xFFFE):
                 return None
         elif chunk_id == b"data":
-            data_offset = pos + 8
+            data_offset, data_size = pos + 8, size
             break
         pos += 8 + size + (size & 1)
     if data_offset is None or not (rate and channels and bits):
         return None
-    frames = (path.stat().st_size - data_offset) // (channels * bits // 8)
-    return rate, channels, round(frames * 1000 / rate)
+    available = path.stat().st_size - data_offset
+    length = data_size if 0 < data_size <= available else available
+    frame_size = channels * bits // 8
+    return rate, channels, bits, data_offset, length - length % frame_size
+
+
+def wav_info(path: Path) -> tuple[int, int, int] | None:
+    """(sample rate, channels, duration in ms) of a PCM wav, read from its header and its size.
+
+    Exact and instant where eighty-five ffprobe launches took ten minutes on this machine. The data
+    length is the one `wav_data_span` trusts. None when the file is not a plain PCM wav."""
+    span = wav_data_span(path)
+    if not span:
+        return None
+    rate, channels, bits, _offset, length = span
+    return rate, channels, round(length // (channels * bits // 8) * 1000 / rate)
 
 
 def probe_duration_ms(path: Path) -> int:
@@ -485,19 +501,12 @@ def transcribe_words(wav: Path) -> list[tuple[str, float, float]]:
     except ImportError:
         sys.exit("faster-whisper is not installed (uv adds it from the script header; else pip install faster-whisper)")
     # the samples are read here, not by faster-whisper's PyAV decoder (its keyword arguments moved between versions)
-    info = wav_info(wav)
-    if not info:
+    span = wav_data_span(wav)
+    if not span:
         sys.exit(f"{wav} is not a plain PCM wav")
-    rate, channels, _duration = info
+    rate, channels, _bits, data_offset, length = span
     raw = wav.read_bytes()
-    pos, data_offset = 12, None
-    while pos + 8 <= len(raw):
-        chunk_id, size = raw[pos:pos + 4], struct.unpack_from("<I", raw, pos + 4)[0]
-        if chunk_id == b"data":
-            data_offset = pos + 8
-            break
-        pos += 8 + size + (size & 1)
-    samples = np.frombuffer(raw[data_offset:], dtype="<i2").astype(np.float32) / 32768.0
+    samples = np.frombuffer(raw[data_offset:data_offset + length], dtype="<i2").astype(np.float32) / 32768.0
     if channels > 1:
         samples = samples.reshape(-1, channels).mean(axis=1)
     if rate != 16000:
@@ -580,24 +589,13 @@ def align_exchange(words: list[tuple[str, float, float]], beats: list[dict], tot
 
 def slice_wav(src: Path, start_ms: int, end_ms: int, out: Path) -> None:
     """Cut [start_ms, end_ms) of a PCM wav into a new wav, by bytes: no ffmpeg launch per line."""
-    info = wav_info(src)
-    if not info:
+    span = wav_data_span(src)
+    if not span:
         sys.exit(f"{src} is not a plain PCM wav")
-    rate, channels, _duration = info
-    with src.open("rb") as handle:
-        head = handle.read(4096)
-    pos, bits, data_offset = 12, 16, None
-    while pos + 8 <= len(head):
-        chunk_id, size = head[pos:pos + 4], struct.unpack_from("<I", head, pos + 4)[0]
-        if chunk_id == b"fmt ":
-            bits = struct.unpack_from("<H", head, pos + 22)[0]
-        elif chunk_id == b"data":
-            data_offset = pos + 8
-            break
-        pos += 8 + size + (size & 1)
+    rate, channels, bits, data_offset, length = span
     frame_size = channels * bits // 8
     first = data_offset + (start_ms * rate // 1000) * frame_size
-    last = data_offset + (end_ms * rate // 1000) * frame_size
+    last = min(data_offset + (end_ms * rate // 1000) * frame_size, data_offset + length)  # never past the samples
     with src.open("rb") as handle:
         handle.seek(first)
         data = handle.read(max(0, last - first))
@@ -631,6 +629,24 @@ def build_audio_gemini(scenario: dict, assets: Path, force: bool) -> None:
             previous = json.loads(sidecar.read_text(encoding="utf-8")) if sidecar.exists() else {}
             lines_ok = all((audio_dir / f"{b['id']}.wav").exists() for b in beats)
             if wav.exists() and lines_ok and not force and previous.get("signature") == signature:
+                # a line cut past the samples (an exchange built before the C2PA fix) is re-cut, no new request
+                total_ms = wav_info(wav)[2]
+                for beat in beats:
+                    bound = index.get(beat["id"])
+                    if bound and bound["end_ms"] > total_ms:
+                        bound["end_ms"] = total_ms
+                        out = audio_dir / f"{beat['id']}.wav"
+                        slice_wav(wav, bound["start_ms"], total_ms, out)
+                        line_sidecar = out.with_suffix(".json")
+                        if line_sidecar.exists():
+                            meta_line = json.loads(line_sidecar.read_text(encoding="utf-8"))
+                            meta_line["end_in_exchange_ms"] = total_ms
+                            line_sidecar.write_text(json.dumps(meta_line, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+                        if previous.get("duration_ms") != total_ms:
+                            previous["duration_ms"] = total_ms
+                            sidecar.write_text(json.dumps(previous, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+                        index_path.write_text(json.dumps(index, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
+                        print(f"  re-cut       {out.name}: ended past the samples of {wav.name} (C2PA trailer)")
                 continue
             started = time.monotonic()
             usage = synthesize_gemini(client, model, speakers, beats, wav)
