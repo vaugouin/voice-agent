@@ -17,7 +17,7 @@ Design: `~/Nestor/projets/t2s-backlog/app-ideas-010-generated-podcast-video.md`.
 
 ## Playing an episode
 
-Open the app with `?cinema=<slug>` (for example `http://127.0.0.1:3000/?cinema=yojimbo-fistful`): the live app is hidden, the stage loads `assets/<slug>/timeline.json` and `episode.mp3` (served by the `/cinema` mount when the folder exists), shows the first brick and waits for Play. `&autoplay=1` tries to start at once (browsers may block it). Space or K plays and pauses, the arrow keys seek by five seconds, Home restarts. Bricks follow the audio clock, so pause and seek keep them in step; the scheduler mirrors the spoken-card cue engine of the live app (one timer, a sorted queue). A `hold` brick keeps the previous picture.
+Open the app with `?cinema=<slug>` (for example `http://127.0.0.1:3000/?cinema=yojimbo-fistful`): the live app is hidden, the stage loads `assets/<slug>/timeline.json` and `episode.mp3` (served by the `/cinema` mount when the folder exists), shows the first brick and waits for Play. `&autoplay=1` tries to start at once (browsers may block it). Space or K plays and pauses, the arrow keys seek by five seconds, Home restarts. Bricks follow the audio clock, so pause and seek keep them in step; the scheduler mirrors the spoken-card cue engine of the live app (one timer, a sorted queue). A `hold` brick keeps the previous picture. `tools/render-cinema-stills.py <slug> --mp4` then writes `episode.mp4`: one still per beat over the audio, loudness brought to -14 LUFS (-1.5 dBTP, two-pass loudnorm), and chapters from `meta.chapters` (`[{beat, title}]`) as MP4 chapter metadata plus `chapters-youtube.txt` for the description.
 
 ## The scenario contract (`version: 2`)
 
@@ -28,6 +28,8 @@ meta        id, title, language, target_minutes (indicative only: no cap, the lo
             persons[] (person_id, name, profile_path), related[] (kind movie|tv, id, title, year, poster_path), fetched
 beats[]     id, voice (candide | expert), track (fact | performance), text, speech, delivery, source, brick, pause_after_ms
 ```
+
+**Speakers.** A voice may carry `label` (the speaker cue on screen, for example "The reader") and `accent: "secondary"` (the second colour); without them the player shows Candide and Expert, as in the first episode. The voice keys are free: the second episode (`strangelove`, APP-IDEAS-010 pilot, 2026-11-02) uses `reader` and `viewer`, and its scenario lives outside this repo (`~/Code/source-to-screen/work/strangelove/episode/strangelove.json`, built from source-to-screen's script) because it retells a novel under copyright.
 
 **Voices.** `meta.voices` names the OpenAI voice of each speaker and its standing instructions (affect, pacing, intonation, emphasis: the whole persona, not one adjective). A beat's `delivery` is the direction for that one line ("Genuinely incredulous, laughing a little."), appended to the instructions when it is synthesized; it is what keeps twenty minutes from sounding read. Chosen on samples the 2026-10-24: `marin` for the candide, `cedar` lowered two semitones for the expert (the sincerity of cedar, the depth of onyx). `gemini_voice` is the prebuilt Gemini voice of the speaker (thirty names, `Laomedeia`, `Algenib`, … in the speech-generation docs) when `meta.tts.provider` is `gemini`; the same `delivery` becomes the turn's `style`.
 
@@ -58,6 +60,7 @@ beats[]     id, voice (candide | expert), track (fact | performance), text, spee
 | `portraits` | `people[]` (`person_id`, `caption`), optional `caption` | a row of TMDb portraits with a caption under each (a pseudonym, a refusal, a credit); a person without a photo gets their initials |
 | `poster_wall` | `items[]` (`kind`, `id`), optional `caption` | the posters of the films and series a line names, title and year under each |
 | `quote_card` | `text`, `attribution` | a verbatim quotation, full screen |
+| `card` | `title`, `lines[]` (up to six), `source`, optional `variant` (`chapter`, `credits`: two columns) | a text card: a fact card, a chapter card, the end credits |
 | `hold` | | keep the previous brick |
 
 A story told over several lines wants a frame every few lines, not one picture held for a minute: the Yojimbo / Fistful episode changes its picture on 44 of its 85 beats.
@@ -70,5 +73,6 @@ A story told over several lines wants a frame every few lines, not one picture h
 
 - When the `based_on` graph asserts a link the Wikipedia text disputes, the expert says both.
 - The fact track reads the structured fields as well as the text (Techniscope is in `FILM_TECHNOLOGY`, nowhere in the text).
+- **A frame shows exactly what its line is about** (Philippe, 2026-11-02): the speaker of a quoted line, on screen while saying it; the action a line describes. A cue's time is not enough (off-screen lines, reaction shots, cuts): check every frame by eye on a contact sheet, then pin the right moment with `"exact": true` and its timecode.
 - A frame is a still, commented and credited, with the same status as a TMDb backdrop; no moving extract beyond a few seconds.
 - Quotations stay in their original language; the dialogue language is the content language (English for this pair).

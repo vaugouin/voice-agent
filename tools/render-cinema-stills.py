@@ -15,7 +15,8 @@ Usage, with the app running (`python -m app --host 127.0.0.1 --port 3000`):
     uv run tools/render-cinema-stills.py yojimbo-fistful --beats s001 s002 --width 1920 --height 1080
     uv run tools/render-cinema-stills.py yojimbo-fistful --no-line      # the picture alone, no spoken line
     uv run tools/render-cinema-stills.py yojimbo-fistful --mp4          # also cinema/assets/<slug>/episode.mp4:
-                                                                        # the stills held for their beats over episode.mp3
+                                                                        # the stills held for their beats over episode.mp3,
+                                                                        # loudness -14 LUFS, chapters from meta.chapters
 
 Idempotent: a still already on disk is kept unless `--force`; `stills/stills.json` records the beat,
 the time seeked to and the brick type.
@@ -109,11 +110,34 @@ def render_mp4(assets: Path, timeline: dict, stills: Path) -> None:
     concat.write_text("\n".join(lines) + "\n", encoding="utf-8")
     out = assets / "episode.mp4"
     started = time.monotonic()
+    # chapters (`meta.chapters`: [{beat, title}]) become MP4 chapter metadata and a YouTube list
+    starts = {b["id"]: b["start_ms"] for b in beats}
+    chapters = sorted((starts[c["beat"]], c["title"]) for c in timeline["meta"].get("chapters", []) if c.get("beat") in starts)
+    meta_args: list[str] = []
+    if chapters:
+        chapters[0] = (0, chapters[0][1])
+        ffmeta, youtube = [";FFMETADATA1"], []
+        for i, (start, title) in enumerate(chapters):
+            end = chapters[i + 1][0] if i + 1 < len(chapters) else timeline["duration_ms"]
+            ffmeta += ["[CHAPTER]", "TIMEBASE=1/1000", f"START={start}", f"END={end}", f"title={title}"]
+            s = start // 1000
+            youtube.append(f"{s // 3600}:{s % 3600 // 60:02d}:{s % 60:02d} {title}" if s >= 3600 else f"{s // 60}:{s % 60:02d} {title}")
+        (stills / "chapters.txt").write_text("\n".join(ffmeta) + "\n", encoding="utf-8")
+        (assets / "chapters-youtube.txt").write_text("\n".join(youtube) + "\n", encoding="utf-8")
+        meta_args = ["-f", "ffmetadata", "-i", str(stills / "chapters.txt"), "-map_chapters", "2"]
+    # loudness: -14 LUFS integrated, -1.5 dBTP, measured first then applied (two-pass loudnorm)
+    probe = subprocess.run(["ffmpeg", "-hide_banner", "-nostats", "-i", str(assets / "episode.mp3"), "-af",
+                            "loudnorm=I=-14:TP=-1.5:LRA=11:print_format=json", "-f", "null", "-"],
+                           capture_output=True, text=True, encoding="utf-8", errors="replace")
+    m = json.loads(probe.stderr[probe.stderr.rfind("{"):probe.stderr.rfind("}") + 1])
+    loudnorm = (f"loudnorm=I=-14:TP=-1.5:LRA=11:measured_I={m['input_i']}:measured_TP={m['input_tp']}:"
+                f"measured_LRA={m['input_lra']}:measured_thresh={m['input_thresh']}:offset={m['target_offset']}:linear=true")
     subprocess.run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", str(concat),
-                    "-i", str(assets / "episode.mp3"), "-map", "0:v", "-map", "1:a", "-c:v", "libx264", "-preset", "medium",
-                    "-crf", "20", "-r", "25", "-pix_fmt", "yuv420p", "-c:a", "aac", "-b:a", "160k", "-shortest",
-                    "-movflags", "+faststart", str(out)], check=True)
-    print(f"episode.mp4: {out.stat().st_size / 1e6:.0f} MB in {time.monotonic() - started:.0f}s", flush=True)
+                    "-i", str(assets / "episode.mp3"), *meta_args, "-map", "0:v", "-map", "1:a", "-c:v", "libx264",
+                    "-preset", "medium", "-crf", "20", "-r", "25", "-pix_fmt", "yuv420p", "-af", loudnorm, "-ar", "48000",
+                    "-c:a", "aac", "-b:a", "192k", "-shortest", "-movflags", "+faststart", str(out)], check=True)
+    print(f"episode.mp4: {out.stat().st_size / 1e6:.0f} MB in {time.monotonic() - started:.0f}s, "
+          f"{len(chapters)} chapters, loudness {m['input_i']} LUFS brought to -14", flush=True)
 
 
 if __name__ == "__main__":

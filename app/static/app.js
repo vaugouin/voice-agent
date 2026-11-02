@@ -13381,8 +13381,11 @@ function applyCinemaCue(cue, { instant = false } = {}) {
   const state = cinemaState;
   const beat = cue.beat;
   state.currentIndex = cue.index;
-  const candide = beat.voice === "candide";
-  cinemaSpeaker.textContent = candide ? "Candide" : "Expert";
+  // A scenario may name its speakers (`meta.voices.<key>.label`, e.g. "The reader") and put one of them on the
+  // secondary accent (`accent: "secondary"`); without them, the candide / expert pair of the first episode.
+  const voiceMeta = (state.timeline.meta.voices || {})[beat.voice] || {};
+  const candide = voiceMeta.accent ? voiceMeta.accent === "secondary" : beat.voice === "candide";
+  cinemaSpeaker.textContent = voiceMeta.label || (beat.voice === "candide" ? "Candide" : "Expert");
   cinemaLine.classList.toggle("isCandide", candide);
   cinemaLine.classList.toggle("isExpert", !candide);
   cinemaText.textContent = beat.text || "";
@@ -13560,9 +13563,30 @@ function buildCinemaBrick(brick) {
       }
       return wrapper;
     }
+    case "card": {
+      // A text card: a heading, up to six short lines, the source in small type (fact cards, chapter cards,
+      // credits). `variant` adds a class (`credits` uses two columns for long lists).
+      const card = cinemaElement("section", `cinemaCard${brick.variant ? ` cinemaCard-${brick.variant}` : ""}`);
+      if (brick.title) {
+        card.appendChild(cinemaElement("h2", "cinemaCardTitle", brick.title));
+      }
+      const lines = brick.lines || [];
+      if (lines.length) {
+        const list = cinemaElement("ul", "cinemaCardLines");
+        for (const line of lines) {
+          list.appendChild(cinemaElement("li", "", line));
+        }
+        card.appendChild(list);
+      }
+      if (brick.source) {
+        card.appendChild(cinemaElement("p", "cinemaCardSource", brick.source));
+      }
+      return card;
+    }
     case "quote_card": {
-      const quote = cinemaElement("blockquote", "cinemaQuote");
-      quote.appendChild(cinemaElement("p", "", `“${brick.text}”`));
+      // A paraphrase (of a book the episode retells, never quotes) is shown without quotation marks.
+      const quote = cinemaElement("blockquote", `cinemaQuote${brick.paraphrase ? " isParaphrase" : ""}`);
+      quote.appendChild(cinemaElement("p", "", brick.paraphrase ? brick.text : `“${brick.text}”`));
       if (brick.attribution) {
         quote.appendChild(cinemaElement("footer", "", brick.attribution));
       }
