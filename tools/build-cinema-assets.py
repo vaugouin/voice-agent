@@ -316,6 +316,9 @@ def image_specs(scenario: dict) -> list[dict]:
     sources = {w["source_work_id"]: w for w in meta["source_works"]}
     persons = {p["person_id"]: p for p in meta.get("persons", [])}
     related = {(r["kind"], r["id"]): r for r in meta.get("related", [])}
+    # sizes: `meta.images.tmdb_profile_size` / `tmdb_wall_size` ("original" for a full-HD render)
+    profile_size = meta.get("images", {}).get("tmdb_profile_size", TMDB_PROFILE_SIZE)
+    wall_size = meta.get("images", {}).get("tmdb_wall_size", TMDB_WALL_SIZE)
     wanted: dict[str, dict] = {}
 
     def add(name: str, url: str) -> None:
@@ -336,14 +339,18 @@ def image_specs(scenario: dict) -> list[dict]:
         elif kind == "portraits":
             for person in brick.get("people", []):
                 person_id = person["person_id"] if isinstance(person, dict) else person
+                if isinstance(person, dict) and person.get("image"):
+                    continue  # a portrait cut from the film, already in images/
                 path = persons[person_id].get("profile_path")
                 if path:
-                    add(f"person-{person_id}.jpg", TMDB_IMAGE + TMDB_PROFILE_SIZE + path)
+                    add(f"person-{person_id}.jpg", TMDB_IMAGE + profile_size + path)
         elif kind == "poster_wall":
             for item in brick.get("items", []):
                 entry = related[(item["kind"], item["id"])]
                 if entry.get("poster_path"):
-                    add(f"wall-{item['kind']}-{item['id']}.jpg", TMDB_IMAGE + TMDB_WALL_SIZE + entry["poster_path"])
+                    add(f"wall-{item['kind']}-{item['id']}.jpg", TMDB_IMAGE + wall_size + entry["poster_path"])
+    if meta.get("images", {}).get("backdrop_url"):
+        add("backdrop.jpg", meta["images"]["backdrop_url"])  # behind the text cards, blurred by the player
     return list(wanted.values())
 
 
@@ -810,8 +817,8 @@ def resolve_brick(brick: dict, scenario: dict, assets: Path, frames: dict) -> di
         for person in brick.get("people", []):
             spec = person if isinstance(person, dict) else {"person_id": person}
             entry = persons[spec["person_id"]]
-            image = f"images/person-{spec['person_id']}.jpg"
-            people.append({"person_id": spec["person_id"], "name": entry["name"], "caption": spec.get("caption", ""),
+            image = spec.get("image") or f"images/person-{spec['person_id']}.jpg"
+            people.append({"person_id": spec["person_id"], "name": spec.get("name") or entry["name"], "caption": spec.get("caption", ""),
                            "image": image if (assets / image).exists() else None})
         out["people"] = people
     elif brick["type"] == "poster_wall":

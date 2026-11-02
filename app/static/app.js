@@ -13377,6 +13377,19 @@ function cinemaBrickIndexFor(index) {
   return 0;
 }
 
+// How long a brick stays on screen: from its beat to the next beat that sets another picture (or the end).
+// Card lines are revealed across that span, a poster pans across part of it.
+function cinemaBrickSpanMs(brickIndex) {
+  const beats = cinemaState.timeline.beats;
+  const start = Number(beats[brickIndex].start_ms) || 0;
+  for (let i = brickIndex + 1; i < beats.length; i += 1) {
+    if (beats[i].brick && beats[i].brick.type !== "hold") {
+      return Math.max(1500, (Number(beats[i].start_ms) || 0) - start);
+    }
+  }
+  return Math.max(1500, (Number(cinemaState.timeline.duration_ms) || start + 8000) - start);
+}
+
 function applyCinemaCue(cue, { instant = false } = {}) {
   const state = cinemaState;
   const beat = cue.beat;
@@ -13393,7 +13406,7 @@ function applyCinemaCue(cue, { instant = false } = {}) {
   const brickIndex = cinemaBrickIndexFor(cue.index);
   if (brickIndex !== state.displayedBrickIndex) {
     state.displayedBrickIndex = brickIndex;
-    renderCinemaBrick(state.timeline.beats[brickIndex].brick, { instant });
+    renderCinemaBrick(state.timeline.beats[brickIndex].brick, { instant, spanMs: cinemaBrickSpanMs(brickIndex) });
   }
 }
 
@@ -13456,7 +13469,9 @@ function buildCinemaTitleCard(brick) {
     const work = cinemaSourceWork(brick.source_work_id);
     const cover = (brick.images || []).find((path) => path.endsWith(`cover-${brick.source_work_id}.jpg`));
     if (cover) {
-      card.appendChild(cinemaImage(cover, work ? `${work.name} cover` : "cover"));
+      const coverImg = cinemaImage(cover, work ? `${work.name} cover` : "cover");
+      coverImg.classList.add("isCover");  // book covers are often small scans: shown smaller, never panned
+      card.appendChild(coverImg);
     }
     if (work) {
       texts.push({ title: work.name, meta: [work.author, work.year].filter(Boolean).join(" · ") });
@@ -13477,7 +13492,23 @@ function buildCinemaTitleCard(brick) {
   if (textBlock.childNodes.length) {
     card.appendChild(textBlock);
   }
-  return card;
+  // the poster fills the screen: its own picture, blurred, behind it; with `motion: "pan"` it first fills the
+  // width and scrolls from top to bottom, then settles as the full poster (first appearance of a work)
+  const images = brick.images || [];
+  const wrapper = cinemaElement("div", `cinemaTitleStage${images.length === 1 ? " isSingle" : ""}`);
+  if (images.length) {
+    const blur = cinemaElement("div", "cinemaTitleBlur");
+    blur.style.backgroundImage = `url("${cinemaAssetUrl(cinemaState.slug, images[0])}")`;
+    wrapper.appendChild(blur);
+  }
+  if (brick.motion === "pan" && images.length === 1) {
+    wrapper.classList.add("isPanning");
+    const pan = cinemaElement("div", "cinemaTitlePan");
+    pan.appendChild(cinemaImage(images[0], ""));
+    wrapper.appendChild(pan);
+  }
+  wrapper.appendChild(card);
+  return wrapper;
 }
 
 // A row of portraits (TMDb profiles): the people a line names, each with a short caption
@@ -13541,7 +13572,7 @@ function buildCinemaPosterWall(brick) {
   return wrapper;
 }
 
-function buildCinemaBrick(brick) {
+function buildCinemaBrick(brick, spanMs = 8000) {
   switch (brick.type) {
     case "title_card":
       return buildCinemaTitleCard(brick);
@@ -13567,15 +13598,22 @@ function buildCinemaBrick(brick) {
       // A text card: a heading, up to six short lines, the source in small type (fact cards, chapter cards,
       // credits). `variant` adds a class (`credits` uses two columns for long lists).
       const card = cinemaElement("section", `cinemaCard${brick.variant ? ` cinemaCard-${brick.variant}` : ""}`);
+      if (brick.kicker) {
+        card.appendChild(cinemaElement("div", "cinemaCardKicker", brick.kicker));
+      }
       if (brick.title) {
         card.appendChild(cinemaElement("h2", "cinemaCardTitle", brick.title));
       }
       const lines = brick.lines || [];
       if (lines.length) {
+        // one line at a time, spread over the time the card stays up: a card never shows what has not been said
         const list = cinemaElement("ul", "cinemaCardLines");
-        for (const line of lines) {
-          list.appendChild(cinemaElement("li", "", line));
-        }
+        const step = Math.min(6000, Math.max(700, (spanMs - 600) / (lines.length + 0.5)));
+        lines.forEach((line, k) => {
+          const li = cinemaElement("li", "", line);
+          li.style.animationDelay = `${Math.round(500 + k * step)}ms`;
+          list.appendChild(li);
+        });
         card.appendChild(list);
       }
       if (brick.source) {
@@ -13585,7 +13623,10 @@ function buildCinemaBrick(brick) {
     }
     case "quote_card": {
       // A paraphrase (of a book the episode retells, never quotes) is shown without quotation marks.
-      const quote = cinemaElement("blockquote", `cinemaQuote${brick.paraphrase ? " isParaphrase" : ""}`);
+      const quote = cinemaElement("blockquote", `cinemaQuote${brick.paraphrase ? " isParaphrase" : ""}${brick.image ? " hasImage" : ""}`);
+      if (brick.image) {
+        quote.appendChild(cinemaImage(brick.image, brick.attribution || ""));
+      }
       quote.appendChild(cinemaElement("p", "", brick.paraphrase ? brick.text : `“${brick.text}”`));
       if (brick.attribution) {
         quote.appendChild(cinemaElement("footer", "", brick.attribution));
@@ -13598,9 +13639,17 @@ function buildCinemaBrick(brick) {
 }
 
 // Crossfade: the new brick enters over the old one, which fades out and is removed.
-function renderCinemaBrick(brick, { instant = false } = {}) {
-  const item = cinemaElement("div", `cinemaBrickItem cinemaBrickItem-${brick.type}`);
-  item.appendChild(buildCinemaBrick(brick));
+function renderCinemaBrick(brick, { instant = false, spanMs = 8000 } = {}) {
+  const item = cinemaElement("div", `cinemaBrickItem cinemaBrickItem-${brick.type}${brick.variant ? ` cinemaBrickItem-${brick.variant}` : ""}`);
+  item.style.setProperty("--cinema-span", `${spanMs}ms`);
+  // text bricks sit on the film's backdrop, blurred and darkened (meta.images.backdrop_image)
+  const backdrop = cinemaState.timeline.meta?.images?.backdrop_image;
+  if (backdrop && ["card", "quote_card"].includes(brick.type)) {
+    const layer = cinemaElement("div", "cinemaBackdrop");
+    layer.style.backgroundImage = `url("${cinemaAssetUrl(cinemaState.slug, backdrop)}")`;
+    item.appendChild(layer);
+  }
+  item.appendChild(buildCinemaBrick(brick, spanMs));
   const previous = Array.from(cinemaBrick.children);
   if (instant) {
     item.classList.add("isInstant");
@@ -13608,7 +13657,10 @@ function renderCinemaBrick(brick, { instant = false } = {}) {
   } else {
     previous.forEach((node) => {
       node.classList.add("isLeaving");
-      window.setTimeout(() => node.remove(), CINEMA_BRICK_LEAVE_MS);
+      // in render mode the renderer steps the animations and removes the leaving brick itself
+      if (!document.body.classList.contains("cinemaRender")) {
+        window.setTimeout(() => node.remove(), CINEMA_BRICK_LEAVE_MS);
+      }
     });
   }
   cinemaBrick.appendChild(item);
@@ -13773,6 +13825,19 @@ async function initCinemaMode(slug) {
   updateCinemaPlayButton();
   clientLog("cinema_loaded", { slug, beats: cues.length, duration_ms: timeline.duration_ms || null });
   const params = new URLSearchParams(window.location.search);
+  // ?render=1: tools/render-cinema-stills.py drives the stage beat by beat and steps the CSS animations itself
+  if (parseUrlBooleanFlag(params.get("render")) === true) {
+    document.body.classList.add("cinemaRender");
+    window.__cinemaRender = {
+      beats: timeline.beats.map((beat) => ({ id: beat.id, start_ms: beat.start_ms, hold: !beat.brick || beat.brick.type === "hold" })),
+      duration_ms: timeline.duration_ms,
+      show(index) {
+        const cue = cinemaState.cues.find((c) => c.index === index);
+        applyCinemaCue(cue, { instant: false });
+        return cinemaState.displayedBrickIndex;
+      },
+    };
+  }
   if (parseUrlBooleanFlag(params.get("autoplay")) === true) {
     cinemaAudio.play().catch((error) => log("cinema autoplay blocked", error.message));
   }

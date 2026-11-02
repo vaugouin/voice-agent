@@ -17,7 +17,7 @@ Design: `~/Nestor/projets/t2s-backlog/app-ideas-010-generated-podcast-video.md`.
 
 ## Playing an episode
 
-Open the app with `?cinema=<slug>` (for example `http://127.0.0.1:3000/?cinema=yojimbo-fistful`): the live app is hidden, the stage loads `assets/<slug>/timeline.json` and `episode.mp3` (served by the `/cinema` mount when the folder exists), shows the first brick and waits for Play. `&autoplay=1` tries to start at once (browsers may block it). Space or K plays and pauses, the arrow keys seek by five seconds, Home restarts. Bricks follow the audio clock, so pause and seek keep them in step; the scheduler mirrors the spoken-card cue engine of the live app (one timer, a sorted queue). A `hold` brick keeps the previous picture. `tools/render-cinema-stills.py <slug> --mp4` then writes `episode.mp4`: one still per beat over the audio, loudness brought to -14 LUFS (-1.5 dBTP, two-pass loudnorm), and chapters from `meta.chapters` (`[{beat, title}]`) as MP4 chapter metadata plus `chapters-youtube.txt` for the description.
+Open the app with `?cinema=<slug>` (for example `http://127.0.0.1:3000/?cinema=yojimbo-fistful`): the live app is hidden, the stage loads `assets/<slug>/timeline.json` and `episode.mp3` (served by the `/cinema` mount when the folder exists), shows the first brick and waits for Play. `&autoplay=1` tries to start at once (browsers may block it). Space or K plays and pauses, the arrow keys seek by five seconds, Home restarts. Bricks follow the audio clock, so pause and seek keep them in step; the scheduler mirrors the spoken-card cue engine of the live app (one timer, a sorted queue). A `hold` brick keeps the previous picture. `tools/render-cinema-video.py <slug>` renders the episode with its motion (2026-11-02): the page in render mode (`&render=1`) exposes `window.__cinemaRender.show(i)`, the tool pauses every CSS animation and sets its `currentTime` itself, screenshots at 25 fps while something moves (crossfades, card lines, the settle of a still, a poster pan) and holds the picture otherwise, then appends silent scrolling credits from `meta.credits` (`[{heading, lines}]`, plus `credits_subtitle`, `credits_footer`). Images at full size: `meta.images.tmdb_profile_size` and `tmdb_wall_size` (`original`), `backdrop_url` / `backdrop_image` for the text cards. The older `tools/render-cinema-stills.py <slug> --mp4` writes `episode.mp4`: one still per beat over the audio, loudness brought to -14 LUFS (-1.5 dBTP, two-pass loudnorm), and chapters from `meta.chapters` (`[{beat, title}]`) as MP4 chapter metadata plus `chapters-youtube.txt` for the description.
 
 ## The scenario contract (`version: 2`)
 
@@ -53,14 +53,14 @@ beats[]     id, voice (candide | expert), track (fact | performance), text, spee
 
 | type | fields | shows |
 | --- | --- | --- |
-| `title_card` | `movie_id` or `source_work_id`, optional `caption` | poster or cover, title, year, runtime; two ids give a diptych |
+| `title_card` | `movie_id` or `source_work_id`, optional `caption`, `motion: "pan"` | poster or cover at full height over its own blurred copy; with `pan`, the poster first fills the width and scrolls top to bottom over half its time on screen, then settles whole (first appearance of a work); a cover (often a small scan) is shown smaller and never panned |
 | `quoted_frame` | `movie_id`, `copy`, `timecode`, `caption` | the frame at that timecode of that copy, the quoted line under it |
 | `frame` | same fields | the same, with a descriptive caption instead of a quotation (the action between two lines) |
 | `split_frames` | `left`, `right` (each a frame spec), `caption` | two frames side by side |
-| `portraits` | `people[]` (`person_id`, `caption`), optional `caption` | a row of TMDb portraits with a caption under each (a pseudonym, a refusal, a credit); a person without a photo gets their initials |
+| `portraits` | `people[]` (`person_id`, `caption`, optional `image` and `name`: a portrait cut from the film, the character's name), optional `caption` | a row of TMDb portraits with a caption under each (a pseudonym, a refusal, a credit); a person without a photo gets their initials |
 | `poster_wall` | `items[]` (`kind`, `id`), optional `caption` | the posters of the films and series a line names, title and year under each |
-| `quote_card` | `text`, `attribution` | a verbatim quotation, full screen |
-| `card` | `title`, `lines[]` (up to six), `source`, optional `variant` (`chapter`, `credits`: two columns) | a text card: a fact card, a chapter card, the end credits |
+| `quote_card` | `text`, `attribution`, optional `paraphrase` (no quotation marks, serif italic), `image` (a book cover, a portrait beside the text) | a quotation or a paraphrase of a book, on the blurred backdrop |
+| `card` | `title`, `lines[]` (up to four), optional `kicker` (small caps above the title), `variant` (`chapter`: title only, centred) | a text card on the film's blurred backdrop; its lines appear one at a time, spread over the time the card stays up, so a card never shows what has not been said yet |
 | `hold` | | keep the previous brick |
 
 A story told over several lines wants a frame every few lines, not one picture held for a minute: the Yojimbo / Fistful episode changes its picture on 44 of its 85 beats.

@@ -3544,3 +3544,325 @@ body.cinemaMode main {
     transition: none;
   }
 }
+
+/* Cinema look v2 (2026-11-02, Strangelove pilot review): text on the film's blurred backdrop, cards that
+   reveal one line at a time over the time they stay up, posters and portraits at full size, the first poster
+   of a work panned from top to bottom. Every animation is a CSS animation, so the renderer can step it
+   frame by frame (render mode, ?render=1). */
+.cinemaBackdrop {
+  position: absolute;
+  inset: -40px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(22px) brightness(0.28) saturate(0.6);
+  transform: scale(1.08);
+  z-index: 0;
+}
+
+.cinemaBrickItem > :not(.cinemaBackdrop) {
+  position: relative;
+  z-index: 1;
+}
+
+.cinemaCard {
+  width: min(1500px, 86vw);
+  padding: clamp(28px, 4vh, 56px) clamp(32px, 4vw, 72px);
+  border-left: 6px solid var(--accent-primary);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgb(12 12 18 / 82%), rgb(28 24 40 / 70%));
+  box-shadow: 0 30px 80px rgb(0 0 0 / 60%);
+}
+
+.cinemaCardKicker {
+  color: var(--accent-secondary);
+  font-size: clamp(0.9rem, 1.4vw, 1.25rem);
+  font-weight: 700;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  animation: cinemaFadeUp 600ms ease-out both;
+}
+
+.cinemaCardTitle {
+  font-size: clamp(2rem, 4vw, 3.8rem);
+  letter-spacing: -0.01em;
+  animation: cinemaFadeUp 650ms ease-out both;
+}
+
+.cinemaCardTitle::after {
+  content: "";
+  display: block;
+  height: 4px;
+  margin-top: 16px;
+  border-radius: 2px;
+  background: var(--accent-primary);
+  transform-origin: left;
+  animation: cinemaRule 900ms 200ms ease-out both;
+}
+
+.cinemaCardLines {
+  list-style: none;
+  padding: 0;
+  gap: 18px;
+  font-size: clamp(1.3rem, 2.5vw, 2.3rem);
+}
+
+.cinemaCardLines li {
+  position: relative;
+  padding-left: 1.2em;
+  animation: cinemaFadeUp 600ms ease-out both;
+}
+
+.cinemaCardLines li::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0.5em;
+  width: 0.45em;
+  height: 0.45em;
+  border-radius: 2px;
+  background: var(--accent-secondary);
+}
+
+.cinemaCard-chapter {
+  width: auto;
+  max-width: 80vw;
+  border-left: 0;
+  background: none;
+  box-shadow: none;
+  text-align: center;
+  justify-items: center;
+}
+
+.cinemaCard-chapter .cinemaCardTitle {
+  font-size: clamp(2.6rem, 5.4vw, 5.2rem);
+  text-shadow: 0 6px 30px rgb(0 0 0 / 70%);
+}
+
+.cinemaCard-chapter .cinemaCardTitle::after {
+  margin: 22px auto 0;
+  width: 40%;
+  transform-origin: center;
+}
+
+.cinemaQuote {
+  max-width: 78vw;
+  padding: clamp(28px, 4vh, 56px) clamp(36px, 4vw, 72px);
+  border-radius: 14px;
+  background: rgb(10 10 16 / 66%);
+  box-shadow: 0 30px 80px rgb(0 0 0 / 60%);
+  animation: cinemaFadeUp 800ms ease-out both;
+}
+
+.cinemaQuote.hasImage {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: 1fr auto;
+  column-gap: clamp(28px, 3vw, 56px);
+  align-items: center;
+  text-align: left;
+}
+
+.cinemaQuote.hasImage img {
+  grid-row: 1 / span 2;
+  height: min(52vh, 520px);
+  border-radius: 10px;
+  box-shadow: 0 20px 50px rgb(0 0 0 / 60%);
+}
+
+.cinemaQuote.isParaphrase p {
+  font-family: Georgia, "Times New Roman", serif;
+  font-size: 1.05em;
+  line-height: 1.35;
+}
+
+.cinemaQuote footer {
+  color: var(--accent-secondary);
+  font-size: 0.48em;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+}
+
+.cinemaTitleStage {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  overflow: hidden;
+}
+
+.cinemaTitleBlur {
+  position: absolute;
+  inset: -60px;
+  background-size: cover;
+  background-position: center;
+  filter: blur(30px) brightness(0.35);
+  transform: scale(1.1);
+}
+
+.cinemaTitleStage .cinemaTitleCard {
+  position: relative;
+  gap: clamp(28px, 3vw, 60px);
+}
+
+.cinemaTitleStage .cinemaTitleCard img {
+  height: 84vh;
+  max-height: 84vh;
+  max-width: 44vw;
+  border-radius: 10px;
+  box-shadow: 0 30px 90px rgb(0 0 0 / 70%);
+}
+
+.cinemaTitleStage .cinemaTitleText {
+  max-width: 34vw;
+}
+
+.cinemaTitleStage .cinemaTitleName {
+  font-size: clamp(1.8rem, 3.4vw, 3.2rem);
+}
+
+.cinemaTitlePan {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  animation: cinemaFadeOut 900ms calc(var(--cinema-span, 8000ms) * 0.5) ease-in both;
+}
+
+.cinemaTitlePan img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: 50% 0%;
+  animation: cinemaPan calc(var(--cinema-span, 8000ms) * 0.55) ease-in-out both;
+}
+
+.cinemaTitleStage.isPanning .cinemaTitleCard {
+  animation: cinemaFadeUp 900ms calc(var(--cinema-span, 8000ms) * 0.5) ease-out both;
+}
+
+.cinemaPortraits {
+  align-items: flex-end;
+}
+
+.cinemaPortrait {
+  max-width: none;
+  animation: cinemaFadeUp 700ms ease-out both;
+}
+
+.cinemaPortrait:nth-child(2) { animation-delay: 180ms; }
+.cinemaPortrait:nth-child(3) { animation-delay: 360ms; }
+.cinemaPortrait:nth-child(4) { animation-delay: 540ms; }
+.cinemaPortrait:nth-child(5) { animation-delay: 720ms; }
+
+.cinemaPortraitMedia {
+  height: 52vh;
+}
+
+.cinemaPortraits[data-count="1"] .cinemaPortraitMedia,
+.cinemaPortraits[data-count="2"] .cinemaPortraitMedia {
+  height: 64vh;
+}
+
+.cinemaPortraits[data-count="4"] .cinemaPortraitMedia,
+.cinemaPortraits[data-count="5"] .cinemaPortraitMedia {
+  height: 42vh;
+}
+
+.cinemaPortraitName {
+  font-size: clamp(1.1rem, 1.9vw, 1.6rem);
+}
+
+.cinemaPortraitCaption {
+  color: var(--accent-secondary);
+  font-size: clamp(0.95rem, 1.5vw, 1.25rem);
+}
+
+.cinemaPosterWall {
+  flex-wrap: nowrap;
+  align-items: flex-end;
+  gap: clamp(24px, 3vw, 56px);
+}
+
+.cinemaPoster {
+  max-width: none;
+  animation: cinemaFadeUp 700ms ease-out both;
+}
+
+.cinemaPoster:nth-child(2) { animation-delay: 200ms; }
+.cinemaPoster:nth-child(3) { animation-delay: 400ms; }
+.cinemaPoster:nth-child(4) { animation-delay: 600ms; }
+
+.cinemaPosterMedia,
+.cinemaPosterWall[data-count="1"] .cinemaPosterMedia,
+.cinemaPosterWall[data-count="2"] .cinemaPosterMedia {
+  height: 66vh;
+  width: auto;
+}
+
+.cinemaPosterWall[data-count="3"] .cinemaPosterMedia {
+  height: 56vh;
+}
+
+.cinemaPosterWall[data-count="4"] .cinemaPosterMedia,
+.cinemaPosterWall[data-count="5"] .cinemaPosterMedia {
+  height: 46vh;
+}
+
+.cinemaPosterTitle {
+  font-size: clamp(1rem, 1.7vw, 1.4rem);
+}
+
+.cinemaFrameMedia img {
+  max-height: calc(100vh - 210px);
+}
+
+body.cinemaRender .cinemaFrameMedia img {
+  animation: cinemaSettle 1400ms ease-out both;
+}
+
+@keyframes cinemaFadeUp {
+  from { opacity: 0; transform: translateY(18px); }
+  to { opacity: 1; transform: none; }
+}
+
+@keyframes cinemaFadeOut {
+  to { opacity: 0; }
+}
+
+@keyframes cinemaRule {
+  from { transform: scaleX(0); }
+  to { transform: scaleX(1); }
+}
+
+@keyframes cinemaPan {
+  from { object-position: 50% 0%; }
+  to { object-position: 50% 100%; }
+}
+
+@keyframes cinemaSettle {
+  from { transform: scale(1.045); }
+  to { transform: scale(1); }
+}
+
+body.cinemaMode .cinemaLine {
+  max-width: min(1500px, calc(100vw - 32px));
+  font-size: clamp(1rem, 2.2vw, 1.65rem);
+}
+
+.cinemaTitleStage .cinemaTitleCard img.isCover {
+  height: 58vh;
+  max-height: 58vh;
+}
+
+.cinemaQuote.hasImage img {
+  height: min(40vh, 400px);
+}
+
+.cinemaBrickItem > .cinemaTitleStage {
+  position: absolute;
+  inset: 0;
+}
+
+.cinemaPosterWall[data-count="1"] .cinemaPosterMedia,
+.cinemaPosterWall[data-count="2"] .cinemaPosterMedia {
+  height: 74vh;
+}
