@@ -13437,15 +13437,165 @@ function cinemaImage(path, alt) {
   return img;
 }
 
+// Cinema look v3 (2026-11-03, Strangelove pilot): restrained motion on the film's own themes. Text that is typed
+// (a novel paraphrase, a renamed character, a teleprinter code) appears letter by letter; every letter is a CSS
+// animation with its own delay, set here when the brick is built, so tools/render-cinema-video.py steps it like
+// the rest. Returns the time (ms from the brick's start) when the last letter appears.
+function cinemaTypeInto(container, text, { startMs = 500, stepMs = 40 } = {}) {
+  let k = 0;
+  for (const part of String(text || "").split(/(\s+)/)) {
+    if (!part) {
+      continue;
+    }
+    if (/^\s+$/.test(part)) {
+      container.appendChild(document.createTextNode(" "));
+      k += 1;
+      continue;
+    }
+    // letters of one word stay on one line: the layout is fixed before the first letter shows
+    const word = cinemaElement("span", "cinemaTypeWord");
+    for (const ch of Array.from(part)) {
+      const letter = cinemaElement("span", "cinemaTypeChar", ch);
+      letter.style.animationDelay = `${Math.round(startMs + k * stepMs)}ms`;
+      word.appendChild(letter);
+      k += 1;
+    }
+    container.appendChild(word);
+  }
+  return Math.round(startMs + k * stepMs);
+}
+
+// A quoted line lit word by word as the host says it: `sync` holds, per whitespace-separated word, its time in
+// ms from the brick's start (tools/build-cinema-assets.py, from words.json); a word not heard takes its
+// neighbour's time. Without `sync`, the plain text.
+function cinemaSpokenInto(container, text, sync) {
+  const words = String(text || "").split(/\s+/).filter(Boolean);
+  if (!Array.isArray(sync) || sync.length !== words.length || !sync.some((t) => Number.isFinite(t))) {
+    container.textContent = text;
+    return;
+  }
+  const times = sync.slice();
+  for (let k = 0; k < times.length; k += 1) {
+    if (!Number.isFinite(times[k])) {
+      times[k] = k > 0 ? times[k - 1] : times.find((t) => Number.isFinite(t));
+    }
+  }
+  container.classList.add("isSpoken");
+  words.forEach((word, k) => {
+    const span = cinemaElement("span", "cinemaSpokenWord", word);
+    span.style.animationDelay = `${Math.max(0, Math.round(times[k]))}ms`;
+    container.appendChild(span);
+    if (k < words.length - 1) {
+      container.appendChild(document.createTextNode(" "));
+    }
+  });
+}
+
+function buildCinemaRename(brick) {
+  const card = cinemaElement("section", "cinemaRename");
+  if (brick.label) {
+    card.appendChild(cinemaElement("div", "cinemaCardKicker", brick.label));
+  }
+  const meta = cinemaState.timeline.meta || {};
+  const novelWork = brick.novel_work || meta.source_works?.[0]?.name || meta.source_works?.[0]?.title || "Novel";
+  const filmWork = brick.film_work || meta.works?.[0]?.title || "Film";
+  const novelRow = cinemaElement("div", "cinemaRenameRow isNovel");
+  novelRow.appendChild(cinemaElement("span", "cinemaRenameWork", novelWork));
+  const novelName = cinemaElement("span", "cinemaRenameName");
+  novelName.appendChild(cinemaElement("span", "", brick.novel));
+  novelName.appendChild(cinemaElement("span", "cinemaRenameStrike"));
+  novelRow.appendChild(novelName);
+  const filmRow = cinemaElement("div", "cinemaRenameRow isFilm");
+  filmRow.appendChild(cinemaElement("span", "cinemaRenameWork", filmWork));
+  const filmName = cinemaElement("span", "cinemaRenameName");
+  cinemaTypeInto(filmName, brick.film, { startMs: 2300, stepMs: 60 });
+  filmRow.appendChild(filmName);
+  card.append(novelRow, filmRow);
+  return card;
+}
+
+function buildCinemaTeletype(brick) {
+  const wrapper = cinemaElement("div", "cinemaTeletype");
+  const strip = cinemaElement("div", "cinemaTeletypeStrip");
+  const text = cinemaElement("span", "cinemaTeletypeText");
+  const end = cinemaTypeInto(text, brick.text, { startMs: 700, stepMs: 150 });
+  strip.appendChild(text);
+  wrapper.appendChild(strip);
+  if (brick.caption) {
+    const caption = cinemaElement("p", "cinemaTeletypeCaption", brick.caption);
+    caption.style.animationDelay = `${end + 300}ms`;
+    wrapper.appendChild(caption);
+  }
+  return wrapper;
+}
+
+// The Big Board: a thin line across the top of the stage, a tick at each chapter, a marker that moves with the
+// episode and the current chapter's title in small type. Set from the audio clock, or by the renderer.
+function buildCinemaBoard(timeline) {
+  const chapters = timeline.meta?.chapters || [];
+  const total = timeline.duration_ms || 0;
+  if (!chapters.length || !total) {
+    return null;
+  }
+  const startOf = new Map(timeline.beats.map((beat) => [beat.id, beat.start_ms]));
+  const marks = chapters
+    .map((chapter) => ({ title: chapter.title, at: startOf.get(chapter.beat) }))
+    .filter((mark) => Number.isFinite(mark.at));
+  const board = cinemaElement("div", "cinemaBoard");
+  board.setAttribute("aria-hidden", "true");
+  const track = cinemaElement("div", "cinemaBoardTrack");
+  const fill = cinemaElement("div", "cinemaBoardFill");
+  track.appendChild(fill);
+  for (const mark of marks) {
+    const tick = cinemaElement("i", "cinemaBoardTick");
+    tick.style.left = `${(mark.at / total) * 100}%`;
+    track.appendChild(tick);
+  }
+  const marker = cinemaElement("div", "cinemaBoardMarker");
+  track.appendChild(marker);
+  const label = cinemaElement("div", "cinemaBoardLabel");
+  board.append(track, label);
+  cinemaStage.appendChild(board);
+  return {
+    set(ms) {
+      const share = Math.max(0, Math.min(1, ms / total));
+      fill.style.width = `${share * 100}%`;
+      marker.style.left = `${share * 100}%`;
+      let current = null;
+      for (const mark of marks) {
+        if (mark.at <= ms + 1) {
+          current = mark;
+        }
+      }
+      const title = current ? current.title : "";
+      if (label.textContent !== title) {
+        label.textContent = title;
+      }
+    },
+  };
+}
+
 function buildCinemaFrame(spec, caption) {
   const figure = cinemaElement("figure", "cinemaFrame");
   const media = cinemaElement("div", "cinemaFrameMedia");
   const work = cinemaWork(spec.movie_id);
   media.appendChild(cinemaImage(spec.image, work ? `${work.title}, ${spec.timecode}` : spec.timecode));
+  if (spec.tag) {
+    // lower-third name tag on a character's first still: "Character · Actor"
+    const [who, actor] = String(spec.tag).split(/\s+·\s+/);
+    const tag = cinemaElement("div", "cinemaTag");
+    tag.appendChild(cinemaElement("span", "cinemaTagName", who));
+    if (actor) {
+      tag.appendChild(cinemaElement("span", "cinemaTagActor", actor));
+    }
+    media.appendChild(tag);
+  }
   figure.appendChild(media);
   const text = caption ?? spec.caption;
   if (text) {
-    figure.appendChild(cinemaElement("figcaption", "", text));
+    const figcaption = cinemaElement("figcaption", "");
+    cinemaSpokenInto(figcaption, text, caption === undefined ? spec.sync : null);
+    figure.appendChild(figcaption);
   }
   return figure;
 }
@@ -13627,12 +13777,26 @@ function buildCinemaBrick(brick, spanMs = 8000) {
       if (brick.image) {
         quote.appendChild(cinemaImage(brick.image, brick.attribution || ""));
       }
-      quote.appendChild(cinemaElement("p", "", brick.paraphrase ? brick.text : `“${brick.text}”`));
+      const body = cinemaElement("p", "");
+      if (brick.paraphrase) {
+        // the novel retold: typed like a manuscript page, finished well before the card leaves
+        const length = Array.from(brick.text || "").length || 1;
+        const stepMs = Math.max(14, Math.min(55, (Math.min(spanMs * 0.6, length * 55) - 500) / length));
+        const end = cinemaTypeInto(body, brick.text, { startMs: 500, stepMs });
+        quote.style.setProperty("--cinema-typed", `${end}ms`);
+      } else {
+        cinemaSpokenInto(body, `“${brick.text}”`, brick.sync);
+      }
+      quote.appendChild(body);
       if (brick.attribution) {
         quote.appendChild(cinemaElement("footer", "", brick.attribution));
       }
       return quote;
     }
+    case "rename":
+      return buildCinemaRename(brick);
+    case "teletype":
+      return buildCinemaTeletype(brick);
     default:
       return cinemaElement("div", "cinemaUnknownBrick", brick.type || "");
   }
@@ -13644,7 +13808,7 @@ function renderCinemaBrick(brick, { instant = false, spanMs = 8000 } = {}) {
   item.style.setProperty("--cinema-span", `${spanMs}ms`);
   // text bricks sit on the film's backdrop, blurred and darkened (meta.images.backdrop_image)
   const backdrop = cinemaState.timeline.meta?.images?.backdrop_image;
-  if (backdrop && ["card", "quote_card"].includes(brick.type)) {
+  if (backdrop && ["card", "quote_card", "rename", "teletype"].includes(brick.type)) {
     const layer = cinemaElement("div", "cinemaBackdrop");
     layer.style.backgroundImage = `url("${cinemaAssetUrl(cinemaState.slug, backdrop)}")`;
     item.appendChild(layer);
@@ -13699,6 +13863,7 @@ function updateCinemaClock() {
   const current = cinemaAudio.currentTime * 1000;
   cinemaClock.textContent = `${cinemaFormatClock(current)} / ${cinemaFormatClock(duration)}`;
   cinemaProgressBar.style.width = duration ? `${Math.min(100, (current / duration) * 100)}%` : "0%";
+  cinemaState?.board?.set(current);
 }
 
 function updateCinemaPlayButton() {
@@ -13814,6 +13979,7 @@ async function initCinemaMode(slug) {
   const cues = timeline.beats.map((beat, index) => ({ index, atMs: Math.max(0, Number(beat.start_ms) || 0), beat }));
   cues.sort((a, b) => a.atMs - b.atMs || a.index - b.index);
   cinemaState = { slug, timeline, cues, queue: [], timer: null, currentIndex: null, displayedBrickIndex: null };
+  cinemaState.board = buildCinemaBoard(timeline);
   cinemaTitle.textContent = timeline.meta?.title || slug;
   document.title = `${timeline.meta?.title || slug} · cinema`;
   cinemaAudio.src = cinemaAssetUrl(slug, "episode.mp3");
@@ -13835,6 +14001,9 @@ async function initCinemaMode(slug) {
         const cue = cinemaState.cues.find((c) => c.index === index);
         applyCinemaCue(cue, { instant: false });
         return cinemaState.displayedBrickIndex;
+      },
+      setTime(ms) {
+        cinemaState.board?.set(ms);
       },
     };
   }

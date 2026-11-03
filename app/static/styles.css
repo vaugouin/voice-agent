@@ -3866,3 +3866,262 @@ body.cinemaMode .cinemaLine {
 .cinemaPosterWall[data-count="2"] .cinemaPosterMedia {
   height: 74vh;
 }
+
+/* Cinema look v3 (2026-11-03, Strangelove pilot, Philippe: "more entertaining but not too flashy"). Restrained
+   motion that stays on the film's own themes: a slow push-in on every still, a lower-third name tag on a
+   character's first still, the novel's paraphrases typed like a manuscript, a renamed character struck through
+   and retyped, codes printed on a teleprinter strip, quoted lines lit word by word as they are said, and a thin
+   Big Board line across the top. Every animation is a CSS animation whose delay is set when the brick is built,
+   so tools/render-cinema-video.py steps it frame by frame. */
+.cinemaFrameMedia {
+  position: relative;
+}
+
+.cinemaFrameMedia img,
+body.cinemaRender .cinemaFrameMedia img {
+  transform-origin: 50% 45%;
+  animation: cinemaPushIn var(--cinema-span, 12s) linear both;
+}
+
+.cinemaSplit .cinemaFrameMedia img,
+body.cinemaRender .cinemaSplit .cinemaFrameMedia img {
+  animation: cinemaPushIn var(--cinema-span, 12s) linear both;
+}
+
+@keyframes cinemaPushIn {
+  from { transform: scale(1); }
+  to { transform: scale(1.035); }
+}
+
+.cinemaTag {
+  position: absolute;
+  left: clamp(18px, 2.4vw, 40px);
+  bottom: clamp(18px, 3vh, 36px);
+  display: grid;
+  gap: 2px;
+  padding: 10px 18px 11px 16px;
+  border-left: 4px solid var(--accent-primary);
+  background: linear-gradient(90deg, rgb(8 8 12 / 82%), rgb(8 8 12 / 40%));
+  text-align: left;
+  animation: cinemaTagLife 6800ms ease-out 700ms both;
+}
+
+.cinemaTagName {
+  color: #f2efe8;
+  font-size: clamp(1rem, 1.6vw, 1.45rem);
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.cinemaTagActor {
+  color: var(--accent-secondary);
+  font-size: clamp(0.8rem, 1.1vw, 1rem);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+@keyframes cinemaTagLife {
+  0% { opacity: 0; transform: translateX(-16px); }
+  9% { opacity: 1; transform: none; }
+  88% { opacity: 1; transform: none; }
+  100% { opacity: 0; transform: none; }
+}
+
+.cinemaTypeWord {
+  white-space: nowrap;
+}
+
+.cinemaTypeChar {
+  opacity: 0;
+  animation: cinemaTypeIn 40ms steps(1, end) both;
+}
+
+@keyframes cinemaTypeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.cinemaQuote.isParaphrase p {
+  font-family: "Courier New", Courier, monospace;
+  font-style: normal;
+  font-size: 0.98em;
+  font-weight: 600;
+  line-height: 1.38;
+  color: #efe9d8;
+}
+
+.cinemaQuote.isParaphrase footer {
+  animation: cinemaFadeUp 600ms ease-out both;
+  animation-delay: var(--cinema-typed, 1200ms);
+}
+
+.cinemaSpokenWord {
+  opacity: 0.38;
+  animation: cinemaSpoken 280ms ease-out both;
+}
+
+@keyframes cinemaSpoken {
+  from { opacity: 0.38; }
+  to { opacity: 1; }
+}
+
+.cinemaRename {
+  width: min(1400px, 84vw);
+  padding: clamp(30px, 5vh, 64px) clamp(36px, 4.5vw, 80px);
+  border-left: 6px solid var(--accent-primary);
+  border-radius: 14px;
+  background: linear-gradient(135deg, rgb(12 12 18 / 84%), rgb(28 24 40 / 72%));
+  box-shadow: 0 30px 80px rgb(0 0 0 / 60%);
+  display: grid;
+  gap: clamp(14px, 2.6vh, 30px);
+}
+
+.cinemaRenameRow {
+  display: grid;
+  grid-template-columns: minmax(180px, 16vw) 1fr;
+  align-items: baseline;
+  gap: 28px;
+}
+
+.cinemaRenameRow.isNovel {
+  animation: cinemaFadeUp 600ms ease-out 300ms both;
+}
+
+.cinemaRenameRow.isFilm .cinemaRenameWork {
+  animation: cinemaFadeUp 500ms ease-out 1900ms both;
+}
+
+.cinemaRenameWork {
+  color: var(--accent-secondary);
+  font-size: clamp(0.85rem, 1.2vw, 1.1rem);
+  font-style: italic;
+  letter-spacing: 0.06em;
+}
+
+.cinemaRenameName {
+  position: relative;
+  justify-self: start;
+  font-size: clamp(1.8rem, 3.8vw, 3.4rem);
+  font-weight: 700;
+  line-height: 1.1;
+  color: #f2efe8;
+}
+
+.cinemaRenameRow.isNovel .cinemaRenameName {
+  font-family: "Courier New", Courier, monospace;
+  color: #cfc8b8;
+}
+
+.cinemaRenameStrike {
+  position: absolute;
+  left: -4px;
+  right: -4px;
+  top: 54%;
+  height: 4px;
+  background: #d0453a;
+  transform-origin: left center;
+  animation: cinemaRule 520ms ease-in-out 1300ms both;
+}
+
+.cinemaTeletype {
+  display: grid;
+  justify-items: center;
+  gap: 26px;
+}
+
+.cinemaTeletypeStrip {
+  min-width: min(900px, 70vw);
+  padding: 30px 48px;
+  background:
+    radial-gradient(circle, rgb(0 0 0 / 22%) 3px, transparent 4px) 0 8px / 26px 100% repeat-x,
+    linear-gradient(180deg, #efe9d8, #e3dcc6);
+  border-radius: 3px;
+  box-shadow: 0 24px 60px rgb(0 0 0 / 60%);
+  text-align: center;
+  transform: rotate(-0.6deg);
+  animation: cinemaFadeUp 500ms ease-out both;
+}
+
+.cinemaTeletypeText {
+  color: #1d1b17;
+  font-family: "Courier New", Courier, monospace;
+  font-size: clamp(2.4rem, 6vw, 5.4rem);
+  font-weight: 700;
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+}
+
+.cinemaTeletypeCaption {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: clamp(1rem, 1.7vw, 1.5rem);
+  animation: cinemaFadeUp 600ms ease-out both;
+}
+
+.cinemaBoard {
+  position: absolute;
+  top: 16px;
+  left: 4vw;
+  right: 4vw;
+  z-index: 5;
+  pointer-events: none;
+}
+
+.cinemaBoardTrack {
+  position: relative;
+  height: 2px;
+  background: rgb(255 255 255 / 13%);
+}
+
+.cinemaBoardFill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 0;
+  background: rgb(208 69 58 / 75%);
+}
+
+.cinemaBoardTick {
+  position: absolute;
+  top: -3px;
+  width: 1px;
+  height: 8px;
+  background: rgb(255 255 255 / 35%);
+}
+
+.cinemaBoardMarker {
+  position: absolute;
+  top: -5px;
+  left: 0;
+  width: 0;
+  height: 0;
+  margin-left: -5px;
+  border-top: 6px solid transparent;
+  border-bottom: 6px solid transparent;
+  border-left: 10px solid #e8604f;
+  filter: drop-shadow(0 0 4px rgb(232 96 79 / 70%));
+}
+
+.cinemaBoardLabel {
+  margin-top: 9px;
+  color: rgb(255 255 255 / 48%);
+  font-size: 0.82rem;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+
+body:not(.cinemaRender) .cinemaControls {
+  margin-top: 30px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cinemaTag,
+  .cinemaTypeChar,
+  .cinemaSpokenWord,
+  .cinemaRenameStrike,
+  .cinemaRenameRow,
+  .cinemaTeletypeStrip,
+  .cinemaTeletypeCaption {
+    animation: none;
+    opacity: 1;
+  }
+}

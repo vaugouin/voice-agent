@@ -47,6 +47,7 @@ Needs ffmpeg and ffprobe on PATH. Gemini 3.8 Flash TTS output is billed per seco
 from __future__ import annotations
 
 import argparse
+import difflib
 import hashlib
 import json
 import math
@@ -782,9 +783,65 @@ def build_timeline(scenario: dict, assets: Path) -> dict:
     run(["ffmpeg", "-v", "error", "-y", "-f", "concat", "-safe", "0", "-i", str(concat_file), "-c", "copy", str(episode_wav)])
     run(["ffmpeg", "-v", "error", "-y", "-i", str(episode_wav), "-c:a", "libmp3lame", "-b:a", MP3_BITRATE,
          str(assets / "episode.mp3")])
+    synced = sync_quotes(timeline, assets)
+    if synced:
+        print(f"  {synced} quotation cards lit word by word as they are said")
     (assets / "timeline.json").write_text(json.dumps(timeline, ensure_ascii=False, indent=2) + "\n", encoding="utf-8")
     (assets / "transcript.txt").write_text("\n".join(transcript) + "\n", encoding="utf-8")
     return timeline
+
+
+def build_words(assets: Path) -> None:
+    """Every word of the finished episode with its time (faster-whisper on episode.wav), kept in words.json: the
+    player lights the words of a quoted line as the host says them (2026-11-03)."""
+    timeline = json.loads((assets / "timeline.json").read_text(encoding="utf-8"))
+    started = time.monotonic()
+    words = transcribe_words(assets / "episode.wav")
+    (assets / "words.json").write_text(json.dumps({"duration_ms": timeline["duration_ms"], "words": [
+        [w, round(a, 3), round(b, 3)] for w, a, b in words]}, ensure_ascii=False) + "\n", encoding="utf-8")
+    print(f"words: {len(words)} heard in {time.monotonic() - started:.0f}s, words.json written")
+
+
+def sync_quotes(timeline: dict, assets: Path) -> int:
+    """Give each spoken quotation (a `quote_card` that is not a paraphrase, the caption of a `quoted_frame`) the
+    time of each of its words, in ms from the brick's start (`brick.sync`, one entry per whitespace-separated
+    word, null when unheard), when the host is heard saying most of it. Needs words.json of this very audio (same duration)."""
+    path = assets / "words.json"
+    if not path.exists():
+        return 0
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if data.get("duration_ms") != timeline["duration_ms"]:
+        print("  words.json belongs to another cut of the audio: run --only words again")
+        return 0
+    heard = [(t, a, b) for w, a, b in data["words"] for t in _norm_words(w)]
+    beats = timeline["beats"]
+    starts = [i for i, b in enumerate(beats) if (b.get("brick") or {}).get("type") != "hold"] + [len(beats)]
+    done = 0
+    for g, i in enumerate(starts[:-1]):
+        brick = beats[i]["brick"]
+        if brick.get("type") == "quoted_frame":
+            key = "caption"  # a film line under its still: "the line" (Speaker)
+        elif brick.get("type") == "quote_card" and not brick.get("paraphrase"):
+            key = "text"
+        else:
+            continue
+        s0 = beats[i]["start_ms"] / 1000
+        j = starts[g + 1]
+        s1 = beats[j]["start_ms"] / 1000 if j < len(beats) else timeline["duration_ms"] / 1000
+        window = [x for x in heard if s0 - 0.2 <= x[1] <= s1]
+        tokens = brick.get(key, "").split()
+        wanted = [((_norm_words(tok) or [""])[0], k) for k, tok in enumerate(tokens)]
+        wanted = [(w, k) for w, k in wanted if w]
+        matcher = difflib.SequenceMatcher(None, [w for w, _ in wanted], [x[0] for x in window], autojunk=False)
+        hit: dict[int, int] = {}
+        for block in matcher.get_matching_blocks():
+            for d in range(block.size):
+                hit[wanted[block.a + d][1]] = max(0, round((window[block.b + d][1] - s0) * 1000))
+        if len(wanted) < 3 or len(hit) < 0.55 * len(wanted):
+            continue
+        brick["sync"] = [hit.get(k) for k in range(len(tokens))]
+        done += 1
+    return done
 
 
 def resolve_frame(spec: dict, assets: Path, frames: dict) -> dict:
@@ -838,7 +895,7 @@ def resolve_brick(brick: dict, scenario: dict, assets: Path, frames: dict) -> di
 def main() -> int:
     parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument("scenario", type=Path)
-    parser.add_argument("--only", choices=["frames", "images", "audio", "timeline"], action="append", default=[])
+    parser.add_argument("--only", choices=["frames", "images", "audio", "timeline", "words"], action="append", default=[])
     parser.add_argument("--force", action="store_true", help="rebuild assets already on disk")
     parser.add_argument("--no-crop", action="store_true", help="keep the black bars of letterboxed copies")
     parser.add_argument("--tts", choices=["openai", "gemini"], default=None,
@@ -869,6 +926,9 @@ def main() -> int:
     if "timeline" in steps:
         timeline = build_timeline(scenario, assets)
         print(f"timeline: {len(timeline['beats'])} beats, {fmt_ms(timeline['duration_ms'])} total, episode.mp3 and transcript.txt written")
+    if "words" in steps:  # never by default: about ten minutes of whisper on the whole episode, then the timeline again
+        build_words(assets)
+        timeline = build_timeline(scenario, assets)
     return 0
 
 

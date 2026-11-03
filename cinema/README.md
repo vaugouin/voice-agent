@@ -54,12 +54,14 @@ beats[]     id, voice (candide | expert), track (fact | performance), text, spee
 | type | fields | shows |
 | --- | --- | --- |
 | `title_card` | `movie_id` or `source_work_id`, optional `caption`, `motion: "pan"` | poster or cover at full height over its own blurred copy; with `pan`, the poster first fills the width and scrolls top to bottom over half its time on screen, then settles whole (first appearance of a work); a cover (often a small scan) is shown smaller and never panned |
-| `quoted_frame` | `movie_id`, `copy`, `timecode`, `caption` | the frame at that timecode of that copy, the quoted line under it |
+| `quoted_frame` | `movie_id`, `copy`, `timecode`, `caption`, optional `tag`, `sync` | the frame at that timecode of that copy, the quoted line under it; with `sync` (per word, ms from the brick's start, filled from `words.json`), the line's words light up as the host says them; with `tag` ("Character · Actor"), a lower-third name tag slides in for about six seconds |
 | `frame` | same fields | the same, with a descriptive caption instead of a quotation (the action between two lines) |
+| `rename` | `label`, `novel`, `film`, optional `novel_work`, `film_work` (default: the titles in `meta`) | the novel's name in typewriter type, struck through in red, then the film's name typed in beneath it (a character or a place renamed by the adaptation) |
+| `teletype` | `text` (a code, at most 48 characters), optional `caption` | the text printed letter by letter on a teleprinter strip, the caption after it |
 | `split_frames` | `left`, `right` (each a frame spec), `caption` | two frames side by side |
 | `portraits` | `people[]` (`person_id`, `caption`, optional `image` and `name`: a portrait cut from the film, the character's name), optional `caption` | a row of TMDb portraits with a caption under each (a pseudonym, a refusal, a credit); a person without a photo gets their initials |
 | `poster_wall` | `items[]` (`kind`, `id`), optional `caption` | the posters of the films and series a line names, title and year under each |
-| `quote_card` | `text`, `attribution`, optional `paraphrase` (no quotation marks, serif italic), `image` (a book cover, a portrait beside the text) | a quotation or a paraphrase of a book, on the blurred backdrop |
+| `quote_card` | `text`, `attribution`, optional `paraphrase` (no quotation marks, typed letter by letter in typewriter type), `image` (a book cover, a portrait beside the text), `sync` (see `quoted_frame`) | a quotation or a paraphrase of a book, on the blurred backdrop |
 | `card` | `title`, `lines[]` (up to four), optional `kicker` (small caps above the title), `variant` (`chapter`: title only, centred) | a text card on the film's blurred backdrop; its lines appear one at a time, spread over the time the card stays up, so a card never shows what has not been said yet |
 | `hold` | | keep the previous brick |
 
@@ -69,7 +71,13 @@ A story told over several lines wants a frame every few lines, not one picture h
 
 **Timing.** `start_ms` and `duration_ms` are absent in the hand-written scenario; the audio build fills them in from the rendered lines, and that is the timeline the player uses.
 
+**Motion** (look v3, 2026-11-03). Every still pushes in slowly (3.5 % over its time on screen), bricks cross-dissolve, and a thin Big Board line runs across the top: a tick per chapter, a marker that moves with the episode, the current chapter's title in small capitals. All motion is CSS animation whose delay is fixed when the brick is built, so `tools/render-cinema-video.py` steps it frame by frame (25 fps for fast motion, about 6 fps for slow motion such as the push-in, a frame every 2 s for the Big Board).
+
+**Words.** `build-cinema-assets.py --only words` transcribes the finished `episode.wav` with faster-whisper (about ten minutes on the CPU) into `words.json`; every later `--only timeline` fills `sync` on the quotations the host is heard saying. A new cut of the audio (another duration) makes `words.json` stale: run `--only words` again.
+
 ## Rules carried over from the design note
+
+- **Restrained motion that stays on the film's own themes** (Philippe, 2026-11-03, for every episode): entertaining but never flashy. Motion is borrowed from the world of the works (the Big Board, a teleprinter, a typewritten manuscript for a 1958 novel), never generic effects (no bounce, spin, glitch, particle, zoom punch, colour flash). One effect at a time on screen, slow and short; the voice stays the star.
 
 - When the `based_on` graph asserts a link the Wikipedia text disputes, the expert says both.
 - The fact track reads the structured fields as well as the text (Techniscope is in `FILM_TECHNOLOGY`, nowhere in the text).

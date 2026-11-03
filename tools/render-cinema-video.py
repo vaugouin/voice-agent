@@ -3,7 +3,7 @@
 # dependencies = ["playwright>=1.40"]
 # ///
 """Render a cinema episode to video with its motion: crossfades, card lines revealed one by one, the slow
-settle of a still, a poster panned from top to bottom, then silent scrolling end credits (2026-11-02).
+push-in on a still, a poster panned from top to bottom, then silent scrolling end credits (2026-11-02).
 
 `render-cinema-stills.py` takes one picture per beat; this tool steps every CSS animation of the player
 (Web Animations API, `currentTime` set by hand) and screenshots at 25 frames per second while something
@@ -40,7 +40,10 @@ ROOT = Path(__file__).resolve().parent.parent
 FPS = 25
 STEP = 1000 / FPS
 HIDE = "#cinemaPlayButton, #cinemaProgressBar, #cinemaClock { visibility: hidden !important; }"
-MAX_WINDOW_MS = 20000  # an animation longer than this is sampled only up to here (safety)
+MAX_WINDOW_MS = 20000  # a fast animation longer than this is sampled only up to here (safety)
+SLOW_MS = 4000  # an animation longer than this is slow (the push-in on a still): sampled every SLOW_STEP ms
+SLOW_STEP = 160
+BOARD_STEP = 2000  # the Big Board marker moves even while nothing else does: a frame every 2 s
 
 JS_ANIMS = """() => document.getAnimations().map((a, i) => {
   a.pause();
@@ -70,12 +73,15 @@ def sample_times(windows: list[tuple[float, float]], beat_offsets: list[float], 
     line change; the frame is then held until the next sample."""
     ts = {0.0}
     for start, end in windows:
-        end = min(end, span, start + MAX_WINDOW_MS)
+        slow = end - start > SLOW_MS
+        step = SLOW_STEP if slow else STEP
+        end = min(end, span) if slow else min(end, span, start + MAX_WINDOW_MS)
         t = max(0.0, start)
         while t < end:
             ts.add(round(t / STEP) * STEP)
-            t += STEP
+            t += step
         ts.add(round(min(end, span - 1) / STEP) * STEP)
+    ts.update(float(t) for t in range(BOARD_STEP, int(span), BOARD_STEP))
     ts.update(o for o in beat_offsets if 0 <= o < span)
     return sorted(t for t in ts if 0 <= t < span)
 
@@ -132,6 +138,7 @@ def main() -> int:
                     page.evaluate(JS_DROP_LEAVING)
                     dropped = True
                 page.evaluate(JS_SET, r)
+                page.evaluate("(ms) => window.__cinemaRender.setTime && window.__cinemaRender.setTime(ms)", s_abs + r)
                 f = anim / f"{n:06d}.jpg"
                 stage.screenshot(path=str(f), type="jpeg", quality=90)
                 entries.append((f, s_abs + r))
