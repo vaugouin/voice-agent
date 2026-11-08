@@ -3302,7 +3302,9 @@ function renderRawTable(container, rows, columns) {
       }, new Set()));
   const unitByName = {};
   columns.forEach((c) => {
-    unitByName[c.name] = c.unit;
+    // A date column (BIRTH_YEAR, DEATH_YEAR) is shown as is: the API typed a calendar year
+    // "years" and the table printed "1,899 years" (2026-11-08).
+    unitByName[c.name] = c.role === "date" ? null : c.unit;
   });
   const wrap = document.createElement("div");
   wrap.className = "t2sTableWrap";
