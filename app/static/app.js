@@ -3300,6 +3300,7 @@ function renderRawTable(container, rows, columns) {
         Object.keys(r).forEach((k) => set.add(k));
         return set;
       }, new Set()));
+  const metricNames = new Set(columns.filter((c) => c.role === "metric").map((c) => c.name));
   const unitByName = {};
   columns.forEach((c) => {
     // A date column (BIRTH_YEAR, DEATH_YEAR) is shown as is: the API typed a calendar year
@@ -3324,7 +3325,9 @@ function renderRawTable(container, rows, columns) {
     keys.forEach((k) => {
       const td = document.createElement("td");
       const unit = unitByName[k];
-      td.textContent = unit ? formatMetric(r[k], unit) : r[k] == null ? "" : String(r[k]);
+      // A metric without a unit (IMDB_VOTES) gets the neutral number format (1,234,567), as the
+      // contract says; ids, years and codes stay as they are (2026-11-08).
+      td.textContent = unit || metricNames.has(k) ? formatMetric(r[k], unit) : r[k] == null ? "" : String(r[k]);
       tr.append(td);
     });
     tbody.append(tr);
