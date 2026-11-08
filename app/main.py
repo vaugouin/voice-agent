@@ -1732,6 +1732,40 @@ RESULT_COUNT_INSTRUCTIONS = (
 # spelled out. It travels in the function output as `summary_line`, beside the rows, and the same
 # sentence is the caption on screen. Voice only: the text path does not send the field, and the
 # sentence is built in app.js (text2SqlSummaryLine), never here, so there is one copy of it.
+# 2026-11-08: typed "Which directors have made the most feature films? Top 20" came back as a
+# markdown table of the twenty rows, which the subtitles read out pipe by pipe, while the screen
+# already drew the same twenty bars. The text model gets the rule, and plain_subtitle_text()
+# below is the deterministic guard when a model ignores it.
+TEXT_RESULT_ON_SCREEN_INSTRUCTIONS = (
+    "The screen already shows every result row (cards, a ranking or a table) with its values. "
+    "Never repeat the rows as a list or a table and never write markdown (no table, no bullet "
+    "list, no heading, no asterisks): answer in one or two plain sentences that say how many "
+    "results there are, in what order, and the one extreme value, then stop."
+)
+
+
+def plain_subtitle_text(text: str) -> str:
+    """Drop the markdown a model writes despite the rule: table rows, headings, bullets, bold.
+
+    The text is shown and read as subtitles; a markdown table reads as pipes and numbers.
+    Table and separator lines are removed (the screen draws the rows), a bullet keeps its
+    words, a trailing colon left by a removed table becomes a full stop.
+    """
+    lines = []
+    for line in str(text or "").splitlines():
+        stripped = line.strip()
+        if stripped.startswith("|") or re.fullmatch(r"[|:\- ]{3,}", stripped or "x"):
+            continue
+        stripped = re.sub(r"^#{1,6}\s+", "", stripped)
+        stripped = re.sub(r"^(?:[-*+]|\d+[.)])\s+", "", stripped)
+        lines.append(stripped)
+    out = re.sub(r"\*{1,2}([^*\n]+)\*{1,2}", r"\1", " ".join(l for l in lines if l))
+    out = re.sub(r"\s{2,}", " ", out).strip()
+    if out.endswith(":"):
+        out = out[:-1].rstrip() + "."
+    return out
+
+
 SUMMARY_LINE_INSTRUCTIONS = (
     "Result summary: a query_text2sql result may include summary_line, one sentence that says "
     "how many results the screen shows, in what order, and the one extreme value (for example "
@@ -3359,7 +3393,8 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         "subtitle text. Use entity names and titles; include the visible year "
         "or subtitle when it distinguishes duplicate titles. Do not enumerate "
         "cards with result numbers unless the user explicitly asks for "
-        "numbered output."
+        "numbered output. "
+        + TEXT_RESULT_ON_SCREEN_INSTRUCTIONS
     )
     instructions += (
         " " + VERBOSE_DETAIL_INSTRUCTIONS
@@ -3540,7 +3575,7 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
                     "output": json.dumps(model_output),
                 })
 
-    output_text = extract_response_text(upstream_body)
+    output_text = plain_subtitle_text(extract_response_text(upstream_body)) or extract_response_text(upstream_body)
 
     # Server-side logging for the typed /text-chat path. The browser only records
     # lengths for text turns (text_chat_sent / text_chat_success), which made typed
