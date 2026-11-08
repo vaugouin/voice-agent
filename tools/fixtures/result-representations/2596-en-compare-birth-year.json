@@ -1,0 +1,100 @@
+{
+ "question": "Compare the birth years of Alfred Hitchcock and Orson Welles",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the birth years of Alfred Hitchcock and Orson Welles, with the earlier one first.",
+ "representation": "value-cards",
+ "representation_options": [
+  "value-cards",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_PERSON",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "PERSON_NAME",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "POPULARITY",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "KNOWN_FOR_DEPARTMENT",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "BIRTH_YEAR",
+   "role": "date",
+   "unit": "years",
+   "ordered": "asc",
+   "focus": true
+  },
+  {
+   "name": "DEATH_YEAR",
+   "role": "date",
+   "unit": "years"
+  },
+  {
+   "name": "PROFILE_PATH",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 2,
+  "total": null,
+  "value_column": "BIRTH_YEAR",
+  "unit": "years",
+  "order": "date",
+  "order_direction": "asc",
+  "top": null
+ },
+ "intent": {
+  "task": "compare",
+  "focus": [
+   "birth"
+  ],
+  "focus_columns": [
+   "BIRTH_YEAR"
+  ],
+  "requested_view": "",
+  "source": "rules"
+ },
+ "page": 1,
+ "rows_per_page": 100,
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_PERSON": 2636,
+    "PERSON_NAME": "Alfred Hitchcock",
+    "POPULARITY": 3.38,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": 1899,
+    "DEATH_YEAR": 1980,
+    "PROFILE_PATH": "/108fiNM6poRieMg7RIqLJRxdAwG.jpg"
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_PERSON": 40,
+    "PERSON_NAME": "Orson Welles",
+    "POPULARITY": 2.94,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": 1915,
+    "DEATH_YEAR": 1985,
+    "PROFILE_PATH": "/e9lGmqQq3EsHeUQgQLByo275hcc.jpg"
+   }
+  }
+ ]
+}

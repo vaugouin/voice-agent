@@ -1,0 +1,50 @@
+{
+ "question": "Combien de temps faudrait-il pour regarder tous les films Harry Potter a la suite ?",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici le temps total nécessaire pour regarder les films de Harry Potter Collection à la suite, en minutes.",
+ "representation": "number-card",
+ "representation_options": [
+  "number-card",
+  "table"
+ ],
+ "result_kind": "scalar",
+ "result_columns": [
+  {
+   "name": "TOTAL_RUNTIME",
+   "role": "metric",
+   "unit": "minutes",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 1,
+  "total": null,
+  "value_column": "TOTAL_RUNTIME",
+  "unit": "minutes",
+  "order": null,
+  "order_direction": null,
+  "top": null
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "runtime"
+  ],
+  "focus_columns": [
+   "TOTAL_RUNTIME"
+  ],
+  "requested_view": "",
+  "source": "rules"
+ },
+ "page": 1,
+ "rows_per_page": 100,
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "TOTAL_RUNTIME": 1178
+   }
+  }
+ ]
+}

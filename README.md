@@ -955,6 +955,12 @@ python -m py_compile .\app\main.py .\app\__main__.py
 node --check .\app\static\app.js
 ```
 
+Result representations (VOICE-AGENT-246 to -248): the value-card, chip and summary-line helpers of `app.js`, run offline against real API responses kept in `tools/fixtures/result-representations/`:
+
+```powershell
+node .\tools\check-result-representations.mjs
+```
+
 Launcher check (no server started):
 
 ```powershell

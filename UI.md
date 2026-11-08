@@ -819,6 +819,7 @@ Content:
 
 - `.answerText`: answer text from `output.answer`, `upstream.answer`, or `Results for: {query}`.
 - optional `.errorText`: rendered if `output.error` or `upstream.error` exists.
+- optional `.t2sCaption` (VOICE-AGENT-248): the summary line, right under `.answerText`, built by `text2SqlSummaryLine()` from `upstream.summary_facts` in the UI language (count, order, one extremum: "Three films in collection order; the longest is The Return of the King, 3 h 21."). Present only on a result drawn through the view host below; hidden when the line is empty (no `summary_facts`, or the form on screen is an entity page, a number card or a stat strip). The view body points at it with `aria-describedby`.
 - optional `.queryDetailsToggle`: rendered only when at least one query-detail string exists.
 - global `#queryDetailsDock`: inserted after the answer block when a toggle exists.
 
@@ -856,6 +857,21 @@ For multi-row text2sql results:
 - Subtitle chunks without a fresh card reference keep the current highlight until another card is referenced or subtitle playback ends.
 - Realtime `focus_result_card` tool calls highlight the requested visible card immediately when structured card focus is active. Realtime output-audio transcript deltas and final transcripts still enqueue fallback card-reference cues; the app starts playing those cues when `output_audio_buffer.started` arrives, estimating their timing from the reference position in the transcript so the UI does not jump to the final card before audio playback reaches it.
 - The spoken-card highlight is cleared when subtitle playback ends, audio output stops, a new Realtime response starts, results are replaced, or the conversation is cleared.
+
+### Result Views And Override Chips (VOICE-AGENT-246, -247)
+
+When the API hint (`upstream.representation`, FASTAPI-TEXT2SQL-349/-354) names a form the user may switch, `card-grid`, `value-cards`, `ranked-bars` or `table`, and the result has rows (one row in a grid form stays the detail sheet), `renderText2SqlResult()` draws it into a view host instead of the bare grid:
+
+- `.t2sViewHost` holds an optional `.t2sViewChips` row (`role="group"`) and the `.t2sViewBody` the form is drawn in (`data-representation` names it).
+- **Chips** are the switchable values of `upstream.representation_options`, in the API's order, shown only when at least two remain and the API default is itself switchable: never on an entity page, a number card or a stat strip, and never on an API without the field. Labels follow the UI language (Values / Posters / Ranking / Table, Valeurs / Affiches / Classement / Tableau). The active chip carries `aria-pressed="true"`.
+- **Clicking a chip** re-renders the rows already on hand into `.t2sViewBody` (no API call, no history entry, no scroll reset), clears the spoken-card highlight, updates the caption, and stores the choice in `t2sPreferredRepresentation`.
+- **The choice lasts for the conversation**: a later result whose chips include it opens in it. `startNewConversation()` resets it; `clearConversationUi()` (also run on a reconnect) keeps it but drops the view state `t2sView`. A page reload returns to the API default.
+- **Value cards** (`value-cards`): the poster grid, order kept, with `.t2sCardValues` under each title: the first `focus` column (every focus column on a comparison, up to three), else the `ordered` metric, else the first metric, formatted short by `formatCardValue()` ("2 h 18", "$150M", a year for a date column). A row with no value, or a zero that means unknown, shows nothing.
+- **Ranking** (`ranked-bars`): with 12 rows or fewer, all with a poster, the numbered poster row (`.t2sRankBadge` on each card, then the bar and the value); otherwise horizontal bars with text labels. The metric is `pickBarMetric()`: `ordered`, else `focus`, else the first metric.
+- **Load more** on a view: rows are added to `t2sView.rows`; a grid form appends cards (with their values), a bars or table form is redrawn with every row so far.
+- Compact results mode and the spoken-card focus are unchanged: grid and poster-row cards are ordinary `.search-poster-card` elements with `data-result-index`.
+
+Without the hint (older API, cached state) none of this appears and the result is drawn as before.
 
 ### Realtime Spoken-Answer Highlight Sync
 

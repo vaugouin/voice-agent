@@ -1727,6 +1727,21 @@ RESULT_COUNT_INSTRUCTIONS = (
     "results."
 )
 
+# VOICE-AGENT-248. The voice client writes one sentence from the API's summary_facts
+# (FASTAPI-TEXT2SQL-354): the count, the order, one extremum, in the UI language, with the units
+# spelled out. It travels in the function output as `summary_line`, beside the rows, and the same
+# sentence is the caption on screen. Voice only: the text path does not send the field, and the
+# sentence is built in app.js (text2SqlSummaryLine), never here, so there is one copy of it.
+SUMMARY_LINE_INSTRUCTIONS = (
+    "Result summary: a query_text2sql result may include summary_line, one sentence that says "
+    "how many results the screen shows, in what order, and the one extreme value (for example "
+    "'Eight films in collection order; the longest is Order of the Phoenix, 2 hours 18 "
+    "minutes'). When it is present, say it as your summary of the list, in the user's "
+    "language, with its facts unchanged: do not read the list out, do not state another "
+    "count, and do not add a total it does not give. You may join it to a short sentence of "
+    "your own."
+)
+
 # VOICE-AGENT-093. A query_text2sql result may carry a `name_ambiguity` object
 # (from FASTAPI-TEXT2SQL-157) meaning the user named ONE entity but the database holds
 # several sharing that exact name/title (homonym person, duplicate movie/serie title).
@@ -2392,6 +2407,7 @@ def realtime_session_config(
         + " " + GROUP_WORKS_INSTRUCTIONS  # VOICE-AGENT-225
         + " " + RECOVERY_INSTRUCTIONS
         + " " + RESULT_COUNT_INSTRUCTIONS
+        + " " + SUMMARY_LINE_INSTRUCTIONS  # VOICE-AGENT-248, voice only
         + " " + DISAMBIGUATION_INSTRUCTIONS
         + " " + GROUNDED_ABSENCE_INSTRUCTIONS
         # VOICE-AGENT-185: after GROUNDED_ABSENCE, which sends the model to the detail tool

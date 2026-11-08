@@ -3164,7 +3164,12 @@ function text2SqlLabelForRow(record, columns) {
 function pickBarMetric(rows, columns) {
   const metrics = columns.filter((c) => c.role === "metric");
   if (metrics.length) {
-    return metrics[0];
+    // The ranked quantity is the column the API marks `ordered` (FASTAPI-TEXT2SQL-351, 1.1.20):
+    // the standard movie projection carries four metrics and the first one is a rating, not
+    // the revenue the question ranked by. First metric when no column is marked (older API).
+    // VOICE-AGENT-246: with no ordered metric, the `focus` one (FASTAPI-TEXT2SQL-354), so bars
+    // chosen by a chip on value cards draw the value the cards showed.
+    return metrics.find((c) => c.ordered) || metrics.find((c) => c.focus) || metrics[0];
   }
   const record0 = rows[0]?.data || rows[0] || {};
   for (const key of Object.keys(record0)) {
@@ -3222,6 +3227,12 @@ function renderRankedBars(container, rows, columns) {
       const card = document.createElement("div");
       card.className = "search-poster-card t2sRankCard";
       assignResultCardIndex(grid, card, { title: spec.title || "" });
+      // VOICE-AGENT-246: the numbered poster row (rank badge, poster, title, value).
+      const badge = document.createElement("span");
+      badge.className = "t2sRankBadge";
+      badge.textContent = String(i + 1);
+      badge.setAttribute("aria-hidden", "true");
+      card.append(badge);
       card.append(buildCardMedia(spec.title, spec.imageUrl, spec.synthetic || null));
       card.append(buildCardText(spec.title, spec.subtitle || ""));
       card.append(buildMetricBar(Number(r[metric.name]), max, metric.unit));
@@ -3289,6 +3300,513 @@ function renderRawTable(container, rows, columns) {
   table.append(thead, tbody);
   wrap.append(table);
   container.append(wrap);
+}
+
+// VOICE-AGENT-246 / -247 / -248 (FASTAPI-TEXT2SQL-354): value cards, the numbered poster row,
+// the override chips drawn from `representation_options`, and the summary line built from
+// `summary_facts`. Every one of these fields is optional: an API without -354, or a front state
+// cached before it, carries none of them, and the result is then drawn exactly as before (no
+// chips, no caption, the renderer chooseText2SqlRepresentation() picks). The pure functions
+// below (no DOM) are pinned by tools/check-result-representations.mjs.
+const T2S_KNOWN_REPRESENTATIONS = [
+  "entity-page", "card-grid", "value-cards", "number-card", "stat-strip", "ranked-bars", "table",
+];
+// Chips only where switching means something: several entity rows, or a table of them. An
+// entity page and a one-row number keep their single form (VOICE-AGENT-247), even though the
+// API lists `table` beside them.
+const T2S_SWITCHABLE_REPRESENTATIONS = ["card-grid", "value-cards", "ranked-bars", "table"];
+const T2S_GRID_REPRESENTATIONS = ["card-grid", "value-cards"];
+const T2S_REPRESENTATION_LABELS = {
+  "card-grid": ["Posters", "Affiches"],
+  "value-cards": ["Values", "Valeurs"],
+  "ranked-bars": ["Ranking", "Classement"],
+  table: ["Table", "Tableau"],
+};
+// Column names the summary line and the value cards name in words. Anything else falls back to
+// prettyLabel() of the column name, in lower case.
+const T2S_METRIC_LABELS = {
+  RUNTIME: ["runtime", "durée"],
+  TOTAL_RUNTIME: ["total runtime", "durée totale"],
+  BUDGET: ["budget", "budget"],
+  REVENUE: ["revenue", "recettes"],
+  PROFIT: ["profit", "bénéfice"],
+  IMDB_RATING: ["IMDb rating", "note IMDb"],
+  IMDB_RATING_WEIGHTED: ["weighted IMDb rating", "note IMDb pondérée"],
+  IMDB_VOTES: ["IMDb votes", "votes IMDb"],
+  VOTE_AVERAGE: ["TMDb rating", "note TMDb"],
+  VOTE_COUNT: ["TMDb votes", "votes TMDb"],
+  POPULARITY: ["popularity", "popularité"],
+  BIRTH_YEAR: ["birth year", "année de naissance"],
+  DEATH_YEAR: ["death year", "année de décès"],
+  AGE: ["age", "âge"],
+  FILM_COUNT: ["number of films", "nombre de films"],
+  MOVIE_COUNT: ["number of films", "nombre de films"],
+  SERIE_COUNT: ["number of series", "nombre de séries"],
+  NUMBER_OF_SEASONS: ["seasons", "saisons"],
+  NUMBER_OF_EPISODES: ["episodes", "épisodes"],
+};
+const T2S_COUNT_WORDS = {
+  en: ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"],
+  fr: ["zéro", "un", "deux", "trois", "quatre", "cinq", "six", "sept", "huit", "neuf", "dix", "onze", "douze"],
+};
+// [EN plural, EN singular, FR plural, FR singular, FR gender]
+const T2S_ROW_NOUNS = {
+  films: ["films", "film", "films", "film", "m"],
+  series: ["series", "series", "séries", "série", "f"],
+  people: ["people", "person", "personnes", "personne", "f"],
+  titles: ["titles", "title", "titres", "titre", "m"],
+  results: ["results", "result", "résultats", "résultat", "m"],
+};
+
+// The user's chip choice, kept for the conversation (reset by startNewConversation) and applied
+// to every later result whose chips offer it.
+let t2sPreferredRepresentation = "";
+// The result on screen when it was drawn from the hint: {upstream, rows, rep, chips, body,
+// chipsBar, caption, lang, hasMore}. Lets a chip re-render the rows locally, with no API call.
+let t2sView = null;
+// The value columns of the value cards being drawn, read by appendText2SqlRowCard() so a page
+// appended by Load more gets its values too.
+let activeValueColumns = [];
+
+function t2sLang(lang) {
+  return normalizeUiLanguage(lang || activeUiLanguage) === "fr" ? "fr" : "en";
+}
+
+function text2SqlRepresentationOptions(upstream) {
+  const raw = Array.isArray(upstream?.representation_options) ? upstream.representation_options : [];
+  const seen = new Set();
+  return raw
+    .map((value) => String(value || "").trim())
+    .filter((value) => {
+      if (!T2S_KNOWN_REPRESENTATIONS.includes(value) || seen.has(value)) {
+        return false;
+      }
+      seen.add(value);
+      return true;
+    });
+}
+
+// The chips to offer: the switchable options, in the API's order, when the default is itself
+// switchable and at least two remain. Empty on an older API (no options) and on one-form shapes.
+function text2SqlChipOptions(upstream) {
+  const fallback = String(upstream?.representation || "").trim();
+  if (!T2S_SWITCHABLE_REPRESENTATIONS.includes(fallback)) {
+    return [];
+  }
+  const chips = text2SqlRepresentationOptions(upstream).filter((rep) => T2S_SWITCHABLE_REPRESENTATIONS.includes(rep));
+  return chips.length >= 2 && chips.includes(fallback) ? chips : [];
+}
+
+// The representation to draw: the user's earlier chip choice when this result offers it, else
+// the API's default. "Shape decides, intent disambiguates, the user has the last word."
+function resolveText2SqlRepresentation(upstream, preferred = t2sPreferredRepresentation) {
+  const fallback = String(upstream?.representation || "").trim();
+  if (preferred && text2SqlChipOptions(upstream).includes(preferred)) {
+    return preferred;
+  }
+  return fallback;
+}
+
+function text2SqlRepresentationLabel(rep, lang) {
+  const entry = T2S_REPRESENTATION_LABELS[rep];
+  if (!entry) {
+    return prettyLabel(rep);
+  }
+  return t2sLang(lang) === "fr" ? entry[1] : entry[0];
+}
+
+function text2SqlMetricLabel(name, lang) {
+  const entry = T2S_METRIC_LABELS[String(name || "").toUpperCase()];
+  if (entry) {
+    return t2sLang(lang) === "fr" ? entry[1] : entry[0];
+  }
+  return prettyLabel(name).toLowerCase();
+}
+
+function capitalizeFirst(text) {
+  const value = String(text || "");
+  return value ? value.charAt(0).toUpperCase() + value.slice(1) : "";
+}
+
+// The quantity each value card shows (FASTAPI-TEXT2SQL-354): the first `focus` column, else the
+// ordered metric, else the first metric. A comparison may name two quantities (budget and
+// revenue), so on `intent.task == compare` every focus column is kept, up to three, except a
+// variant of another one (IMDB_RATING_WEIGHTED beside IMDB_RATING says the same thing twice).
+function text2SqlValueColumns(columns, intent) {
+  const list = Array.isArray(columns) ? columns.filter((c) => c && c.name) : [];
+  const focus = list.filter((c) => c.focus && (c.role === "metric" || c.role === "date"));
+  if (focus.length) {
+    if (String(intent?.task || "") !== "compare") {
+      return [focus[0]];
+    }
+    return focus
+      .filter((c) => !focus.some((other) => other !== c && String(c.name).startsWith(`${other.name}_`)))
+      .slice(0, 3);
+  }
+  const metrics = list.filter((c) => c.role === "metric");
+  const pick = metrics.find((c) => c.ordered) || metrics[0];
+  return pick ? [pick] : [];
+}
+
+function formatHoursMinutes(value) {
+  const total = Math.round(Number(value));
+  const h = Math.floor(total / 60);
+  const m = total % 60;
+  return h > 0 ? `${h} h ${String(m).padStart(2, "0")}` : `${m} min`;
+}
+
+// A value under a poster: short, so "2 h 18" rather than the number card's "138 min · 2 h 18",
+// and "$150M" rather than "$150,000,000". A missing value shows nothing, and so does a zero that
+// can only mean "unknown" (a runtime, a budget, a rating); a count or a ratio of zero is real.
+// A date column carries a year (BIRTH_YEAR) or a date, never a duration, whatever its unit says.
+function formatCardValue(value, column) {
+  if (value === null || value === undefined || String(value).trim() === "") {
+    return "";
+  }
+  const unit = column?.unit || null;
+  const number = Number(value);
+  if (column?.role === "date") {
+    if (Number.isFinite(number)) {
+      return number ? String(Math.trunc(number)) : "";
+    }
+    return formatDate(value);
+  }
+  if (!Number.isFinite(number)) {
+    return String(value);
+  }
+  if (number === 0 && unit !== "count" && unit !== "ratio" && unit !== "years") {
+    return "";
+  }
+  if (unit === "minutes") {
+    return formatHoursMinutes(number);
+  }
+  if (unit === "usd" && number > 0) {
+    return formatMoney(number);
+  }
+  return formatMetric(number, unit);
+}
+
+// The same value, said aloud: units spelled out, never "min", "h" or "$150M" (VOICE-AGENT-248).
+function spokenMetricValue(value, unit, lang) {
+  const fr = t2sLang(lang) === "fr";
+  const number = Number(value);
+  if (!Number.isFinite(number)) {
+    return String(value ?? "");
+  }
+  const decimal = (n, digits) =>
+    new Intl.NumberFormat(fr ? "fr-FR" : "en-US", { maximumFractionDigits: digits }).format(n);
+  if (unit === "minutes") {
+    const total = Math.round(number);
+    const h = Math.floor(total / 60);
+    const m = total % 60;
+    const parts = [];
+    if (h) {
+      parts.push(fr ? `${h} heure${h > 1 ? "s" : ""}` : `${h} hour${h > 1 ? "s" : ""}`);
+    }
+    if (m || !h) {
+      parts.push(`${m} minute${m > 1 ? "s" : ""}`);
+    }
+    return parts.join(" ");
+  }
+  if (unit === "usd") {
+    const amount = Math.abs(number);
+    let text;
+    if (amount >= 1e9) {
+      const n = amount / 1e9;
+      text = fr ? `${decimal(n, 1)} milliard${n >= 2 ? "s" : ""} de dollars` : `${decimal(n, 1)} billion dollars`;
+    } else if (amount >= 1e6) {
+      const n = amount / 1e6;
+      text = fr ? `${decimal(n, 1)} million${n >= 2 ? "s" : ""} de dollars` : `${decimal(n, 1)} million dollars`;
+    } else {
+      text = `${decimal(Math.round(amount), 0)} dollars`;
+    }
+    return number < 0 ? `${fr ? "moins" : "minus"} ${text}` : text;
+  }
+  if (unit === "years") {
+    const n = decimal(number, 1);
+    return fr ? `${n} ${Math.abs(number) < 2 ? "an" : "ans"}` : `${n} ${number === 1 ? "year" : "years"}`;
+  }
+  return decimal(number, Number.isInteger(number) ? 0 : 2);
+}
+
+// What the rows are, for the sentence: the entity column says it. ID_CONTENT mixes films and
+// series, so its rows' CONTENT_TYPE decides.
+function text2SqlRowNounKey(columns, rows) {
+  const entity = (Array.isArray(columns) ? columns : []).find((c) => c && c.role === "entity_id");
+  const name = String(entity?.name || "").toUpperCase();
+  if (name === "ID_MOVIE") {
+    return "films";
+  }
+  if (name === "ID_SERIE") {
+    return "series";
+  }
+  if (name === "ID_PERSON") {
+    return "people";
+  }
+  if (name === "ID_CONTENT") {
+    const types = new Set(
+      (Array.isArray(rows) ? rows : [])
+        .map((item) => String((item?.data || item)?.CONTENT_TYPE || "").toLowerCase())
+        .filter(Boolean)
+    );
+    if (types.size === 1 && types.has("movie")) {
+      return "films";
+    }
+    if (types.size === 1 && types.has("serie")) {
+      return "series";
+    }
+    return "titles";
+  }
+  return "results";
+}
+
+function text2SqlCountWord(count, gender, lang) {
+  const fr = t2sLang(lang) === "fr";
+  if (count === 1 && fr) {
+    return gender === "f" ? "une" : "un";
+  }
+  const words = T2S_COUNT_WORDS[fr ? "fr" : "en"];
+  return count >= 0 && count < words.length ? words[count] : String(count);
+}
+
+// A superlative that reads naturally for the value column, or "" for the neutral form
+// ("X leads with V"). French agrees with the noun of the rows.
+function text2SqlSuperlative(column, unit, isMax, gender, lang) {
+  const fr = t2sLang(lang) === "fr";
+  const f = gender === "f";
+  const name = String(column || "").toUpperCase();
+  if (unit === "minutes") {
+    if (fr) {
+      return isMax ? (f ? "la plus longue" : "le plus long") : (f ? "la plus courte" : "le plus court");
+    }
+    return isMax ? "the longest" : "the shortest";
+  }
+  if (name === "BUDGET") {
+    if (fr) {
+      return isMax ? (f ? "la plus chère" : "le plus cher") : (f ? "la moins chère" : "le moins cher");
+    }
+    return isMax ? "the most expensive" : "the least expensive";
+  }
+  if (name === "REVENUE" && isMax) {
+    return fr ? "le plus gros succès en salles" : "the highest-grossing";
+  }
+  if (["IMDB_RATING", "IMDB_RATING_WEIGHTED", "VOTE_AVERAGE"].includes(name)) {
+    if (fr) {
+      return isMax ? (f ? "la mieux notée" : "le mieux noté") : (f ? "la moins bien notée" : "le moins bien noté");
+    }
+    return isMax ? "the best rated" : "the lowest rated";
+  }
+  return "";
+}
+
+// VOICE-AGENT-248: one sentence from `summary_facts`, in the UI language: the count, the order,
+// one extremum. "Eight films in collection order; the longest is Order of the Phoenix, 2 h 18."
+// `spoken` spells the units out for the voice model; the caption keeps the short display form.
+// `total` is always null in phase 1, so a ranking or a page with more behind it says "the
+// first N", never a total (decision of 2026-10-31). Empty when there is nothing to say: no
+// facts (an older API), no rows, or a one-item form (entity page, number card, stat strip) whose
+// screen already says it all.
+function text2SqlSummaryLine(upstream, { rep = "", lang = "", spoken = false, hasMore = false } = {}) {
+  const facts = upstream?.summary_facts;
+  if (!facts || typeof facts !== "object") {
+    return "";
+  }
+  const count = Number(facts.count);
+  if (!Number.isInteger(count) || count < 1) {
+    return "";
+  }
+  const shown = rep || String(upstream?.representation || "");
+  if (["entity-page", "number-card", "stat-strip"].includes(shown)) {
+    return "";
+  }
+  const language = t2sLang(lang);
+  const fr = language === "fr";
+  const columns = text2SqlResultColumns(upstream);
+  const nounEntry = T2S_ROW_NOUNS[text2SqlRowNounKey(columns, upstream?.result)];
+  const gender = nounEntry[4];
+  const noun = fr ? nounEntry[count === 1 ? 3 : 2] : nounEntry[count === 1 ? 1 : 0];
+  const order = String(facts.order || "");
+  const direction = String(facts.order_direction || "").toLowerCase();
+  const task = String(upstream?.intent?.task || "");
+  const metricOrder = Boolean(order) && order !== "collection" && order !== "date";
+  const ranking = metricOrder && (shown === "ranked-bars" || task === "rank");
+
+  let lead;
+  if (ranking || hasMore) {
+    const n = count <= 12 && count > 1 ? text2SqlCountWord(count, gender, language) : String(count);
+    if (fr) {
+      const first = count === 1 ? (gender === "f" ? "la première" : "le premier") : gender === "f" ? "premières" : "premiers";
+      lead = count === 1 ? `${first} ${noun}` : `les ${n} ${first} ${noun}`;
+    } else {
+      lead = count === 1 ? `the first ${noun}` : `the first ${n} ${noun}`;
+    }
+  } else {
+    lead = `${text2SqlCountWord(count, gender, language)} ${noun}`;
+  }
+
+  let orderPhrase = "";
+  if (ranking) {
+    orderPhrase = `${fr ? "par" : "by"} ${text2SqlMetricLabel(order, language)}`;
+  } else if (order === "collection") {
+    orderPhrase = fr ? "dans l'ordre de la collection" : "in collection order";
+  } else if (order === "date") {
+    orderPhrase = direction === "desc"
+      ? (fr ? "du plus récent au plus ancien" : "most recent first")
+      : (fr ? "dans l'ordre chronologique" : "in chronological order");
+  }
+
+  let tail = "";
+  const top = facts.top;
+  if (top && typeof top === "object" && String(top.label || "").trim() && top.value !== null && top.value !== undefined && String(top.value).trim() !== "") {
+    const unit = facts.unit || null;
+    const label = String(top.label).trim();
+    const valueText = spoken
+      ? spokenMetricValue(top.value, unit, language)
+      : formatCardValue(top.value, { unit, role: "metric" });
+    if (valueText) {
+      const isMax = String(top.extreme || "max") !== "min";
+      const adjective = text2SqlSuperlative(facts.value_column, unit, isMax, gender, language);
+      if (adjective) {
+        tail = fr ? `${adjective} est ${label}, ${valueText}` : `${adjective} is ${label}, ${valueText}`;
+      } else if (isMax) {
+        tail = fr ? `${label} arrive en tête avec ${valueText}` : `${label} leads with ${valueText}`;
+      } else {
+        tail = fr ? `la valeur la plus basse est celle de ${label}, ${valueText}` : `the lowest is ${label}, ${valueText}`;
+      }
+    }
+  }
+
+  const head = orderPhrase ? `${lead} ${orderPhrase}` : lead;
+  return `${capitalizeFirst(head)}${tail ? `${fr ? " ; " : "; "}${tail}` : ""}.`;
+}
+
+// The spoken line handed to the Realtime model beside the tool output (VOICE-AGENT-248).
+function text2SqlSpokenSummary(output) {
+  const upstream = output?.upstream && typeof output.upstream === "object" ? output.upstream : {};
+  return text2SqlSummaryLine(upstream, {
+    rep: resolveText2SqlRepresentation(upstream),
+    lang: upstream.ui_language || activeUiLanguage,
+    spoken: true,
+    hasMore: Boolean(output?.has_more),
+  });
+}
+
+// One result row as a poster card, with the value(s) under it when value cards are being drawn.
+function appendText2SqlRowCard(grid, record) {
+  const cardSpec = cardSpecFromRecord(record);
+  if (!cardSpec) {
+    appendAggregateCard(grid, record);
+    return;
+  }
+  appendCard(grid, cardSpec);
+  if (activeValueColumns.length) {
+    appendCardValues(grid.lastElementChild, record, activeValueColumns);
+  }
+}
+
+function appendCardValues(card, record, valueColumns) {
+  if (!card) {
+    return;
+  }
+  const parts = valueColumns
+    .map((column) => ({ column, text: formatCardValue(record?.[column.name], column) }))
+    .filter((part) => part.text);
+  if (!parts.length) {
+    return; // a row with no value shows nothing, never "0"
+  }
+  const box = document.createElement("div");
+  box.className = "t2sCardValues";
+  parts.forEach(({ column, text }) => {
+    const line = document.createElement("div");
+    line.className = "t2sCardValue";
+    const label = document.createElement("span");
+    label.className = "t2sCardValueLabel";
+    label.textContent = capitalizeFirst(text2SqlMetricLabel(column.name));
+    const number = document.createElement("span");
+    number.className = "t2sCardValueNumber";
+    number.textContent = text;
+    line.append(label, number);
+    box.append(line);
+  });
+  (card.querySelector(".search-poster-card-text") || card).append(box);
+}
+
+function buildText2SqlChips(chips, active) {
+  const bar = document.createElement("div");
+  bar.className = "t2sViewChips";
+  bar.setAttribute("role", "group");
+  bar.setAttribute("aria-label", uiText("Show as", "Afficher en"));
+  chips.forEach((rep) => {
+    const chip = document.createElement("button");
+    chip.type = "button";
+    chip.className = "t2sViewChip";
+    chip.dataset.representation = rep;
+    chip.textContent = text2SqlRepresentationLabel(rep);
+    chip.setAttribute("aria-pressed", rep === active ? "true" : "false");
+    chip.addEventListener("click", () => {
+      switchText2SqlRepresentation(rep);
+    });
+    bar.append(chip);
+  });
+  return bar;
+}
+
+// Draw `t2sView.rep` into its body from the rows already on hand. Grid forms build the poster
+// grid the rest of the page knows (Load more, spoken-card focus); the others go through
+// renderText2SqlRepresentation().
+function renderText2SqlView(view) {
+  const { body, rep, rows, upstream } = view;
+  body.replaceChildren();
+  body.dataset.representation = rep;
+  const columns = text2SqlResultColumns(upstream);
+  activeValueColumns = rep === "value-cards" ? text2SqlValueColumns(columns, upstream?.intent) : [];
+  if (T2S_GRID_REPRESENTATIONS.includes(rep)) {
+    const section = document.createElement("div");
+    section.className = "search-poster-results";
+    const grid = document.createElement("div");
+    grid.className = "search-poster-card-grid";
+    section.append(grid);
+    body.append(section);
+    rows.forEach((item) => {
+      const record = item?.data || item;
+      if (record && typeof record === "object") {
+        appendText2SqlRowCard(grid, record);
+      }
+    });
+    return grid;
+  }
+  renderText2SqlRepresentation(rep, body, rows, upstream);
+  return null;
+}
+
+function updateText2SqlViewChrome(view) {
+  view.chipsBar?.querySelectorAll(".t2sViewChip").forEach((chip) => {
+    chip.setAttribute("aria-pressed", chip.dataset.representation === view.rep ? "true" : "false");
+  });
+  if (view.caption) {
+    const line = text2SqlSummaryLine(view.upstream, { rep: view.rep, lang: view.lang, hasMore: view.hasMore });
+    view.caption.textContent = line;
+    view.caption.hidden = !line;
+  }
+}
+
+// VOICE-AGENT-247: a chip re-renders the same rows locally (no API call) and becomes the
+// preference for the rest of the conversation.
+function switchText2SqlRepresentation(rep) {
+  const view = t2sView;
+  if (!view || !view.body?.isConnected || !view.chips.includes(rep)) {
+    return;
+  }
+  t2sPreferredRepresentation = rep;
+  if (rep === view.rep) {
+    return;
+  }
+  view.rep = rep;
+  clearActiveSpokenCard();
+  renderText2SqlView(view);
+  updateText2SqlViewChrome(view);
+  refreshPaginationControls();
+  clientLog("t2s_representation_switch", { representation: rep, rows: view.rows.length });
 }
 
 // VOICE-AGENT-218. Source works (FASTAPI-TEXT2SQL-320/-323): the novel, manga, play, game, tale
@@ -6014,8 +6532,25 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
   }
 
   let grid = resultsContent.querySelector(".search-poster-card-grid");
+  // VOICE-AGENT-247: a page appended to a result drawn from the hint joins the rows a chip
+  // re-renders from. In a form that is not a poster grid (ranked bars, table) the whole view is
+  // redrawn with every row so far: appending cards to it, or rebuilding the page from the new
+  // rows alone, were the two ways to lose the first page.
+  let rowsAlreadyDrawn = false;
+  if (append) {
+    if (t2sView && t2sView.body?.isConnected) {
+      t2sView.rows.push(...rows);
+      if (!T2S_GRID_REPRESENTATIONS.includes(t2sView.rep)) {
+        renderText2SqlView(t2sView);
+        rowsAlreadyDrawn = true;
+        grid = null;
+      }
+    } else {
+      activeValueColumns = [];
+    }
+  }
 
-  if (!append || !grid) {
+  if (!append || (!grid && !rowsAlreadyDrawn)) {
     saveCurrentScrollPosition();
     clearActiveSpokenCard();
     clearQueryDetailsDock();
@@ -6081,7 +6616,62 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
     // fallback. Entity shapes (entity-page, card-grid) and hintless entity results keep the
     // existing renderers below. This replaces the empty "Result" page a one-row aggregate used
     // to produce.
-    const t2sRepresentation = chooseText2SqlRepresentation(upstream, rows);
+    //
+    // VOICE-AGENT-246 / -247 / -248: a multi-row form the chips can switch (card grid, value
+    // cards, ranked bars, table) is drawn into a view host instead: the chips above it, the
+    // summary line as the caption of the answer, and the rows kept for a local re-render. One
+    // row in a grid form stays the detail sheet below, and an API without the hint takes the
+    // path it always took.
+    t2sView = null;
+    activeValueColumns = [];
+    const hintedRepresentation = resolveText2SqlRepresentation(upstream);
+    if (
+      T2S_SWITCHABLE_REPRESENTATIONS.includes(hintedRepresentation) &&
+      rows.length &&
+      !(rows.length === 1 && T2S_GRID_REPRESENTATIONS.includes(hintedRepresentation))
+    ) {
+      const chips = text2SqlChipOptions(upstream);
+      const chipsBar = chips.length ? buildText2SqlChips(chips, hintedRepresentation) : null;
+      const caption = document.createElement("p");
+      caption.className = "t2sCaption";
+      caption.id = "t2sCaption";
+      answer.after(caption);
+      const host = document.createElement("div");
+      host.className = "t2sViewHost";
+      const body = document.createElement("div");
+      body.className = "t2sViewBody";
+      body.setAttribute("aria-describedby", caption.id);
+      if (chipsBar) {
+        host.append(chipsBar);
+      }
+      host.append(body);
+      resultsContent.append(host);
+      t2sView = {
+        upstream,
+        rows: rows.slice(),
+        rep: hintedRepresentation,
+        chips,
+        body,
+        chipsBar,
+        caption,
+        lang: uiLanguage,
+        hasMore: Boolean(pagination.has_more),
+      };
+      const viewGrid = renderText2SqlView(t2sView);
+      updateText2SqlViewChrome(t2sView);
+      if (!viewGrid) {
+        refreshPaginationControls();
+        markRenderedPageView(outputSignature);
+        if (!skipHistory) {
+          pushPageHistory({ type: "search", output, args });
+        }
+        return {};
+      }
+      grid = viewGrid;
+      rowsAlreadyDrawn = true;
+    }
+
+    const t2sRepresentation = t2sView ? "" : chooseText2SqlRepresentation(upstream, rows);
     if (t2sRepresentation) {
       renderText2SqlRepresentation(t2sRepresentation, resultsContent, rows, upstream);
       refreshPaginationControls();
@@ -6092,7 +6682,7 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
       return {};
     }
 
-    if (rows.length === 1) {
+    if (!t2sView && rows.length === 1) {
       const record = rows[0]?.data || rows[0];
       if (record && typeof record === "object") {
         const renderedDetail = await renderSingleRecordResult(resultsContent, record);
@@ -6108,28 +6698,28 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
       }
     }
 
-    const section = document.createElement("div");
-    section.className = "search-poster-results";
-    grid = document.createElement("div");
-    grid.className = "search-poster-card-grid";
-    section.append(grid);
-    resultsContent.append(section);
+    if (!t2sView) {
+      const section = document.createElement("div");
+      section.className = "search-poster-results";
+      grid = document.createElement("div");
+      grid.className = "search-poster-card-grid";
+      section.append(grid);
+      resultsContent.append(section);
+    }
   }
 
-  rows.forEach((item) => {
-    const record = item?.data || item;
-    if (!record || typeof record !== "object") {
-      return;
-    }
-    const cardSpec = cardSpecFromRecord(record);
-    if (cardSpec) {
-      appendCard(grid, cardSpec);
-    } else {
-      appendAggregateCard(grid, record);
-    }
-  });
+  if (!rowsAlreadyDrawn) {
+    rows.forEach((item) => {
+      const record = item?.data || item;
+      if (!record || typeof record !== "object") {
+        return;
+      }
+      // VOICE-AGENT-246: the value under the poster when value cards are on screen.
+      appendText2SqlRowCard(grid, record);
+    });
+  }
 
-  if (!grid.children.length) {
+  if (grid && !grid.children.length) {
     const empty = document.createElement("div");
     empty.className = "search-poster-card-text";
     empty.textContent = "No displayable rows.";
@@ -11505,6 +12095,7 @@ async function handleFunctionCall(item) {
 
   toolCallsInFlight = Math.max(0, toolCallsInFlight - 1);
   awaitingToolResponse = true;
+  const summaryLine = item.name === "query_text2sql" ? text2SqlSpokenSummary(output) : "";
   const toolOutput = item.name === "query_text2sql"
     ? {
         // VOICE-AGENT-149: today's date plus the precedence rule, forwarded from the tool
@@ -11529,6 +12120,10 @@ async function handleFunctionCall(item) {
         // Present when the user named one entity but several share the name/title;
         // the prompt tells the model to ask which one (singular) or list (plural).
         name_ambiguity: output.name_ambiguity || null,
+        // VOICE-AGENT-248: the count, the order and one extremum, written from the API's
+        // summary_facts in the UI language, for the model to say instead of reading the list
+        // (SUMMARY_LINE_INSTRUCTIONS in main.py). Absent when the API sends no facts.
+        ...(summaryLine ? { summary_line: summaryLine } : {}),
       }
     : {
         today: output.today || "",  // VOICE-AGENT-149, same reason as above
@@ -12886,6 +13481,8 @@ function clearConversationUi() {
   lastToolOutput = null;
   lastDetailCall = null;
   inputTranscripts.clear();
+  t2sView = null; // VOICE-AGENT-247: the rows a chip re-renders from are gone with the page
+  activeValueColumns = [];
 }
 
 function startNewConversation() {
@@ -12908,6 +13505,9 @@ function startNewConversation() {
   cleanupConnection();
   clearConversationUi();
   clearRetainedContext();
+  // VOICE-AGENT-247: the chip choice lasts for the conversation, not past it. Kept by
+  // clearConversationUi() on purpose, since that one also runs on a reconnect.
+  t2sPreferredRepresentation = "";
   setConversationActive(false);
   clearPageHistory();
   setSessionRunning(false);

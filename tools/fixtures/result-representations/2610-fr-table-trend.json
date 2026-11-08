@@ -1,0 +1,93 @@
+{
+ "question": "Combien de films Woody Allen a-t-il réalisés par décennie ?",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici le nombre de films réalisés par Woody Allen pour chaque décennie.",
+ "representation": "table",
+ "representation_options": [
+  "table"
+ ],
+ "result_kind": "unknown",
+ "result_columns": [
+  {
+   "name": "DECENNIE",
+   "role": "date",
+   "unit": null,
+   "ordered": "asc"
+  },
+  {
+   "name": "FILM_COUNT",
+   "role": "metric",
+   "unit": "count"
+  }
+ ],
+ "summary_facts": {
+  "count": 7,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "date",
+  "order_direction": "asc",
+  "top": null
+ },
+ "intent": {
+  "task": "trend",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "",
+  "source": "rules"
+ },
+ "page": 1,
+ "rows_per_page": 100,
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "DECENNIE": 1960,
+    "FILM_COUNT": 2
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "DECENNIE": 1970,
+    "FILM_COUNT": 8
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "DECENNIE": 1980,
+    "FILM_COUNT": 11
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "DECENNIE": 1990,
+    "FILM_COUNT": 11
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "DECENNIE": 2000,
+    "FILM_COUNT": 11
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "DECENNIE": 2010,
+    "FILM_COUNT": 9
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "DECENNIE": 2020,
+    "FILM_COUNT": 2
+   }
+  }
+ ]
+}

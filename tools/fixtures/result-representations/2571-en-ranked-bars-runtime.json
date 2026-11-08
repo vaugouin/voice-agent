@@ -1,0 +1,183 @@
+{
+ "question": "The five longest films directed by Martin Scorsese",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the five longest films directed by Martin Scorsese.",
+ "representation": "ranked-bars",
+ "representation_options": [
+  "ranked-bars",
+  "card-grid",
+  "value-cards",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes",
+   "ordered": "desc",
+   "focus": true
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 5,
+  "total": null,
+  "value_column": "RUNTIME",
+  "unit": "minutes",
+  "order": "RUNTIME",
+  "order_direction": "desc",
+  "top": {
+   "label": "The Concert for New York City",
+   "id": 75009,
+   "index": 0,
+   "value": 296,
+   "extreme": "max"
+  }
+ },
+ "intent": {
+  "task": "rank",
+  "focus": [
+   "runtime"
+  ],
+  "focus_columns": [
+   "RUNTIME"
+  ],
+  "requested_view": "",
+  "source": "rules"
+ },
+ "page": 1,
+ "rows_per_page": 100,
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 75009,
+    "MOVIE_TITLE": "The Concert for New York City",
+    "DAT_RELEASE": "2001-10-20",
+    "ID_IMDB": "tt0298810",
+    "IMDB_RATING": 6.5,
+    "IMDB_RATING_WEIGHTED": 6.95,
+    "IMDB_VOTES": 937,
+    "POSTER_PATH": "/h3OWNj5OQ8X4ptvd4IRH47CJtvS.jpg",
+    "RUNTIME": 296,
+    "TAGLINE": "One night. One place. One reason.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 53198,
+    "MOVIE_TITLE": "My Voyage to Italy",
+    "DAT_RELEASE": "1999-09-11",
+    "ID_IMDB": "tt0173772",
+    "IMDB_RATING": 8.1,
+    "IMDB_RATING_WEIGHTED": 7.14,
+    "IMDB_VOTES": 3729,
+    "POSTER_PATH": "/hygBynLFPb4YWStH6ha3vbU7pAM.jpg",
+    "RUNTIME": 246,
+    "TAGLINE": "",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 9459,
+    "MOVIE_TITLE": "Woodstock",
+    "DAT_RELEASE": "1970-03-26",
+    "ID_IMDB": "tt0066580",
+    "IMDB_RATING": 8.1,
+    "IMDB_RATING_WEIGHTED": 7.52,
+    "IMDB_VOTES": 19692,
+    "POSTER_PATH": "/AapH8Qx4kUZoO7F4aK5cUnHjtdg.jpg",
+    "RUNTIME": 224,
+    "TAGLINE": "3 days of peace, music...and love.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_MOVIE": 398978,
+    "MOVIE_TITLE": "The Irishman",
+    "DAT_RELEASE": "2019-11-01",
+    "ID_IMDB": "tt1302006",
+    "IMDB_RATING": 7.8,
+    "IMDB_RATING_WEIGHTED": 7.77,
+    "IMDB_VOTES": 482206,
+    "POSTER_PATH": "/mbm8k3GFhXS0ROd9AD1gqYbIFbM.jpg",
+    "RUNTIME": 209,
+    "TAGLINE": "His story changed history.",
+    "ID_CRITERION_SPINE": 1058
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_MOVIE": 19082,
+    "MOVIE_TITLE": "No Direction Home: Bob Dylan",
+    "DAT_RELEASE": "2005-07-21",
+    "ID_IMDB": "tt0367555",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 7.51,
+    "IMDB_VOTES": 12527,
+    "POSTER_PATH": "/lqOo4nyRS56Goi8InZqLFKGEJR5.jpg",
+    "RUNTIME": 208,
+    "TAGLINE": "Bob Dylan. Songwriter. Rocker. Rebel. Legend.",
+    "ID_CRITERION_SPINE": null
+   }
+  }
+ ]
+}

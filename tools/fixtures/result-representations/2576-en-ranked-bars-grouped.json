@@ -1,0 +1,348 @@
+{
+ "question": "Which directors have made the most feature films? Top 20",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the 20 people in Directing with the most feature films to their credit.",
+ "representation": "ranked-bars",
+ "representation_options": [
+  "ranked-bars",
+  "card-grid",
+  "value-cards",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_PERSON",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "PERSON_NAME",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "POPULARITY",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "KNOWN_FOR_DEPARTMENT",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "BIRTH_YEAR",
+   "role": "date",
+   "unit": "years"
+  },
+  {
+   "name": "DEATH_YEAR",
+   "role": "date",
+   "unit": "years"
+  },
+  {
+   "name": "PROFILE_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "FILM_COUNT",
+   "role": "metric",
+   "unit": "count",
+   "ordered": "desc",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 20,
+  "total": null,
+  "value_column": "FILM_COUNT",
+  "unit": "count",
+  "order": "FILM_COUNT",
+  "order_direction": "desc",
+  "top": {
+   "label": "Kevin Dunn",
+   "id": 1061603,
+   "index": 0,
+   "value": 405,
+   "extreme": "max"
+  }
+ },
+ "intent": {
+  "task": "rank",
+  "focus": [
+   "count"
+  ],
+  "focus_columns": [
+   "FILM_COUNT"
+  ],
+  "requested_view": "",
+  "source": "rules"
+ },
+ "page": 1,
+ "rows_per_page": 100,
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_PERSON": 1061603,
+    "PERSON_NAME": "Kevin Dunn",
+    "POPULARITY": 1.12,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": null,
+    "DEATH_YEAR": null,
+    "PROFILE_PATH": "/32y6nzb5PuUIkXeJ4w3xPeUCm4l.jpg",
+    "FILM_COUNT": 405
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_PERSON": 1118754,
+    "PERSON_NAME": "Satoru Kobayashi",
+    "POPULARITY": 0.94,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": 1930,
+    "DEATH_YEAR": 2001,
+    "PROFILE_PATH": "/c8b2odNXd4Z7vnYaxb2pKE0WC2r.jpg",
+    "FILM_COUNT": 321
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_PERSON": 941323,
+    "PERSON_NAME": "Aurora Martínez",
+    "POPULARITY": 0.15,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": null,
+    "DEATH_YEAR": null,
+    "PROFILE_PATH": "/zot1cV79ZfOerXzjLyqbrdLnHw.jpg",
+    "FILM_COUNT": 195
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_PERSON": 1058009,
+    "PERSON_NAME": "Yoshikazu Katō",
+    "POPULARITY": 0.61,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": null,
+    "DEATH_YEAR": null,
+    "PROFILE_PATH": "/ycxHVivvEwDsV2R5wUezl1eH2mx.jpg",
+    "FILM_COUNT": 194
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_PERSON": 65565,
+    "PERSON_NAME": "Paul Terry",
+    "POPULARITY": 0.79,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": 1887,
+    "DEATH_YEAR": 1971,
+    "PROFILE_PATH": "/9nUH3iMaImOynJyXfo11Hp8b4q4.jpg",
+    "FILM_COUNT": 189
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_PERSON": 30833,
+    "PERSON_NAME": "William Beaudine",
+    "POPULARITY": 0.64,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": 1892,
+    "DEATH_YEAR": 1970,
+    "PROFILE_PATH": "/3ZU7jfJuEBbJenUSXAX7DhqzTqA.jpg",
+    "FILM_COUNT": 187
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_PERSON": 57342,
+    "PERSON_NAME": "Vince McMahon",
+    "POPULARITY": 1.13,
+    "KNOWN_FOR_DEPARTMENT": "Production",
+    "BIRTH_YEAR": 1945,
+    "DEATH_YEAR": null,
+    "PROFILE_PATH": "/3m4Z7YwnTqgLlQWP7A7TgYOJrj7.jpg",
+    "FILM_COUNT": 185
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_PERSON": 1268205,
+    "PERSON_NAME": "Kinya Ogawa",
+    "POPULARITY": 1.67,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": 1934,
+    "DEATH_YEAR": 2024,
+    "PROFILE_PATH": "/uDzWTHLyBC450DWtJ895Gh1ZUgb.jpg",
+    "FILM_COUNT": 185
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_PERSON": 44879,
+    "PERSON_NAME": "Gilbert M. Anderson",
+    "POPULARITY": 3.91,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": 1880,
+    "DEATH_YEAR": 1971,
+    "PROFILE_PATH": "/74ej5a4gI8qMOwfwwO5VrSsAtnP.jpg",
+    "FILM_COUNT": 183
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_PERSON": 1278829,
+    "PERSON_NAME": "Tetsuya Takehora",
+    "POPULARITY": 0.7,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": 1974,
+    "DEATH_YEAR": null,
+    "PROFILE_PATH": null,
+    "FILM_COUNT": 167
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_PERSON": 4109,
+    "PERSON_NAME": "Michael Curtiz",
+    "POPULARITY": 1.35,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": 1886,
+    "DEATH_YEAR": 1962,
+    "PROFILE_PATH": "/AnxPuEsdjPTJ6uIaHY0KdgBeu7t.jpg",
+    "FILM_COUNT": 164
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_PERSON": 1269394,
+    "PERSON_NAME": "Sachi Hamano",
+    "POPULARITY": 5.17,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": 1948,
+    "DEATH_YEAR": null,
+    "PROFILE_PATH": null,
+    "FILM_COUNT": 160
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_PERSON": 31155,
+    "PERSON_NAME": "Fred Olen Ray",
+    "POPULARITY": 0.6,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": 1954,
+    "DEATH_YEAR": null,
+    "PROFILE_PATH": "/91Y7oLIYJjpoY0YmDEsswKfeqDg.jpg",
+    "FILM_COUNT": 158
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "ID_PERSON": 225507,
+    "PERSON_NAME": "Gilberto Martínez Solares",
+    "POPULARITY": 0.14,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": 1906,
+    "DEATH_YEAR": 1997,
+    "PROFILE_PATH": "/apthPskDenP4d4tZW2YpyXPUReK.jpg",
+    "FILM_COUNT": 158
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "ID_PERSON": 1019920,
+    "PERSON_NAME": "Mototsugu Watanabe",
+    "POPULARITY": 0.15,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": 1957,
+    "DEATH_YEAR": null,
+    "PROFILE_PATH": "/8KAQGswDMZ2qus2xBsnC0psdojW.jpg",
+    "FILM_COUNT": 153
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "ID_PERSON": 584480,
+    "PERSON_NAME": "Eckhart Schmidt",
+    "POPULARITY": 1.67,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": 1938,
+    "DEATH_YEAR": 2024,
+    "PROFILE_PATH": "/9gC60dhxqgk4kfB4Kw0g2RJcyfG.jpg",
+    "FILM_COUNT": 152
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "ID_PERSON": 105145,
+    "PERSON_NAME": "Alfredo B. Crevenna",
+    "POPULARITY": 1.19,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": 1914,
+    "DEATH_YEAR": 1996,
+    "PROFILE_PATH": "/tL19fAmluH5wO5mcv7ccmc7elrc.jpg",
+    "FILM_COUNT": 150
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "ID_PERSON": 125071,
+    "PERSON_NAME": "Miguel M. Delgado",
+    "POPULARITY": 0.27,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": 1905,
+    "DEATH_YEAR": 1994,
+    "PROFILE_PATH": "/gTzLAooPwjr9yoXFOqiVULFu3zQ.jpg",
+    "FILM_COUNT": 148
+   }
+  },
+  {
+   "index": 18,
+   "data": {
+    "ID_PERSON": 97670,
+    "PERSON_NAME": "Kostas Karagiannis",
+    "POPULARITY": 0.17,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": 1932,
+    "DEATH_YEAR": 1993,
+    "PROFILE_PATH": "/szIqDVzyot1zm7hRWn6e93QdgF2.jpg",
+    "FILM_COUNT": 146
+   }
+  },
+  {
+   "index": 19,
+   "data": {
+    "ID_PERSON": 1028011,
+    "PERSON_NAME": "René Cardona",
+    "POPULARITY": 0.15,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": 1905,
+    "DEATH_YEAR": 1988,
+    "PROFILE_PATH": "/9ph4xtzSsIWSKfR0S5BKqLdBSX2.jpg",
+    "FILM_COUNT": 144
+   }
+  }
+ ]
+}

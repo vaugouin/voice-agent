@@ -1,0 +1,152 @@
+{
+ "question": "Compare the budget and the revenue of Jurassic Park and Jurassic World",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the budgets and revenues for Jurassic Park and Jurassic World, side by side for comparison.",
+ "representation": "value-cards",
+ "representation_options": [
+  "value-cards",
+  "card-grid",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "BUDGET",
+   "role": "metric",
+   "unit": "usd",
+   "focus": true
+  },
+  {
+   "name": "REVENUE",
+   "role": "metric",
+   "unit": "usd",
+   "ordered": "desc",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 2,
+  "total": null,
+  "value_column": "BUDGET",
+  "unit": "usd",
+  "order": "REVENUE",
+  "order_direction": "desc",
+  "top": {
+   "label": "Jurassic World",
+   "id": 135397,
+   "index": 0,
+   "value": 150000000,
+   "extreme": "max"
+  }
+ },
+ "intent": {
+  "task": "compare",
+  "focus": [
+   "budget",
+   "revenue"
+  ],
+  "focus_columns": [
+   "BUDGET",
+   "REVENUE"
+  ],
+  "requested_view": "",
+  "source": "rules"
+ },
+ "page": 1,
+ "rows_per_page": 100,
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 135397,
+    "MOVIE_TITLE": "Jurassic World",
+    "DAT_RELEASE": "2015-06-06",
+    "ID_IMDB": "tt0369610",
+    "IMDB_RATING": 6.9,
+    "IMDB_RATING_WEIGHTED": 6.9,
+    "IMDB_VOTES": 740678,
+    "POSTER_PATH": "/rhr4y79GpxQF9IsfJItRXVaoGs4.jpg",
+    "RUNTIME": 124,
+    "TAGLINE": "The park is open.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 150000000,
+    "REVENUE": 1671537444
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 329,
+    "MOVIE_TITLE": "Jurassic Park",
+    "DAT_RELEASE": "1993-06-11",
+    "ID_IMDB": "tt0107290",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 8.18,
+    "IMDB_VOTES": 1205075,
+    "POSTER_PATH": "/d9mtMGQDLANKieb9PbD3yK7xxzo.jpg",
+    "RUNTIME": 127,
+    "TAGLINE": "An adventure 65 million years in the making.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 63000000,
+    "REVENUE": 1058454230
+   }
+  }
+ ]
+}

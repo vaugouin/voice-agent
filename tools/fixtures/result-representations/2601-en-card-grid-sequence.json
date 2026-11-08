@@ -1,0 +1,170 @@
+{
+ "question": "The Godfather trilogy in order",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the movies and series in The Godfather Collection, sorted by rating rather than collection order.",
+ "representation": "card-grid",
+ "representation_options": [
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_CONTENT",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "CONTENT_TYPE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "CONTENT_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_FIRST_AIR",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "DAT_LAST_AIR",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null,
+   "ordered": "desc"
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "NUMBER_OF_SEASONS",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "NUMBER_OF_EPISODES",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 3,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "IMDB_RATING_WEIGHTED",
+  "order_direction": "desc",
+  "top": null
+ },
+ "intent": {
+  "task": "sequence",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "",
+  "source": "rules"
+ },
+ "page": 1,
+ "rows_per_page": 100,
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_CONTENT": 238,
+    "CONTENT_TYPE": "movie",
+    "CONTENT_TITLE": "The Godfather",
+    "DAT_FIRST_AIR": "1972-03-14",
+    "DAT_LAST_AIR": "1972-03-14",
+    "ID_IMDB": "tt0068646",
+    "IMDB_RATING": 9.2,
+    "IMDB_RATING_WEIGHTED": 9.18,
+    "IMDB_VOTES": 2270488,
+    "POSTER_PATH": "/3bhkrj58Vtu7enYsRolD1fZdja1.jpg",
+    "RUNTIME": 175,
+    "TAGLINE": "An offer you can't refuse.",
+    "NUMBER_OF_SEASONS": null,
+    "NUMBER_OF_EPISODES": null,
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_CONTENT": 240,
+    "CONTENT_TYPE": "movie",
+    "CONTENT_TITLE": "The Godfather Part II",
+    "DAT_FIRST_AIR": "1974-12-20",
+    "DAT_LAST_AIR": "1974-12-20",
+    "ID_IMDB": "tt0071562",
+    "IMDB_RATING": 9.0,
+    "IMDB_RATING_WEIGHTED": 8.97,
+    "IMDB_VOTES": 1522699,
+    "POSTER_PATH": "/8a1lJs7mFyGhGhZZDT1azJUoQiZ.jpg",
+    "RUNTIME": 202,
+    "TAGLINE": "The rise and fall of the Corleone empire.",
+    "NUMBER_OF_SEASONS": null,
+    "NUMBER_OF_EPISODES": null,
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_CONTENT": 242,
+    "CONTENT_TYPE": "movie",
+    "CONTENT_TITLE": "The Godfather Part III",
+    "DAT_FIRST_AIR": "1990-12-25",
+    "DAT_LAST_AIR": "1990-12-25",
+    "ID_IMDB": "tt0099674",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.48,
+    "IMDB_VOTES": 462848,
+    "POSTER_PATH": "/lm3pQ2QoQ16pextRsmnUbG2onES.jpg",
+    "RUNTIME": 162,
+    "TAGLINE": "All the power on earth can't change destiny.",
+    "NUMBER_OF_SEASONS": null,
+    "NUMBER_OF_EPISODES": null,
+    "ID_CRITERION_SPINE": null
+   }
+  }
+ ]
+}

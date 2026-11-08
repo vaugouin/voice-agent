@@ -1,0 +1,329 @@
+{
+ "question": "The Star Wars movies and the budget of each, in release order",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the Star Wars Collection movies and their budgets, in release order.",
+ "representation": "value-cards",
+ "representation_options": [
+  "value-cards",
+  "card-grid",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null,
+   "ordered": "asc"
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "BUDGET",
+   "role": "metric",
+   "unit": "usd",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 13,
+  "total": null,
+  "value_column": "BUDGET",
+  "unit": "usd",
+  "order": "date",
+  "order_direction": "asc",
+  "top": {
+   "label": "Star Wars: The Rise of Skywalker",
+   "id": 181812,
+   "index": 10,
+   "value": 489900000,
+   "extreme": "max"
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "budget"
+  ],
+  "focus_columns": [
+   "BUDGET"
+  ],
+  "requested_view": "",
+  "source": "rules"
+ },
+ "page": 1,
+ "rows_per_page": 100,
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 11,
+    "MOVIE_TITLE": "Star Wars",
+    "DAT_RELEASE": "1977-05-25",
+    "ID_IMDB": "tt0076759",
+    "IMDB_RATING": 8.6,
+    "IMDB_RATING_WEIGHTED": 8.58,
+    "IMDB_VOTES": 1596810,
+    "POSTER_PATH": "/fai0rspsNeJCS69wHNjOdWxcI7P.jpg",
+    "RUNTIME": 121,
+    "TAGLINE": "A long time ago in a galaxy far, far away...",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 11000000
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 1891,
+    "MOVIE_TITLE": "The Empire Strikes Back",
+    "DAT_RELEASE": "1980-05-20",
+    "ID_IMDB": "tt0080684",
+    "IMDB_RATING": 8.7,
+    "IMDB_RATING_WEIGHTED": 8.68,
+    "IMDB_VOTES": 1532057,
+    "POSTER_PATH": "/nNAeTmF4CtdSgMDplXTDPOpYzsX.jpg",
+    "RUNTIME": 124,
+    "TAGLINE": "The Star Wars saga continues.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 18000000
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 1892,
+    "MOVIE_TITLE": "Return of the Jedi",
+    "DAT_RELEASE": "1983-05-25",
+    "ID_IMDB": "tt0086190",
+    "IMDB_RATING": 8.3,
+    "IMDB_RATING_WEIGHTED": 8.28,
+    "IMDB_VOTES": 1228813,
+    "POSTER_PATH": "/jQYlydvHm3kUix1f8prMucrplhm.jpg",
+    "RUNTIME": 132,
+    "TAGLINE": "Return to a galaxy far far away.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 32350000
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_MOVIE": 1893,
+    "MOVIE_TITLE": "Star Wars: Episode I - The Phantom Menace",
+    "DAT_RELEASE": "1999-05-19",
+    "ID_IMDB": "tt0120915",
+    "IMDB_RATING": 6.5,
+    "IMDB_RATING_WEIGHTED": 6.51,
+    "IMDB_VOTES": 942644,
+    "POSTER_PATH": "/6wkfovpn7Eq8dYNKaG5PY3q2oq6.jpg",
+    "RUNTIME": 136,
+    "TAGLINE": "Every saga has a beginning.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 115000000
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_MOVIE": 1894,
+    "MOVIE_TITLE": "Star Wars: Episode II - Attack of the Clones",
+    "DAT_RELEASE": "2002-05-15",
+    "ID_IMDB": "tt0121765",
+    "IMDB_RATING": 6.6,
+    "IMDB_RATING_WEIGHTED": 6.61,
+    "IMDB_VOTES": 834889,
+    "POSTER_PATH": "/oZNPzxqM2s5DyVWab09NTQScDQt.jpg",
+    "RUNTIME": 142,
+    "TAGLINE": "A Jedi shall not know anger. Nor hatred. Nor love.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 120000000
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_MOVIE": 1895,
+    "MOVIE_TITLE": "Star Wars: Episode III - Revenge of the Sith",
+    "DAT_RELEASE": "2005-05-17",
+    "ID_IMDB": "tt0121766",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.68,
+    "IMDB_VOTES": 937932,
+    "POSTER_PATH": "/xfSAoBEm9MNBjmlNcDYLvLSMlnq.jpg",
+    "RUNTIME": 140,
+    "TAGLINE": "Every story has a hero. Every hero has a destiny. Every saga has an end.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 113000000
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_MOVIE": 140607,
+    "MOVIE_TITLE": "Star Wars: The Force Awakens",
+    "DAT_RELEASE": "2015-12-15",
+    "ID_IMDB": "tt2488496",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.69,
+    "IMDB_VOTES": 1038534,
+    "POSTER_PATH": "/wqnLdwVXoBjKibFRR5U3y0aDUhs.jpg",
+    "RUNTIME": 136,
+    "TAGLINE": "Every generation has a story.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 245000000
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_MOVIE": 330459,
+    "MOVIE_TITLE": "Rogue One: A Star Wars Story",
+    "DAT_RELEASE": "2016-12-14",
+    "ID_IMDB": "tt3748528",
+    "IMDB_RATING": 7.8,
+    "IMDB_RATING_WEIGHTED": 7.78,
+    "IMDB_VOTES": 768970,
+    "POSTER_PATH": "/i0yw1mFbB7sNGHCs7EXZPzFkdA1.jpg",
+    "RUNTIME": 133,
+    "TAGLINE": "Empires are built on fear. Rebellions are built on hope.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 200000000
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_MOVIE": 181808,
+    "MOVIE_TITLE": "Star Wars: The Last Jedi",
+    "DAT_RELEASE": "2017-12-13",
+    "ID_IMDB": "tt2527336",
+    "IMDB_RATING": 6.8,
+    "IMDB_RATING_WEIGHTED": 6.8,
+    "IMDB_VOTES": 729882,
+    "POSTER_PATH": "/kOVEVeg59E0wsnXmF9nrh6OmWII.jpg",
+    "RUNTIME": 152,
+    "TAGLINE": "Let the past die.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 300000000
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_MOVIE": 348350,
+    "MOVIE_TITLE": "Solo: A Star Wars Story",
+    "DAT_RELEASE": "2018-05-15",
+    "ID_IMDB": "tt3778644",
+    "IMDB_RATING": 6.9,
+    "IMDB_RATING_WEIGHTED": 6.9,
+    "IMDB_VOTES": 416661,
+    "POSTER_PATH": "/4oD6VEccFkorEBTEDXtpLAaz0Rl.jpg",
+    "RUNTIME": 135,
+    "TAGLINE": "Never tell him the odds.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 250000000
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_MOVIE": 181812,
+    "MOVIE_TITLE": "Star Wars: The Rise of Skywalker",
+    "DAT_RELEASE": "2019-12-18",
+    "ID_IMDB": "tt2527338",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.32,
+    "IMDB_VOTES": 553759,
+    "POSTER_PATH": "/db32LaOibwEliAmSL2jjDF6oDdj.jpg",
+    "RUNTIME": 142,
+    "TAGLINE": "The saga concludes.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 489900000
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_MOVIE": 732670,
+    "MOVIE_TITLE": "LEGO Star Wars Holiday Special",
+    "DAT_RELEASE": "2020-11-17",
+    "ID_IMDB": "tt12885438",
+    "IMDB_RATING": 6.4,
+    "IMDB_RATING_WEIGHTED": 6.8,
+    "IMDB_VOTES": 8888,
+    "POSTER_PATH": "/zyzJSI7UZZzz5Toj10rYGF5689z.jpg",
+    "RUNTIME": 50,
+    "TAGLINE": "To: Luke. From: Your father.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 0
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_MOVIE": 1228710,
+    "MOVIE_TITLE": "The Mandalorian and Grogu",
+    "DAT_RELEASE": "2026-05-20",
+    "ID_IMDB": "tt30825738",
+    "IMDB_RATING": 6.7,
+    "IMDB_RATING_WEIGHTED": 6.74,
+    "IMDB_VOTES": 124111,
+    "POSTER_PATH": "/uwMKWjcNID0D9jjplsjkQS2OrB4.jpg",
+    "RUNTIME": 132,
+    "TAGLINE": "If you're searching for new adventure, \"this is the way.\"",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 165000000
+   }
+  }
+ ]
+}

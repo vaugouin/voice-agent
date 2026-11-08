@@ -1,0 +1,150 @@
+{
+ "question": "Les films du Seigneur des anneaux avec la durée de chacun",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici les films de Le Seigneur des anneaux - Saga, avec la durée de chacun.",
+ "representation": "value-cards",
+ "representation_options": [
+  "value-cards",
+  "card-grid",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes",
+   "focus": true
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 3,
+  "total": null,
+  "value_column": "RUNTIME",
+  "unit": "minutes",
+  "order": "collection",
+  "order_direction": null,
+  "top": {
+   "label": "Le Seigneur des anneaux : Le Retour du roi",
+   "id": 122,
+   "index": 2,
+   "value": 201,
+   "extreme": "max"
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "runtime"
+  ],
+  "focus_columns": [
+   "RUNTIME"
+  ],
+  "requested_view": "",
+  "source": "rules"
+ },
+ "page": 1,
+ "rows_per_page": 100,
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 120,
+    "MOVIE_TITLE": "Le Seigneur des anneaux : La Communauté de l'anneau",
+    "DAT_RELEASE": "2001-12-18",
+    "ID_IMDB": "tt0120737",
+    "IMDB_RATING": 8.9,
+    "IMDB_RATING_WEIGHTED": 8.88,
+    "IMDB_VOTES": 2250168,
+    "POSTER_PATH": "/5OPg6M0yHr21Ovs1fni2H1xpKuF.jpg",
+    "RUNTIME": 179,
+    "TAGLINE": "Le périple de Frodon commence…",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 121,
+    "MOVIE_TITLE": "Le Seigneur des anneaux : Les Deux Tours",
+    "DAT_RELEASE": "2002-12-18",
+    "ID_IMDB": "tt0167261",
+    "IMDB_RATING": 8.8,
+    "IMDB_RATING_WEIGHTED": 8.78,
+    "IMDB_VOTES": 1995232,
+    "POSTER_PATH": "/qVHBqQYLDRs7ESjP9q6o9iPHLWj.jpg",
+    "RUNTIME": 179,
+    "TAGLINE": "L'aventure continue…",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 122,
+    "MOVIE_TITLE": "Le Seigneur des anneaux : Le Retour du roi",
+    "DAT_RELEASE": "2003-12-17",
+    "ID_IMDB": "tt0167260",
+    "IMDB_RATING": 9.0,
+    "IMDB_RATING_WEIGHTED": 8.98,
+    "IMDB_VOTES": 2205977,
+    "POSTER_PATH": "/ypUCFOvOf07bcHy81jng9LyMUfi.jpg",
+    "RUNTIME": 201,
+    "TAGLINE": "L'aventure s'achève.",
+    "ID_CRITERION_SPINE": null
+   }
+  }
+ ]
+}

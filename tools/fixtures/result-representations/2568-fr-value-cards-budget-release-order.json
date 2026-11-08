@@ -1,0 +1,329 @@
+{
+ "question": "Les films Star Wars et le budget de chacun, par ordre de sortie",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici les films de Star Wars Collection, avec leur budget, dans l’ordre de sortie.",
+ "representation": "value-cards",
+ "representation_options": [
+  "value-cards",
+  "card-grid",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null,
+   "ordered": "asc"
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "BUDGET",
+   "role": "metric",
+   "unit": "usd",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 13,
+  "total": null,
+  "value_column": "BUDGET",
+  "unit": "usd",
+  "order": "date",
+  "order_direction": "asc",
+  "top": {
+   "label": "Star Wars : L'Ascension de Skywalker",
+   "id": 181812,
+   "index": 10,
+   "value": 489900000,
+   "extreme": "max"
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "budget"
+  ],
+  "focus_columns": [
+   "BUDGET"
+  ],
+  "requested_view": "",
+  "source": "rules"
+ },
+ "page": 1,
+ "rows_per_page": 100,
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 11,
+    "MOVIE_TITLE": "La Guerre des étoiles",
+    "DAT_RELEASE": "1977-05-25",
+    "ID_IMDB": "tt0076759",
+    "IMDB_RATING": 8.6,
+    "IMDB_RATING_WEIGHTED": 8.58,
+    "IMDB_VOTES": 1596810,
+    "POSTER_PATH": "/rLi9cokiFU20mLUPvQ0IRok3ELY.jpg",
+    "RUNTIME": 121,
+    "TAGLINE": "“Que la force soit avec toi.”",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 11000000
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 1891,
+    "MOVIE_TITLE": "L'Empire contre-attaque",
+    "DAT_RELEASE": "1980-05-20",
+    "ID_IMDB": "tt0080684",
+    "IMDB_RATING": 8.7,
+    "IMDB_RATING_WEIGHTED": 8.68,
+    "IMDB_VOTES": 1532057,
+    "POSTER_PATH": "/qDvctAykmNWAmi9G2GrVrwWx3pr.jpg",
+    "RUNTIME": 124,
+    "TAGLINE": "La Guerre des Étoiles continue…",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 18000000
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 1892,
+    "MOVIE_TITLE": "Le Retour du Jedi",
+    "DAT_RELEASE": "1983-05-25",
+    "ID_IMDB": "tt0086190",
+    "IMDB_RATING": 8.3,
+    "IMDB_RATING_WEIGHTED": 8.28,
+    "IMDB_VOTES": 1228813,
+    "POSTER_PATH": "/tEQlCGiiWvMvfD7Sz8d99Pouy39.jpg",
+    "RUNTIME": 132,
+    "TAGLINE": "Retour dans une galaxie… loin, très loin.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 32350000
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_MOVIE": 1893,
+    "MOVIE_TITLE": "Star Wars, épisode I - La Menace fantôme",
+    "DAT_RELEASE": "1999-05-19",
+    "ID_IMDB": "tt0120915",
+    "IMDB_RATING": 6.5,
+    "IMDB_RATING_WEIGHTED": 6.51,
+    "IMDB_VOTES": 942644,
+    "POSTER_PATH": "/fpEC910v5DrMvZteRNlKzXeHiHY.jpg",
+    "RUNTIME": 136,
+    "TAGLINE": "Toute saga a un commencement.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 115000000
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_MOVIE": 1894,
+    "MOVIE_TITLE": "Star Wars, épisode II - L'Attaque des clones",
+    "DAT_RELEASE": "2002-05-15",
+    "ID_IMDB": "tt0121765",
+    "IMDB_RATING": 6.6,
+    "IMDB_RATING_WEIGHTED": 6.61,
+    "IMDB_VOTES": 834889,
+    "POSTER_PATH": "/3nqpcTkODCBhuKuDQJ1dtRhgTqZ.jpg",
+    "RUNTIME": 142,
+    "TAGLINE": "La saga continue.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 120000000
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_MOVIE": 1895,
+    "MOVIE_TITLE": "Star Wars, épisode III - La Revanche des Sith",
+    "DAT_RELEASE": "2005-05-17",
+    "ID_IMDB": "tt0121766",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.68,
+    "IMDB_VOTES": 937932,
+    "POSTER_PATH": "/2RcBuU8cdxFxCJibbiYCGNLApfz.jpg",
+    "RUNTIME": 140,
+    "TAGLINE": "La saga est complète.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 113000000
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_MOVIE": 140607,
+    "MOVIE_TITLE": "Star Wars : Le Réveil de la Force",
+    "DAT_RELEASE": "2015-12-15",
+    "ID_IMDB": "tt2488496",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.69,
+    "IMDB_VOTES": 1038534,
+    "POSTER_PATH": "/zKZ1iF1ABqL7a16u6Im8JTQKp7H.jpg",
+    "RUNTIME": 136,
+    "TAGLINE": "Chaque génération a son histoire.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 245000000
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_MOVIE": 330459,
+    "MOVIE_TITLE": "Rogue One : A Star Wars Story",
+    "DAT_RELEASE": "2016-12-14",
+    "ID_IMDB": "tt3748528",
+    "IMDB_RATING": 7.8,
+    "IMDB_RATING_WEIGHTED": 7.78,
+    "IMDB_VOTES": 768970,
+    "POSTER_PATH": "/obsGPyNOAwkQbLRQOHR6a21VT23.jpg",
+    "RUNTIME": 133,
+    "TAGLINE": "Une rébellion fondée sur l'espoir.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 200000000
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_MOVIE": 181808,
+    "MOVIE_TITLE": "Star Wars : Les Derniers Jedi",
+    "DAT_RELEASE": "2017-12-13",
+    "ID_IMDB": "tt2527336",
+    "IMDB_RATING": 6.8,
+    "IMDB_RATING_WEIGHTED": 6.8,
+    "IMDB_VOTES": 729882,
+    "POSTER_PATH": "/prV3qBW4CqFsH14CEQNslnwvqWi.jpg",
+    "RUNTIME": 152,
+    "TAGLINE": "Laisser le passé mourir.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 300000000
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_MOVIE": 348350,
+    "MOVIE_TITLE": "Solo: A Star Wars Story",
+    "DAT_RELEASE": "2018-05-15",
+    "ID_IMDB": "tt3778644",
+    "IMDB_RATING": 6.9,
+    "IMDB_RATING_WEIGHTED": 6.9,
+    "IMDB_VOTES": 416661,
+    "POSTER_PATH": "/oMCIfJMezZeJvLK124uj4T0BpAy.jpg",
+    "RUNTIME": 135,
+    "TAGLINE": "Ne lui dites jamais quelles sont les cotes.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 250000000
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_MOVIE": 181812,
+    "MOVIE_TITLE": "Star Wars : L'Ascension de Skywalker",
+    "DAT_RELEASE": "2019-12-18",
+    "ID_IMDB": "tt2527338",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.32,
+    "IMDB_VOTES": 553759,
+    "POSTER_PATH": "/1pQc75SdFOKpo2AqoL58z5kF3YI.jpg",
+    "RUNTIME": 142,
+    "TAGLINE": "Toute saga a une fin.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 489900000
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_MOVIE": 732670,
+    "MOVIE_TITLE": "LEGO Star Wars : Joyeuses fêtes",
+    "DAT_RELEASE": "2020-11-17",
+    "ID_IMDB": "tt12885438",
+    "IMDB_RATING": 6.4,
+    "IMDB_RATING_WEIGHTED": 6.8,
+    "IMDB_VOTES": 8888,
+    "POSTER_PATH": "/aibbIWRyZcr2yIXWy1TlOZ8YboY.jpg",
+    "RUNTIME": 50,
+    "TAGLINE": "To: Luke. From: Your father.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 0
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_MOVIE": 1228710,
+    "MOVIE_TITLE": "The Mandalorian and Grogu",
+    "DAT_RELEASE": "2026-05-20",
+    "ID_IMDB": "tt30825738",
+    "IMDB_RATING": 6.7,
+    "IMDB_RATING_WEIGHTED": 6.74,
+    "IMDB_VOTES": 124111,
+    "POSTER_PATH": "/dSGk2j6cBKHKdofvsILHaRQscum.jpg",
+    "RUNTIME": 132,
+    "TAGLINE": "Telle est la voie.",
+    "ID_CRITERION_SPINE": null,
+    "BUDGET": 165000000
+   }
+  }
+ ]
+}

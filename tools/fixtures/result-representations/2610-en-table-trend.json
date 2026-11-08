@@ -1,0 +1,93 @@
+{
+ "question": "How many films did Woody Allen direct per decade?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here’s how many films Woody Allen directed in each decade.",
+ "representation": "table",
+ "representation_options": [
+  "table"
+ ],
+ "result_kind": "unknown",
+ "result_columns": [
+  {
+   "name": "DECADE",
+   "role": "date",
+   "unit": null,
+   "ordered": "asc"
+  },
+  {
+   "name": "FILM_COUNT",
+   "role": "metric",
+   "unit": "count"
+  }
+ ],
+ "summary_facts": {
+  "count": 7,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "date",
+  "order_direction": "asc",
+  "top": null
+ },
+ "intent": {
+  "task": "trend",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "",
+  "source": "rules"
+ },
+ "page": 1,
+ "rows_per_page": 100,
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "DECADE": 1960,
+    "FILM_COUNT": 2
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "DECADE": 1970,
+    "FILM_COUNT": 8
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "DECADE": 1980,
+    "FILM_COUNT": 11
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "DECADE": 1990,
+    "FILM_COUNT": 11
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "DECADE": 2000,
+    "FILM_COUNT": 11
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "DECADE": 2010,
+    "FILM_COUNT": 9
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "DECADE": 2020,
+    "FILM_COUNT": 2
+   }
+  }
+ ]
+}

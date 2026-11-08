@@ -1,0 +1,233 @@
+{
+ "question": "Classe les films Harry Potter par note IMDb",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici les films de Harry Potter Collection, classés de la meilleure à la moins bonne note IMDb.",
+ "representation": "ranked-bars",
+ "representation_options": [
+  "ranked-bars",
+  "card-grid",
+  "value-cards",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null,
+   "ordered": "desc",
+   "focus": true
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null,
+   "focus": true
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 8,
+  "total": null,
+  "value_column": "IMDB_RATING",
+  "unit": null,
+  "order": "IMDB_RATING",
+  "order_direction": "desc",
+  "top": {
+   "label": "Harry Potter et les Reliques de la Mort - 2ème partie",
+   "id": 12445,
+   "index": 0,
+   "value": 8.1,
+   "extreme": "max"
+  }
+ },
+ "intent": {
+  "task": "rank",
+  "focus": [
+   "rating"
+  ],
+  "focus_columns": [
+   "IMDB_RATING",
+   "IMDB_RATING_WEIGHTED"
+  ],
+  "requested_view": "",
+  "source": "rules"
+ },
+ "page": 1,
+ "rows_per_page": 100,
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 12445,
+    "MOVIE_TITLE": "Harry Potter et les Reliques de la Mort - 2ème partie",
+    "DAT_RELEASE": "2011-07-12",
+    "ID_IMDB": "tt1201607",
+    "IMDB_RATING": 8.1,
+    "IMDB_RATING_WEIGHTED": 8.08,
+    "IMDB_VOTES": 1068603,
+    "POSTER_PATH": "/alQOPmKEPHkH4BLMEla1vTNYrUr.jpg",
+    "RUNTIME": 130,
+    "TAGLINE": "L’affrontement final.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 673,
+    "MOVIE_TITLE": "Harry Potter et le Prisonnier d'Azkaban",
+    "DAT_RELEASE": "2004-05-31",
+    "ID_IMDB": "tt0304141",
+    "IMDB_RATING": 8.0,
+    "IMDB_RATING_WEIGHTED": 7.97,
+    "IMDB_VOTES": 783647,
+    "POSTER_PATH": "/t4P2079IyK19njHDP2GwQrKdvzd.jpg",
+    "RUNTIME": 141,
+    "TAGLINE": "Tout va changer.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 671,
+    "MOVIE_TITLE": "Harry Potter à l'école des sorciers",
+    "DAT_RELEASE": "2001-11-16",
+    "ID_IMDB": "tt0241527",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.68,
+    "IMDB_VOTES": 973069,
+    "POSTER_PATH": "/fbxQ44VRdM2PVzHSNajUseUteem.jpg",
+    "RUNTIME": 152,
+    "TAGLINE": "Un voyage au‐delà de votre imagination.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_MOVIE": 674,
+    "MOVIE_TITLE": "Harry Potter et la Coupe de feu",
+    "DAT_RELEASE": "2005-11-16",
+    "ID_IMDB": "tt0330373",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.68,
+    "IMDB_VOTES": 769316,
+    "POSTER_PATH": "/hBak1pn5pbI4ycAbrgMMn1YI7P1.jpg",
+    "RUNTIME": 157,
+    "TAGLINE": "Des heures sombres et difficiles s’annoncent.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_MOVIE": 12444,
+    "MOVIE_TITLE": "Harry Potter et les Reliques de la Mort - 1ère partie",
+    "DAT_RELEASE": "2010-11-17",
+    "ID_IMDB": "tt0926084",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.68,
+    "IMDB_VOTES": 678878,
+    "POSTER_PATH": "/yJm61MmTMjOmNXxPxdoaIkdqnOm.jpg",
+    "RUNTIME": 146,
+    "TAGLINE": "La menace est partout",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_MOVIE": 767,
+    "MOVIE_TITLE": "Harry Potter et le Prince de sang-mêlé",
+    "DAT_RELEASE": "2009-07-15",
+    "ID_IMDB": "tt0417741",
+    "IMDB_RATING": 7.6,
+    "IMDB_RATING_WEIGHTED": 7.58,
+    "IMDB_VOTES": 674720,
+    "POSTER_PATH": "/A4WWOzWUASfUeESXxduQxVmoD7t.jpg",
+    "RUNTIME": 153,
+    "TAGLINE": "De sombres secrets dévoilés",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_MOVIE": 672,
+    "MOVIE_TITLE": "Harry Potter et la Chambre des secrets",
+    "DAT_RELEASE": "2002-11-13",
+    "ID_IMDB": "tt0295297",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.49,
+    "IMDB_VOTES": 782499,
+    "POSTER_PATH": "/8KpHRokGpiaqEGpjYe0rpywtvUx.jpg",
+    "RUNTIME": 161,
+    "TAGLINE": "Quelque chose de maléfique est de retour à Poudlard !",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_MOVIE": 675,
+    "MOVIE_TITLE": "Harry Potter et l'Ordre du Phénix",
+    "DAT_RELEASE": "2007-07-08",
+    "ID_IMDB": "tt0373889",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.49,
+    "IMDB_VOTES": 715573,
+    "POSTER_PATH": "/9ZfpCVNx0y8jpColnnfdA1HI4Zb.jpg",
+    "RUNTIME": 138,
+    "TAGLINE": "La révolte a commencé.",
+    "ID_CRITERION_SPINE": null
+   }
+  }
+ ]
+}
