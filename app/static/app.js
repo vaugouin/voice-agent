@@ -3233,7 +3233,11 @@ function renderRankedBars(container, rows, columns) {
       badge.textContent = String(i + 1);
       badge.setAttribute("aria-hidden", "true");
       card.append(badge);
-      card.append(buildCardMedia(spec.title, spec.imageUrl, spec.synthetic || null));
+      const rankMedia = buildCardMedia(spec.title, spec.imageUrl, spec.synthetic || null);
+      // Twelve posters at most: load them now. Lazy loading left most of them blank on the iPad
+      // (Safari, 2026-11-08: only the posters already in cache showed).
+      rankMedia.querySelectorAll("img").forEach((img) => { img.loading = "eager"; });
+      card.append(rankMedia);
       card.append(buildCardText(spec.title, spec.subtitle || ""));
       card.append(buildMetricBar(Number(r[metric.name]), max, metric.unit));
       grid.append(card);
