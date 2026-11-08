@@ -3206,6 +3206,30 @@ function buildMetricBar(value, max, unit) {
   return body;
 }
 
+// A ranked row (poster or bar) opens the record's detail sheet like a grid card does, when the
+// row names an entity the detail tools know (2026-11-08: the names in the bars could not be
+// clicked). Keyboard reachable: a role=button with Enter and Space.
+function makeText2SqlRowOpenable(element, record) {
+  if (!detailRequestFromRecord(record)) {
+    return;
+  }
+  element.classList.add("t2sRowOpenable");
+  element.setAttribute("role", "button");
+  element.tabIndex = 0;
+  const open = () => {
+    showRecordDetail(record).catch((error) => {
+      log("ranked row click error", error.message);
+    });
+  };
+  element.addEventListener("click", open);
+  element.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" || event.key === " ") {
+      event.preventDefault();
+      open();
+    }
+  });
+}
+
 function renderRankedBars(container, rows, columns) {
   const metric = pickBarMetric(rows, columns);
   const records = rows.map((item) => item?.data || item).filter((r) => r && typeof r === "object");
@@ -3240,6 +3264,7 @@ function renderRankedBars(container, rows, columns) {
       card.append(rankMedia);
       card.append(buildCardText(spec.title, spec.subtitle || ""));
       card.append(buildMetricBar(Number(r[metric.name]), max, metric.unit));
+      makeText2SqlRowOpenable(card, r);
       grid.append(card);
     });
     section.append(grid);
@@ -3256,6 +3281,7 @@ function renderRankedBars(container, rows, columns) {
       lab.title = label;
       lab.textContent = label;
       row.append(lab, buildMetricBar(Number(r[metric.name]), max, metric.unit));
+      makeText2SqlRowOpenable(row, r);
       list.append(row);
     });
     section.append(list);

@@ -4198,3 +4198,16 @@ body:not(.cinemaRender) .cinemaControls {
     opacity: 1;
   }
 }
+
+/* Ranked rows that open a detail sheet (bars and the numbered poster row). */
+.t2sRowOpenable {
+  cursor: pointer;
+}
+.t2sRowOpenable:hover .t2sBarLabel,
+.t2sRowOpenable:focus-visible .t2sBarLabel {
+  text-decoration: underline;
+}
+.t2sRowOpenable:focus-visible {
+  outline: 2px solid var(--accent, #03dac6);
+  outline-offset: 2px;
+}
