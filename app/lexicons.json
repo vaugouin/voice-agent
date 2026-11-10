@@ -476,5 +476,21 @@
   "_comment_group_pronouns": "VOICE-AGENT-225: the plural pronouns that stand for a group (a band, a troupe) in a voice query_text2sql call. Checked only when a group is in focus (its page on screen, a group in the last search rows, or a group word in the previous search), because 'they' is too common to send back otherwise. JS only (app/static/app.js).",
   "follow_up_group_pronouns_en": ["they", "them", "their", "theirs", "themselves"],
   "follow_up_group_pronouns_fr": ["ils", "elles", "eux", "leur", "leurs"],
-  "group_subject_words": ["member", "members", "band", "bands", "group", "groups", "troupe", "troupes", "duo", "trio", "quartet", "quintet", "membre", "membres", "groupe", "groupes"]
+  "group_subject_words": ["member", "members", "band", "bands", "group", "groups", "troupe", "troupes", "duo", "trio", "quartet", "quintet", "membre", "membres", "groupe", "groupes"],
+  "_comment_representation_request": "VOICE-AGENT-250: the typed 'show it as a table' route. A typed message is a request to redraw the result on screen when, once accents are folded and the words split, it holds one of these view phrases (the longest wins) and every other word is a filler below; a one-word message never is ('Timeline' is a film). Anything else ('Nolan films as a table') goes to the search as before. The keys are the views of show_results_as in app/main.py. JS only (app/static/app.js, text2SqlRequestedView).",
+  "representation_request_phrases": {
+    "table": ["table", "tableau", "tabular", "spreadsheet"],
+    "chart": ["chart", "graph", "diagram", "graphique", "graphe", "diagramme"],
+    "cards": ["cards", "card", "cartes", "fiches", "vignettes"],
+    "posters": ["posters", "poster", "affiches", "les affiches"],
+    "values": ["values", "valeurs"],
+    "bars": ["bars", "bar chart", "bar graph", "ranking", "barres", "classement"],
+    "timeline": ["timeline", "time line", "frise", "frise chronologique", "chronologie"],
+    "sequence": ["sequence", "in order", "numbered", "dans l'ordre", "par ordre", "numerotes", "numerotees"],
+    "columns": ["columns", "column chart", "colonnes", "histogram", "histogramme"]
+  },
+  "representation_request_fillers": [
+    "show", "display", "put", "make", "switch", "change", "turn", "view", "see", "it", "them", "this", "that", "these", "those", "the", "a", "an", "as", "in", "into", "to", "with", "on", "me", "us", "please", "can", "could", "would", "will", "you", "instead", "rather", "again", "back", "form", "format", "mode", "layout", "style", "now", "let", "lets", "s", "d", "m", "i", "want", "like", "prefer", "and", "ok", "okay", "then", "give", "draw", "go", "use", "one", "all", "list", "data", "results", "result", "film", "films", "movie", "movies", "series", "thanks",
+    "montre", "montrez", "montrer", "affiche", "affichez", "afficher", "mets", "met", "mettez", "mettre", "passe", "passez", "passer", "presente", "presentez", "presenter", "voir", "vois", "donne", "donnez", "fais", "faites", "le", "la", "les", "l", "un", "une", "des", "en", "sous", "forme", "de", "du", "moi", "nous", "te", "vous", "il", "plait", "svp", "stp", "plutot", "au", "aux", "avec", "sur", "ca", "cela", "ce", "ces", "ceci", "resultats", "resultat", "liste", "serie", "donnees", "maintenant", "veux", "voudrais", "je", "j", "peux", "pouvez", "tu", "et", "alors", "bien", "vue", "version", "encore", "revenir", "reviens", "retour", "oui", "merci"
+  ]
 }

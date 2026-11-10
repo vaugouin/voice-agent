@@ -228,6 +228,8 @@ const ASK_ABOUT_RECORD_TOOL = "ask_about_record";
 const PLAY_TRAILER_TOOL = "play_trailer";
 // VOICE-AGENT-218: browser-side read of the "Based on" rail of the record on screen.
 const READ_BASED_ON_TOOL = "read_based_on";
+// VOICE-AGENT-250: browser-side redraw of the result on screen in another form ("as a table").
+const SHOW_RESULTS_AS_TOOL = "show_results_as";
 // VOICE-AGENT-085: the spoken-card highlight targets two card families that never
 // coexist in `#resultsContent` — search grid cards (`.search-poster-card`) and entity
 // detail rail cards (`.detailVisualCard`). One selector covers both so the matcher,
@@ -3104,6 +3106,16 @@ function renderText2SqlRepresentation(rep, container, rows, upstream) {
   if (rep === "table") {
     return renderRawTable(container, rows, columns);
   }
+  // VOICE-AGENT-249: the three forms of phase 2 lot A.
+  if (rep === "timeline") {
+    return renderTimeline(container, rows, columns, upstream);
+  }
+  if (rep === "sequence-strip") {
+    return renderSequenceStrip(container, rows, columns);
+  }
+  if (rep === "trend-columns") {
+    return renderTrendColumns(container, rows, columns, upstream);
+  }
   // number-card | stat-strip: the scalar family, one card per metric column.
   return renderScalarCards(container, rows, columns);
 }
@@ -3289,6 +3301,199 @@ function renderRankedBars(container, rows, columns) {
   container.append(section);
 }
 
+// VOICE-AGENT-249: the small poster mark of the timeline and of its undated list. An ordinary
+// `.search-poster-card` with `data-result-index`, so the spoken-card focus and the card count of
+// the pagination line see it; it opens the detail sheet like a grid card.
+function buildTimelineMark(root, record, columns, dateColumn) {
+  const spec = cardSpecFromRecord(record);
+  const title = text2SqlLabelForRow(record, columns) || spec?.title || "";
+  const mark = document.createElement("div");
+  mark.className = "search-poster-card t2sTimelineMark";
+  const dateText = dateColumn ? formatDate(record[dateColumn.name]) : "";
+  assignResultCardIndex(root, mark, { title, subtitle: String(text2SqlYearOf(record[dateColumn?.name]) ?? "") });
+  mark.title = dateText ? `${title} (${dateText})` : title;
+  if (spec?.imageUrl) {
+    const img = document.createElement("img");
+    img.className = "t2sTimelineImage";
+    img.loading = "lazy";
+    img.decoding = "async";
+    img.src = spec.imageUrl;
+    img.alt = "";
+    mark.append(img);
+  } else {
+    const fallback = document.createElement("div");
+    fallback.className = "t2sTimelineImage posterFallback";
+    fallback.textContent = title;
+    mark.append(fallback);
+  }
+  const caption = document.createElement("div");
+  caption.className = "t2sTimelineTitle";
+  caption.textContent = title;
+  mark.append(caption);
+  makeText2SqlRowOpenable(mark, record);
+  if (mark.getAttribute("role") === "button") {
+    mark.setAttribute("aria-label", mark.title);
+  }
+  return mark;
+}
+
+// VOICE-AGENT-249, `timeline`: the rows placed on a horizontal time axis by the first `focus`
+// date column (year granularity), rows of one year stacked, rows with no date listed apart. The
+// axis scrolls inside its own box, so a phone never gets a page-wide horizontal scroll.
+function renderTimeline(container, rows, columns, upstream) {
+  const model = text2SqlTimelineModel(rows, columns, { preferred: upstream?.summary_facts?.value_column || "" });
+  if (!model.dateColumn || !model.groups.length) {
+    return renderRawTable(container, rows, columns);
+  }
+  const root = document.createElement("div");
+  root.className = "t2sTimelineWrap";
+  const scroller = document.createElement("div");
+  scroller.className = "t2sTimeline";
+  scroller.tabIndex = 0;
+  scroller.setAttribute("role", "region");
+  scroller.setAttribute("aria-label", uiText(
+    `Timeline from ${model.minYear} to ${model.maxYear}`,
+    `Frise de ${model.minYear} à ${model.maxYear}`,
+  ));
+  const track = document.createElement("div");
+  track.className = "t2sTimelineTrack";
+  const axis = document.createElement("div");
+  axis.className = "t2sTimelineAxis";
+  axis.setAttribute("aria-hidden", "true");
+  track.append(axis);
+  root.append(scroller);
+  scroller.append(track);
+  model.groups.forEach((group) => {
+    const slot = document.createElement("div");
+    slot.className = "t2sTimelineSlot";
+    slot.style.width = `${T2S_TIMELINE_SLOT_PX}px`;
+    if (group.offset) {
+      slot.style.marginLeft = `${group.offset}px`;
+    }
+    const stack = document.createElement("div");
+    stack.className = "t2sTimelineStack";
+    group.items.forEach((record) => {
+      stack.append(buildTimelineMark(root, record, columns, model.dateColumn));
+    });
+    const year = document.createElement("div");
+    year.className = "t2sTimelineYear";
+    year.textContent = String(group.year);
+    slot.append(stack, year);
+    track.append(slot);
+  });
+  if (model.undated.length) {
+    const apart = document.createElement("div");
+    apart.className = "t2sTimelineUndated";
+    const heading = document.createElement("p");
+    heading.className = "t2sTimelineUndatedTitle";
+    heading.textContent = uiText("No date", "Sans date");
+    const list = document.createElement("div");
+    list.className = "t2sTimelineUndatedList";
+    model.undated.forEach((record) => {
+      list.append(buildTimelineMark(root, record, columns, model.dateColumn));
+    });
+    apart.append(heading, list);
+    root.append(apart);
+  }
+  container.append(root);
+}
+
+// VOICE-AGENT-249, `sequence-strip`: the numbered poster row of the rankings (rank badge,
+// poster, title) with the year under each poster instead of a bar. It is redrawn with every row
+// on Load more, so the numbering continues across pages.
+function renderSequenceStrip(container, rows, columns) {
+  const records = rows.map((item) => item?.data || item).filter((r) => r && typeof r === "object");
+  if (!records.length) {
+    return renderRawTable(container, rows, columns);
+  }
+  const dateColumn = text2SqlDateColumn(columns, { orderedFirst: true });
+  const section = document.createElement("div");
+  section.className = "search-poster-results";
+  const grid = document.createElement("div");
+  grid.className = "search-poster-card-grid t2sPosterRanking t2sSequenceStrip";
+  records.forEach((r, i) => {
+    const spec = cardSpecFromRecord(r);
+    if (!spec) {
+      appendAggregateCard(grid, r);
+      return;
+    }
+    const year = dateColumn ? text2SqlYearOf(r[dateColumn.name]) : null;
+    const yearText = year === null ? spec.subtitle || "" : String(year);
+    const title = text2SqlLabelForRow(r, columns) || spec.title || "";
+    const card = document.createElement("div");
+    card.className = "search-poster-card t2sRankCard";
+    assignResultCardIndex(grid, card, { title, subtitle: yearText });
+    const badge = document.createElement("span");
+    badge.className = "t2sRankBadge";
+    badge.textContent = String(i + 1);
+    badge.setAttribute("aria-hidden", "true");
+    card.append(badge);
+    const media = buildCardMedia(title, spec.imageUrl, spec.synthetic || null);
+    if (i < 12) {
+      media.querySelectorAll("img").forEach((img) => { img.loading = "eager"; });
+    }
+    card.append(media, buildCardText(title, yearText));
+    makeText2SqlRowOpenable(card, r);
+    if (card.getAttribute("role") === "button") {
+      card.setAttribute("aria-label", `${i + 1}. ${title}${yearText ? `, ${yearText}` : ""}`);
+    }
+    grid.append(card);
+  });
+  section.append(grid);
+  container.append(section);
+}
+
+// VOICE-AGENT-249, `trend-columns`: one vertical column per period (year or decade), in row
+// order, the height the metric (summary_facts.value_column, else the focus metric). Each column
+// carries its period and formatted value as a title and an aria label; the values are printed
+// over the columns only when there are few enough to read, the largest one always.
+function renderTrendColumns(container, rows, columns, upstream) {
+  const model = text2SqlTrendModel(rows, columns, upstream?.summary_facts, activeUiLanguage);
+  if (!model) {
+    return renderRawTable(container, rows, columns);
+  }
+  const showAllValues = model.bars.length <= 12;
+  const maxValue = Math.max(...model.bars.map((b) => (b.value === null ? -Infinity : b.value)));
+  const root = document.createElement("div");
+  root.className = "t2sTrend";
+  const plot = document.createElement("div");
+  plot.className = "t2sTrendPlot";
+  plot.setAttribute("role", "list");
+  plot.setAttribute("aria-label", capitalizeFirst(text2SqlMetricLabel(model.metric.name)));
+  plot.style.minWidth = `${model.bars.length * (showAllValues ? 44 : 30)}px`;
+  model.bars.forEach((bar) => {
+    const col = document.createElement("div");
+    col.className = "t2sTrendCol";
+    col.setAttribute("role", "listitem");
+    const description = bar.valueText ? `${bar.label}${t2sLang() === "fr" ? " : " : ": "}${bar.valueText}` : bar.label;
+    col.title = description;
+    col.setAttribute("aria-label", description);
+    const area = document.createElement("div");
+    area.className = "t2sTrendArea";
+    area.setAttribute("aria-hidden", "true");
+    const value = document.createElement("div");
+    value.className = "t2sTrendValue";
+    if (showAllValues || bar.value === maxValue) {
+      value.textContent = bar.valueText;
+    }
+    const fill = document.createElement("div");
+    fill.className = "t2sTrendFill";
+    if (bar.value === maxValue && bar.value !== null) {
+      fill.classList.add("isPeak");
+    }
+    fill.style.height = `${bar.pct}%`;
+    area.append(value, fill);
+    const label = document.createElement("div");
+    label.className = "t2sTrendLabel";
+    label.setAttribute("aria-hidden", "true");
+    label.textContent = bar.label;
+    col.append(area, label);
+    plot.append(col);
+  });
+  root.append(plot);
+  container.append(root);
+}
+
 function renderRawTable(container, rows, columns) {
   const records = rows.map((item) => item?.data || item).filter((r) => r && typeof r === "object");
   if (!records.length) {
@@ -3300,6 +3505,9 @@ function renderRawTable(container, rows, columns) {
         Object.keys(r).forEach((k) => set.add(k));
         return set;
       }, new Set()));
+  // VOICE-AGENT-251: the title cells open the entity's detail sheet, like a card.
+  const links = text2SqlTableLinks(columns, keys);
+  const linkByLabel = new Map(links.map((link) => [link.label, link]));
   const metricNames = new Set(columns.filter((c) => c.role === "metric").map((c) => c.name));
   const unitByName = {};
   columns.forEach((c) => {
@@ -3327,7 +3535,22 @@ function renderRawTable(container, rows, columns) {
       const unit = unitByName[k];
       // A metric without a unit (IMDB_VOTES) gets the neutral number format (1,234,567), as the
       // contract says; ids, years and codes stay as they are (2026-11-08).
-      td.textContent = unit || metricNames.has(k) ? formatMetric(r[k], unit) : r[k] == null ? "" : String(r[k]);
+      const text = unit || metricNames.has(k) ? formatMetric(r[k], unit) : r[k] == null ? "" : String(r[k]);
+      const target = linkByLabel.has(k) ? text2SqlTableLinkRecord(r, linkByLabel.get(k)) : null;
+      if (target) {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = "t2sTableLink";
+        button.textContent = text;
+        button.addEventListener("click", () => {
+          showRecordDetail(target).catch((error) => {
+            log("table link click error", error.message);
+          });
+        });
+        td.append(button);
+      } else {
+        td.textContent = text;
+      }
       tr.append(td);
     });
     tbody.append(tr);
@@ -3343,19 +3566,27 @@ function renderRawTable(container, rows, columns) {
 // cached before it, carries none of them, and the result is then drawn exactly as before (no
 // chips, no caption, the renderer chooseText2SqlRepresentation() picks). The pure functions
 // below (no DOM) are pinned by tools/check-result-representations.mjs.
+// VOICE-AGENT-249: `timeline`, `sequence-strip` and `trend-columns` (FASTAPI-TEXT2SQL phase 2
+// lot A) joined the list; before that an API sending them fell back to the front's own chooser.
 const T2S_KNOWN_REPRESENTATIONS = [
   "entity-page", "card-grid", "value-cards", "number-card", "stat-strip", "ranked-bars", "table",
+  "timeline", "sequence-strip", "trend-columns",
 ];
 // Chips only where switching means something: several entity rows, or a table of them. An
 // entity page and a one-row number keep their single form (VOICE-AGENT-247), even though the
 // API lists `table` beside them.
-const T2S_SWITCHABLE_REPRESENTATIONS = ["card-grid", "value-cards", "ranked-bars", "table"];
+const T2S_SWITCHABLE_REPRESENTATIONS = [
+  "card-grid", "value-cards", "ranked-bars", "table", "timeline", "sequence-strip", "trend-columns",
+];
 const T2S_GRID_REPRESENTATIONS = ["card-grid", "value-cards"];
 const T2S_REPRESENTATION_LABELS = {
   "card-grid": ["Posters", "Affiches"],
   "value-cards": ["Values", "Valeurs"],
   "ranked-bars": ["Ranking", "Classement"],
   table: ["Table", "Tableau"],
+  timeline: ["Timeline", "Frise"],
+  "sequence-strip": ["In order", "Dans l'ordre"],
+  "trend-columns": ["Columns", "Colonnes"],
 };
 // Column names the summary line and the value cards name in words. Anything else falls back to
 // prettyLabel() of the column name, in lower case.
@@ -3711,8 +3942,426 @@ function text2SqlSummaryLine(upstream, { rep = "", lang = "", spoken = false, ha
     }
   }
 
+  // VOICE-AGENT-249: the three phase 2 forms say their own sentence (the "Spoken" rows of the
+  // contract). A timeline says the count and the span; a sequence the count, the order and the
+  // span; trend columns the span and the extremum, with no count (the rows are periods).
+  if (shown === "timeline" || shown === "sequence-strip") {
+    const dateColumn = shown === "timeline"
+      ? text2SqlDateColumn(columns, { focusFirst: true, preferred: facts.value_column })
+      : text2SqlDateColumn(columns, { orderedFirst: true });
+    const years = (Array.isArray(upstream?.result) ? upstream.result : [])
+      .map((item) => text2SqlYearOf((item?.data || item)?.[dateColumn?.name]))
+      .filter((year) => year !== null);
+    const span = text2SqlYearSpan(years, language);
+    let sequenceOrder = "";
+    if (shown === "sequence-strip") {
+      const works = ["films", "series", "titles"].includes(text2SqlRowNounKey(columns, upstream?.result));
+      if (order === "collection") {
+        sequenceOrder = fr ? "dans l'ordre de la collection" : "in collection order";
+      } else if (direction === "desc") {
+        sequenceOrder = fr ? "du plus récent au plus ancien" : "most recent first";
+      } else if (works) {
+        sequenceOrder = fr ? "dans l'ordre de sortie" : "in release order";
+      } else {
+        sequenceOrder = fr ? "dans l'ordre chronologique" : "in chronological order";
+      }
+    }
+    const parts = [lead, sequenceOrder].filter(Boolean).join(" ");
+    return `${capitalizeFirst(span ? `${parts}, ${span}` : parts)}.`;
+  }
+  if (shown === "trend-columns") {
+    return text2SqlTrendSummary(upstream, { lang: language, spoken });
+  }
+
   const head = orderPhrase ? `${lead} ${orderPhrase}` : lead;
   return `${capitalizeFirst(head)}${tail ? `${fr ? " ; " : "; "}${tail}` : ""}.`;
+}
+
+// VOICE-AGENT-249. The year of a date cell: a number is a year (RELEASE_YEAR, a decade), a
+// string is an ISO date ("1979-05-25") or a bare year. null when there is none, so a row with
+// no date stays off the timeline axis instead of landing on year 0.
+function text2SqlYearOf(value) {
+  if (value === null || value === undefined) {
+    return null;
+  }
+  if (typeof value === "number") {
+    return Number.isFinite(value) && value !== 0 ? Math.trunc(value) : null;
+  }
+  const match = String(value).trim().match(/^(-?\d{1,4})(?:$|[-/T ])/);
+  if (!match) {
+    return null;
+  }
+  const year = Number(match[1]);
+  return Number.isFinite(year) && year !== 0 ? year : null;
+}
+
+// The date column a form positions by. A timeline takes the first `focus` date column (the
+// date the question asked for); a sequence the date column the SQL ordered on, else the first
+// date column. Mixed movie+series results alias the date (DAT_FIRST_AIR for a film), which is
+// why the column comes from `result_columns` and never from a fixed name.
+function text2SqlDateColumn(columns, { focusFirst = false, orderedFirst = false, preferred = "" } = {}) {
+  const dates = (Array.isArray(columns) ? columns : []).filter((c) => c && c.name && c.role === "date");
+  if (!dates.length) {
+    return null;
+  }
+  if (preferred) {
+    const named = dates.find((c) => c.name === preferred);
+    if (named && (!focusFirst || named.focus)) {
+      return named;
+    }
+  }
+  if (focusFirst) {
+    const focus = dates.find((c) => c.focus);
+    if (focus) {
+      return focus;
+    }
+  }
+  if (orderedFirst) {
+    const ordered = dates.find((c) => c.ordered);
+    if (ordered) {
+      return ordered;
+    }
+  }
+  return dates[0];
+}
+
+// "from 1979 to 2017" / "de 1979 à 2017"; "in 1979" / "en 1979" when every year is the same.
+function text2SqlYearSpan(years, lang) {
+  const list = (Array.isArray(years) ? years : []).filter((y) => Number.isFinite(y));
+  if (!list.length) {
+    return "";
+  }
+  const fr = t2sLang(lang) === "fr";
+  const min = Math.min(...list);
+  const max = Math.max(...list);
+  if (min === max) {
+    return fr ? `en ${min}` : `in ${min}`;
+  }
+  return fr ? `de ${min} à ${max}` : `from ${min} to ${max}`;
+}
+
+// A period column counts decades when its name says so (DECADE, DECENNIE) or, with no such
+// name, when every value is a multiple of ten and no two periods are closer than ten years.
+function text2SqlIsDecadeColumn(name, values) {
+  if (/DECADE|DECENN/i.test(String(name || ""))) {
+    return true;
+  }
+  const years = (Array.isArray(values) ? values : []).map(text2SqlYearOf).filter((y) => y !== null);
+  if (years.length < 2 || years.some((y) => y % 10 !== 0)) {
+    return false;
+  }
+  const sorted = years.slice().sort((a, b) => a - b);
+  return sorted.every((y, i) => i === 0 || y - sorted[i - 1] >= 10);
+}
+
+// "1980s" / "années 1980" for a decade, the bare year otherwise.
+function text2SqlPeriodLabel(year, decade, lang) {
+  if (year === null || year === undefined) {
+    return "";
+  }
+  if (!decade) {
+    return String(year);
+  }
+  return t2sLang(lang) === "fr" ? `années ${year}` : `${year}s`;
+}
+
+// The model of the trend columns, no DOM: the period column, the metric (summary_facts'
+// value column, else the focus metric, else pickBarMetric()), and one bar per row in row order
+// with its label, its value and its height in percent of the largest value.
+function text2SqlTrendModel(rows, columns, facts, lang) {
+  const list = Array.isArray(columns) ? columns : [];
+  const period = list.find((c) => c && c.role === "date") || null;
+  const metrics = list.filter((c) => c && c.role === "metric");
+  const metric = metrics.find((c) => facts?.value_column && c.name === facts.value_column)
+    || metrics.find((c) => c.focus)
+    || pickBarMetric(rows, list);
+  const records = (Array.isArray(rows) ? rows : []).map((item) => item?.data || item).filter((r) => r && typeof r === "object");
+  if (!period || !metric || !records.length) {
+    return null;
+  }
+  const unit = metric.unit || facts?.unit || null;
+  const decade = text2SqlIsDecadeColumn(period.name, records.map((r) => r[period.name]));
+  const values = records.map((r) => Number(r[metric.name]));
+  const max = Math.max(0, ...values.filter((v) => Number.isFinite(v)));
+  const bars = records.map((r, index) => {
+    const value = values[index];
+    const year = text2SqlYearOf(r[period.name]);
+    const label = year === null ? String(r[period.name] ?? "") : text2SqlPeriodLabel(year, decade, lang);
+    const valueText = Number.isFinite(value) ? formatCardValue(value, { unit, role: "metric" }) || formatMetric(value, unit) : "";
+    const pct = Number.isFinite(value) && max > 0 ? Math.max(value > 0 ? 1 : 0, Math.round((value / max) * 1000) / 10) : 0;
+    return { index, year, label, value: Number.isFinite(value) ? value : null, valueText, pct };
+  });
+  return { period, metric, unit, decade, bars };
+}
+
+// The value of a trend extremum with the noun of what was counted: "11 films", "21,776 films";
+// any other unit as the value card or the voice would say it.
+function text2SqlTrendValueText(value, metric, unit, lang, spoken) {
+  const fr = t2sLang(lang) === "fr";
+  const text = spoken ? spokenMetricValue(value, unit, lang) : formatCardValue(value, { unit, role: "metric" });
+  if (!text) {
+    return "";
+  }
+  if (unit === "count") {
+    const name = String(metric || "").toUpperCase();
+    const one = Number(value) === 1;
+    if (/MOVIE|FILM/.test(name)) {
+      return `${text} film${one ? "" : "s"}`;
+    }
+    if (/SERIE/.test(name)) {
+      return fr ? `${text} série${one ? "" : "s"}` : `${text} series`;
+    }
+  }
+  return text;
+}
+
+// "From the 1960s to the 2020s; the peak is the 1980s, 11 films." (contract, trend-columns,
+// Spoken; same wording as tmdb-front f_t2srep_caption_trend).
+function text2SqlTrendSummary(upstream, { lang = "", spoken = false } = {}) {
+  const language = t2sLang(lang);
+  const fr = language === "fr";
+  const facts = upstream?.summary_facts || {};
+  const columns = text2SqlResultColumns(upstream);
+  const model = text2SqlTrendModel(upstream?.result, columns, facts, language);
+  if (!model) {
+    return "";
+  }
+  const years = model.bars.map((b) => b.year).filter((y) => y !== null);
+  let span = text2SqlYearSpan(years, language);
+  if (model.decade && years.length > 1 && Math.min(...years) !== Math.max(...years)) {
+    const lo = Math.min(...years);
+    const hi = Math.max(...years);
+    span = fr ? `des années ${lo} aux années ${hi}` : `from the ${lo}s to the ${hi}s`;
+  }
+  let tail = "";
+  const top = facts.top;
+  const bar = top && Number.isInteger(Number(top.index)) ? model.bars[Number(top.index)] : null;
+  if (bar && bar.year !== null && top.value !== null && top.value !== undefined && String(top.value).trim() !== "") {
+    const valueText = text2SqlTrendValueText(top.value, model.metric.name, model.unit, language, spoken);
+    const isMax = String(top.extreme || "max") !== "min";
+    if (valueText) {
+      if (fr) {
+        const when = model.decade ? `dans les années ${bar.year}` : `en ${bar.year}`;
+        tail = `${isMax ? "le pic est" : "le creux est"} ${when}, avec ${valueText}`;
+      } else {
+        const when = model.decade ? `the ${bar.year}s` : String(bar.year);
+        tail = `${isMax ? "the peak is" : "the low point is"} ${when}, ${valueText}`;
+      }
+    }
+  }
+  const head = capitalizeFirst(span);
+  if (!head) {
+    return tail ? `${capitalizeFirst(tail)}.` : "";
+  }
+  return `${head}${tail ? `${fr ? " ; " : "; "}${tail}` : ""}.`;
+}
+
+// VOICE-AGENT-249. The timeline model, no DOM: the rows grouped by year along the axis, in
+// year order (by full date inside a year, so the stack reads bottom-up in release order), and
+// the rows with no date set apart. `offset` is the gap in pixels before each year slot: the
+// distance is proportional to the years between two slots, with a floor so two posters never
+// overlap. The axis then keeps the shape of time without a 40-year span becoming a 4000 px page.
+const T2S_TIMELINE_SLOT_PX = 88;
+const T2S_TIMELINE_MIN_GAP_PX = 8;
+const T2S_TIMELINE_PX_PER_YEAR = 16;
+
+function text2SqlTimelineModel(rows, columns, { preferred = "" } = {}) {
+  const dateColumn = text2SqlDateColumn(columns, { focusFirst: true, preferred });
+  const records = (Array.isArray(rows) ? rows : []).map((item) => item?.data || item).filter((r) => r && typeof r === "object");
+  if (!dateColumn) {
+    return { dateColumn: null, groups: [], undated: records, minYear: null, maxYear: null };
+  }
+  const byYear = new Map();
+  const undated = [];
+  records.forEach((record, index) => {
+    const year = text2SqlYearOf(record[dateColumn.name]);
+    if (year === null) {
+      undated.push(record);
+      return;
+    }
+    if (!byYear.has(year)) {
+      byYear.set(year, []);
+    }
+    byYear.get(year).push({ record, index, sortKey: String(record[dateColumn.name] ?? "") });
+  });
+  const years = Array.from(byYear.keys()).sort((a, b) => a - b);
+  const groups = [];
+  let previousEnd = null;
+  years.forEach((year) => {
+    const x = (year - years[0]) * T2S_TIMELINE_PX_PER_YEAR;
+    const start = previousEnd === null ? 0 : Math.max(previousEnd + T2S_TIMELINE_MIN_GAP_PX, x);
+    const offset = previousEnd === null ? 0 : start - previousEnd;
+    previousEnd = start + T2S_TIMELINE_SLOT_PX;
+    const items = byYear.get(year)
+      .sort((a, b) => (a.sortKey < b.sortKey ? -1 : a.sortKey > b.sortKey ? 1 : a.index - b.index))
+      .map((entry) => entry.record);
+    groups.push({ year, offset, items });
+  });
+  return {
+    dateColumn,
+    groups,
+    undated,
+    minYear: years.length ? years[0] : null,
+    maxYear: years.length ? years[years.length - 1] : null,
+  };
+}
+
+// VOICE-AGENT-250. "Show it as a table", "en tableau", "with the posters", "en frise": a
+// follow-up that asks for the result on screen in another form. It is a third route beside the
+// search and the detail tools, answered locally (the chip mechanism) with no new search. The
+// matcher is deliberately narrow: the WHOLE message must be a view phrase plus filler words
+// (lexicons.json, representation_request_*), so "Nolan's films as a table" or "a chart of the
+// budgets" still go to the search, which reads requested_view itself. A one-word message is
+// never a view request: "Timeline" (2003) and "Table 19" are films. Returns the view key, or "".
+const T2S_REQUESTED_VIEW_PHRASES = (LEXICONS.representation_request_phrases && typeof LEXICONS.representation_request_phrases === "object")
+  ? LEXICONS.representation_request_phrases
+  : {};
+const T2S_REQUESTED_VIEW_FILLERS = new Set(LEXICONS.representation_request_fillers || []);
+// The representations each view asks for, in preference order (contract, `requested_view`:
+// table to table, chart to ranked-bars, trend-columns or timeline, cards to value-cards or
+// card-grid); the first one the result offers wins.
+const T2S_REQUESTED_VIEW_TARGETS = {
+  table: ["table"],
+  chart: ["ranked-bars", "trend-columns", "timeline"],
+  cards: ["value-cards", "card-grid"],
+  posters: ["card-grid", "value-cards"],
+  values: ["value-cards"],
+  bars: ["ranked-bars"],
+  timeline: ["timeline"],
+  sequence: ["sequence-strip"],
+  columns: ["trend-columns"],
+};
+const T2S_REQUESTED_VIEW_NOUNS = {
+  table: ["a table", "en tableau"],
+  chart: ["a chart", "en graphique"],
+  cards: ["cards", "en cartes"],
+  posters: ["posters", "en affiches"],
+  values: ["values", "avec les valeurs"],
+  bars: ["a ranking", "en classement"],
+  timeline: ["a timeline", "en frise"],
+  sequence: ["a numbered sequence", "dans l'ordre"],
+  columns: ["columns", "en colonnes"],
+};
+const T2S_REQUESTED_VIEW_DONE = {
+  table: ["Here it is as a table.", "Voici le résultat en tableau."],
+  "card-grid": ["Here are the posters.", "Voici les affiches."],
+  "value-cards": ["Here are the values under each poster.", "Voici les valeurs sous chaque affiche."],
+  "ranked-bars": ["Here it is as a ranking.", "Voici le classement."],
+  timeline: ["Here it is on a timeline.", "Voici la frise chronologique."],
+  "sequence-strip": ["Here they are in order.", "Les voici dans l'ordre."],
+  "trend-columns": ["Here it is as columns.", "Voici les colonnes."],
+};
+
+function text2SqlRequestedView(text) {
+  const words = foldedWords(text);
+  if (words.length < 2) {
+    return "";
+  }
+  let best = null;
+  Object.entries(T2S_REQUESTED_VIEW_PHRASES).forEach(([view, phrases]) => {
+    (Array.isArray(phrases) ? phrases : []).forEach((phrase) => {
+      const target = foldedWords(phrase);
+      if (!target.length) {
+        return;
+      }
+      for (let i = 0; i + target.length <= words.length; i += 1) {
+        if (target.every((word, k) => words[i + k] === word) && (!best || target.length > best.length)) {
+          best = { view, start: i, length: target.length };
+        }
+      }
+    });
+  });
+  if (!best) {
+    return "";
+  }
+  const rest = words.filter((_, i) => i < best.start || i >= best.start + best.length);
+  return rest.every((word) => T2S_REQUESTED_VIEW_FILLERS.has(word)) ? best.view : "";
+}
+
+// The representation a view asks for among the ones this result offers, or "".
+function text2SqlRepresentationForView(view, options) {
+  const offered = Array.isArray(options) ? options : [];
+  return (T2S_REQUESTED_VIEW_TARGETS[view] || []).find((rep) => offered.includes(rep)) || "";
+}
+
+// The short sentence of the typed route, and the note of the voice tool: done, or not offered.
+function text2SqlRequestedViewReply({ ok, representation = "", view = "", available = [] }, lang) {
+  const fr = t2sLang(lang) === "fr";
+  if (ok) {
+    const done = T2S_REQUESTED_VIEW_DONE[representation];
+    return done ? done[fr ? 1 : 0] : fr ? "Voici." : "Here it is.";
+  }
+  const noun = (T2S_REQUESTED_VIEW_NOUNS[view] || ["that way", "de cette façon"])[fr ? 1 : 0];
+  const labels = (Array.isArray(available) ? available : []).map((rep) => text2SqlRepresentationLabel(rep, lang));
+  if (!labels.length) {
+    return fr
+      ? `Ce résultat ne peut pas s'afficher ${noun} : il n'a qu'une seule vue.`
+      : `This result cannot be shown as ${noun}: it has only one view.`;
+  }
+  return fr
+    ? `Ce résultat ne peut pas s'afficher ${noun}. Vues possibles : ${labels.join(", ")}.`
+    : `This result cannot be shown as ${noun}. Available views: ${labels.join(", ")}.`;
+}
+
+// VOICE-AGENT-251. The table cells that open a detail sheet. The label cell (the `label` role
+// column, else the first *_TITLE or *_NAME column) opens the row's main entity; any other
+// label column whose id sits beside it under the evident name (MOVIE_TITLE with ID_MOVIE,
+// PERSON_NAME with ID_PERSON, COLLECTION_NAME with ID_T2S_COLLECTION, CONTENT_TITLE with
+// ID_CONTENT and CONTENT_TYPE) opens its own entity. Returns [{label, idColumn, typeColumn}],
+// idColumn "" for the main entity with no evident pair (the whole row is then the record).
+const T2S_TABLE_LINK_ID_COLUMNS = [
+  "ID_MOVIE", "ID_SERIE", "ID_PERSON", "ID_T2S_COLLECTION", "ID_T2S_LIST", "ID_TOPIC", "ID_MOVEMENT",
+  "ID_TECHNICAL", "ID_GROUP", "ID_DEATH", "ID_AWARD", "ID_NOMINATION", "ID_COMPANY", "ID_NETWORK",
+  "ID_LOCATION", "ID_SOURCE_WORK", "ID_GENRE", "ID_CONTENT",
+];
+
+function text2SqlTableLinks(columns, keys) {
+  const names = Array.isArray(keys) && keys.length
+    ? keys.map(String)
+    : (Array.isArray(columns) ? columns : []).map((c) => String(c?.name || "")).filter(Boolean);
+  const present = new Set(names);
+  const pairs = [];
+  T2S_TABLE_LINK_ID_COLUMNS.forEach((idColumn) => {
+    if (!present.has(idColumn)) {
+      return;
+    }
+    const base = idColumn.replace(/^ID_/, "").replace(/^T2S_/, "");
+    const label = [`${base}_TITLE`, `${base}_NAME`].find((name) => present.has(name));
+    if (label) {
+      pairs.push({ label, idColumn, typeColumn: idColumn === "ID_CONTENT" && present.has("CONTENT_TYPE") ? "CONTENT_TYPE" : "" });
+    }
+  });
+  const labelRole = (Array.isArray(columns) ? columns : []).find((c) => c && c.role === "label" && present.has(c.name));
+  const main = labelRole?.name || names.find((name) => /_(TITLE|NAME)$/.test(name)) || "";
+  const links = pairs.slice();
+  if (main && !pairs.some((p) => p.label === main)) {
+    links.unshift({ label: main, idColumn: "", typeColumn: "" });
+  }
+  return links;
+}
+
+// The record a linked cell opens: the label and its own id (and CONTENT_TYPE for ID_CONTENT),
+// or the whole row for the main entity. null when the cell is empty or nothing can be opened.
+function text2SqlTableLinkRecord(record, link) {
+  if (!record || !link) {
+    return null;
+  }
+  const text = record[link.label];
+  if (text === null || text === undefined || String(text).trim() === "") {
+    return null;
+  }
+  let target = record;
+  if (link.idColumn) {
+    const id = record[link.idColumn];
+    if (id === null || id === undefined || String(id).trim() === "") {
+      return null;
+    }
+    target = { [link.idColumn]: id, [link.label]: text };
+    if (link.typeColumn) {
+      target[link.typeColumn] = record[link.typeColumn];
+    }
+  }
+  return detailRequestFromRecord(target) ? target : null;
 }
 
 // The spoken line handed to the Realtime model beside the tool output (VOICE-AGENT-248).
@@ -3842,6 +4491,57 @@ function switchText2SqlRepresentation(rep) {
   updateText2SqlViewChrome(view);
   refreshPaginationControls();
   clientLog("t2s_representation_switch", { representation: rep, rows: view.rows.length });
+}
+
+// VOICE-AGENT-250. The spoken or typed "as a table": the result on screen is redrawn in the form
+// the view asks for when its chips offer it, exactly as a chip click (local re-render, kept as
+// the preference), with no new search. Shared by the typed route (sendTextChatMessage) and the
+// voice tool show_results_as. Returns {ok, view, representation, available, error}.
+function applyRequestedRepresentation(view, source) {
+  const onScreen = t2sView && t2sView.body?.isConnected && !resultsPanel.hidden ? t2sView : null;
+  const available = onScreen ? onScreen.chips.slice() : [];
+  const representation = onScreen ? text2SqlRepresentationForView(view, available) : "";
+  let result;
+  if (!onScreen) {
+    result = { ok: false, view, representation: "", available, error: "no_result_view" };
+  } else if (!representation) {
+    result = { ok: false, view, representation: "", available, error: "not_available" };
+  } else {
+    switchText2SqlRepresentation(representation);
+    result = { ok: true, view, representation, available, error: "" };
+  }
+  clientLog("t2s_representation_request", {
+    source,
+    view,
+    ok: result.ok,
+    representation: result.representation || null,
+    error: result.error || null,
+    available,
+  });
+  return result;
+}
+
+// The typed route: true when the message was a view request and has been answered here, so the
+// caller must not post it to /text-chat (which would fire a search for "show it as a table").
+// Only with a switchable result on screen: with nothing to redraw, the message takes the usual
+// path.
+function handleTypedRepresentationRequest(text) {
+  const view = text2SqlRequestedView(text);
+  if (!view || resultsPanel.hidden || !(t2sView && t2sView.body?.isConnected)) {
+    return false;
+  }
+  const lang = detectUiLanguageFromText(text);
+  activeUiLanguage = lang;
+  lastUserTranscript = text;
+  questionInput.value = "";
+  syncQuestionInputUi();
+  addRetainedContext({ type: "user", text });
+  const result = applyRequestedRepresentation(view, "typed");
+  const reply = text2SqlRequestedViewReply(result, lang);
+  addRetainedContext({ type: "assistant", text: reply });
+  showSubtitleText(reply);
+  setStatus("Text response", "live");
+  return true;
 }
 
 // VOICE-AGENT-218. Source works (FASTAPI-TEXT2SQL-320/-323): the novel, manga, play, game, tale
@@ -8321,6 +9021,11 @@ async function sendTextChatMessage(text, { source = "typed", imageRef = "" } = {
   if (!text && !attachedImageRef) {
     return;
   }
+  // VOICE-AGENT-250: "en tableau", "show it as a chart": answered here by redrawing the result on
+  // screen, before /text-chat, whose server pre-fires a search for every typed message.
+  if (!imageRef && text && handleTypedRepresentationRequest(text)) {
+    return;
+  }
 
   cancelTextChatOutput("new text message");
   const requestGeneration = ++textChatGeneration;
@@ -11828,6 +12533,43 @@ function handleReadBasedOnCall(item) {
   }
 }
 
+// VOICE-AGENT-250. The voice half of the "as a table" route: the model calls show_results_as
+// instead of searching again, the result on screen is redrawn locally (applyRequestedRepresentation,
+// the chip mechanism), and the output tells the model what changed so it confirms in a few words
+// or says the form is not offered. Like read_based_on, the model speaks afterwards.
+function handleShowResultsAsCall(item, args) {
+  const view = String(args?.view || "").trim().toLowerCase();
+  clientLog("tool_call_start", { name: item.name, call_id: item.call_id, view });
+  const lang = normalizeUiLanguage(activeUiLanguage || currentSearchState?.ui_language || "en");
+  const result = T2S_REQUESTED_VIEW_TARGETS[view]
+    ? applyRequestedRepresentation(view, "voice")
+    : { ok: false, view, representation: "", available: t2sView?.chips?.slice() || [], error: "unknown_view" };
+  const output = {
+    ok: result.ok,
+    view,
+    representation: result.representation || null,
+    available_views: result.available.map((rep) => text2SqlRepresentationLabel(rep, lang)),
+    error: result.error || "",
+    reply: result.error === "no_result_view" ? "" : text2SqlRequestedViewReply(result, lang),
+    note: result.ok
+      ? "The screen now shows the same results in the requested form. Confirm it in a few words, in the user's language; do not search again and do not read the list out."
+      : result.error === "no_result_view"
+        ? "No list of search results is on screen, so nothing was redrawn. If the user named what to show, search for it; otherwise ask what they want to see."
+        : "Nothing changed on screen. Tell the user in one short sentence that this result cannot be shown that way, naming the available views; do not search again.",
+  };
+  clientLog("tool_call_success", { name: item.name, call_id: item.call_id, ok: output.ok, error: output.error, representation: output.representation });
+  awaitingToolResponse = true;
+  try {
+    sendFunctionCallOutput(item.call_id, output);
+  } catch (error) {
+    clientLog("tool_output_send_error", { tool: item.name, call_id: item.call_id, error: error.message }, "error");
+  } finally {
+    requestRealtimeResponseAfterToolOutput();
+    scheduleToolResponseWatchdog(); // VOICE-AGENT-094
+    syncMicrophone("tool output sent");
+  }
+}
+
 // VOICE-AGENT-217. A voice search that still holds the user's "he" or "his". The search is
 // stateless, so the pronoun stands for nobody there: on 2026-10-10 "Which movies did he direct
 // with Leonardo DiCaprio?" painted 50 unfiltered DiCaprio films and "only his 10 best-rated ones"
@@ -11980,6 +12722,7 @@ async function handleFunctionCall(item) {
       item.name !== ASK_ABOUT_RECORD_TOOL &&
       item.name !== PLAY_TRAILER_TOOL &&
       item.name !== READ_BASED_ON_TOOL &&
+      item.name !== SHOW_RESULTS_AS_TOOL &&
       !DETAIL_TOOL_ENTITIES[item.name]
     )
   ) {
@@ -12005,6 +12748,10 @@ async function handleFunctionCall(item) {
   }
   if (item.name === READ_BASED_ON_TOOL) {
     handleReadBasedOnCall(item);
+    return;
+  }
+  if (item.name === SHOW_RESULTS_AS_TOOL) {
+    handleShowResultsAsCall(item, args);
     return;
   }
   args.ui_language = item.name === "query_text2sql"

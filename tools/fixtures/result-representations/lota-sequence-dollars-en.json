@@ -1,0 +1,169 @@
+{
+ "question": "Sergio Leone's Dollars trilogy in order of release",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are Sergio Leone's works in The Dollars Trilogy, in release order.",
+ "representation": "sequence-strip",
+ "representation_options": [
+  "sequence-strip",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_CONTENT",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "CONTENT_TYPE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "CONTENT_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_FIRST_AIR",
+   "role": "date",
+   "unit": null,
+   "ordered": "asc"
+  },
+  {
+   "name": "DAT_LAST_AIR",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "NUMBER_OF_SEASONS",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "NUMBER_OF_EPISODES",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 3,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "date",
+  "order_direction": "asc",
+  "top": null
+ },
+ "intent": {
+  "task": "sequence",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_CONTENT": 391,
+    "CONTENT_TYPE": "movie",
+    "CONTENT_TITLE": "A Fistful of Dollars",
+    "DAT_FIRST_AIR": "1964-09-12",
+    "DAT_LAST_AIR": "1964-09-12",
+    "ID_IMDB": "tt0058461",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.83,
+    "IMDB_VOTES": 257922,
+    "POSTER_PATH": "/lBwOEpwVeUAmrmglcstnaGcJq3Y.jpg",
+    "RUNTIME": 99,
+    "TAGLINE": "In his own way he is, perhaps, the most dangerous man who ever lived!",
+    "NUMBER_OF_SEASONS": null,
+    "NUMBER_OF_EPISODES": null,
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_CONTENT": 938,
+    "CONTENT_TYPE": "movie",
+    "CONTENT_TITLE": "For a Few Dollars More",
+    "DAT_FIRST_AIR": "1965-12-18",
+    "DAT_LAST_AIR": "1965-12-18",
+    "ID_IMDB": "tt0059578",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 8.12,
+    "IMDB_VOTES": 305385,
+    "POSTER_PATH": "/ooqASvA7qxlTVKL3KwOzBwy57Dh.jpg",
+    "RUNTIME": 132,
+    "TAGLINE": "The man with no name is back... the man in black is waiting... a walking arsenal - he uncoils, strikes and kills!",
+    "NUMBER_OF_SEASONS": null,
+    "NUMBER_OF_EPISODES": null,
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_CONTENT": 429,
+    "CONTENT_TYPE": "movie",
+    "CONTENT_TITLE": "The Good, the Bad and the Ugly",
+    "DAT_FIRST_AIR": "1966-12-23",
+    "DAT_LAST_AIR": "1966-12-23",
+    "ID_IMDB": "tt0060196",
+    "IMDB_RATING": 8.8,
+    "IMDB_RATING_WEIGHTED": 8.76,
+    "IMDB_VOTES": 906267,
+    "POSTER_PATH": "/bX2xnavhMYjWDoZp1VM6VnU1xwe.jpg",
+    "RUNTIME": 161,
+    "TAGLINE": "For three men the Civil War wasn't hell. It was practice.",
+    "NUMBER_OF_SEASONS": null,
+    "NUMBER_OF_EPISODES": null,
+    "ID_CRITERION_SPINE": null
+   }
+  }
+ ]
+}

@@ -1265,6 +1265,41 @@ def read_based_on_tool_definition() -> dict[str, Any]:
     }
 
 
+# VOICE-AGENT-250. Voice only, handled in the browser like play_trailer: it redraws the search
+# result on screen in another form ("show it as a table", "en frise") from the rows already
+# there, the same local re-render as an override chip, with no new search. The typed path
+# reaches the same code through a keyword check in the browser (text2SqlRequestedView), before
+# /text-chat. The views are the keys of representation_request_phrases in lexicons.json.
+SHOW_RESULTS_AS_TOOL = "show_results_as"
+SHOW_RESULTS_AS_VIEWS = tuple(LEXICONS["representation_request_phrases"])
+
+
+def show_results_as_tool_definition() -> dict[str, Any]:
+    return {
+        "type": "function",
+        "name": SHOW_RESULTS_AS_TOOL,
+        "description": (
+            "Redraw the search results already on screen in another form, with no new search: "
+            "table, chart, cards, posters, values (the value under each poster), bars (a "
+            "ranking), timeline, sequence (numbered, in order) or columns (one column per year "
+            "or decade). Returns ok false with the available views when this result cannot be "
+            "shown that way."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "view": {
+                    "type": "string",
+                    "enum": list(SHOW_RESULTS_AS_VIEWS),
+                    "description": "The form the user asked for.",
+                },
+            },
+            "required": ["view"],
+            "additionalProperties": False,
+        },
+    }
+
+
 def ask_about_record_tool_definition() -> dict[str, Any]:
     return {
         "type": "function",
@@ -1891,6 +1926,20 @@ READ_BASED_ON_INSTRUCTIONS = (
     "more about one source work, call get_source_work_detail with its ID_SOURCE_WORK."
 )
 
+# VOICE-AGENT-250, voice only: the third route of a follow-up, beside the search and the detail
+# tools. A request about the FORM of the result on screen is neither a new search (the search is
+# stateless and would answer "show it as a table" with an error) nor a detail question.
+REPRESENTATION_REQUEST_INSTRUCTIONS = (
+    "When the user asks to see the results already on screen in another form, without naming "
+    "a new subject or filter ('show it as a table', 'as a chart', 'with the posters', 'on a "
+    "timeline', 'en tableau', 'en graphique', 'en frise', 'avec les affiches'), call "
+    "show_results_as with that view, never query_text2sql and never a detail tool: it redraws "
+    "the same rows. Then confirm in a few words. If it returns ok false, say in one short "
+    "sentence that this result cannot be shown that way and name the available_views; do not "
+    "search again. A request that names a new subject or filter ('Nolan's films as a table') "
+    "is a new search: call query_text2sql with it."
+)
+
 # VOICE-AGENT-218, both modes: the detail field that answers "what is it based on?".
 SOURCE_WORK_INSTRUCTIONS = (
     "Movie and series details carry based_on, the works they are adapted from; answer questions "
@@ -2436,6 +2485,7 @@ def realtime_session_config(
         + " " + ASK_ABOUT_RECORD_INSTRUCTIONS  # VOICE-AGENT-198
         + " " + PLAY_TRAILER_INSTRUCTIONS  # VOICE-AGENT-207
         + " " + READ_BASED_ON_INSTRUCTIONS  # VOICE-AGENT-218
+        + " " + REPRESENTATION_REQUEST_INSTRUCTIONS  # VOICE-AGENT-250
         + " " + SOURCE_WORK_INSTRUCTIONS  # VOICE-AGENT-218
         + " " + LOCATION_INSTRUCTIONS  # VOICE-AGENT-227
         + " " + GROUP_WORKS_INSTRUCTIONS  # VOICE-AGENT-225
@@ -2511,6 +2561,7 @@ def realtime_session_config(
         ask_about_record_tool_definition(),
         play_trailer_tool_definition(),
         read_based_on_tool_definition(),  # VOICE-AGENT-218
+        show_results_as_tool_definition(),  # VOICE-AGENT-250
     ]
     if structured_card_focus:
         instructions += (

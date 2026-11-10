@@ -1,0 +1,180 @@
+{
+ "question": "What is the average runtime of films by decade?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here is the average film runtime for each decade, in minutes.",
+ "representation": "trend-columns",
+ "representation_options": [
+  "trend-columns",
+  "table"
+ ],
+ "result_kind": "unknown",
+ "result_columns": [
+  {
+   "name": "DECADE",
+   "role": "date",
+   "unit": null,
+   "ordered": "asc"
+  },
+  {
+   "name": "AVERAGE_RUNTIME",
+   "role": "metric",
+   "unit": "minutes",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 18,
+  "total": null,
+  "value_column": "AVERAGE_RUNTIME",
+  "unit": "minutes",
+  "order": "date",
+  "order_direction": "asc",
+  "top": {
+   "label": null,
+   "id": null,
+   "index": 12,
+   "value": 68.98,
+   "extreme": "max"
+  }
+ },
+ "intent": {
+  "task": "trend",
+  "focus": [
+   "runtime"
+  ],
+  "focus_columns": [
+   "AVERAGE_RUNTIME"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "DECADE": 1870,
+    "AVERAGE_RUNTIME": 1
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "DECADE": 1880,
+    "AVERAGE_RUNTIME": 1
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "DECADE": 1890,
+    "AVERAGE_RUNTIME": 1.32
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "DECADE": 1900,
+    "AVERAGE_RUNTIME": 4.61
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "DECADE": 1910,
+    "AVERAGE_RUNTIME": 25.88
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "DECADE": 1920,
+    "AVERAGE_RUNTIME": 41.68
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "DECADE": 1930,
+    "AVERAGE_RUNTIME": 52.04
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "DECADE": 1940,
+    "AVERAGE_RUNTIME": 55.61
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "DECADE": 1950,
+    "AVERAGE_RUNTIME": 62.12
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "DECADE": 1960,
+    "AVERAGE_RUNTIME": 60.28
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "DECADE": 1970,
+    "AVERAGE_RUNTIME": 64.59
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "DECADE": 1980,
+    "AVERAGE_RUNTIME": 68.78
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "DECADE": 1990,
+    "AVERAGE_RUNTIME": 68.98
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "DECADE": 2000,
+    "AVERAGE_RUNTIME": 65.72
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "DECADE": 2010,
+    "AVERAGE_RUNTIME": 57.37
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "DECADE": 2020,
+    "AVERAGE_RUNTIME": 54.92
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "DECADE": 2030,
+    "AVERAGE_RUNTIME": 0
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "DECADE": 2090,
+    "AVERAGE_RUNTIME": 0
+   }
+  }
+ ]
+}

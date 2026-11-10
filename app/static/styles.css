@@ -2686,6 +2686,206 @@ button.detailVisualCard:hover {
   font-variant-numeric: tabular-nums;
   pointer-events: none;
 }
+/* VOICE-AGENT-249: timeline. The axis scrolls inside .t2sTimeline (never the page); each year
+   is a slot of fixed width (T2S_TIMELINE_SLOT_PX in app.js) whose left margin keeps the
+   distance in years; the marks of one year stack upwards from the axis. */
+.t2sTimelineWrap {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0;
+  min-width: 0;
+}
+.t2sTimeline {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  max-width: 100%;
+  padding: 14px 12px 6px;
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+}
+.t2sTimeline:focus-visible {
+  outline: 2px solid var(--accent-secondary);
+  outline-offset: 2px;
+}
+.t2sTimelineTrack {
+  position: relative;
+  display: flex;
+  align-items: flex-end;
+  width: max-content;
+  min-width: 100%;
+  padding: 0 4px;
+}
+.t2sTimelineAxis {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: calc(1.75rem - 1px);
+  height: 2px;
+  background: var(--border);
+}
+.t2sTimelineSlot {
+  flex: 0 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+.t2sTimelineStack {
+  display: flex;
+  flex-direction: column-reverse;
+  align-items: center;
+  gap: 8px;
+}
+.t2sTimelineYear {
+  position: relative;
+  height: 1.75rem;
+  line-height: 1.75rem;
+  padding-top: 4px;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+.t2sTimelineYear::before {
+  content: "";
+  position: absolute;
+  top: -5px;
+  left: 50%;
+  width: 10px;
+  height: 10px;
+  margin-left: -5px;
+  border-radius: 50%;
+  background: var(--accent-secondary);
+}
+.search-poster-card.t2sTimelineMark {
+  width: 80px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 4px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+}
+.t2sTimelineImage {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 3;
+  object-fit: cover;
+  border-radius: 4px;
+  background: var(--bg-tertiary);
+}
+.t2sTimelineImage.posterFallback {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px;
+  overflow: hidden;
+  font-size: 0.7rem;
+  text-align: center;
+}
+.t2sTimelineTitle {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  color: var(--text-primary);
+  font-size: 0.72rem;
+  line-height: 1.2;
+  text-align: center;
+}
+.t2sTimelineUndatedTitle {
+  margin: 0 0 6px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+}
+.t2sTimelineUndatedList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+/* VOICE-AGENT-249: trend columns. Same scroll rule as the timeline. */
+.t2sTrend {
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-x: contain;
+  max-width: 100%;
+  margin: 12px 0;
+  padding: 14px 12px 8px;
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+}
+.t2sTrendPlot {
+  display: flex;
+  align-items: stretch;
+  gap: 4px;
+  height: 240px;
+}
+.t2sTrendCol {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+.t2sTrendArea {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+  min-height: 0;
+}
+.t2sTrendValue {
+  margin-bottom: 4px;
+  color: var(--text-primary);
+  font-size: 0.72rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.t2sTrendFill {
+  width: 100%;
+  max-width: 48px;
+  min-height: 1px;
+  border-radius: 4px 4px 0 0;
+  background: rgba(3, 218, 198, 0.55);
+}
+.t2sTrendFill.isPeak {
+  background: var(--accent-secondary);
+}
+.t2sTrendCol:hover .t2sTrendFill {
+  background: var(--accent-secondary);
+}
+.t2sTrendLabel {
+  flex: 0 0 auto;
+  padding-top: 6px;
+  border-top: 2px solid var(--border);
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  line-height: 1.15;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+/* VOICE-AGENT-251: a title cell of the table that opens the entity's sheet. */
+.t2sTableLink {
+  appearance: none;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--accent-secondary);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+}
+.t2sTableLink:hover {
+  text-decoration: underline;
+}
+.t2sTableLink:focus-visible {
+  outline: 2px solid var(--accent-secondary);
+  outline-offset: 2px;
+}
 @media (max-width: 768px) {
   .t2sBarLabel {
     flex-basis: 42%;

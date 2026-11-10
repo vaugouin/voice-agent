@@ -1,0 +1,953 @@
+{
+ "question": "Dans quel ordre regarder les films de l'univers cinématographique Marvel, par date de sortie ?",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici les films de Univers cinématographique Marvel dans l’ordre de leur sortie.",
+ "representation": "sequence-strip",
+ "representation_options": [
+  "sequence-strip",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null,
+   "ordered": "asc"
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 54,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "date",
+  "order_direction": "asc",
+  "top": null
+ },
+ "intent": {
+  "task": "sequence",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 1726,
+    "MOVIE_TITLE": "Iron Man",
+    "DAT_RELEASE": "2008-04-30",
+    "ID_IMDB": "tt0371746",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.88,
+    "IMDB_VOTES": 1257913,
+    "POSTER_PATH": "/uZrsDJkn0PPnGc51fQhtCqwPPVM.jpg",
+    "RUNTIME": 126,
+    "TAGLINE": "Ce n'est pas l'armure qui fait le héros, mais l'homme qui est à l'intérieur.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 1724,
+    "MOVIE_TITLE": "L'Incroyable Hulk",
+    "DAT_RELEASE": "2008-06-12",
+    "ID_IMDB": "tt0800080",
+    "IMDB_RATING": 6.6,
+    "IMDB_RATING_WEIGHTED": 6.61,
+    "IMDB_VOTES": 581531,
+    "POSTER_PATH": "/cImKVGUiEnwLsNUyoMA0a0na2y5.jpg",
+    "RUNTIME": 114,
+    "TAGLINE": "L'histoire du géant vert",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 10138,
+    "MOVIE_TITLE": "Iron Man 2",
+    "DAT_RELEASE": "2010-04-28",
+    "ID_IMDB": "tt1228705",
+    "IMDB_RATING": 6.9,
+    "IMDB_RATING_WEIGHTED": 6.9,
+    "IMDB_VOTES": 963779,
+    "POSTER_PATH": "/ghomWlBZtAW5K9zjcAvg4dU62AU.jpg",
+    "RUNTIME": 124,
+    "TAGLINE": "Le masque tombe mais l'homme reste debout.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_MOVIE": 10195,
+    "MOVIE_TITLE": "Thor",
+    "DAT_RELEASE": "2011-04-27",
+    "ID_IMDB": "tt0800369",
+    "IMDB_RATING": 7,
+    "IMDB_RATING_WEIGHTED": 7,
+    "IMDB_VOTES": 989846,
+    "POSTER_PATH": "/q8pF6s9b9veTQvxTqMDIQf9nJKi.jpg",
+    "RUNTIME": 115,
+    "TAGLINE": "Le courage est immortel.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_MOVIE": 1771,
+    "MOVIE_TITLE": "Captain America : First Avenger",
+    "DAT_RELEASE": "2011-07-22",
+    "ID_IMDB": "tt0458339",
+    "IMDB_RATING": 6.9,
+    "IMDB_RATING_WEIGHTED": 6.9,
+    "IMDB_VOTES": 993794,
+    "POSTER_PATH": "/l1SP3gyHA5ZEuf72WKx5ihtZZFO.jpg",
+    "RUNTIME": 124,
+    "TAGLINE": "Certains naissent héros, d'autres le deviennent.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_MOVIE": 76122,
+    "MOVIE_TITLE": "Le Consultant",
+    "DAT_RELEASE": "2011-09-13",
+    "ID_IMDB": "tt2011118",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.71,
+    "IMDB_VOTES": 12926,
+    "POSTER_PATH": "/ujamH9m90eIknBeCHPmFhFWm6kT.jpg",
+    "RUNTIME": 4,
+    "TAGLINE": "",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_MOVIE": 76535,
+    "MOVIE_TITLE": "Une drôle d'histoire sur la route du marteau de Thor",
+    "DAT_RELEASE": "2011-10-25",
+    "ID_IMDB": "tt2011109",
+    "IMDB_RATING": 7,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 13945,
+    "POSTER_PATH": "/37BOdZZUajNHrytfrE5iOeboCxR.jpg",
+    "RUNTIME": 4,
+    "TAGLINE": "A quick stop for some gas, donuts and a can of whoop ass.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_MOVIE": 24428,
+    "MOVIE_TITLE": "Avengers",
+    "DAT_RELEASE": "2012-04-25",
+    "ID_IMDB": "tt0848228",
+    "IMDB_RATING": 8,
+    "IMDB_RATING_WEIGHTED": 7.99,
+    "IMDB_VOTES": 1591130,
+    "POSTER_PATH": "/ylsAO88v2tF0iXRFojPa0UaAJf1.jpg",
+    "RUNTIME": 143,
+    "TAGLINE": "L'union fait la force.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_MOVIE": 119569,
+    "MOVIE_TITLE": "Article 47",
+    "DAT_RELEASE": "2012-08-29",
+    "ID_IMDB": "tt2247732",
+    "IMDB_RATING": 6.6,
+    "IMDB_RATING_WEIGHTED": 6.82,
+    "IMDB_VOTES": 14870,
+    "POSTER_PATH": "/636mzj2gCoHdVMO33ZbWY9PpKx.jpg",
+    "RUNTIME": 12,
+    "TAGLINE": "The Avengers won the battle, but a few items were left behind.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_MOVIE": 68721,
+    "MOVIE_TITLE": "Iron Man 3",
+    "DAT_RELEASE": "2013-04-18",
+    "ID_IMDB": "tt1300854",
+    "IMDB_RATING": 7.1,
+    "IMDB_RATING_WEIGHTED": 7.1,
+    "IMDB_VOTES": 989939,
+    "POSTER_PATH": "/sE71EBrRMfW0NKMHlXPO55Km88X.jpg",
+    "RUNTIME": 130,
+    "TAGLINE": "Libérez la puissance derrière l’armure.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_MOVIE": 211387,
+    "MOVIE_TITLE": "Agent Carter",
+    "DAT_RELEASE": "2013-10-04",
+    "ID_IMDB": "tt3067038",
+    "IMDB_RATING": 7.3,
+    "IMDB_RATING_WEIGHTED": 7.12,
+    "IMDB_VOTES": 17750,
+    "POSTER_PATH": "/qHjvXAAMyZ3Ylip9SqZEGJzyL9n.jpg",
+    "RUNTIME": 15,
+    "TAGLINE": "In an all-new Captain America adventure.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_MOVIE": 76338,
+    "MOVIE_TITLE": "Thor : Le Monde des ténèbres",
+    "DAT_RELEASE": "2013-10-30",
+    "ID_IMDB": "tt1981115",
+    "IMDB_RATING": 6.7,
+    "IMDB_RATING_WEIGHTED": 6.71,
+    "IMDB_VOTES": 797276,
+    "POSTER_PATH": "/eAIGX0nlwlb5sMb4uDRGNFqMyG9.jpg",
+    "RUNTIME": 112,
+    "TAGLINE": "Plonger dans l'obscurité",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_MOVIE": 253980,
+    "MOVIE_TITLE": "Longue vie au roi",
+    "DAT_RELEASE": "2014-02-04",
+    "ID_IMDB": "tt3438640",
+    "IMDB_RATING": 7.1,
+    "IMDB_RATING_WEIGHTED": 7.03,
+    "IMDB_VOTES": 15796,
+    "POSTER_PATH": "/7y0p6O1gCnBUErMAYxNazm8pFvl.jpg",
+    "RUNTIME": 14,
+    "TAGLINE": "The Toast of Croydon is back.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "ID_MOVIE": 259910,
+    "MOVIE_TITLE": "Marvel : La naissance d'un univers",
+    "DAT_RELEASE": "2014-03-18",
+    "ID_IMDB": "tt3591568",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 6.99,
+    "IMDB_VOTES": 1948,
+    "POSTER_PATH": "/aaV477dy4TlXouurMaF1P26IgmI.jpg",
+    "RUNTIME": 43,
+    "TAGLINE": "",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "ID_MOVIE": 100402,
+    "MOVIE_TITLE": "Captain America : Le Soldat de l'hiver",
+    "DAT_RELEASE": "2014-03-20",
+    "ID_IMDB": "tt1843866",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.69,
+    "IMDB_VOTES": 995838,
+    "POSTER_PATH": "/n3Xa8g1sWrUVUal6zk0OoC9ARo1.jpg",
+    "RUNTIME": 136,
+    "TAGLINE": "Nous avons confiance en nos héros.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "ID_MOVIE": 118340,
+    "MOVIE_TITLE": "Les Gardiens de la Galaxie",
+    "DAT_RELEASE": "2014-07-30",
+    "ID_IMDB": "tt2015381",
+    "IMDB_RATING": 8,
+    "IMDB_RATING_WEIGHTED": 7.98,
+    "IMDB_VOTES": 1391955,
+    "POSTER_PATH": "/9a6fGeSV5kffyNPPMWCPhLOhLdJ.jpg",
+    "RUNTIME": 121,
+    "TAGLINE": "Tous les héros commencent quelque part.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "ID_MOVIE": 299969,
+    "MOVIE_TITLE": "Marvel : 75 ans, du papier au monde entier",
+    "DAT_RELEASE": "2014-11-04",
+    "ID_IMDB": "tt4128102",
+    "IMDB_RATING": 6.9,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 1370,
+    "POSTER_PATH": "/oJBBjm8qKr1jO9lMhEMyqkZy8gJ.jpg",
+    "RUNTIME": 42,
+    "TAGLINE": "",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "ID_MOVIE": 99861,
+    "MOVIE_TITLE": "Avengers : L'Ère d'Ultron",
+    "DAT_RELEASE": "2015-04-22",
+    "ID_IMDB": "tt2395427",
+    "IMDB_RATING": 7.3,
+    "IMDB_RATING_WEIGHTED": 7.29,
+    "IMDB_VOTES": 1029583,
+    "POSTER_PATH": "/A0tw88n1byyR2vodhJMlFPQGQgF.jpg",
+    "RUNTIME": 141,
+    "TAGLINE": "Une nouvelle ère est venue.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 18,
+   "data": {
+    "ID_MOVIE": 102899,
+    "MOVIE_TITLE": "Ant-Man",
+    "DAT_RELEASE": "2015-07-14",
+    "ID_IMDB": "tt0478970",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 7.19,
+    "IMDB_VOTES": 799960,
+    "POSTER_PATH": "/hAH2Rt2WvfMBK2tZDLMNuUTUwxG.jpg",
+    "RUNTIME": 117,
+    "TAGLINE": "Ce n'est pas la taille qui compte.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 19,
+   "data": {
+    "ID_MOVIE": 271110,
+    "MOVIE_TITLE": "Captain America : Civil War",
+    "DAT_RELEASE": "2016-04-27",
+    "ID_IMDB": "tt3498820",
+    "IMDB_RATING": 7.8,
+    "IMDB_RATING_WEIGHTED": 7.78,
+    "IMDB_VOTES": 956334,
+    "POSTER_PATH": "/i2nc9IAP1xRWoa3MgeR7ldsshkV.jpg",
+    "RUNTIME": 147,
+    "TAGLINE": "La division entraîne la chute",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 20,
+   "data": {
+    "ID_MOVIE": 413279,
+    "MOVIE_TITLE": "Team Thor : Partie 1",
+    "DAT_RELEASE": "2016-08-28",
+    "ID_IMDB": "tt6016776",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.24,
+    "IMDB_VOTES": 12264,
+    "POSTER_PATH": "/llVRWHTiOUsI4f5tqsGRTJVtWpR.jpg",
+    "RUNTIME": 3,
+    "TAGLINE": "",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 21,
+   "data": {
+    "ID_MOVIE": 284052,
+    "MOVIE_TITLE": "Doctor Strange",
+    "DAT_RELEASE": "2016-10-25",
+    "ID_IMDB": "tt1211837",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.49,
+    "IMDB_VOTES": 903671,
+    "POSTER_PATH": "/7wZ7mx7tY5SgflQKuJmQvwu3wGm.jpg",
+    "RUNTIME": 115,
+    "TAGLINE": "Ouvrez votre esprit, changez de dimension.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 22,
+   "data": {
+    "ID_MOVIE": 441829,
+    "MOVIE_TITLE": "Team Thor : Partie 2",
+    "DAT_RELEASE": "2017-02-14",
+    "ID_IMDB": "tt6599818",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 7.03,
+    "IMDB_VOTES": 7878,
+    "POSTER_PATH": "/qmnJ6D0RgSVegTA0Aqiy4arRJrP.jpg",
+    "RUNTIME": 5,
+    "TAGLINE": "Rogers & Barnes. Stark & Rhodes. Thor & Darryl.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 23,
+   "data": {
+    "ID_MOVIE": 283995,
+    "MOVIE_TITLE": "Les Gardiens de la Galaxie Vol. 2",
+    "DAT_RELEASE": "2017-04-25",
+    "ID_IMDB": "tt3896198",
+    "IMDB_RATING": 7.6,
+    "IMDB_RATING_WEIGHTED": 7.58,
+    "IMDB_VOTES": 852669,
+    "POSTER_PATH": "/eJz44lc3IaM68BkJtIkm4ia9xpZ.jpg",
+    "RUNTIME": 137,
+    "TAGLINE": "N'importe qui peut sauver la galaxie une fois.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 24,
+   "data": {
+    "ID_MOVIE": 315635,
+    "MOVIE_TITLE": "Spider-Man : Homecoming",
+    "DAT_RELEASE": "2017-07-05",
+    "ID_IMDB": "tt2250912",
+    "IMDB_RATING": 7.4,
+    "IMDB_RATING_WEIGHTED": 7.39,
+    "IMDB_VOTES": 845997,
+    "POSTER_PATH": "/wFNNv1ZHglNdXJLYiEgpLY5sa9S.jpg",
+    "RUNTIME": 133,
+    "TAGLINE": "Les devoirs peuvent attendre. La ville non.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 25,
+   "data": {
+    "ID_MOVIE": 284053,
+    "MOVIE_TITLE": "Thor : Ragnarok",
+    "DAT_RELEASE": "2017-10-24",
+    "ID_IMDB": "tt3501632",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.88,
+    "IMDB_VOTES": 919703,
+    "POSTER_PATH": "/mAA8RXkgF87jSWWMSf6hgLl73mk.jpg",
+    "RUNTIME": 131,
+    "TAGLINE": "Pas de marteau ? Pas de problème !",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 26,
+   "data": {
+    "ID_MOVIE": 284054,
+    "MOVIE_TITLE": "Black Panther",
+    "DAT_RELEASE": "2018-02-13",
+    "ID_IMDB": "tt1825683",
+    "IMDB_RATING": 7.3,
+    "IMDB_RATING_WEIGHTED": 7.29,
+    "IMDB_VOTES": 932135,
+    "POSTER_PATH": "/g94IcdzPswTYl1ISdgn2EwvaZtt.jpg",
+    "RUNTIME": 135,
+    "TAGLINE": "Longue vie au roi.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 27,
+   "data": {
+    "ID_MOVIE": 505945,
+    "MOVIE_TITLE": "Team Darryl",
+    "DAT_RELEASE": "2018-02-20",
+    "ID_IMDB": "tt8023090",
+    "IMDB_RATING": 6.5,
+    "IMDB_RATING_WEIGHTED": 6.88,
+    "IMDB_VOTES": 5200,
+    "POSTER_PATH": "/edroTAeTEM9ILyAnumA0ALxRSne.jpg",
+    "RUNTIME": 6,
+    "TAGLINE": "",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 28,
+   "data": {
+    "ID_MOVIE": 299536,
+    "MOVIE_TITLE": "Avengers : Infinity War",
+    "DAT_RELEASE": "2018-04-25",
+    "ID_IMDB": "tt4154756",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.38,
+    "IMDB_VOTES": 1422603,
+    "POSTER_PATH": "/hSfuKPtyEryeFzapZ8UgZd4aESu.jpg",
+    "RUNTIME": 149,
+    "TAGLINE": "Où serez-vous, quand tout sera fini ?",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 29,
+   "data": {
+    "ID_MOVIE": 363088,
+    "MOVIE_TITLE": "Ant-Man et la Guêpe",
+    "DAT_RELEASE": "2018-07-04",
+    "ID_IMDB": "tt5095030",
+    "IMDB_RATING": 7,
+    "IMDB_RATING_WEIGHTED": 7,
+    "IMDB_VOTES": 510937,
+    "POSTER_PATH": "/r3Vapr4sdXOhHBThTNtfuijKe5V.jpg",
+    "RUNTIME": 119,
+    "TAGLINE": "Ant-Man est de retour",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 30,
+   "data": {
+    "ID_MOVIE": 299537,
+    "MOVIE_TITLE": "Captain Marvel",
+    "DAT_RELEASE": "2019-03-06",
+    "ID_IMDB": "tt4154664",
+    "IMDB_RATING": 6.7,
+    "IMDB_RATING_WEIGHTED": 6.71,
+    "IMDB_VOTES": 677739,
+    "POSTER_PATH": "/aRJAoQ6mqPHAKXjP3CqNyLC8FAh.jpg",
+    "RUNTIME": 124,
+    "TAGLINE": "Notre monde aura besoin d'elle.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 31,
+   "data": {
+    "ID_MOVIE": 299534,
+    "MOVIE_TITLE": "Avengers : Endgame",
+    "DAT_RELEASE": "2019-04-24",
+    "ID_IMDB": "tt4154796",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.38,
+    "IMDB_VOTES": 1506167,
+    "POSTER_PATH": "/qXekTarZKRrVfnBwhS6xevt6BGU.jpg",
+    "RUNTIME": 181,
+    "TAGLINE": "Rien ne peut vous préparer pour la fin.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 32,
+   "data": {
+    "ID_MOVIE": 429617,
+    "MOVIE_TITLE": "Spider-Man : Far From Home",
+    "DAT_RELEASE": "2019-06-28",
+    "ID_IMDB": "tt6320628",
+    "IMDB_RATING": 7.3,
+    "IMDB_RATING_WEIGHTED": 7.29,
+    "IMDB_VOTES": 683543,
+    "POSTER_PATH": "/xVYGzjMaHVwNQ9STT5ZXcz7knsB.jpg",
+    "RUNTIME": 129,
+    "TAGLINE": "Il est temps de passer à l'action.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 33,
+   "data": {
+    "ID_MOVIE": 647375,
+    "MOVIE_TITLE": "Marvel Studios: Expanding the Universe",
+    "DAT_RELEASE": "2019-11-12",
+    "ID_IMDB": "tt11295300",
+    "IMDB_RATING": 6.5,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 642,
+    "POSTER_PATH": "/dU7qXzttvOUvSlwwpEFQDsLnThK.jpg",
+    "RUNTIME": 12,
+    "TAGLINE": "",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 34,
+   "data": {
+    "ID_MOVIE": 497698,
+    "MOVIE_TITLE": "Black Widow",
+    "DAT_RELEASE": "2021-07-07",
+    "ID_IMDB": "tt3480822",
+    "IMDB_RATING": 6.6,
+    "IMDB_RATING_WEIGHTED": 6.62,
+    "IMDB_VOTES": 493990,
+    "POSTER_PATH": "/tIdq9lGrbSsq3RkgB9r0g0vYTbl.jpg",
+    "RUNTIME": 134,
+    "TAGLINE": "Elle a fini de fuir son passé.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 35,
+   "data": {
+    "ID_MOVIE": 566525,
+    "MOVIE_TITLE": "Shang-Chi et la Légende des Dix Anneaux",
+    "DAT_RELEASE": "2021-09-01",
+    "ID_IMDB": "tt9376612",
+    "IMDB_RATING": 7.3,
+    "IMDB_RATING_WEIGHTED": 7.29,
+    "IMDB_VOTES": 507579,
+    "POSTER_PATH": "/g54eUtuCTAOQaNlVpr7Kpr7sVoH.jpg",
+    "RUNTIME": 132,
+    "TAGLINE": "Vous ne pouvez pas dépasser votre destin.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 36,
+   "data": {
+    "ID_MOVIE": 524434,
+    "MOVIE_TITLE": "Les Éternels",
+    "DAT_RELEASE": "2021-11-03",
+    "ID_IMDB": "tt9032400",
+    "IMDB_RATING": 6.2,
+    "IMDB_RATING_WEIGHTED": 6.23,
+    "IMDB_VOTES": 440374,
+    "POSTER_PATH": "/vV7TrS7PNRZJHCxNmiYN1SU7s1w.jpg",
+    "RUNTIME": 156,
+    "TAGLINE": "Le combat pour notre monde est éternel.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 37,
+   "data": {
+    "ID_MOVIE": 634649,
+    "MOVIE_TITLE": "Spider-Man : No Way Home",
+    "DAT_RELEASE": "2021-12-15",
+    "ID_IMDB": "tt10872600",
+    "IMDB_RATING": 8.1,
+    "IMDB_RATING_WEIGHTED": 8.08,
+    "IMDB_VOTES": 1086844,
+    "POSTER_PATH": "/jwfDFqzxBkXC5bERBZrCEfK9iii.jpg",
+    "RUNTIME": 148,
+    "TAGLINE": "Le multivers libéré !",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 38,
+   "data": {
+    "ID_MOVIE": 453395,
+    "MOVIE_TITLE": "Doctor Strange in the Multiverse of Madness",
+    "DAT_RELEASE": "2022-05-04",
+    "ID_IMDB": "tt9419884",
+    "IMDB_RATING": 6.8,
+    "IMDB_RATING_WEIGHTED": 6.81,
+    "IMDB_VOTES": 566136,
+    "POSTER_PATH": "/arfzjn1tGvXWwkX7eaGVuXsc0mp.jpg",
+    "RUNTIME": 126,
+    "TAGLINE": "Votre manque de respect pour la réalité ne restera pas impuni.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 39,
+   "data": {
+    "ID_MOVIE": 616037,
+    "MOVIE_TITLE": "Thor : Love and Thunder",
+    "DAT_RELEASE": "2022-07-06",
+    "ID_IMDB": "tt10648342",
+    "IMDB_RATING": 6.1,
+    "IMDB_RATING_WEIGHTED": 6.14,
+    "IMDB_VOTES": 479290,
+    "POSTER_PATH": "/kSMarEm3ESOOr11dzsep2RZ1ClD.jpg",
+    "RUNTIME": 119,
+    "TAGLINE": "Certains dieux se cherchent encore...",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 40,
+   "data": {
+    "ID_MOVIE": 894205,
+    "MOVIE_TITLE": "Werewolf by Night",
+    "DAT_RELEASE": "2022-09-25",
+    "ID_IMDB": "tt15318872",
+    "IMDB_RATING": 7.1,
+    "IMDB_RATING_WEIGHTED": 7.07,
+    "IMDB_VOTES": 82433,
+    "POSTER_PATH": "/5p6Q5dsqgT7dknImjtoRvNx50k9.jpg",
+    "RUNTIME": 55,
+    "TAGLINE": "On ne peut échapper à la nuit.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 41,
+   "data": {
+    "ID_MOVIE": 505642,
+    "MOVIE_TITLE": "Black Panther : Wakanda Forever",
+    "DAT_RELEASE": "2022-11-09",
+    "ID_IMDB": "tt9114286",
+    "IMDB_RATING": 6.6,
+    "IMDB_RATING_WEIGHTED": 6.62,
+    "IMDB_VOTES": 405958,
+    "POSTER_PATH": "/rNTKgJdJ8tyfpiUug5ittECK8CS.jpg",
+    "RUNTIME": 162,
+    "TAGLINE": "Pour toujours.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 42,
+   "data": {
+    "ID_MOVIE": 774752,
+    "MOVIE_TITLE": "Les Gardiens de la Galaxie : Joyeuses Fêtes",
+    "DAT_RELEASE": "2022-11-24",
+    "ID_IMDB": "tt13623136",
+    "IMDB_RATING": 6.9,
+    "IMDB_RATING_WEIGHTED": 6.91,
+    "IMDB_VOTES": 112615,
+    "POSTER_PATH": "/cF3E6CrCm3NUy5PDRBbGyXRChYb.jpg",
+    "RUNTIME": 45,
+    "TAGLINE": "Le cadeau parfait est dans une galaxie.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 43,
+   "data": {
+    "ID_MOVIE": 640146,
+    "MOVIE_TITLE": "Ant-Man et la Guêpe : Quantumania",
+    "DAT_RELEASE": "2023-02-15",
+    "ID_IMDB": "tt10954600",
+    "IMDB_RATING": 6,
+    "IMDB_RATING_WEIGHTED": 6.07,
+    "IMDB_VOTES": 282542,
+    "POSTER_PATH": "/2hq8EKF6kaUyOxB9KhmIb5JUxEe.jpg",
+    "RUNTIME": 125,
+    "TAGLINE": "Assistez à la naissance d'une nouvelle dynastie.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 44,
+   "data": {
+    "ID_MOVIE": 447365,
+    "MOVIE_TITLE": "Les Gardiens de la Galaxie : Volume 3",
+    "DAT_RELEASE": "2023-05-03",
+    "ID_IMDB": "tt6791350",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.86,
+    "IMDB_VOTES": 493309,
+    "POSTER_PATH": "/dnyQnKSSqQ8aOEMiE5hYDNJO4dE.jpg",
+    "RUNTIME": 150,
+    "TAGLINE": "On la refait, moins crispés.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 45,
+   "data": {
+    "ID_MOVIE": 609681,
+    "MOVIE_TITLE": "The Marvels",
+    "DAT_RELEASE": "2023-11-08",
+    "ID_IMDB": "tt10676048",
+    "IMDB_RATING": 5.4,
+    "IMDB_RATING_WEIGHTED": 5.57,
+    "IMDB_VOTES": 173583,
+    "POSTER_PATH": "/mqAQO6j5gkq6iwCXNbXpzf0RXBU.jpg",
+    "RUNTIME": 105,
+    "TAGLINE": "Le monde a besoin d'elles.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 46,
+   "data": {
+    "ID_MOVIE": 533535,
+    "MOVIE_TITLE": "Deadpool & Wolverine",
+    "DAT_RELEASE": "2024-07-24",
+    "ID_IMDB": "tt6263850",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.48,
+    "IMDB_VOTES": 601568,
+    "POSTER_PATH": "/7CtRdKd5hQPB2b1apKCqxxQUKSf.jpg",
+    "RUNTIME": 128,
+    "TAGLINE": "Toujours fourrés ensemble !",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 47,
+   "data": {
+    "ID_MOVIE": 822119,
+    "MOVIE_TITLE": "Captain America : Brave New World",
+    "DAT_RELEASE": "2025-02-12",
+    "ID_IMDB": "tt14513804",
+    "IMDB_RATING": 5.6,
+    "IMDB_RATING_WEIGHTED": 5.73,
+    "IMDB_VOTES": 196949,
+    "POSTER_PATH": "/wDRXmiAEJdhNIcuetM4016fOCx8.jpg",
+    "RUNTIME": 119,
+    "TAGLINE": "L'avenir sourit aux courageux.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 48,
+   "data": {
+    "ID_MOVIE": 986056,
+    "MOVIE_TITLE": "Thunderbolts*",
+    "DAT_RELEASE": "2025-04-30",
+    "ID_IMDB": "tt20969586",
+    "IMDB_RATING": 7.1,
+    "IMDB_RATING_WEIGHTED": 7.09,
+    "IMDB_VOTES": 312402,
+    "POSTER_PATH": "/zctISSBEZRgVQPG178HqRJMnc4x.jpg",
+    "RUNTIME": 127,
+    "TAGLINE": "Pas de pouvoirs. Pas de héros. Pas de concessions.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 49,
+   "data": {
+    "ID_MOVIE": 617126,
+    "MOVIE_TITLE": "Les 4 Fantastiques : Premiers Pas",
+    "DAT_RELEASE": "2025-07-23",
+    "ID_IMDB": "tt10676052",
+    "IMDB_RATING": 6.8,
+    "IMDB_RATING_WEIGHTED": 6.81,
+    "IMDB_VOTES": 298628,
+    "POSTER_PATH": "/rNc4KARs6fVa4axzvuv3NfUiNy1.jpg",
+    "RUNTIME": 115,
+    "TAGLINE": "Bienvenue dans la famille.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 50,
+   "data": {
+    "ID_MOVIE": 1439930,
+    "MOVIE_TITLE": "The Punisher : One Last Kill",
+    "DAT_RELEASE": "2026-05-12",
+    "ID_IMDB": "tt36042156",
+    "IMDB_RATING": 7,
+    "IMDB_RATING_WEIGHTED": 6.99,
+    "IMDB_VOTES": 59480,
+    "POSTER_PATH": "/74VbBYHmpjgeES1zkRo1DwHkWnE.jpg",
+    "RUNTIME": 51,
+    "TAGLINE": "Salut Franck !",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 51,
+   "data": {
+    "ID_MOVIE": 969681,
+    "MOVIE_TITLE": "Spider-Man : Brand New Day",
+    "DAT_RELEASE": "2026-07-29",
+    "ID_IMDB": "tt22084616",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.85,
+    "IMDB_VOTES": 378466,
+    "POSTER_PATH": "/6OEtkkzoyusZDm2uMJojlWZSLR9.jpg",
+    "RUNTIME": 145,
+    "TAGLINE": "Le monde a peut-être oublié Peter Parker, mais lui, il ne les a pas oubliés.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 52,
+   "data": {
+    "ID_MOVIE": 1003596,
+    "MOVIE_TITLE": "Avengers : Doomsday",
+    "DAT_RELEASE": "2026-12-16",
+    "ID_IMDB": "tt21357150",
+    "IMDB_RATING": null,
+    "IMDB_RATING_WEIGHTED": null,
+    "IMDB_VOTES": null,
+    "POSTER_PATH": "/cCUxE6EJ9zi1YfdsxU8rWLgqQnN.jpg",
+    "RUNTIME": 165,
+    "TAGLINE": "Meet your doom.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 53,
+   "data": {
+    "ID_MOVIE": 1003598,
+    "MOVIE_TITLE": "Avengers: Secret Wars",
+    "DAT_RELEASE": "2027-12-15",
+    "ID_IMDB": "tt21361444",
+    "IMDB_RATING": null,
+    "IMDB_RATING_WEIGHTED": null,
+    "IMDB_VOTES": null,
+    "POSTER_PATH": "/f0YBuh4hyiAheXhh4JnJWoKi9g5.jpg",
+    "RUNTIME": 0,
+    "TAGLINE": "",
+    "ID_CRITERION_SPINE": null
+   }
+  }
+ ]
+}

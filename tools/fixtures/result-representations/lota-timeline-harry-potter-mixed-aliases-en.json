@@ -1,0 +1,277 @@
+{
+ "question": "When were the Harry Potter films released?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the release dates for movies and premiere dates for series in Harry Potter Collection.",
+ "representation": "timeline",
+ "representation_options": [
+  "timeline",
+  "card-grid",
+  "value-cards",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_CONTENT",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "CONTENT_TYPE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "CONTENT_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_FIRST_AIR",
+   "role": "date",
+   "unit": null,
+   "focus": true
+  },
+  {
+   "name": "DAT_LAST_AIR",
+   "role": "date",
+   "unit": null,
+   "focus": true
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null,
+   "ordered": "desc"
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "NUMBER_OF_SEASONS",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "NUMBER_OF_EPISODES",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 8,
+  "total": null,
+  "value_column": "DAT_FIRST_AIR",
+  "unit": null,
+  "order": "IMDB_RATING_WEIGHTED",
+  "order_direction": "desc",
+  "top": null
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "release_date"
+  ],
+  "focus_columns": [
+   "DAT_FIRST_AIR",
+   "DAT_LAST_AIR"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_CONTENT": 12445,
+    "CONTENT_TYPE": "movie",
+    "CONTENT_TITLE": "Harry Potter and the Deathly Hallows: Part 2",
+    "DAT_FIRST_AIR": "2011-07-12",
+    "DAT_LAST_AIR": "2011-07-12",
+    "ID_IMDB": "tt1201607",
+    "IMDB_RATING": 8.1,
+    "IMDB_RATING_WEIGHTED": 8.08,
+    "IMDB_VOTES": 1069097,
+    "POSTER_PATH": "/c54HpQmuwXjHq2C9wmoACjxoom3.jpg",
+    "RUNTIME": 130,
+    "TAGLINE": "It all ends.",
+    "NUMBER_OF_SEASONS": null,
+    "NUMBER_OF_EPISODES": null,
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_CONTENT": 673,
+    "CONTENT_TYPE": "movie",
+    "CONTENT_TITLE": "Harry Potter and the Prisoner of Azkaban",
+    "DAT_FIRST_AIR": "2004-05-31",
+    "DAT_LAST_AIR": "2004-05-31",
+    "ID_IMDB": "tt0304141",
+    "IMDB_RATING": 8,
+    "IMDB_RATING_WEIGHTED": 7.97,
+    "IMDB_VOTES": 784024,
+    "POSTER_PATH": "/aWxwnYoe8p2d2fcxOqtvAtJ72Rw.jpg",
+    "RUNTIME": 141,
+    "TAGLINE": "Something wicked this way comes.",
+    "NUMBER_OF_SEASONS": null,
+    "NUMBER_OF_EPISODES": null,
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_CONTENT": 671,
+    "CONTENT_TYPE": "movie",
+    "CONTENT_TITLE": "Harry Potter and the Philosopher's Stone",
+    "DAT_FIRST_AIR": "2001-11-16",
+    "DAT_LAST_AIR": "2001-11-16",
+    "ID_IMDB": "tt0241527",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.68,
+    "IMDB_VOTES": 973575,
+    "POSTER_PATH": "/wuMc08IPKEatf9rnMNXvIDxqP4W.jpg",
+    "RUNTIME": 152,
+    "TAGLINE": "Let the magic begin.",
+    "NUMBER_OF_SEASONS": null,
+    "NUMBER_OF_EPISODES": null,
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_CONTENT": 674,
+    "CONTENT_TYPE": "movie",
+    "CONTENT_TITLE": "Harry Potter and the Goblet of Fire",
+    "DAT_FIRST_AIR": "2005-11-16",
+    "DAT_LAST_AIR": "2005-11-16",
+    "ID_IMDB": "tt0330373",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.68,
+    "IMDB_VOTES": 769710,
+    "POSTER_PATH": "/fECBtHlr0RB3foNHDiCBXeg9Bv9.jpg",
+    "RUNTIME": 157,
+    "TAGLINE": "Dark and difficult times lie ahead.",
+    "NUMBER_OF_SEASONS": null,
+    "NUMBER_OF_EPISODES": null,
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_CONTENT": 12444,
+    "CONTENT_TYPE": "movie",
+    "CONTENT_TITLE": "Harry Potter and the Deathly Hallows: Part 1",
+    "DAT_FIRST_AIR": "2010-11-17",
+    "DAT_LAST_AIR": "2010-11-17",
+    "ID_IMDB": "tt0926084",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.68,
+    "IMDB_VOTES": 679240,
+    "POSTER_PATH": "/iGoXIpQb7Pot00EEdwpwPajheZ5.jpg",
+    "RUNTIME": 146,
+    "TAGLINE": "Nowhere is safe.",
+    "NUMBER_OF_SEASONS": null,
+    "NUMBER_OF_EPISODES": null,
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_CONTENT": 767,
+    "CONTENT_TYPE": "movie",
+    "CONTENT_TITLE": "Harry Potter and the Half-Blood Prince",
+    "DAT_FIRST_AIR": "2009-07-15",
+    "DAT_LAST_AIR": "2009-07-15",
+    "ID_IMDB": "tt0417741",
+    "IMDB_RATING": 7.6,
+    "IMDB_RATING_WEIGHTED": 7.58,
+    "IMDB_VOTES": 675080,
+    "POSTER_PATH": "/z7uo9zmQdQwU5ZJHFpv2Upl30i1.jpg",
+    "RUNTIME": 153,
+    "TAGLINE": "Dark secrets revealed.",
+    "NUMBER_OF_SEASONS": null,
+    "NUMBER_OF_EPISODES": null,
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_CONTENT": 672,
+    "CONTENT_TYPE": "movie",
+    "CONTENT_TITLE": "Harry Potter and the Chamber of Secrets",
+    "DAT_FIRST_AIR": "2002-11-13",
+    "DAT_LAST_AIR": "2002-11-13",
+    "ID_IMDB": "tt0295297",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.49,
+    "IMDB_VOTES": 782951,
+    "POSTER_PATH": "/sdEOH0992YZ0QSxgXNIGLq1ToUi.jpg",
+    "RUNTIME": 161,
+    "TAGLINE": "Something evil has returned to Hogwarts!",
+    "NUMBER_OF_SEASONS": null,
+    "NUMBER_OF_EPISODES": null,
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_CONTENT": 675,
+    "CONTENT_TYPE": "movie",
+    "CONTENT_TITLE": "Harry Potter and the Order of the Phoenix",
+    "DAT_FIRST_AIR": "2007-07-08",
+    "DAT_LAST_AIR": "2007-07-08",
+    "ID_IMDB": "tt0373889",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.49,
+    "IMDB_VOTES": 715938,
+    "POSTER_PATH": "/5aOyriWkPec0zUDxmHFP9qMmBaj.jpg",
+    "RUNTIME": 138,
+    "TAGLINE": "The rebellion begins.",
+    "NUMBER_OF_SEASONS": null,
+    "NUMBER_OF_EPISODES": null,
+    "ID_CRITERION_SPINE": null
+   }
+  }
+ ]
+}

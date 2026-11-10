@@ -1,0 +1,278 @@
+{
+ "question": "Quel était le budget moyen des films par an depuis 2000 ?",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici le budget moyen des films par année depuis 2000.",
+ "representation": "trend-columns",
+ "representation_options": [
+  "trend-columns",
+  "table"
+ ],
+ "result_kind": "unknown",
+ "result_columns": [
+  {
+   "name": "RELEASE_YEAR",
+   "role": "date",
+   "unit": null,
+   "ordered": "asc"
+  },
+  {
+   "name": "AVERAGE_BUDGET",
+   "role": "metric",
+   "unit": "usd",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 32,
+  "total": null,
+  "value_column": "AVERAGE_BUDGET",
+  "unit": "usd",
+  "order": "date",
+  "order_direction": "asc",
+  "top": {
+   "label": null,
+   "id": null,
+   "index": 28,
+   "value": 11106636.36,
+   "extreme": "max"
+  }
+ },
+ "intent": {
+  "task": "trend",
+  "focus": [
+   "budget"
+  ],
+  "focus_columns": [
+   "AVERAGE_BUDGET"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "RELEASE_YEAR": 2000,
+    "AVERAGE_BUDGET": 1123214.77
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "RELEASE_YEAR": 2001,
+    "AVERAGE_BUDGET": 1136377.85
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "RELEASE_YEAR": 2002,
+    "AVERAGE_BUDGET": 1071864.46
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "RELEASE_YEAR": 2003,
+    "AVERAGE_BUDGET": 981859.56
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "RELEASE_YEAR": 2004,
+    "AVERAGE_BUDGET": 1052348.96
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "RELEASE_YEAR": 2005,
+    "AVERAGE_BUDGET": 982481.23
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "RELEASE_YEAR": 2006,
+    "AVERAGE_BUDGET": 927163.41
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "RELEASE_YEAR": 2007,
+    "AVERAGE_BUDGET": 948591.87
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "RELEASE_YEAR": 2008,
+    "AVERAGE_BUDGET": 929296.74
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "RELEASE_YEAR": 2009,
+    "AVERAGE_BUDGET": 905789.74
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "RELEASE_YEAR": 2010,
+    "AVERAGE_BUDGET": 916408.06
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "RELEASE_YEAR": 2011,
+    "AVERAGE_BUDGET": 810572.01
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "RELEASE_YEAR": 2012,
+    "AVERAGE_BUDGET": 717325.02
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "RELEASE_YEAR": 2013,
+    "AVERAGE_BUDGET": 697269.71
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "RELEASE_YEAR": 2014,
+    "AVERAGE_BUDGET": 611568.79
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "RELEASE_YEAR": 2015,
+    "AVERAGE_BUDGET": 574211.07
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "RELEASE_YEAR": 2016,
+    "AVERAGE_BUDGET": 646576.94
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "RELEASE_YEAR": 2017,
+    "AVERAGE_BUDGET": 537662.9
+   }
+  },
+  {
+   "index": 18,
+   "data": {
+    "RELEASE_YEAR": 2018,
+    "AVERAGE_BUDGET": 506685.75
+   }
+  },
+  {
+   "index": 19,
+   "data": {
+    "RELEASE_YEAR": 2019,
+    "AVERAGE_BUDGET": 484060.78
+   }
+  },
+  {
+   "index": 20,
+   "data": {
+    "RELEASE_YEAR": 2020,
+    "AVERAGE_BUDGET": 250319.21
+   }
+  },
+  {
+   "index": 21,
+   "data": {
+    "RELEASE_YEAR": 2021,
+    "AVERAGE_BUDGET": 451333.91
+   }
+  },
+  {
+   "index": 22,
+   "data": {
+    "RELEASE_YEAR": 2022,
+    "AVERAGE_BUDGET": 474311.82
+   }
+  },
+  {
+   "index": 23,
+   "data": {
+    "RELEASE_YEAR": 2023,
+    "AVERAGE_BUDGET": 517840.77
+   }
+  },
+  {
+   "index": 24,
+   "data": {
+    "RELEASE_YEAR": 2024,
+    "AVERAGE_BUDGET": 525826.87
+   }
+  },
+  {
+   "index": 25,
+   "data": {
+    "RELEASE_YEAR": 2025,
+    "AVERAGE_BUDGET": 597377.93
+   }
+  },
+  {
+   "index": 26,
+   "data": {
+    "RELEASE_YEAR": 2026,
+    "AVERAGE_BUDGET": 700989.51
+   }
+  },
+  {
+   "index": 27,
+   "data": {
+    "RELEASE_YEAR": 2027,
+    "AVERAGE_BUDGET": 4488664.16
+   }
+  },
+  {
+   "index": 28,
+   "data": {
+    "RELEASE_YEAR": 2028,
+    "AVERAGE_BUDGET": 11106636.36
+   }
+  },
+  {
+   "index": 29,
+   "data": {
+    "RELEASE_YEAR": 2029,
+    "AVERAGE_BUDGET": 0
+   }
+  },
+  {
+   "index": 30,
+   "data": {
+    "RELEASE_YEAR": 2031,
+    "AVERAGE_BUDGET": 0
+   }
+  },
+  {
+   "index": 31,
+   "data": {
+    "RELEASE_YEAR": 2099,
+    "AVERAGE_BUDGET": 0
+   }
+  }
+ ]
+}

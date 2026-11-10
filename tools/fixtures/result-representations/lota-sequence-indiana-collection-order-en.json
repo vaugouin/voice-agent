@@ -1,0 +1,208 @@
+{
+ "question": "List the Indiana Jones films from first to last",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the movies and series in Indiana Jones Collection, sorted by rating.",
+ "representation": "card-grid",
+ "representation_options": [
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_CONTENT",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "CONTENT_TYPE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "CONTENT_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_FIRST_AIR",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "DAT_LAST_AIR",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null,
+   "ordered": "desc"
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "NUMBER_OF_SEASONS",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "NUMBER_OF_EPISODES",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 5,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "IMDB_RATING_WEIGHTED",
+  "order_direction": "desc",
+  "top": null
+ },
+ "intent": {
+  "task": "sequence",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_CONTENT": 85,
+    "CONTENT_TYPE": "movie",
+    "CONTENT_TITLE": "Raiders of the Lost Ark",
+    "DAT_FIRST_AIR": "1981-06-12",
+    "DAT_LAST_AIR": "1981-06-12",
+    "ID_IMDB": "tt0082971",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.37,
+    "IMDB_VOTES": 1125255,
+    "POSTER_PATH": "/ceG9VzoRAVGwivFU403Wc3AHRys.jpg",
+    "RUNTIME": 115,
+    "TAGLINE": "The return of the great adventure.",
+    "NUMBER_OF_SEASONS": null,
+    "NUMBER_OF_EPISODES": null,
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_CONTENT": 89,
+    "CONTENT_TYPE": "movie",
+    "CONTENT_TITLE": "Indiana Jones and the Last Crusade",
+    "DAT_FIRST_AIR": "1989-05-24",
+    "DAT_LAST_AIR": "1989-05-24",
+    "ID_IMDB": "tt0097576",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 8.17,
+    "IMDB_VOTES": 874932,
+    "POSTER_PATH": "/sizg1AU8f8JDZX4QIgE4pjUMBvx.jpg",
+    "RUNTIME": 127,
+    "TAGLINE": "Have the adventure of your life keeping up with the Joneses.",
+    "NUMBER_OF_SEASONS": null,
+    "NUMBER_OF_EPISODES": null,
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_CONTENT": 87,
+    "CONTENT_TYPE": "movie",
+    "CONTENT_TITLE": "Indiana Jones and the Temple of Doom",
+    "DAT_FIRST_AIR": "1984-05-23",
+    "DAT_LAST_AIR": "1984-05-23",
+    "ID_IMDB": "tt0087469",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.48,
+    "IMDB_VOTES": 576016,
+    "POSTER_PATH": "/gpdVNUaa4LhRMLfJOPj1AZdhAZ3.jpg",
+    "RUNTIME": 118,
+    "TAGLINE": "If adventure has a name... it must be Indiana Jones.",
+    "NUMBER_OF_SEASONS": null,
+    "NUMBER_OF_EPISODES": null,
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_CONTENT": 335977,
+    "CONTENT_TYPE": "movie",
+    "CONTENT_TITLE": "Indiana Jones and the Dial of Destiny",
+    "DAT_FIRST_AIR": "2023-06-25",
+    "DAT_LAST_AIR": "2023-06-25",
+    "ID_IMDB": "tt1462764",
+    "IMDB_RATING": 6.5,
+    "IMDB_RATING_WEIGHTED": 6.54,
+    "IMDB_VOTES": 238360,
+    "POSTER_PATH": "/Af4bXE63pVsb2FtbW8uYIyPBadD.jpg",
+    "RUNTIME": 155,
+    "TAGLINE": "A legend will face his destiny.",
+    "NUMBER_OF_SEASONS": null,
+    "NUMBER_OF_EPISODES": null,
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_CONTENT": 217,
+    "CONTENT_TYPE": "movie",
+    "CONTENT_TITLE": "Indiana Jones and the Kingdom of the Crystal Skull",
+    "DAT_FIRST_AIR": "2008-05-21",
+    "DAT_LAST_AIR": "2008-05-21",
+    "ID_IMDB": "tt0367882",
+    "IMDB_RATING": 6.2,
+    "IMDB_RATING_WEIGHTED": 6.23,
+    "IMDB_VOTES": 519548,
+    "POSTER_PATH": "/56As6XEM1flWvprX4LgkPl8ii4K.jpg",
+    "RUNTIME": 122,
+    "TAGLINE": "The adventure continues...",
+    "NUMBER_OF_SEASONS": null,
+    "NUMBER_OF_EPISODES": null,
+    "ID_CRITERION_SPINE": null
+   }
+  }
+ ]
+}

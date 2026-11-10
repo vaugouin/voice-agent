@@ -1,0 +1,168 @@
+{
+ "question": "Liste les films Indiana Jones du premier au dernier",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici les films de Indiana Jones Collection, du premier au dernier.",
+ "representation": "sequence-strip",
+ "representation_options": [
+  "sequence-strip",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 5,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "collection",
+  "order_direction": null,
+  "top": null
+ },
+ "intent": {
+  "task": "sequence",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 85,
+    "MOVIE_TITLE": "Les Aventuriers de l'arche perdue",
+    "DAT_RELEASE": "1981-06-12",
+    "ID_IMDB": "tt0082971",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.37,
+    "IMDB_VOTES": 1125255,
+    "POSTER_PATH": "/by5xmwAUVzXc3WyIyjMYCVaL5Lj.jpg",
+    "RUNTIME": 115,
+    "TAGLINE": "Indiana Jones - le nouveau héros des créateurs des DENTS DE LA MER et de la GUERRE DES ETOILES.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 87,
+    "MOVIE_TITLE": "Indiana Jones et le Temple maudit",
+    "DAT_RELEASE": "1984-05-23",
+    "ID_IMDB": "tt0087469",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.48,
+    "IMDB_VOTES": 576016,
+    "POSTER_PATH": "/oiUd1KUXWZeDPGMr8TrtZcXzpQU.jpg",
+    "RUNTIME": 118,
+    "TAGLINE": "Depuis « Les Aventuriers de l’arche perdue », l’aventure a un nom : Indiana Jones.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 89,
+    "MOVIE_TITLE": "Indiana Jones et la dernière croisade",
+    "DAT_RELEASE": "1989-05-24",
+    "ID_IMDB": "tt0097576",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 8.17,
+    "IMDB_VOTES": 874932,
+    "POSTER_PATH": "/73gYk4vShggfajlthEcOsY5ZhQI.jpg",
+    "RUNTIME": 127,
+    "TAGLINE": "Il est de retour. Et, cette fois‐ci, avec son père.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_MOVIE": 217,
+    "MOVIE_TITLE": "Indiana Jones et le royaume du crâne de cristal",
+    "DAT_RELEASE": "2008-05-21",
+    "ID_IMDB": "tt0367882",
+    "IMDB_RATING": 6.2,
+    "IMDB_RATING_WEIGHTED": 6.23,
+    "IMDB_VOTES": 519548,
+    "POSTER_PATH": "/hwLaM3EaV7QvYhSFHbZ0VpuUY7Y.jpg",
+    "RUNTIME": 122,
+    "TAGLINE": "Il est de retour.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_MOVIE": 335977,
+    "MOVIE_TITLE": "Indiana Jones et le Cadran de la destinée",
+    "DAT_RELEASE": "2023-06-25",
+    "ID_IMDB": "tt1462764",
+    "IMDB_RATING": 6.5,
+    "IMDB_RATING_WEIGHTED": 6.54,
+    "IMDB_VOTES": 238360,
+    "POSTER_PATH": "/64TyGedJPmfwfO0dIQWFDLIw1U7.jpg",
+    "RUNTIME": 155,
+    "TAGLINE": "Une légende affrontera son destin.",
+    "ID_CRITERION_SPINE": null
+   }
+  }
+ ]
+}

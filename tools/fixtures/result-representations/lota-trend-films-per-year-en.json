@@ -1,0 +1,278 @@
+{
+ "question": "How many films were released each year since 2000?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the numbers of films released each year since 2000.",
+ "representation": "trend-columns",
+ "representation_options": [
+  "trend-columns",
+  "table"
+ ],
+ "result_kind": "unknown",
+ "result_columns": [
+  {
+   "name": "RELEASE_YEAR",
+   "role": "date",
+   "unit": null,
+   "ordered": "asc"
+  },
+  {
+   "name": "MOVIE_COUNT",
+   "role": "metric",
+   "unit": "count",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 32,
+  "total": null,
+  "value_column": "MOVIE_COUNT",
+  "unit": "count",
+  "order": "date",
+  "order_direction": "asc",
+  "top": {
+   "label": null,
+   "id": null,
+   "index": 23,
+   "value": 21776,
+   "extreme": "max"
+  }
+ },
+ "intent": {
+  "task": "trend",
+  "focus": [
+   "count"
+  ],
+  "focus_columns": [
+   "MOVIE_COUNT"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "RELEASE_YEAR": 2000,
+    "MOVIE_COUNT": 6269
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "RELEASE_YEAR": 2001,
+    "MOVIE_COUNT": 6636
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "RELEASE_YEAR": 2002,
+    "MOVIE_COUNT": 7243
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "RELEASE_YEAR": 2003,
+    "MOVIE_COUNT": 7777
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "RELEASE_YEAR": 2004,
+    "MOVIE_COUNT": 8312
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "RELEASE_YEAR": 2005,
+    "MOVIE_COUNT": 9050
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "RELEASE_YEAR": 2006,
+    "MOVIE_COUNT": 10004
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "RELEASE_YEAR": 2007,
+    "MOVIE_COUNT": 10465
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "RELEASE_YEAR": 2008,
+    "MOVIE_COUNT": 11183
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "RELEASE_YEAR": 2009,
+    "MOVIE_COUNT": 11852
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "RELEASE_YEAR": 2010,
+    "MOVIE_COUNT": 12293
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "RELEASE_YEAR": 2011,
+    "MOVIE_COUNT": 13460
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "RELEASE_YEAR": 2012,
+    "MOVIE_COUNT": 14582
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "RELEASE_YEAR": 2013,
+    "MOVIE_COUNT": 16021
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "RELEASE_YEAR": 2014,
+    "MOVIE_COUNT": 17316
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "RELEASE_YEAR": 2015,
+    "MOVIE_COUNT": 17904
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "RELEASE_YEAR": 2016,
+    "MOVIE_COUNT": 18566
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "RELEASE_YEAR": 2017,
+    "MOVIE_COUNT": 20057
+   }
+  },
+  {
+   "index": 18,
+   "data": {
+    "RELEASE_YEAR": 2018,
+    "MOVIE_COUNT": 20658
+   }
+  },
+  {
+   "index": 19,
+   "data": {
+    "RELEASE_YEAR": 2019,
+    "MOVIE_COUNT": 21659
+   }
+  },
+  {
+   "index": 20,
+   "data": {
+    "RELEASE_YEAR": 2020,
+    "MOVIE_COUNT": 18604
+   }
+  },
+  {
+   "index": 21,
+   "data": {
+    "RELEASE_YEAR": 2021,
+    "MOVIE_COUNT": 19872
+   }
+  },
+  {
+   "index": 22,
+   "data": {
+    "RELEASE_YEAR": 2022,
+    "MOVIE_COUNT": 21168
+   }
+  },
+  {
+   "index": 23,
+   "data": {
+    "RELEASE_YEAR": 2023,
+    "MOVIE_COUNT": 21776
+   }
+  },
+  {
+   "index": 24,
+   "data": {
+    "RELEASE_YEAR": 2024,
+    "MOVIE_COUNT": 21424
+   }
+  },
+  {
+   "index": 25,
+   "data": {
+    "RELEASE_YEAR": 2025,
+    "MOVIE_COUNT": 20577
+   }
+  },
+  {
+   "index": 26,
+   "data": {
+    "RELEASE_YEAR": 2026,
+    "MOVIE_COUNT": 16021
+   }
+  },
+  {
+   "index": 27,
+   "data": {
+    "RELEASE_YEAR": 2027,
+    "MOVIE_COUNT": 596
+   }
+  },
+  {
+   "index": 28,
+   "data": {
+    "RELEASE_YEAR": 2028,
+    "MOVIE_COUNT": 66
+   }
+  },
+  {
+   "index": 29,
+   "data": {
+    "RELEASE_YEAR": 2029,
+    "MOVIE_COUNT": 3
+   }
+  },
+  {
+   "index": 30,
+   "data": {
+    "RELEASE_YEAR": 2031,
+    "MOVIE_COUNT": 1
+   }
+  },
+  {
+   "index": 31,
+   "data": {
+    "RELEASE_YEAR": 2099,
+    "MOVIE_COUNT": 1
+   }
+  }
+ ]
+}

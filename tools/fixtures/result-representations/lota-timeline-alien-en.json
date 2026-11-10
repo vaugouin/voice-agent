@@ -1,0 +1,159 @@
+{
+ "question": "When did the Alien films come out?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the Alien Collection films and their release dates, from earliest to latest.",
+ "representation": "timeline",
+ "representation_options": [
+  "timeline",
+  "card-grid",
+  "value-cards",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null,
+   "ordered": "asc",
+   "focus": true
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 4,
+  "total": null,
+  "value_column": "DAT_RELEASE",
+  "unit": null,
+  "order": "date",
+  "order_direction": "asc",
+  "top": null
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "release_date"
+  ],
+  "focus_columns": [
+   "DAT_RELEASE"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 348,
+    "MOVIE_TITLE": "Alien",
+    "DAT_RELEASE": "1979-05-25",
+    "ID_IMDB": "tt0078748",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.37,
+    "IMDB_VOTES": 1082955,
+    "POSTER_PATH": "/vfrQk5IPloGg1v9Rzbh2Eg3VGyM.jpg",
+    "RUNTIME": 117,
+    "TAGLINE": "In space no one can hear you scream.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 679,
+    "MOVIE_TITLE": "Aliens",
+    "DAT_RELEASE": "1986-07-18",
+    "ID_IMDB": "tt0090605",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.37,
+    "IMDB_VOTES": 852344,
+    "POSTER_PATH": "/r1x5JGpyqZU8PYhbs4UcrO1Xb6x.jpg",
+    "RUNTIME": 137,
+    "TAGLINE": "This time it's war.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 8077,
+    "MOVIE_TITLE": "Alien³",
+    "DAT_RELEASE": "1992-05-22",
+    "ID_IMDB": "tt0103644",
+    "IMDB_RATING": 6.4,
+    "IMDB_RATING_WEIGHTED": 6.43,
+    "IMDB_VOTES": 357173,
+    "POSTER_PATH": "/xh5wI0UoW7DfS1IyLy3d2CgrCEP.jpg",
+    "RUNTIME": 114,
+    "TAGLINE": "3 times the suspense. 3 times the danger. 3 times the terror",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_MOVIE": 8078,
+    "MOVIE_TITLE": "Alien Resurrection",
+    "DAT_RELEASE": "1997-11-12",
+    "ID_IMDB": "tt0118583",
+    "IMDB_RATING": 6.2,
+    "IMDB_RATING_WEIGHTED": 6.25,
+    "IMDB_VOTES": 295761,
+    "POSTER_PATH": "/9aRDMlU5Zwpysilm0WCWzU2PCFv.jpg",
+    "RUNTIME": 109,
+    "TAGLINE": "It's already too late.",
+    "ID_CRITERION_SPINE": null
+   }
+  }
+ ]
+}

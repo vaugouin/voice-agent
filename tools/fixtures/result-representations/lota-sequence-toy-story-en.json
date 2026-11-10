@@ -1,0 +1,169 @@
+{
+ "question": "The Toy Story films from the first to the latest",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the Toy Story Collection films, from the earliest to the latest.",
+ "representation": "sequence-strip",
+ "representation_options": [
+  "sequence-strip",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null,
+   "ordered": "asc"
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 5,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "date",
+  "order_direction": "asc",
+  "top": null
+ },
+ "intent": {
+  "task": "sequence",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 862,
+    "MOVIE_TITLE": "Toy Story",
+    "DAT_RELEASE": "1995-11-22",
+    "ID_IMDB": "tt0114709",
+    "IMDB_RATING": 8.3,
+    "IMDB_RATING_WEIGHTED": 8.28,
+    "IMDB_VOTES": 1206110,
+    "POSTER_PATH": "/uXDfjJbdP4ijW5hWSBrPrlKpxab.jpg",
+    "RUNTIME": 81,
+    "TAGLINE": "Hang on for the comedy that goes to infinity and beyond!",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 863,
+    "MOVIE_TITLE": "Toy Story 2",
+    "DAT_RELEASE": "1999-10-30",
+    "ID_IMDB": "tt0120363",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.87,
+    "IMDB_VOTES": 688152,
+    "POSTER_PATH": "/4rbcp3ng8n1MKHjpeqW0L7Fnpzz.jpg",
+    "RUNTIME": 92,
+    "TAGLINE": "The toys are back!",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 10193,
+    "MOVIE_TITLE": "Toy Story 3",
+    "DAT_RELEASE": "2010-06-16",
+    "ID_IMDB": "tt0435761",
+    "IMDB_RATING": 8.3,
+    "IMDB_RATING_WEIGHTED": 8.27,
+    "IMDB_VOTES": 995945,
+    "POSTER_PATH": "/AbbXspMOwdvwWZgVN0nabZq03Ec.jpg",
+    "RUNTIME": 103,
+    "TAGLINE": "No toy gets left behind.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_MOVIE": 301528,
+    "MOVIE_TITLE": "Toy Story 4",
+    "DAT_RELEASE": "2019-06-19",
+    "ID_IMDB": "tt1979376",
+    "IMDB_RATING": 7.6,
+    "IMDB_RATING_WEIGHTED": 7.56,
+    "IMDB_VOTES": 333155,
+    "POSTER_PATH": "/w9kR8qbmQ01HwnvK4alvnQ2ca0L.jpg",
+    "RUNTIME": 100,
+    "TAGLINE": "The adventure of a lifetime.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_MOVIE": 1084244,
+    "MOVIE_TITLE": "Toy Story 5",
+    "DAT_RELEASE": "2026-06-17",
+    "ID_IMDB": "tt29355505",
+    "IMDB_RATING": 7.3,
+    "IMDB_RATING_WEIGHTED": 7.25,
+    "IMDB_VOTES": 106233,
+    "POSTER_PATH": "/sfQtVlIHljToOwYjhe21KPGzZWK.jpg",
+    "RUNTIME": 102,
+    "TAGLINE": "It's on.",
+    "ID_CRITERION_SPINE": null
+   }
+  }
+ ]
+}

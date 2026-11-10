@@ -1,0 +1,383 @@
+{
+ "question": "When were the films directed by Christopher Nolan released?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the films directed by Christopher Nolan, with their release dates.",
+ "representation": "timeline",
+ "representation_options": [
+  "timeline",
+  "card-grid",
+  "value-cards",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null,
+   "ordered": "asc",
+   "focus": true
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 18,
+  "total": null,
+  "value_column": "DAT_RELEASE",
+  "unit": null,
+  "order": "date",
+  "order_direction": "asc",
+  "top": null
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "release_date"
+  ],
+  "focus_columns": [
+   "DAT_RELEASE"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 804706,
+    "MOVIE_TITLE": "Tarantella",
+    "DAT_RELEASE": "1990-09-12",
+    "ID_IMDB": "tt6386408",
+    "IMDB_RATING": 5.1,
+    "IMDB_RATING_WEIGHTED": 6.86,
+    "IMDB_VOTES": 1361,
+    "POSTER_PATH": "/eqFhruWEIRwjkvqgJN48VPuR50Q.jpg",
+    "RUNTIME": 5,
+    "TAGLINE": "",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 456684,
+    "MOVIE_TITLE": "Larceny",
+    "DAT_RELEASE": "1996-07-14",
+    "ID_IMDB": "tt6386412",
+    "IMDB_RATING": 5.9,
+    "IMDB_RATING_WEIGHTED": 6.95,
+    "IMDB_VOTES": 349,
+    "POSTER_PATH": "/jBWtTViwpr9xN6PWuzp8WlxTSXB.jpg",
+    "RUNTIME": 9,
+    "TAGLINE": "",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 43629,
+    "MOVIE_TITLE": "Doodlebug",
+    "DAT_RELEASE": "1997-01-01",
+    "ID_IMDB": "tt0411302",
+    "IMDB_RATING": 7,
+    "IMDB_RATING_WEIGHTED": 6.99,
+    "IMDB_VOTES": 20635,
+    "POSTER_PATH": "/cXDFFv6yZNW3vUHOKKUPJNnL0So.jpg",
+    "RUNTIME": 3,
+    "TAGLINE": "",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_MOVIE": 11660,
+    "MOVIE_TITLE": "Following",
+    "DAT_RELEASE": "1999-04-02",
+    "ID_IMDB": "tt0154506",
+    "IMDB_RATING": 7.4,
+    "IMDB_RATING_WEIGHTED": 7.33,
+    "IMDB_VOTES": 115175,
+    "POSTER_PATH": "/3bX6VVSMf0dvzk5pMT4ALG5A92d.jpg",
+    "RUNTIME": 69,
+    "TAGLINE": "You're never alone.",
+    "ID_CRITERION_SPINE": 638
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_MOVIE": 77,
+    "MOVIE_TITLE": "Memento",
+    "DAT_RELEASE": "2000-10-11",
+    "ID_IMDB": "tt0209144",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.38,
+    "IMDB_VOTES": 1466440,
+    "POSTER_PATH": "/nzlv62aC0octS5AklAiWpXLX9Z0.jpg",
+    "RUNTIME": 113,
+    "TAGLINE": "Some memories are best forgotten.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_MOVIE": 320,
+    "MOVIE_TITLE": "Insomnia",
+    "DAT_RELEASE": "2002-05-24",
+    "ID_IMDB": "tt0278504",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 7.19,
+    "IMDB_VOTES": 354066,
+    "POSTER_PATH": "/riVXh3EimGO0y5dgQxEWPRy5Itg.jpg",
+    "RUNTIME": 118,
+    "TAGLINE": "A tough cop. A brilliant killer. An unspeakable crime.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_MOVIE": 126444,
+    "MOVIE_TITLE": "Cinema16: British Short Films",
+    "DAT_RELEASE": "2003-05-05",
+    "ID_IMDB": "tt0368644",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 496,
+    "POSTER_PATH": "/iY1FDQM6taKwO7bG6YH09nE8NSs.jpg",
+    "RUNTIME": 203,
+    "TAGLINE": "Classic and award winning British short films",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_MOVIE": 272,
+    "MOVIE_TITLE": "Batman Begins",
+    "DAT_RELEASE": "2005-06-10",
+    "ID_IMDB": "tt0372784",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 8.19,
+    "IMDB_VOTES": 1753544,
+    "POSTER_PATH": "/sPX89Td70IDDjVr85jdSBb4rWGr.jpg",
+    "RUNTIME": 140,
+    "TAGLINE": "Evil fears the knight.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_MOVIE": 1124,
+    "MOVIE_TITLE": "The Prestige",
+    "DAT_RELEASE": "2006-10-19",
+    "ID_IMDB": "tt0482571",
+    "IMDB_RATING": 8.5,
+    "IMDB_RATING_WEIGHTED": 8.48,
+    "IMDB_VOTES": 1640114,
+    "POSTER_PATH": "/Ag2B2KHKQPukjH7WutmgnnSNurZ.jpg",
+    "RUNTIME": 131,
+    "TAGLINE": "Are you watching closely?",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_MOVIE": 155,
+    "MOVIE_TITLE": "The Dark Knight",
+    "DAT_RELEASE": "2008-07-16",
+    "ID_IMDB": "tt0468569",
+    "IMDB_RATING": 9.1,
+    "IMDB_RATING_WEIGHTED": 9.09,
+    "IMDB_VOTES": 3248732,
+    "POSTER_PATH": "/qJ2tW6WMUDux911r6m7haRef0WH.jpg",
+    "RUNTIME": 152,
+    "TAGLINE": "Welcome to a world without rules.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_MOVIE": 27205,
+    "MOVIE_TITLE": "Inception",
+    "DAT_RELEASE": "2010-07-15",
+    "ID_IMDB": "tt1375666",
+    "IMDB_RATING": 8.8,
+    "IMDB_RATING_WEIGHTED": 8.79,
+    "IMDB_VOTES": 2887766,
+    "POSTER_PATH": "/xlaY2zyzMfkhk0HSC5VUwzoZPU1.jpg",
+    "RUNTIME": 148,
+    "TAGLINE": "Your mind is the scene of the crime.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_MOVIE": 49026,
+    "MOVIE_TITLE": "The Dark Knight Rises",
+    "DAT_RELEASE": "2012-07-17",
+    "ID_IMDB": "tt1345836",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.39,
+    "IMDB_VOTES": 2037655,
+    "POSTER_PATH": "/hr0L2aueqlP2BYUblTTjmtn0hw4.jpg",
+    "RUNTIME": 165,
+    "TAGLINE": "The legend ends.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_MOVIE": 157336,
+    "MOVIE_TITLE": "Interstellar",
+    "DAT_RELEASE": "2014-11-04",
+    "ID_IMDB": "tt0816692",
+    "IMDB_RATING": 8.7,
+    "IMDB_RATING_WEIGHTED": 8.69,
+    "IMDB_VOTES": 2631783,
+    "POSTER_PATH": "/yQvGrMoipbRoddT0ZR8tPoR7NfX.jpg",
+    "RUNTIME": 169,
+    "TAGLINE": "Mankind was born on Earth. It was never meant to die here.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "ID_MOVIE": 352114,
+    "MOVIE_TITLE": "Quay",
+    "DAT_RELEASE": "2015-08-19",
+    "ID_IMDB": "tt4907572",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.91,
+    "IMDB_VOTES": 2074,
+    "POSTER_PATH": "/uluMeKfYFVvfZlmHgFBXqbnHXE2.jpg",
+    "RUNTIME": 8,
+    "TAGLINE": "We don’t try to emulate what’s outside our window, that’s the last thing we want to emulate.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "ID_MOVIE": 374720,
+    "MOVIE_TITLE": "Dunkirk",
+    "DAT_RELEASE": "2017-07-19",
+    "ID_IMDB": "tt5013056",
+    "IMDB_RATING": 7.8,
+    "IMDB_RATING_WEIGHTED": 7.78,
+    "IMDB_VOTES": 832340,
+    "POSTER_PATH": "/b4Oe15CGLL61Ped0RAS9JpqdmCt.jpg",
+    "RUNTIME": 107,
+    "TAGLINE": "When 400,000 men couldn't get home, home came for them.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "ID_MOVIE": 577922,
+    "MOVIE_TITLE": "Tenet",
+    "DAT_RELEASE": "2020-08-22",
+    "ID_IMDB": "tt6723592",
+    "IMDB_RATING": 7.3,
+    "IMDB_RATING_WEIGHTED": 7.29,
+    "IMDB_VOTES": 715883,
+    "POSTER_PATH": "/rrKH3VhHssGTCfPuaEQkxvEoElv.jpg",
+    "RUNTIME": 150,
+    "TAGLINE": "Time runs out.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "ID_MOVIE": 872585,
+    "MOVIE_TITLE": "Oppenheimer",
+    "DAT_RELEASE": "2023-07-19",
+    "ID_IMDB": "tt15398776",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 8.18,
+    "IMDB_VOTES": 1111095,
+    "POSTER_PATH": "/8Gxv8gSFCU0XGDykEGv7zR1n2ua.jpg",
+    "RUNTIME": 181,
+    "TAGLINE": "The world forever changes.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "ID_MOVIE": 1368337,
+    "MOVIE_TITLE": "The Odyssey",
+    "DAT_RELEASE": "2026-07-15",
+    "ID_IMDB": "tt33764258",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.35,
+    "IMDB_VOTES": 549646,
+    "POSTER_PATH": "/krVa7rKCQb4OBfsr2LTJv4rTz5q.jpg",
+    "RUNTIME": 173,
+    "TAGLINE": "Defy the gods.",
+    "ID_CRITERION_SPINE": null
+   }
+  }
+ ]
+}
