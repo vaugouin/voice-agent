@@ -3610,6 +3610,9 @@ const T2S_METRIC_LABELS = {
   SERIE_COUNT: ["number of series", "nombre de séries"],
   NUMBER_OF_SEASONS: ["seasons", "saisons"],
   NUMBER_OF_EPISODES: ["episodes", "épisodes"],
+  DAT_RELEASE: ["release date", "date de sortie"],
+  DAT_FIRST_AIR: ["first aired", "première diffusion"],
+  DAT_LAST_AIR: ["last aired", "dernière diffusion"],
 };
 const T2S_COUNT_WORDS = {
   en: ["zero", "one", "two", "three", "four", "five", "six", "seven", "eight", "nine", "ten", "eleven", "twelve"],
@@ -3705,8 +3708,12 @@ function text2SqlValueColumns(columns, intent) {
     if (String(intent?.task || "") !== "compare") {
       return [focus[0]];
     }
+    // A union of films and series aliases the release date as DAT_FIRST_AIR and repeats it as
+    // DAT_LAST_AIR: the first date of the span is kept, the last one dropped.
+    const union = focus.some((c) => c.name === "DAT_FIRST_AIR");
     return focus
       .filter((c) => !focus.some((other) => other !== c && String(c.name).startsWith(`${other.name}_`)))
+      .filter((c) => !(union && c.name === "DAT_LAST_AIR"))
       .slice(0, 3);
   }
   const metrics = list.filter((c) => c.role === "metric");
@@ -4405,7 +4412,9 @@ function appendCardValues(card, record, valueColumns) {
     line.className = "t2sCardValue";
     const label = document.createElement("span");
     label.className = "t2sCardValueLabel";
-    label.textContent = capitalizeFirst(text2SqlMetricLabel(column.name));
+    // A film of a films-and-series union carries its release date as DAT_FIRST_AIR
+    const film = column.name === "DAT_FIRST_AIR" && (record?.CONTENT_TYPE === "movie" || record?.ENTITY_TYPE === "movie");
+    label.textContent = capitalizeFirst(text2SqlMetricLabel(film ? "DAT_RELEASE" : column.name));
     const number = document.createElement("span");
     number.className = "t2sCardValueNumber";
     number.textContent = text;

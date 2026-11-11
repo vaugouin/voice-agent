@@ -139,6 +139,15 @@ check("value col, runtime", names(api.text2SqlValueColumns(fx("2560-en-value-car
 check("value cols, two focus", names(api.text2SqlValueColumns(fx("2599-en-compare-two-focus").result_columns, fx("2599-en-compare-two-focus").intent)), ["BUDGET", "REVENUE"]);
 check("value col, birth year", names(api.text2SqlValueColumns(fx("2596-en-compare-birth-year").result_columns, fx("2596-en-compare-birth-year").intent)), ["BIRTH_YEAR"]);
 check("value col, rating rank keeps one", names(api.text2SqlValueColumns(fx("2573-en-ranked-bars-rating").result_columns, fx("2573-en-ranked-bars-rating").intent)), ["IMDB_RATING"]);
+{
+  // A films-and-series union: DAT_LAST_AIR repeats the release date aliased DAT_FIRST_AIR
+  const unionCols = [
+    { name: "ID_CONTENT", role: "entity_id" }, { name: "CONTENT_TYPE", role: "other" },
+    { name: "DAT_FIRST_AIR", role: "date", focus: true }, { name: "DAT_LAST_AIR", role: "date", focus: true },
+  ];
+  check("value col, union value keeps the first date", names(api.text2SqlValueColumns(unionCols, { task: "value" })), ["DAT_FIRST_AIR"]);
+  check("value col, union compare drops the last date", names(api.text2SqlValueColumns(unionCols, { task: "compare" })), ["DAT_FIRST_AIR"]);
+}
 check("value col, no focus: ordered metric", names(api.text2SqlValueColumns([
   { name: "A", role: "metric" }, { name: "B", role: "metric", ordered: "desc" }], null)), ["B"]);
 check("value col, older API", names(api.text2SqlValueColumns([], null)), []);
