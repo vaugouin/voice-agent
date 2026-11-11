@@ -1,0 +1,126 @@
+{
+ "question": "How much did Avatar (2009) gross at the box office?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here’s the box-office revenue for Avatar (2009).",
+ "representation": "fact-card",
+ "representation_options": [
+  "fact-card",
+  "entity-page",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "REVENUE",
+   "role": "metric",
+   "unit": "usd",
+   "ordered": "desc",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 1,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "REVENUE",
+  "order_direction": "desc",
+  "top": null,
+  "fact": {
+   "index": 0,
+   "id": 19995,
+   "label": "Avatar",
+   "column": "REVENUE",
+   "role": "metric",
+   "unit": "usd",
+   "value": 2923706026,
+   "others": 0
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "revenue"
+  ],
+  "focus_columns": [
+   "REVENUE"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 19995,
+    "MOVIE_TITLE": "Avatar",
+    "DAT_RELEASE": "2009-12-16",
+    "ID_IMDB": "tt0499549",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.89,
+    "IMDB_VOTES": 1521271,
+    "POSTER_PATH": "/gKY6q7SjCkAU6FqvqWybDYgUKIF.jpg",
+    "RUNTIME": 162,
+    "TAGLINE": "Enter the world of Pandora.",
+    "ID_CRITERION_SPINE": null,
+    "REVENUE": 2923706026
+   }
+  }
+ ]
+}

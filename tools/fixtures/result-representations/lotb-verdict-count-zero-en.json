@@ -1,0 +1,47 @@
+{
+ "question": "Has Meryl Streep ever won an Oscar?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here’s how many times Meryl Streep has won Osgar; any number above zero means yes.",
+ "representation": "verdict",
+ "representation_options": [
+  "verdict",
+  "number-card",
+  "table"
+ ],
+ "result_kind": "count",
+ "result_columns": [
+  {
+   "name": "AWARD_WIN_COUNT",
+   "role": "metric",
+   "unit": "count",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 1,
+  "total": null,
+  "value_column": "AWARD_WIN_COUNT",
+  "unit": "count",
+  "order": null,
+  "order_direction": null,
+  "top": null,
+  "verdict": "no",
+  "verdict_basis": "count"
+ },
+ "intent": {
+  "task": "verdict",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "AWARD_WIN_COUNT": 0
+   }
+  }
+ ]
+}

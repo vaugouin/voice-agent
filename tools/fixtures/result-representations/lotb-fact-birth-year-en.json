@@ -1,0 +1,96 @@
+{
+ "question": "When was Akira Kurosawa born?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here’s the recorded birth year for Akira Kurosawa.",
+ "representation": "fact-card",
+ "representation_options": [
+  "fact-card",
+  "entity-page",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_PERSON",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "PERSON_NAME",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "POPULARITY",
+   "role": "metric",
+   "unit": null,
+   "ordered": "desc"
+  },
+  {
+   "name": "KNOWN_FOR_DEPARTMENT",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "BIRTH_YEAR",
+   "role": "date",
+   "unit": null,
+   "focus": true
+  },
+  {
+   "name": "DEATH_YEAR",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "PROFILE_PATH",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 1,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "POPULARITY",
+  "order_direction": "desc",
+  "top": null,
+  "fact": {
+   "index": 0,
+   "id": 5026,
+   "label": "Akira Kurosawa",
+   "column": "BIRTH_YEAR",
+   "role": "date",
+   "unit": null,
+   "value": 1910,
+   "others": 0
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "birth"
+  ],
+  "focus_columns": [
+   "BIRTH_YEAR"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_PERSON": 5026,
+    "PERSON_NAME": "Akira Kurosawa",
+    "POPULARITY": 3.31,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": 1910,
+    "DEATH_YEAR": 1998,
+    "PROFILE_PATH": "/ca8fRqLDfTJTCamLKHp70up23ET.jpg"
+   }
+  }
+ ]
+}

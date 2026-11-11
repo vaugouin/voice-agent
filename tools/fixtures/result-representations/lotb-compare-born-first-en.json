@@ -1,0 +1,113 @@
+{
+ "question": "Who was born first, Charlie Chaplin or Buster Keaton?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are Charlie Chaplin and Buster Keaton, ordered by who was born first.",
+ "representation": "compare-cards",
+ "representation_options": [
+  "compare-cards",
+  "card-grid",
+  "timeline",
+  "value-cards",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_PERSON",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "PERSON_NAME",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "POPULARITY",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "KNOWN_FOR_DEPARTMENT",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "BIRTH_YEAR",
+   "role": "date",
+   "unit": null,
+   "ordered": "asc",
+   "focus": true
+  },
+  {
+   "name": "DEATH_YEAR",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "PROFILE_PATH",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 2,
+  "total": null,
+  "value_column": "BIRTH_YEAR",
+  "unit": null,
+  "order": "date",
+  "order_direction": "asc",
+  "top": null,
+  "winners": [
+   {
+    "column": "BIRTH_YEAR",
+    "unit": null,
+    "role": "date",
+    "index": 0,
+    "id": 13848,
+    "label": "Charlie Chaplin",
+    "value": 1889,
+    "extreme": "earliest",
+    "tie": false
+   }
+  ]
+ },
+ "intent": {
+  "task": "compare",
+  "focus": [
+   "birth"
+  ],
+  "focus_columns": [
+   "BIRTH_YEAR"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_PERSON": 13848,
+    "PERSON_NAME": "Charlie Chaplin",
+    "POPULARITY": 2.73,
+    "KNOWN_FOR_DEPARTMENT": "Acting",
+    "BIRTH_YEAR": 1889,
+    "DEATH_YEAR": 1977,
+    "PROFILE_PATH": "/lRI9Ky1SMOehn04OqhYJ5hQfgIK.jpg"
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_PERSON": 8635,
+    "PERSON_NAME": "Buster Keaton",
+    "POPULARITY": 1.18,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": 1895,
+    "DEATH_YEAR": 1966,
+    "PROFILE_PATH": "/kEybBFkO5AX83o3WKyNDfuvfVrn.jpg"
+   }
+  }
+ ]
+}

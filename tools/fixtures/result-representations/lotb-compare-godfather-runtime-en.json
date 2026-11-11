@@ -1,0 +1,163 @@
+{
+ "question": "Which is longer, The Godfather or The Godfather Part II?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are The Godfather and The Godfather Part II, ordered from longer to shorter.",
+ "representation": "compare-cards",
+ "representation_options": [
+  "compare-cards",
+  "card-grid",
+  "value-cards",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes",
+   "ordered": "desc",
+   "focus": true
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 3,
+  "total": null,
+  "value_column": "RUNTIME",
+  "unit": "minutes",
+  "order": "RUNTIME",
+  "order_direction": "desc",
+  "top": {
+   "label": "The Godfather Part II",
+   "id": 240,
+   "index": 0,
+   "value": 202,
+   "extreme": "max"
+  },
+  "winners": [
+   {
+    "column": "RUNTIME",
+    "unit": "minutes",
+    "role": "metric",
+    "index": 0,
+    "id": 240,
+    "label": "The Godfather Part II",
+    "value": 202,
+    "extreme": "max",
+    "tie": false
+   }
+  ]
+ },
+ "intent": {
+  "task": "compare",
+  "focus": [
+   "runtime"
+  ],
+  "focus_columns": [
+   "RUNTIME"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 240,
+    "MOVIE_TITLE": "The Godfather Part II",
+    "DAT_RELEASE": "1974-12-20",
+    "ID_IMDB": "tt0071562",
+    "IMDB_RATING": 9.0,
+    "IMDB_RATING_WEIGHTED": 8.97,
+    "IMDB_VOTES": 1523405,
+    "POSTER_PATH": "/8a1lJs7mFyGhGhZZDT1azJUoQiZ.jpg",
+    "RUNTIME": 202,
+    "TAGLINE": "The rise and fall of the Corleone empire.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 238,
+    "MOVIE_TITLE": "The Godfather",
+    "DAT_RELEASE": "1972-03-14",
+    "ID_IMDB": "tt0068646",
+    "IMDB_RATING": 9.2,
+    "IMDB_RATING_WEIGHTED": 9.18,
+    "IMDB_VOTES": 2271534,
+    "POSTER_PATH": "/3bhkrj58Vtu7enYsRolD1fZdja1.jpg",
+    "RUNTIME": 175,
+    "TAGLINE": "An offer you can't refuse.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 1050474,
+    "MOVIE_TITLE": "The Godfather",
+    "DAT_RELEASE": "2023-01-28",
+    "ID_IMDB": "tt13652970",
+    "IMDB_RATING": 9.5,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 8,
+    "POSTER_PATH": "/hGiNkRgXTkF4C6WplyPrglEKtd0.jpg",
+    "RUNTIME": 8,
+    "TAGLINE": "If you can't abuse power, what *can* you abuse?",
+    "ID_CRITERION_SPINE": null
+   }
+  }
+ ]
+}

@@ -1,0 +1,107 @@
+{
+ "question": "Did Steven Spielberg direct Jaws?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here’s Jaws if Steven Spielberg is credited with directing it; no result means no such credit was found.",
+ "representation": "verdict",
+ "representation_options": [
+  "verdict",
+  "entity-page",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null,
+   "ordered": "desc"
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 1,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "IMDB_RATING_WEIGHTED",
+  "order_direction": "desc",
+  "top": null,
+  "verdict": "yes",
+  "verdict_basis": "rows"
+ },
+ "intent": {
+  "task": "verdict",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 578,
+    "MOVIE_TITLE": "Jaws",
+    "DAT_RELEASE": "1975-06-20",
+    "ID_IMDB": "tt0073195",
+    "IMDB_RATING": 8.1,
+    "IMDB_RATING_WEIGHTED": 8.07,
+    "IMDB_VOTES": 754180,
+    "POSTER_PATH": "/lxM6kqilAdpdhqUl2biYp5frUxE.jpg",
+    "RUNTIME": 124,
+    "TAGLINE": "The terrifying motion picture from the terrifying No. 1 best seller.",
+    "ID_CRITERION_SPINE": null
+   }
+  }
+ ]
+}

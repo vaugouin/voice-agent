@@ -1,0 +1,147 @@
+{
+ "question": "Titanic (1997) est-il plus long qu'Avatar (2009) ?",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici les durées de Titanic (1997) et de Avatar (2009), classées de la plus longue à la plus courte.",
+ "representation": "compare-cards",
+ "representation_options": [
+  "compare-cards",
+  "card-grid",
+  "value-cards",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes",
+   "ordered": "desc",
+   "focus": true
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 2,
+  "total": null,
+  "value_column": "RUNTIME",
+  "unit": "minutes",
+  "order": "RUNTIME",
+  "order_direction": "desc",
+  "top": {
+   "label": "Titanic",
+   "id": 597,
+   "index": 0,
+   "value": 194,
+   "extreme": "max"
+  },
+  "winners": [
+   {
+    "column": "RUNTIME",
+    "unit": "minutes",
+    "role": "metric",
+    "index": 0,
+    "id": 597,
+    "label": "Titanic",
+    "value": 194,
+    "extreme": "max",
+    "tie": false
+   }
+  ]
+ },
+ "intent": {
+  "task": "compare",
+  "focus": [
+   "runtime"
+  ],
+  "focus_columns": [
+   "RUNTIME"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 597,
+    "MOVIE_TITLE": "Titanic",
+    "DAT_RELEASE": "1997-12-18",
+    "ID_IMDB": "tt0120338",
+    "IMDB_RATING": 8.0,
+    "IMDB_RATING_WEIGHTED": 7.99,
+    "IMDB_VOTES": 1419956,
+    "POSTER_PATH": "/vpsvHLkoeKUjceIMeNSqCp3xEyY.jpg",
+    "RUNTIME": 194,
+    "TAGLINE": "Rien sur cette terre ne saurait les séparer.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 19995,
+    "MOVIE_TITLE": "Avatar",
+    "DAT_RELEASE": "2009-12-16",
+    "ID_IMDB": "tt0499549",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.89,
+    "IMDB_VOTES": 1521271,
+    "POSTER_PATH": "/7N8L80OaG8EBTDdRBjGqT8PBzCM.jpg",
+    "RUNTIME": 162,
+    "TAGLINE": "Entrez dans le monde de Pandora.",
+    "ID_CRITERION_SPINE": null
+   }
+  }
+ ]
+}

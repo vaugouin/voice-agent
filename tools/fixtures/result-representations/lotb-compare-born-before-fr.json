@@ -1,0 +1,113 @@
+{
+ "question": "Orson Welles est-il né avant Alfred Hitchcock ?",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici les années de naissance de Orson Welles et Alfred Hitchcock, pour voir qui est né en premier.",
+ "representation": "compare-cards",
+ "representation_options": [
+  "compare-cards",
+  "card-grid",
+  "timeline",
+  "value-cards",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_PERSON",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "PERSON_NAME",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "POPULARITY",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "KNOWN_FOR_DEPARTMENT",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "BIRTH_YEAR",
+   "role": "date",
+   "unit": null,
+   "ordered": "asc",
+   "focus": true
+  },
+  {
+   "name": "DEATH_YEAR",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "PROFILE_PATH",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 2,
+  "total": null,
+  "value_column": "BIRTH_YEAR",
+  "unit": null,
+  "order": "date",
+  "order_direction": "asc",
+  "top": null,
+  "winners": [
+   {
+    "column": "BIRTH_YEAR",
+    "unit": null,
+    "role": "date",
+    "index": 0,
+    "id": 2636,
+    "label": "Alfred Hitchcock",
+    "value": 1899,
+    "extreme": "earliest",
+    "tie": false
+   }
+  ]
+ },
+ "intent": {
+  "task": "verdict",
+  "focus": [
+   "birth"
+  ],
+  "focus_columns": [
+   "BIRTH_YEAR"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_PERSON": 2636,
+    "PERSON_NAME": "Alfred Hitchcock",
+    "POPULARITY": 3.38,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": 1899,
+    "DEATH_YEAR": 1980,
+    "PROFILE_PATH": "/108fiNM6poRieMg7RIqLJRxdAwG.jpg"
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_PERSON": 40,
+    "PERSON_NAME": "Orson Welles",
+    "POPULARITY": 2.94,
+    "KNOWN_FOR_DEPARTMENT": "Directing",
+    "BIRTH_YEAR": 1915,
+    "DEATH_YEAR": 1985,
+    "PROFILE_PATH": "/e9lGmqQq3EsHeUQgQLByo275hcc.jpg"
+   }
+  }
+ ]
+}

@@ -1,0 +1,33 @@
+{
+ "question": "Did Alfred Hitchcock direct Casablanca?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "No matching results were found for this question.",
+ "representation": "verdict",
+ "representation_options": [
+  "verdict",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [],
+ "summary_facts": {
+  "count": 0,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": null,
+  "order_direction": null,
+  "top": null,
+  "verdict": "no",
+  "verdict_basis": "empty"
+ },
+ "intent": {
+  "task": "verdict",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": []
+}

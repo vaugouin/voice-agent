@@ -1,0 +1,120 @@
+{
+ "question": "How long is Lawrence of Arabia?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here’s the runtime of Lawrence of Arabia.",
+ "representation": "fact-card",
+ "representation_options": [
+  "fact-card",
+  "entity-page",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null,
+   "ordered": "desc"
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes",
+   "focus": true
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 1,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "IMDB_RATING_WEIGHTED",
+  "order_direction": "desc",
+  "top": null,
+  "fact": {
+   "index": 0,
+   "id": 947,
+   "label": "Lawrence of Arabia",
+   "column": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes",
+   "value": 228,
+   "others": 0
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "runtime"
+  ],
+  "focus_columns": [
+   "RUNTIME"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 947,
+    "MOVIE_TITLE": "Lawrence of Arabia",
+    "DAT_RELEASE": "1962-12-11",
+    "ID_IMDB": "tt0056172",
+    "IMDB_RATING": 8.3,
+    "IMDB_RATING_WEIGHTED": 8.22,
+    "IMDB_VOTES": 348194,
+    "POSTER_PATH": "/AiAm0EtDvyGqNpVoieRw4u65vD1.jpg",
+    "RUNTIME": 228,
+    "TAGLINE": "Nothing is written.",
+    "ID_CRITERION_SPINE": null
+   }
+  }
+ ]
+}

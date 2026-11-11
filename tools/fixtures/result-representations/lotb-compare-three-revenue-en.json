@@ -1,0 +1,171 @@
+{
+ "question": "Compare the box office of Jaws (1975), E.T. the Extra-Terrestrial and Jurassic Park",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the box-office revenues for Jaws (1975), E.T. the Extra-Terrestrial, and Jurassic Park, ranked from highest to lowest.",
+ "representation": "compare-cards",
+ "representation_options": [
+  "compare-cards",
+  "card-grid",
+  "value-cards",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "REVENUE",
+   "role": "metric",
+   "unit": "usd",
+   "ordered": "desc",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 3,
+  "total": null,
+  "value_column": "REVENUE",
+  "unit": "usd",
+  "order": "REVENUE",
+  "order_direction": "desc",
+  "top": {
+   "label": "Jurassic Park",
+   "id": 329,
+   "index": 0,
+   "value": 1058454230,
+   "extreme": "max"
+  },
+  "winners": [
+   {
+    "column": "REVENUE",
+    "unit": "usd",
+    "role": "metric",
+    "index": 0,
+    "id": 329,
+    "label": "Jurassic Park",
+    "value": 1058454230,
+    "extreme": "max",
+    "tie": false
+   }
+  ]
+ },
+ "intent": {
+  "task": "compare",
+  "focus": [
+   "revenue"
+  ],
+  "focus_columns": [
+   "REVENUE"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 329,
+    "MOVIE_TITLE": "Jurassic Park",
+    "DAT_RELEASE": "1993-06-11",
+    "ID_IMDB": "tt0107290",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 8.18,
+    "IMDB_VOTES": 1206092,
+    "POSTER_PATH": "/d9mtMGQDLANKieb9PbD3yK7xxzo.jpg",
+    "RUNTIME": 127,
+    "TAGLINE": "An adventure 65 million years in the making.",
+    "ID_CRITERION_SPINE": null,
+    "REVENUE": 1058454230
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 601,
+    "MOVIE_TITLE": "E.T. the Extra-Terrestrial",
+    "DAT_RELEASE": "1982-06-11",
+    "ID_IMDB": "tt0083866",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.86,
+    "IMDB_VOTES": 479280,
+    "POSTER_PATH": "/an0nD6uq6byfxXCfk6lQBzdL2J1.jpg",
+    "RUNTIME": 115,
+    "TAGLINE": "He is afraid. He is totally alone. He is 3,000,000 light years from home.",
+    "ID_CRITERION_SPINE": null,
+    "REVENUE": 797307407
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 578,
+    "MOVIE_TITLE": "Jaws",
+    "DAT_RELEASE": "1975-06-20",
+    "ID_IMDB": "tt0073195",
+    "IMDB_RATING": 8.1,
+    "IMDB_RATING_WEIGHTED": 8.07,
+    "IMDB_VOTES": 754180,
+    "POSTER_PATH": "/lxM6kqilAdpdhqUl2biYp5frUxE.jpg",
+    "RUNTIME": 124,
+    "TAGLINE": "The terrifying motion picture from the terrifying No. 1 best seller.",
+    "ID_CRITERION_SPINE": null,
+    "REVENUE": 470653000
+   }
+  }
+ ]
+}

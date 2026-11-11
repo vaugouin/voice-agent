@@ -2909,6 +2909,223 @@ button.detailVisualCard:hover {
   outline: 2px solid var(--accent-secondary);
   outline-offset: 2px;
 }
+/* Phase 2 lot B: compare cards. Up to four cards in one row on a wide screen, two by two for
+   four at phone width, so every card and its winner mark stay on screen together; never wider
+   than the page. The winner card gets an outline AND a text pill (never colour alone). */
+.t2sCompare {
+  --t2s-compare-n: 2;
+  display: grid;
+  grid-template-columns: repeat(var(--t2s-compare-n), minmax(0, 220px));
+  justify-content: center;
+  gap: 1rem;
+  margin: 12px 0;
+  padding: 1rem;
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+}
+.t2sCompare[data-count="1"] { --t2s-compare-n: 1; }
+.t2sCompare[data-count="3"] { --t2s-compare-n: 3; }
+.t2sCompare[data-count="4"] { --t2s-compare-n: 4; }
+.t2sCompareCard {
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-secondary);
+  border: 2px solid transparent;
+}
+.t2sCompareCard.isWinner {
+  border-color: var(--accent-secondary);
+}
+.t2sCompareCard:focus-visible {
+  outline: 2px solid var(--accent-secondary);
+  outline-offset: 2px;
+}
+.t2sCompareValue {
+  flex-wrap: wrap;
+  align-items: baseline;
+}
+.t2sCompareValue .t2sCardValueNumber {
+  color: var(--text-primary);
+}
+.t2sCompareValue.isWinner .t2sCardValueNumber {
+  color: var(--accent-secondary);
+}
+.t2sComparePill {
+  flex: 0 0 auto;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--accent-secondary);
+  color: #000000;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+.t2sComparePill.isTie {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--text-secondary);
+}
+@media (max-width: 520px) {
+  .t2sCompare {
+    gap: 0.6rem;
+    padding: 0.6rem;
+  }
+  .t2sCompare[data-count="4"] { --t2s-compare-n: 2; }
+  .t2sCompare .search-poster-card-text {
+    padding: 0.5rem 0.55rem;
+    font-size: 0.85rem;
+  }
+  .t2sCompareValue {
+    flex-direction: column;
+    gap: 2px;
+  }
+}
+/* Phase 2 lot B: the fact card. The poster or face beside the named value, stacked at phone
+   width; the homonyms follow in the scrolling row of the sequence strip, smaller. */
+.t2sFact {
+  display: grid;
+  gap: 14px;
+  margin: 12px 0;
+  min-width: 0;
+}
+.t2sFactCard {
+  display: grid;
+  grid-template-columns: 160px minmax(0, 1fr);
+  align-items: center;
+  gap: 20px;
+  padding: 14px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+}
+.t2sFactCard:hover {
+  transform: none;
+}
+.t2sFactCard .search-poster-card-media {
+  border-radius: 6px;
+}
+.t2sFactCard:focus-visible {
+  outline: 2px solid var(--accent-secondary);
+  outline-offset: 2px;
+}
+.t2sFactBody {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-width: 0;
+}
+.t2sFactTitle {
+  color: var(--text-primary);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.t2sFactSubtitle {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+.t2sFactQuantity {
+  margin-top: 8px;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.t2sFactValue {
+  color: var(--accent-secondary);
+  font-size: 2.4rem;
+  font-weight: 700;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+  overflow-wrap: anywhere;
+}
+.t2sFactDetail {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+.t2sFactOthers {
+  min-width: 0;
+}
+.t2sFactOthersTitle {
+  margin: 0 0 6px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}
+.search-poster-card-grid.t2sFactOthersStrip {
+  grid-auto-columns: 112px;
+  gap: 0.75rem;
+  padding: 0.75rem;
+  border-radius: 8px;
+}
+.t2sFactOthersStrip .search-poster-card-text {
+  padding: 0.4rem 0.5rem;
+  font-size: 0.78rem;
+}
+@media (max-width: 520px) {
+  .t2sFactCard {
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 14px;
+    padding: 10px;
+  }
+  .t2sFactTitle {
+    font-size: 1.05rem;
+  }
+  .t2sFactValue {
+    font-size: 1.9rem;
+  }
+  .search-poster-card-grid.t2sFactOthersStrip {
+    grid-auto-columns: 96px;
+  }
+}
+/* Phase 2 lot B: the verdict. The word itself, large, with a glyph; the evidence below is the
+   ordinary sheet, poster grid or number card. */
+.t2sVerdictWrap {
+  display: grid;
+  gap: 12px;
+  margin: 12px 0;
+  min-width: 0;
+}
+.t2sVerdict {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  column-gap: 16px;
+  padding: 18px 22px;
+  border: 1px solid var(--border);
+  border-left: 6px solid var(--success);
+  border-radius: 12px;
+  background: var(--bg-tertiary);
+}
+.t2sVerdict.isNo {
+  border-left-color: var(--accent-primary);
+}
+.t2sVerdictGlyph {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 50%;
+  background: var(--success);
+  color: #000000;
+  font-size: 1.7rem;
+  font-weight: 800;
+}
+.t2sVerdict.isNo .t2sVerdictGlyph {
+  background: var(--accent-primary);
+}
+.t2sVerdictWord {
+  color: var(--text-primary);
+  font-size: 3rem;
+  font-weight: 800;
+  line-height: 1;
+}
+.t2sVerdictNote {
+  grid-column: 1 / -1;
+  margin: 12px 0 0;
+  color: var(--text-secondary);
+  font-size: 0.95rem;
+}
 @media (max-width: 768px) {
   .t2sBarLabel {
     flex-basis: 42%;

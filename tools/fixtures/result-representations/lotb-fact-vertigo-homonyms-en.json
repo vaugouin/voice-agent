@@ -1,0 +1,298 @@
+{
+ "question": "When was Vertigo released?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here’s the release date for Vertigo.",
+ "representation": "fact-card",
+ "representation_options": [
+  "fact-card",
+  "timeline",
+  "card-grid",
+  "value-cards",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null,
+   "focus": true
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null,
+   "ordered": "desc"
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 12,
+  "total": null,
+  "value_column": "DAT_RELEASE",
+  "unit": null,
+  "order": "IMDB_RATING_WEIGHTED",
+  "order_direction": "desc",
+  "top": null,
+  "fact": {
+   "index": 0,
+   "id": 426,
+   "label": "Vertigo",
+   "column": "DAT_RELEASE",
+   "role": "date",
+   "unit": null,
+   "value": "1958-05-28",
+   "others": 11
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "release_date"
+  ],
+  "focus_columns": [
+   "DAT_RELEASE"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 426,
+    "MOVIE_TITLE": "Vertigo",
+    "DAT_RELEASE": "1958-05-28",
+    "ID_IMDB": "tt0052357",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 8.15,
+    "IMDB_VOTES": 464920,
+    "POSTER_PATH": "/15uOEfqBNTVtDUT7hGBVCka0rZz.jpg",
+    "RUNTIME": 128,
+    "TAGLINE": "Alfred Hitchcock engulfs you in a whirlpool of terror and tension!",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 922902,
+    "MOVIE_TITLE": "Vertigo",
+    "DAT_RELEASE": "2016-08-10",
+    "ID_IMDB": "tt5433782",
+    "IMDB_RATING": 7.4,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 385,
+    "POSTER_PATH": "/l4JQQkBQo4fYHWTasg5hzcPUqao.jpg",
+    "RUNTIME": 6,
+    "TAGLINE": "",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 414621,
+    "MOVIE_TITLE": "Vertigo",
+    "DAT_RELEASE": "1945-09-06",
+    "ID_IMDB": "tt0038232",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 92,
+    "POSTER_PATH": "/o0RGQhoago8BVKCteObxP5kOhCl.jpg",
+    "RUNTIME": 88,
+    "TAGLINE": "",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_MOVIE": 356234,
+    "MOVIE_TITLE": "Vertigo",
+    "DAT_RELEASE": "2013-12-25",
+    "ID_IMDB": "tt1842534",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 8,
+    "POSTER_PATH": "/uZxsur3FeA0pvzIfRlZAk5ZLv5t.jpg",
+    "RUNTIME": 0,
+    "TAGLINE": "",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_MOVIE": 236312,
+    "MOVIE_TITLE": "Vertigo",
+    "DAT_RELEASE": "1963-02-08",
+    "ID_IMDB": "tt0056716",
+    "IMDB_RATING": 7.0,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 80,
+    "POSTER_PATH": "/3xtUm1HFzZ6WMUojKPBbBOEI8of.jpg",
+    "RUNTIME": 81,
+    "TAGLINE": "",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_MOVIE": 1010373,
+    "MOVIE_TITLE": "Vértigo",
+    "DAT_RELEASE": "1950-05-28",
+    "ID_IMDB": "tt0043114",
+    "IMDB_RATING": 5.9,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 12,
+    "POSTER_PATH": "/fC9m8rVvBK2Zk1eNvD0179cAuaf.jpg",
+    "RUNTIME": 0,
+    "TAGLINE": "",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_MOVIE": 593450,
+    "MOVIE_TITLE": "Vertigo",
+    "DAT_RELEASE": "1963-08-14",
+    "ID_IMDB": "tt0183230",
+    "IMDB_RATING": 6.2,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 215,
+    "POSTER_PATH": "/Aoxnu1Ur0HtZlpgkiBtXYuVuUlI.jpg",
+    "RUNTIME": 91,
+    "TAGLINE": "",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_MOVIE": 598075,
+    "MOVIE_TITLE": "Vertigo",
+    "DAT_RELEASE": "2019-10-17",
+    "ID_IMDB": "tt11135842",
+    "IMDB_RATING": 6.0,
+    "IMDB_RATING_WEIGHTED": 6.95,
+    "IMDB_VOTES": 366,
+    "POSTER_PATH": "/aiEfZdOZvGyUwNv5LsrxJ7lxN3J.jpg",
+    "RUNTIME": 114,
+    "TAGLINE": "A dizzying solitude on the edge of the skyscraper.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_MOVIE": 1027344,
+    "MOVIE_TITLE": "Vértigo",
+    "DAT_RELEASE": "1936-03-11",
+    "ID_IMDB": "tt0351971",
+    "IMDB_RATING": null,
+    "IMDB_RATING_WEIGHTED": null,
+    "IMDB_VOTES": null,
+    "POSTER_PATH": null,
+    "RUNTIME": 77,
+    "TAGLINE": "",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_MOVIE": 1783080,
+    "MOVIE_TITLE": "Vértigo",
+    "DAT_RELEASE": "2025-06-01",
+    "ID_IMDB": "tt43329771",
+    "IMDB_RATING": null,
+    "IMDB_RATING_WEIGHTED": null,
+    "IMDB_VOTES": null,
+    "POSTER_PATH": "/7vUX8ozLNciEDRhsfozcwQAaqMN.jpg",
+    "RUNTIME": 0,
+    "TAGLINE": "",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_MOVIE": 643914,
+    "MOVIE_TITLE": "Vertigo",
+    "DAT_RELEASE": "2019-10-30",
+    "ID_IMDB": "tt10312820",
+    "IMDB_RATING": null,
+    "IMDB_RATING_WEIGHTED": null,
+    "IMDB_VOTES": null,
+    "POSTER_PATH": null,
+    "RUNTIME": 52,
+    "TAGLINE": "",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_MOVIE": 1649751,
+    "MOVIE_TITLE": "Vertigo",
+    "DAT_RELEASE": "2018-09-10",
+    "ID_IMDB": "tt40571720",
+    "IMDB_RATING": null,
+    "IMDB_RATING_WEIGHTED": null,
+    "IMDB_VOTES": null,
+    "POSTER_PATH": "/oWlu02yJouErY5ft68eBU654li8.jpg",
+    "RUNTIME": 20,
+    "TAGLINE": "",
+    "ID_CRITERION_SPINE": null
+   }
+  }
+ ]
+}

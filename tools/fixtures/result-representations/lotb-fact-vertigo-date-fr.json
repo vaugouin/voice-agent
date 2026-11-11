@@ -1,0 +1,120 @@
+{
+ "question": "Quand Sueurs froides est-il sorti ?",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici la date de sortie de Sueurs froides.",
+ "representation": "fact-card",
+ "representation_options": [
+  "fact-card",
+  "entity-page",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null,
+   "focus": true
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null,
+   "ordered": "desc"
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 1,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "IMDB_RATING_WEIGHTED",
+  "order_direction": "desc",
+  "top": null,
+  "fact": {
+   "index": 0,
+   "id": 426,
+   "label": "Sueurs froides",
+   "column": "DAT_RELEASE",
+   "role": "date",
+   "unit": null,
+   "value": "1958-05-28",
+   "others": 0
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "release_date"
+  ],
+  "focus_columns": [
+   "DAT_RELEASE"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 426,
+    "MOVIE_TITLE": "Sueurs froides",
+    "DAT_RELEASE": "1958-05-28",
+    "ID_IMDB": "tt0052357",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 8.15,
+    "IMDB_VOTES": 464920,
+    "POSTER_PATH": "/hkhbbSQdsV3U0HtuPugHfx2wOi9.jpg",
+    "RUNTIME": 128,
+    "TAGLINE": "Alfred Hitchcock vous engloutit dans un tourbillon de terreur et de tension !",
+    "ID_CRITERION_SPINE": null
+   }
+  }
+ ]
+}

@@ -1,0 +1,132 @@
+{
+ "question": "Combien de saisons compte Breaking Bad ?",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici le nombre de saisons de Breaking Bad.",
+ "representation": "fact-card",
+ "representation_options": [
+  "fact-card",
+  "entity-page",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_SERIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "SERIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_FIRST_AIR",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "DAT_LAST_AIR",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null,
+   "ordered": "desc"
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "NUMBER_OF_SEASONS",
+   "role": "metric",
+   "unit": "count",
+   "focus": true
+  },
+  {
+   "name": "NUMBER_OF_EPISODES",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 1,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "IMDB_RATING_WEIGHTED",
+  "order_direction": "desc",
+  "top": null,
+  "fact": {
+   "index": 0,
+   "id": 1396,
+   "label": "Breaking Bad",
+   "column": "NUMBER_OF_SEASONS",
+   "role": "metric",
+   "unit": "count",
+   "value": 5,
+   "others": 0
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "seasons"
+  ],
+  "focus_columns": [
+   "NUMBER_OF_SEASONS"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_SERIE": 1396,
+    "SERIE_TITLE": "Breaking Bad",
+    "DAT_FIRST_AIR": "2008-01-20",
+    "DAT_LAST_AIR": "2013-09-29",
+    "ID_IMDB": "tt0903747",
+    "IMDB_RATING": 9.5,
+    "IMDB_RATING_WEIGHTED": 9.48,
+    "IMDB_VOTES": 2703457,
+    "POSTER_PATH": "/hVVxgGZFR3JaXmkstnG1IR9Qbt6.jpg",
+    "NUMBER_OF_SEASONS": 5,
+    "NUMBER_OF_EPISODES": 62,
+    "TAGLINE": "Souviens-toi de mon nom.",
+    "ID_CRITERION_SPINE": null
+   }
+  }
+ ]
+}

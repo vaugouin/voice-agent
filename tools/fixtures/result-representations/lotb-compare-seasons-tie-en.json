@@ -1,0 +1,161 @@
+{
+ "question": "Which series has more seasons, Breaking Bad or The Wire?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are Breaking Bad and The Wire, ordered by how many seasons they have.",
+ "representation": "compare-cards",
+ "representation_options": [
+  "compare-cards",
+  "card-grid",
+  "value-cards",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_SERIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "SERIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_FIRST_AIR",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "DAT_LAST_AIR",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "NUMBER_OF_SEASONS",
+   "role": "metric",
+   "unit": "count",
+   "ordered": "desc",
+   "focus": true
+  },
+  {
+   "name": "NUMBER_OF_EPISODES",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 2,
+  "total": null,
+  "value_column": "NUMBER_OF_SEASONS",
+  "unit": "count",
+  "order": "NUMBER_OF_SEASONS",
+  "order_direction": "desc",
+  "top": {
+   "label": "Breaking Bad",
+   "id": 1396,
+   "index": 0,
+   "value": 5,
+   "extreme": "max"
+  },
+  "winners": [
+   {
+    "column": "NUMBER_OF_SEASONS",
+    "unit": "count",
+    "role": "metric",
+    "index": null,
+    "id": null,
+    "label": null,
+    "value": null,
+    "extreme": null,
+    "tie": true
+   }
+  ]
+ },
+ "intent": {
+  "task": "compare",
+  "focus": [
+   "seasons"
+  ],
+  "focus_columns": [
+   "NUMBER_OF_SEASONS"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_SERIE": 1396,
+    "SERIE_TITLE": "Breaking Bad",
+    "DAT_FIRST_AIR": "2008-01-20",
+    "DAT_LAST_AIR": "2013-09-29",
+    "ID_IMDB": "tt0903747",
+    "IMDB_RATING": 9.5,
+    "IMDB_RATING_WEIGHTED": 9.48,
+    "IMDB_VOTES": 2703457,
+    "POSTER_PATH": "/anFx9aTOOYqgS3v7x3R84Kz67ly.jpg",
+    "NUMBER_OF_SEASONS": 5,
+    "NUMBER_OF_EPISODES": 62,
+    "TAGLINE": "Change the equation.",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_SERIE": 1438,
+    "SERIE_TITLE": "The Wire",
+    "DAT_FIRST_AIR": "2002-06-02",
+    "DAT_LAST_AIR": "2008-03-09",
+    "ID_IMDB": "tt0306414",
+    "IMDB_RATING": 9.3,
+    "IMDB_RATING_WEIGHTED": 9.2,
+    "IMDB_VOTES": 443988,
+    "POSTER_PATH": "/4lbclFySvugI51fwsyxBTOm4DqK.jpg",
+    "NUMBER_OF_SEASONS": 5,
+    "NUMBER_OF_EPISODES": 60,
+    "TAGLINE": "Listen carefully.",
+    "ID_CRITERION_SPINE": null
+   }
+  }
+ ]
+}

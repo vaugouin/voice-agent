@@ -3116,6 +3116,16 @@ function renderText2SqlRepresentation(rep, container, rows, upstream) {
   if (rep === "trend-columns") {
     return renderTrendColumns(container, rows, columns, upstream);
   }
+  // Phase 2 lot B (FASTAPI-TEXT2SQL, 2026-11-11): compare cards, the fact card, the verdict.
+  if (rep === "compare-cards") {
+    return renderCompareCards(container, rows, columns, upstream);
+  }
+  if (rep === "fact-card") {
+    return renderFactCard(container, rows, columns, upstream);
+  }
+  if (rep === "verdict") {
+    return renderVerdict(container, rows, columns, upstream);
+  }
   // number-card | stat-strip: the scalar family, one card per metric column.
   return renderScalarCards(container, rows, columns);
 }
@@ -3494,6 +3504,233 @@ function renderTrendColumns(container, rows, columns, upstream) {
   container.append(root);
 }
 
+// Phase 2 lot B, `compare-cards`: two to four entities side by side, poster or face, the compared
+// quantities under each card (the columns of summary_facts.winners, text2SqlCompareModel()), the
+// winner of each quantity marked by an outline AND a text pill ("Top", "First"), never by colour
+// alone; a tie marks no card and says "Tie" on every one. The cards sit in a grid of their own:
+// up to four in a row on a wide screen, two by two at phone width for four, so every card and its
+// mark are on screen at once (a scrolling row would hide the winner behind a swipe).
+function renderCompareCards(container, rows, columns, upstream) {
+  const model = text2SqlCompareModel(rows, columns, upstream?.summary_facts);
+  if (!model.cards.length) {
+    return renderRawTable(container, rows, columns);
+  }
+  const root = document.createElement("div");
+  root.className = "t2sCompare";
+  root.dataset.count = String(model.cards.length);
+  root.setAttribute("role", "group");
+  const titles = [];
+  model.cards.forEach(({ record, marks }) => {
+    const spec = cardSpecFromRecord(record);
+    const title = text2SqlLabelForRow(record, columns) || spec?.title || "";
+    titles.push(title);
+    const subtitle = spec?.subtitle || "";
+    const card = document.createElement("div");
+    card.className = "search-poster-card t2sCompareCard";
+    assignResultCardIndex(root, card, { title, subtitle });
+    const media = buildCardMedia(title, spec?.imageUrl || "", spec?.synthetic || null);
+    media.querySelectorAll("img").forEach((img) => { img.loading = "eager"; });
+    const text = buildCardText(title, subtitle);
+    const box = document.createElement("div");
+    box.className = "t2sCardValues t2sCompareValues";
+    const spokenParts = [];
+    model.quantities.forEach(({ column }, k) => {
+      const mark = marks[k];
+      const word = capitalizeFirst(text2SqlMetricLabel(column.name));
+      const valueText = text2SqlQuantityText(record[column.name], column, activeUiLanguage) || uiText("unknown", "inconnu");
+      const line = document.createElement("div");
+      line.className = "t2sCardValue t2sCompareValue";
+      const label = document.createElement("span");
+      label.className = "t2sCardValueLabel";
+      label.textContent = word;
+      const number = document.createElement("span");
+      number.className = "t2sCardValueNumber";
+      number.textContent = valueText;
+      line.append(label, number);
+      let pillText = "";
+      if (mark.wins) {
+        pillText = text2SqlCompareMarkText(mark.extreme, activeUiLanguage);
+        line.classList.add("isWinner");
+      } else if (mark.tie) {
+        pillText = uiText("Tie", "Égalité");
+      }
+      if (pillText) {
+        const pill = document.createElement("span");
+        pill.className = mark.wins ? "t2sComparePill" : "t2sComparePill isTie";
+        pill.textContent = pillText;
+        line.append(pill);
+      }
+      box.append(line);
+      spokenParts.push(`${word} ${valueText}${pillText ? ` (${pillText})` : ""}`);
+    });
+    text.append(box);
+    if (marks.some((mark) => mark.wins)) {
+      card.classList.add("isWinner");
+    }
+    card.append(media, text);
+    makeText2SqlRowOpenable(card, record);
+    if (card.getAttribute("role") === "button") {
+      card.setAttribute("aria-label", spokenParts.length ? `${title}: ${spokenParts.join(", ")}` : title);
+    }
+    root.append(card);
+  });
+  root.setAttribute("aria-label", `${uiText("Side by side", "Côte à côte")}: ${titles.filter(Boolean).join(", ")}`);
+  container.append(root);
+}
+
+// Phase 2 lot B, `fact-card`: the entity of row 0 (poster or face, title) and the one value the
+// question asked for, named and large ("Runtime" / "3 h 48"), with the unit's full form under it
+// when it says more ("228 min · 3 h 48", "$2,923,706,026"). Homonyms (the other rows, all with the
+// same title) follow in a small scrolling row under "11 other titles with this name", each opening
+// its own sheet. The card itself opens the entity like a grid card.
+function renderFactCard(container, rows, columns, upstream) {
+  const model = text2SqlFactModel(rows, columns, upstream?.summary_facts, upstream?.intent);
+  if (!model) {
+    return renderRawTable(container, rows, columns);
+  }
+  const lang = activeUiLanguage;
+  const root = document.createElement("div");
+  root.className = "t2sFact";
+  const spec = cardSpecFromRecord(model.record);
+  const title = model.label || text2SqlLabelForRow(model.record, columns) || spec?.title || "";
+  const subtitle = spec?.subtitle || "";
+  const word = capitalizeFirst(text2SqlMetricLabel(model.column.name, lang));
+  const valueText = text2SqlQuantityText(model.value, model.column, lang);
+  const card = document.createElement("div");
+  card.className = "search-poster-card t2sFactCard";
+  assignResultCardIndex(root, card, { title, subtitle });
+  const media = buildCardMedia(title, spec?.imageUrl || "", spec?.synthetic || null);
+  media.querySelectorAll("img").forEach((img) => { img.loading = "eager"; });
+  const body = document.createElement("div");
+  body.className = "t2sFactBody";
+  const head = document.createElement("div");
+  head.className = "t2sFactTitle";
+  head.textContent = title;
+  body.append(head);
+  if (subtitle) {
+    const sub = document.createElement("div");
+    sub.className = "t2sFactSubtitle";
+    sub.textContent = subtitle;
+    body.append(sub);
+  }
+  const quantity = document.createElement("div");
+  quantity.className = "t2sFactQuantity";
+  quantity.textContent = word;
+  const value = document.createElement("div");
+  value.className = "t2sFactValue";
+  value.textContent = valueText || uiText("Not in the database", "Absent de la base");
+  body.append(quantity, value);
+  const full = model.column.role === "metric" && model.column.unit ? formatMetric(model.value, model.column.unit) : "";
+  if (valueText && full && full !== valueText) {
+    const detail = document.createElement("div");
+    detail.className = "t2sFactDetail";
+    detail.textContent = full;
+    body.append(detail);
+  }
+  card.append(media, body);
+  makeText2SqlRowOpenable(card, model.record);
+  if (card.getAttribute("role") === "button") {
+    card.setAttribute("aria-label", `${title}: ${word}, ${valueText || value.textContent}`);
+  }
+  root.append(card);
+  if (model.others.length) {
+    const section = document.createElement("div");
+    section.className = "t2sFactOthers";
+    const heading = document.createElement("p");
+    heading.className = "t2sFactOthersTitle";
+    heading.textContent = capitalizeFirst(text2SqlFactOthersText(model.others.length, text2SqlRowNounKey(columns, rows), lang));
+    const strip = document.createElement("div");
+    strip.className = "search-poster-card-grid t2sSequenceStrip t2sFactOthersStrip";
+    strip.setAttribute("role", "list");
+    strip.setAttribute("aria-label", heading.textContent);
+    model.others.forEach((record) => {
+      const otherSpec = cardSpecFromRecord(record);
+      const otherTitle = text2SqlLabelForRow(record, columns) || otherSpec?.title || "";
+      const otherValue = model.column.role === "date"
+        ? String(text2SqlYearOf(record[model.column.name]) ?? "")
+        : text2SqlQuantityText(record[model.column.name], model.column, lang);
+      const other = document.createElement("div");
+      other.className = "search-poster-card t2sFactOther";
+      other.setAttribute("role", "listitem");
+      assignResultCardIndex(root, other, { title: otherTitle, subtitle: otherValue || otherSpec?.subtitle || "" });
+      other.append(
+        buildCardMedia(otherTitle, otherSpec?.imageUrl || "", otherSpec?.synthetic || null),
+        buildCardText(otherTitle, otherValue || otherSpec?.subtitle || ""),
+      );
+      makeText2SqlRowOpenable(other, record);
+      if (other.getAttribute("role") === "button") {
+        other.setAttribute("aria-label", otherValue ? `${otherTitle}, ${otherValue}` : otherTitle);
+      }
+      strip.append(other);
+    });
+    section.append(heading, strip);
+    root.append(section);
+  }
+  container.append(root);
+}
+
+// Phase 2 lot B, `verdict`: Yes or No, large (the word itself, plus a check or a cross glyph, so
+// the answer never rests on colour), then the evidence drawn by the renderer of the next entry of
+// representation_options: the detail sheet for one entity, the poster grid for several, the
+// number card for a count, nothing for an empty result. An empty result reads "nothing in the
+// database matches", never "false": the database may simply not hold it (contract, Limits).
+function renderVerdict(container, rows, columns, upstream) {
+  const facts = upstream?.summary_facts || {};
+  const verdict = String(facts.verdict || "").toLowerCase();
+  const records = rows.map((item) => item?.data || item).filter((r) => r && typeof r === "object");
+  const root = document.createElement("div");
+  root.className = "t2sVerdictWrap";
+  if (verdict === "yes" || verdict === "no") {
+    const yes = verdict === "yes";
+    const block = document.createElement("div");
+    block.className = `t2sVerdict ${yes ? "isYes" : "isNo"}`;
+    const glyph = document.createElement("span");
+    glyph.className = "t2sVerdictGlyph";
+    glyph.setAttribute("aria-hidden", "true");
+    glyph.textContent = yes ? "✓" : "✕";
+    const word = document.createElement("div");
+    word.className = "t2sVerdictWord";
+    word.textContent = text2SqlVerdictWord(verdict, activeUiLanguage);
+    block.append(glyph, word);
+    const note = text2SqlVerdictNote(upstream, activeUiLanguage);
+    if (note) {
+      const p = document.createElement("p");
+      p.className = "t2sVerdictNote";
+      p.textContent = note;
+      block.append(p);
+    }
+    root.append(block);
+  }
+  const evidence = text2SqlVerdictEvidence(upstream, rows);
+  if (evidence && records.length) {
+    const box = document.createElement("div");
+    box.className = "t2sVerdictEvidence";
+    box.dataset.representation = evidence;
+    root.append(box);
+    if (evidence === "entity-page") {
+      renderSingleRecordResult(box, records[0]).catch((error) => {
+        log("verdict evidence error", error.message);
+      });
+    } else if (evidence === "number-card" || evidence === "stat-strip") {
+      renderScalarCards(box, rows, columns);
+    } else if (evidence === "table") {
+      renderRawTable(box, rows, columns);
+    } else {
+      const section = document.createElement("div");
+      section.className = "search-poster-results";
+      const grid = document.createElement("div");
+      grid.className = "search-poster-card-grid";
+      section.append(grid);
+      box.append(section);
+      records.forEach((record) => appendText2SqlRowCard(grid, record));
+    }
+  }
+  if (!root.children.length) {
+    return renderRawTable(container, rows, columns);
+  }
+  container.append(root);
+}
+
 function renderRawTable(container, rows, columns) {
   const records = rows.map((item) => item?.data || item).filter((r) => r && typeof r === "object");
   if (!records.length) {
@@ -3568,16 +3805,24 @@ function renderRawTable(container, rows, columns) {
 // below (no DOM) are pinned by tools/check-result-representations.mjs.
 // VOICE-AGENT-249: `timeline`, `sequence-strip` and `trend-columns` (FASTAPI-TEXT2SQL phase 2
 // lot A) joined the list; before that an API sending them fell back to the front's own chooser.
+// Phase 2 lot B: `compare-cards`, `fact-card` and `verdict` joined them on 2026-11-11.
 const T2S_KNOWN_REPRESENTATIONS = [
   "entity-page", "card-grid", "value-cards", "number-card", "stat-strip", "ranked-bars", "table",
-  "timeline", "sequence-strip", "trend-columns",
+  "timeline", "sequence-strip", "trend-columns", "compare-cards", "fact-card", "verdict",
 ];
 // Chips only where switching means something: several entity rows, or a table of them. An
 // entity page and a one-row number keep their single form (VOICE-AGENT-247), even though the
 // API lists `table` beside them.
+// A fact card and a verdict stand on a one-row shape, yet they get chips: the API lists them
+// first over that shape's own options, and their `table` (or poster grid) is a real alternative.
+// The entity page and the number card beside them stay out of the chips, as before.
 const T2S_SWITCHABLE_REPRESENTATIONS = [
   "card-grid", "value-cards", "ranked-bars", "table", "timeline", "sequence-strip", "trend-columns",
+  "compare-cards", "fact-card", "verdict",
 ];
+// The two forms that ARE the answer to the question (a yes or no, the one value asked for): a
+// remembered chip choice from an earlier list never replaces them; a chip on this result still does.
+const T2S_ANSWER_REPRESENTATIONS = ["fact-card", "verdict"];
 const T2S_GRID_REPRESENTATIONS = ["card-grid", "value-cards"];
 const T2S_REPRESENTATION_LABELS = {
   "card-grid": ["Posters", "Affiches"],
@@ -3587,6 +3832,9 @@ const T2S_REPRESENTATION_LABELS = {
   timeline: ["Timeline", "Frise"],
   "sequence-strip": ["In order", "Dans l'ordre"],
   "trend-columns": ["Columns", "Colonnes"],
+  "compare-cards": ["Side by side", "Côte à côte"],
+  "fact-card": ["Fact", "Fait"],
+  verdict: ["Yes / No", "Oui / Non"],
 };
 // Column names the summary line and the value cards name in words. Anything else falls back to
 // prettyLabel() of the column name, in lower case.
@@ -3662,7 +3910,11 @@ function text2SqlChipOptions(upstream) {
   if (!T2S_SWITCHABLE_REPRESENTATIONS.includes(fallback)) {
     return [];
   }
-  const chips = text2SqlRepresentationOptions(upstream).filter((rep) => T2S_SWITCHABLE_REPRESENTATIONS.includes(rep));
+  // An empty result (the No of a verdict) has nothing another form could show.
+  if (Array.isArray(upstream?.result) && !upstream.result.length) {
+    return [];
+  }
+  const chips =text2SqlRepresentationOptions(upstream).filter((rep) => T2S_SWITCHABLE_REPRESENTATIONS.includes(rep));
   return chips.length >= 2 && chips.includes(fallback) ? chips : [];
 }
 
@@ -3670,6 +3922,9 @@ function text2SqlChipOptions(upstream) {
 // the API's default. "Shape decides, intent disambiguates, the user has the last word."
 function resolveText2SqlRepresentation(upstream, preferred = t2sPreferredRepresentation) {
   const fallback = String(upstream?.representation || "").trim();
+  if (T2S_ANSWER_REPRESENTATIONS.includes(fallback)) {
+    return fallback;
+  }
   if (preferred && text2SqlChipOptions(upstream).includes(preferred)) {
     return preferred;
   }
@@ -3884,11 +4139,22 @@ function text2SqlSummaryLine(upstream, { rep = "", lang = "", spoken = false, ha
   if (!facts || typeof facts !== "object") {
     return "";
   }
+  const shown = rep || String(upstream?.representation || "");
+  // Phase 2 lot B: a verdict speaks even with no row (its No), so it is answered before the count
+  // test; compare cards and the fact card say their own sentence too.
+  if (shown === "verdict") {
+    return text2SqlVerdictSummary(upstream, { lang, spoken, hasMore });
+  }
   const count = Number(facts.count);
   if (!Number.isInteger(count) || count < 1) {
     return "";
   }
-  const shown = rep || String(upstream?.representation || "");
+  if (shown === "compare-cards") {
+    return text2SqlCompareSummary(upstream, { lang, spoken });
+  }
+  if (shown === "fact-card") {
+    return text2SqlFactSummary(upstream, { lang, spoken });
+  }
   if (["entity-page", "number-card", "stat-strip"].includes(shown)) {
     return "";
   }
@@ -4213,6 +4479,293 @@ function text2SqlTimelineModel(rows, columns, { preferred = "" } = {}) {
   };
 }
 
+// Phase 2 lot B (contract tables `compare-cards`, `fact-card`, `verdict`). Pure functions, no DOM,
+// pinned by tools/check-result-representations.mjs with the lotb-* fixtures.
+
+// A date part of a birth or death (BIRTH_MONTH, BIRTH_DAY) is not a quantity to compare or state.
+const T2S_DATE_PART_RE = /_(MONTH|DAY)$/i;
+
+function text2SqlRecords(rows) {
+  return (Array.isArray(rows) ? rows : []).map((item) => item?.data || item).filter((r) => r && typeof r === "object");
+}
+
+// "28 May 1958" / "28 mai 1958" for a full ISO date; any other date text as formatDate() has it.
+function text2SqlLongDate(value, lang) {
+  const text = String(value ?? "").trim();
+  const match = text.match(/^(\d{4})-(\d{2})-(\d{2})/);
+  if (!match) {
+    return formatDate(text);
+  }
+  const date = new Date(Date.UTC(Number(match[1]), Number(match[2]) - 1, Number(match[3])));
+  if (Number.isNaN(date.getTime())) {
+    return text;
+  }
+  return new Intl.DateTimeFormat(t2sLang(lang) === "fr" ? "fr-FR" : "en-GB", {
+    day: "numeric",
+    month: "long",
+    year: "numeric",
+    timeZone: "UTC",
+  }).format(date);
+}
+
+// A compared or stated quantity as text: a date column as its year (BIRTH_YEAR) or its full date,
+// a metric in the short card form ("3 h 14", "$237M", "5"), or spelled out for the voice. "" for a
+// missing value and for a zero that means unknown (formatCardValue's rule).
+function text2SqlQuantityText(value, column, lang, spoken = false) {
+  if (value === null || value === undefined || String(value).trim() === "") {
+    return "";
+  }
+  if (column?.role === "date") {
+    const number = Number(value);
+    if (Number.isFinite(number)) {
+      return number ? String(Math.trunc(number)) : "";
+    }
+    return text2SqlLongDate(value, lang);
+  }
+  const unit = column?.unit || null;
+  const display = formatCardValue(value, { unit, role: "metric" });
+  if (!display || !spoken) {
+    return display;
+  }
+  return spokenMetricValue(value, unit, lang);
+}
+
+// The compare cards model: the compared quantities and, per card, whether it wins each one. The
+// quantities are the columns of summary_facts.winners (the API's choice: the focus columns, two
+// at most, no date part, no weighted rating beside the rating); with no winners (an older API)
+// the same rule is applied here to the value columns, and no card is marked.
+function text2SqlCompareModel(rows, columns, facts) {
+  const list = (Array.isArray(columns) ? columns : []).filter((c) => c && c.name);
+  const byName = new Map(list.map((c) => [c.name, c]));
+  const records = text2SqlRecords(rows);
+  const winners = (Array.isArray(facts?.winners) ? facts.winners : []).filter((w) => w && byName.has(w.column));
+  let quantities;
+  if (winners.length) {
+    quantities = winners.map((winner) => ({ column: byName.get(winner.column), winner }));
+  } else {
+    let picked = text2SqlValueColumns(list, { task: "compare" }).filter((c) => !T2S_DATE_PART_RE.test(c.name));
+    if (picked.some((c) => String(c.name).toUpperCase() === "IMDB_RATING")) {
+      picked = picked.filter((c) => String(c.name).toUpperCase() !== "IMDB_RATING_WEIGHTED");
+    }
+    quantities = picked.slice(0, 2).map((column) => ({ column, winner: null }));
+  }
+  const cards = records.map((record, index) => ({
+    record,
+    index,
+    marks: quantities.map(({ column, winner }) => {
+      const tie = Boolean(winner?.tie);
+      const wins = !tie && Boolean(winner) && Number.isInteger(winner.index) && winner.index === index;
+      return { column: column.name, tie, wins, extreme: wins ? String(winner.extreme || "max") : "" };
+    }),
+  }));
+  return { quantities, cards };
+}
+
+// The pill on a winning card: what it won by, gender-neutral in French.
+function text2SqlCompareMarkText(extreme, lang) {
+  const fr = t2sLang(lang) === "fr";
+  switch (String(extreme || "")) {
+    case "min":
+      return fr ? "Minimum" : "Lowest";
+    case "earliest":
+      return fr ? "En premier" : "First";
+    case "latest":
+      return fr ? "En dernier" : "Last";
+    default:
+      return fr ? "En tête" : "Top";
+  }
+}
+
+// "Two films side by side; Titanic leads on runtime, 3 h 14." A date won by its order: "Charlie
+// Chaplin comes first (1889)". A tie: "tied on seasons, 5". Two quantities won by one card are
+// said once: "Avatar leads on budget, $237M, and on revenue, $2.9B".
+function text2SqlCompareSummary(upstream, { lang = "", spoken = false } = {}) {
+  const language = t2sLang(lang);
+  const fr = language === "fr";
+  const columns = text2SqlResultColumns(upstream);
+  const model = text2SqlCompareModel(upstream?.result, columns, upstream?.summary_facts);
+  const count = model.cards.length || Number(upstream?.summary_facts?.count) || 0;
+  const nounEntry = T2S_ROW_NOUNS[text2SqlRowNounKey(columns, upstream?.result)];
+  const noun = fr ? nounEntry[count === 1 ? 3 : 2] : nounEntry[count === 1 ? 1 : 0];
+  const lead = `${text2SqlCountWord(count, nounEntry[4], language)} ${noun} ${fr ? "côte à côte" : "side by side"}`;
+  const records = model.cards.map((card) => card.record);
+  const said = model.quantities.map(({ column, winner }) => {
+    const word = text2SqlMetricLabel(column.name, language);
+    if (winner?.tie) {
+      const valueText = text2SqlQuantityText(records[0]?.[column.name], column, language, spoken);
+      const tail = valueText ? `, ${valueText}` : "";
+      return { text: fr ? `à égalité en ${word}${tail}` : `tied on ${word}${tail}` };
+    }
+    const label = String(winner?.label ?? "").trim();
+    if (!winner || !Number.isInteger(winner.index) || !label) {
+      return null;
+    }
+    const raw = records[winner.index]?.[column.name] ?? winner.value;
+    const valueText = text2SqlQuantityText(raw, column, language, spoken);
+    const extreme = String(winner.extreme || "max");
+    if (extreme === "earliest" || extreme === "latest") {
+      const verb = extreme === "earliest"
+        ? (fr ? "vient en premier" : "comes first")
+        : (fr ? "vient en dernier" : "comes last");
+      return { text: `${label} ${verb}${valueText ? ` (${valueText})` : ""}` };
+    }
+    const tail = valueText ? `, ${valueText}` : "";
+    if (extreme === "min") {
+      return { text: fr ? `${label} a la valeur la plus basse en ${word}${tail}` : `${label} has the lowest ${word}${tail}` };
+    }
+    return { text: fr ? `${label} l'emporte en ${word}${tail}` : `${label} leads on ${word}${tail}`, label, word, tail };
+  }).filter(Boolean);
+  if (said.length === 2 && said[0].label && said[0].label === said[1].label) {
+    const [a, b] = said;
+    said.splice(0, 2, { text: fr ? `${a.text}, et en ${b.word}${b.tail}` : `${a.text}, and on ${b.word}${b.tail}` });
+  }
+  const sep = fr ? " ; " : "; ";
+  return `${capitalizeFirst(lead)}${said.length ? sep + said.map((s) => s.text).join(sep) : ""}.`;
+}
+
+// The fact card model: the row (summary_facts.fact.index, 0), its label, the fact column and its
+// value, and the other rows (homonyms of the one title asked for, listed under the card). With
+// no `fact` (an older API) the first value column of the row is the fact.
+function text2SqlFactModel(rows, columns, facts, intent) {
+  const records = text2SqlRecords(rows);
+  if (!records.length) {
+    return null;
+  }
+  const list = (Array.isArray(columns) ? columns : []).filter((c) => c && c.name);
+  const fact = facts?.fact && typeof facts.fact === "object" ? facts.fact : null;
+  const column = (fact && list.find((c) => c.name === fact.column))
+    || text2SqlValueColumns(list, intent).find((c) => !T2S_DATE_PART_RE.test(c.name));
+  if (!column) {
+    return null;
+  }
+  const index = fact && Number.isInteger(fact.index) && records[fact.index] ? fact.index : 0;
+  const record = records[index];
+  const labelColumn = list.find((c) => c.role === "label");
+  const label = String(fact?.label ?? (labelColumn ? record[labelColumn.name] ?? "" : "")).trim();
+  const cell = record[column.name];
+  const value = cell === undefined ? fact?.value ?? null : cell;
+  const others = records.filter((_, i) => i !== index);
+  return { record, index, label, column, value, others, othersCount: Math.max(others.length, Number(fact?.others) || 0) };
+}
+
+// "11 other titles with this name" / "11 autres titres portent ce nom" (people for persons).
+function text2SqlFactOthersText(count, nounKey, lang) {
+  const fr = t2sLang(lang) === "fr";
+  const one = count === 1;
+  if (nounKey === "people") {
+    return fr
+      ? `${count} ${one ? "autre personne porte" : "autres personnes portent"} ce nom`
+      : `${count} other ${one ? "person" : "people"} with this name`;
+  }
+  return fr
+    ? `${count} ${one ? "autre titre porte" : "autres titres portent"} ce nom`
+    : `${count} other ${one ? "title" : "titles"} with this name`;
+}
+
+// "Lawrence of Arabia: runtime, 3 h 48." / "Lawrence d'Arabie : durée, 3 h 48.", with the
+// homonyms in parentheses: "Vertigo: release date, 28 May 1958 (11 other titles with this name)."
+function text2SqlFactSummary(upstream, { lang = "", spoken = false } = {}) {
+  const language = t2sLang(lang);
+  const fr = language === "fr";
+  const columns = text2SqlResultColumns(upstream);
+  const model = text2SqlFactModel(upstream?.result, columns, upstream?.summary_facts, upstream?.intent);
+  if (!model) {
+    return "";
+  }
+  const word = text2SqlMetricLabel(model.column.name, language);
+  const valueText = text2SqlQuantityText(model.value, model.column, language, spoken);
+  const body = valueText
+    ? `${word}, ${valueText}`
+    : (fr ? `pas de ${word} dans la base` : `no ${word} in the database`);
+  const head = model.label ? `${model.label}${fr ? " : " : ": "}${body}` : capitalizeFirst(body);
+  const others = model.othersCount > 0
+    ? ` (${text2SqlFactOthersText(model.othersCount, text2SqlRowNounKey(columns, upstream?.result), language)})`
+    : "";
+  return `${head}${others}.`;
+}
+
+function text2SqlVerdictWord(verdict, lang) {
+  const fr = t2sLang(lang) === "fr";
+  return String(verdict || "").toLowerCase() === "yes" ? (fr ? "Oui" : "Yes") : (fr ? "Non" : "No");
+}
+
+// The value a count verdict stands on: the value column of the one row, else its first metric.
+function text2SqlVerdictCount(upstream) {
+  const facts = upstream?.summary_facts || {};
+  const record = text2SqlRecords(upstream?.result)[0];
+  if (!record) {
+    return { value: null, unit: null };
+  }
+  const columns = text2SqlResultColumns(upstream);
+  const column = columns.find((c) => c && c.name === facts.value_column)
+    || columns.find((c) => c && c.role === "metric")
+    || { name: Object.keys(record)[0], unit: null };
+  return { value: record[column.name], unit: column.unit || facts.unit || null };
+}
+
+// The sentence of a verdict (contract, Spoken). Rows: "Yes: 2 matching results." Empty: "No:
+// nothing in the database matches." (never "it is false": the database may not hold it). Count:
+// "Yes: 3." / "No: 0.". A page with more behind it says "at least N".
+function text2SqlVerdictSummary(upstream, { lang = "", spoken = false, hasMore = false } = {}) {
+  const facts = upstream?.summary_facts || {};
+  const verdict = String(facts.verdict || "").toLowerCase();
+  if (verdict !== "yes" && verdict !== "no") {
+    return "";
+  }
+  const language = t2sLang(lang);
+  const fr = language === "fr";
+  const word = text2SqlVerdictWord(verdict, language);
+  const sep = fr ? " : " : ": ";
+  const basis = String(facts.verdict_basis || "");
+  const count = Number(facts.count) || 0;
+  if (basis === "empty" || (basis !== "count" && count < 1)) {
+    return fr ? `${word} : rien dans la base ne correspond.` : `${word}: nothing in the database matches.`;
+  }
+  if (basis === "count") {
+    const { value, unit } = text2SqlVerdictCount(upstream);
+    const text = value === null || value === undefined || String(value).trim() === ""
+      ? ""
+      : spoken ? spokenMetricValue(value, unit, language) : formatMetric(value, unit);
+    return text ? `${word}${sep}${text}.` : `${word}.`;
+  }
+  const n = hasMore ? (fr ? `au moins ${count}` : `at least ${count}`) : String(count);
+  const plural = count !== 1;
+  return fr
+    ? `${word} : ${n} résultat${plural ? "s" : ""} correspondant${plural ? "s" : ""}.`
+    : `${word}: ${n} matching result${plural ? "s" : ""}.`;
+}
+
+// The line under the big Yes or No, on screen only (the caption carries the sentence).
+function text2SqlVerdictNote(upstream, lang) {
+  const facts = upstream?.summary_facts || {};
+  const fr = t2sLang(lang) === "fr";
+  const basis = String(facts.verdict_basis || "");
+  const count = Number(facts.count) || 0;
+  if (basis === "empty" || (basis !== "count" && count < 1)) {
+    return fr ? "Rien dans la base ne correspond à cette question." : "Nothing in the database matches this question.";
+  }
+  return "";
+}
+
+// The form the evidence under a verdict is drawn in: the next known entry of
+// representation_options after `verdict` (entity-page, card-grid, number-card); "" with no row.
+// With no options (an older API), one entity row is its sheet, several the poster grid.
+function text2SqlVerdictEvidence(upstream, rows = upstream?.result) {
+  const records = text2SqlRecords(rows);
+  if (!records.length) {
+    return "";
+  }
+  const options = text2SqlRepresentationOptions(upstream);
+  const next = options.find((rep) => rep !== "verdict");
+  if (next) {
+    return next;
+  }
+  if (String(upstream?.result_kind || "") === "count") {
+    return "number-card";
+  }
+  return records.length === 1 ? "entity-page" : "card-grid";
+}
+
 // VOICE-AGENT-250. "Show it as a table", "en tableau", "with the posters", "en frise": a
 // follow-up that asks for the result on screen in another form. It is a third route beside the
 // search and the detail tools, answered locally (the chip mechanism) with no new search. The
@@ -4237,6 +4790,7 @@ const T2S_REQUESTED_VIEW_TARGETS = {
   timeline: ["timeline"],
   sequence: ["sequence-strip"],
   columns: ["trend-columns"],
+  compare: ["compare-cards"],
 };
 const T2S_REQUESTED_VIEW_NOUNS = {
   table: ["a table", "en tableau"],
@@ -4248,6 +4802,7 @@ const T2S_REQUESTED_VIEW_NOUNS = {
   timeline: ["a timeline", "en frise"],
   sequence: ["a numbered sequence", "dans l'ordre"],
   columns: ["columns", "en colonnes"],
+  compare: ["cards side by side", "côte à côte"],
 };
 const T2S_REQUESTED_VIEW_DONE = {
   table: ["Here it is as a table.", "Voici le résultat en tableau."],
@@ -4257,6 +4812,9 @@ const T2S_REQUESTED_VIEW_DONE = {
   timeline: ["Here it is on a timeline.", "Voici la frise chronologique."],
   "sequence-strip": ["Here they are in order.", "Les voici dans l'ordre."],
   "trend-columns": ["Here it is as columns.", "Voici les colonnes."],
+  "compare-cards": ["Here they are side by side.", "Les voici côte à côte."],
+  "fact-card": ["Here is the fact.", "Voici le fait."],
+  verdict: ["Here is the answer, yes or no.", "Voici la réponse, oui ou non."],
 };
 
 function text2SqlRequestedView(text) {
@@ -4285,9 +4843,14 @@ function text2SqlRequestedView(text) {
   return rest.every((word) => T2S_REQUESTED_VIEW_FILLERS.has(word)) ? best.view : "";
 }
 
-// The representation a view asks for among the ones this result offers, or "".
-function text2SqlRepresentationForView(view, options) {
+// The representation a view asks for among the ones this result offers, or "". "As cards" keeps
+// compare cards or a fact card on screen as they are, since both already are cards (contract,
+// `requested_view`).
+function text2SqlRepresentationForView(view, options, current = "") {
   const offered = Array.isArray(options) ? options : [];
+  if (view === "cards" && ["compare-cards", "fact-card"].includes(current) && offered.includes(current)) {
+    return current;
+  }
   return (T2S_REQUESTED_VIEW_TARGETS[view] || []).find((rep) => offered.includes(rep)) || "";
 }
 
@@ -4529,7 +5092,7 @@ function switchText2SqlRepresentation(rep) {
 function applyRequestedRepresentation(view, source) {
   const onScreen = t2sView && t2sView.body?.isConnected && !resultsPanel.hidden ? t2sView : null;
   const available = onScreen ? onScreen.chips.slice() : [];
-  const representation = onScreen ? text2SqlRepresentationForView(view, available) : "";
+  const representation = onScreen ? text2SqlRepresentationForView(view, available, onScreen.rep) : "";
   let result;
   if (!onScreen) {
     result = { ok: false, view, representation: "", available, error: "no_result_view" };
@@ -7391,9 +7954,11 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
     t2sView = null;
     activeValueColumns = [];
     const hintedRepresentation = resolveText2SqlRepresentation(upstream);
+    // Phase 2 lot B: a verdict on an empty result (`result: []`, summary_facts.count 0) is the No
+    // block, not the "No displayable rows" grid an empty search falls to below.
     if (
       T2S_SWITCHABLE_REPRESENTATIONS.includes(hintedRepresentation) &&
-      rows.length &&
+      (rows.length || hintedRepresentation === "verdict") &&
       !(rows.length === 1 && T2S_GRID_REPRESENTATIONS.includes(hintedRepresentation))
     ) {
       const chips = text2SqlChipOptions(upstream);

@@ -1281,9 +1281,9 @@ def show_results_as_tool_definition() -> dict[str, Any]:
         "description": (
             "Redraw the search results already on screen in another form, with no new search: "
             "table, chart, cards, posters, values (the value under each poster), bars (a "
-            "ranking), timeline, sequence (numbered, in order) or columns (one column per year "
-            "or decade). Returns ok false with the available views when this result cannot be "
-            "shown that way."
+            "ranking), timeline, sequence (numbered, in order), columns (one column per year "
+            "or decade) or compare (two to four cards side by side, the winner marked). Returns "
+            "ok false with the available views when this result cannot be shown that way."
         ),
         "parameters": {
             "type": "object",
@@ -1932,7 +1932,8 @@ READ_BASED_ON_INSTRUCTIONS = (
 REPRESENTATION_REQUEST_INSTRUCTIONS = (
     "When the user asks to see the results already on screen in another form, without naming "
     "a new subject or filter ('show it as a table', 'as a chart', 'with the posters', 'on a "
-    "timeline', 'en tableau', 'en graphique', 'en frise', 'avec les affiches'), call "
+    "timeline', 'side by side', 'en tableau', 'en graphique', 'en frise', 'côte à côte', "
+    "'avec les affiches'), call "
     "show_results_as with that view, never query_text2sql and never a detail tool: it redraws "
     "the same rows. Then confirm in a few words. If it returns ok false, say in one short "
     "sentence that this result cannot be shown that way and name the available_views; do not "

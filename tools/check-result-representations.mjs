@@ -70,7 +70,8 @@ function extractRegion(startMarker, endMarker) {
 
 // VOICE-AGENT-249 to -251 added the phase 2 helpers (timeline, sequence, trend columns), the
 // "as a table" matcher, which reads its word lists from app/lexicons.json like the page does
-// (window.__LEXICONS__), and the table links, which need detailRequestFromRecord().
+// (window.__LEXICONS__), and the table links, which need detailRequestFromRecord(). Phase 2 lot B
+// (fixtures lotb-*) added the compare-card, fact-card and verdict models and sentences.
 const lexicons = readFileSync(join(root, "app", "lexicons.json"), "utf8");
 const code = [
   ...["normalizeUiLanguage", "uiText", "prettyLabel", "formatDate", "formatMoney", "formatMinutes",
@@ -83,6 +84,9 @@ const code = [
   "  text2SqlIsDecadeColumn, text2SqlPeriodLabel, text2SqlTrendModel, text2SqlTimelineModel,",
   "  text2SqlRequestedView, text2SqlRepresentationForView, text2SqlRequestedViewReply,",
   "  text2SqlTableLinks, text2SqlTableLinkRecord, T2S_TIMELINE_SLOT_PX, T2S_TIMELINE_MIN_GAP_PX,",
+  "  text2SqlLongDate, text2SqlQuantityText, text2SqlCompareModel, text2SqlCompareMarkText, text2SqlCompareSummary,",
+  "  text2SqlFactModel, text2SqlFactOthersText, text2SqlFactSummary, text2SqlVerdictWord, text2SqlVerdictSummary,",
+  "  text2SqlVerdictNote, text2SqlVerdictEvidence,",
   "  setLang: (l) => { activeUiLanguage = l; } };",
 ].join("\n\n");
 const sandbox = { Intl, console };
@@ -378,6 +382,163 @@ check("links: older API, from the keys", linkSummary([], ["ID_PERSON", "PERSON_N
   check("link record: location", api.text2SqlTableLinkRecord(location, locationLink), { ID_LOCATION: 12, LOCATION_NAME: "Paris" });
   const mainOnly = { ID_MOVIE: 5, TITLE: "Four Rooms" };
   check("link record: main entity is the row", api.text2SqlTableLinkRecord(mainOnly, { label: "TITLE", idColumn: "", typeColumn: "" }), mainOnly);
+}
+
+// Phase 2 lot B: compare-cards, fact-card, verdict (fixtures lotb-*: live API 1.1.20 responses of
+// 2026-11-11, re-classified by the API's new module, EN and FR).
+{
+  // Known, offered as chips only when the API lists them, in the API's order.
+  check("lotb chips: compare", api.text2SqlChipOptions(fx("lotb-compare-yes-no-runtime-en")), ["compare-cards", "card-grid", "value-cards", "ranked-bars", "table"]);
+  check("lotb chips: compare of people", api.text2SqlChipOptions(fx("lotb-compare-born-first-en")), ["compare-cards", "card-grid", "timeline", "value-cards", "table"]);
+  check("lotb chips: fact of one row, no entity page chip", api.text2SqlChipOptions(fx("lotb-fact-runtime-en")), ["fact-card", "table"]);
+  check("lotb chips: fact over homonyms", api.text2SqlChipOptions(fx("lotb-fact-vertigo-homonyms-en")), ["fact-card", "timeline", "card-grid", "value-cards", "table"]);
+  check("lotb chips: fact over two homonyms offers compare", api.text2SqlChipOptions(fx("lotb-fact-chernobyl-homonym-en")), ["fact-card", "value-cards", "card-grid", "compare-cards", "ranked-bars", "table"]);
+  check("lotb chips: verdict over rows", api.text2SqlChipOptions(fx("lotb-verdict-yes-two-rows-en")), ["verdict", "card-grid", "table"]);
+  check("lotb chips: verdict over one entity", api.text2SqlChipOptions(fx("lotb-verdict-yes-en")), ["verdict", "table"]);
+  check("lotb chips: verdict over a count", api.text2SqlChipOptions(fx("lotb-verdict-count-zero-en")), ["verdict", "table"]);
+  check("lotb chips: none on an empty verdict", api.text2SqlChipOptions(fx("lotb-verdict-no-empty-en")), []);
+  check("lotb chip labels en", ["compare-cards", "fact-card", "verdict"].map((r) => api.text2SqlRepresentationLabel(r, "en")), ["Side by side", "Fact", "Yes / No"]);
+  check("lotb chip labels fr", ["compare-cards", "fact-card", "verdict"].map((r) => api.text2SqlRepresentationLabel(r, "fr")), ["Côte à côte", "Fait", "Oui / Non"]);
+  check("lotb unknown representation still ignored", api.text2SqlRepresentationOptions({ representation_options: ["verdict", "pie-chart", "table"] }), ["verdict", "table"]);
+
+  // The representation drawn: the default; a remembered list preference applies to compare cards,
+  // never over a fact card or a verdict, which are the answer itself.
+  check("lotb default compare", api.resolveText2SqlRepresentation(fx("lotb-compare-godfather-runtime-en"), ""), "compare-cards");
+  check("lotb preference over compare", api.resolveText2SqlRepresentation(fx("lotb-compare-godfather-runtime-en"), "ranked-bars"), "ranked-bars");
+  check("lotb compare preference on value cards", api.resolveText2SqlRepresentation(fx("lotb-fact-chernobyl-homonym-en"), "compare-cards"), "fact-card");
+  check("lotb table preference keeps the fact", api.resolveText2SqlRepresentation(fx("lotb-fact-vertigo-homonyms-en"), "table"), "fact-card");
+  check("lotb table preference keeps the verdict", api.resolveText2SqlRepresentation(fx("lotb-verdict-yes-two-rows-en"), "table"), "verdict");
+  check("lotb empty verdict keeps the verdict", api.resolveText2SqlRepresentation(fx("lotb-verdict-no-empty-en"), "table"), "verdict");
+
+  // Formats of the quantities: minutes, usd, count, a year, a full date (EN and FR), spoken.
+  check("lotb qty minutes", api.text2SqlQuantityText(194, { unit: "minutes", role: "metric" }, "en"), "3 h 14");
+  check("lotb qty minutes spoken", api.text2SqlQuantityText(194, { unit: "minutes", role: "metric" }, "fr", true), "3 heures 14 minutes");
+  check("lotb qty usd", api.text2SqlQuantityText(2923706026, { unit: "usd", role: "metric" }, "en"), "$2.9B");
+  check("lotb qty usd spoken", api.text2SqlQuantityText(2923706026, { unit: "usd", role: "metric" }, "en", true), "2.9 billion dollars");
+  check("lotb qty count", api.text2SqlQuantityText(5, { unit: "count", role: "metric" }, "en"), "5");
+  check("lotb qty year", api.text2SqlQuantityText(1889, { unit: null, role: "date" }, "en"), "1889");
+  check("lotb qty date en", api.text2SqlQuantityText("1958-05-28", { unit: null, role: "date" }, "en"), "28 May 1958");
+  check("lotb qty date fr", api.text2SqlQuantityText("1958-05-28", { unit: null, role: "date" }, "fr"), "28 mai 1958");
+  check("lotb qty unknown runtime", api.text2SqlQuantityText(0, { unit: "minutes", role: "metric" }, "en"), "");
+  check("lotb qty missing", api.text2SqlQuantityText(null, { unit: "count", role: "metric" }, "en"), "");
+
+  // Compare cards: the quantities and the marked card of each one.
+  const marks = (name) => {
+    const f = fx(name);
+    const model = api.text2SqlCompareModel(f.result, f.result_columns, f.summary_facts);
+    return {
+      columns: model.quantities.map((q) => q.column.name),
+      cards: model.cards.map((c) => c.marks.map((m) => (m.wins ? m.extreme : m.tie ? "tie" : "-")).join(",")),
+    };
+  };
+  check("lotb compare runtime winner", marks("lotb-compare-yes-no-runtime-en"), { columns: ["RUNTIME"], cards: ["max", "-"] });
+  check("lotb compare godfather winner", marks("lotb-compare-godfather-runtime-en"), { columns: ["RUNTIME"], cards: ["max", "-", "-"] });
+  check("lotb compare three revenue winner", marks("lotb-compare-three-revenue-en"), { columns: ["REVENUE"], cards: ["max", "-", "-"] });
+  check("lotb compare two quantities", marks("lotb-compare-two-focus-en"), { columns: ["BUDGET", "REVENUE"], cards: ["max,max", "-,-"] });
+  check("lotb compare tie marks nobody", marks("lotb-compare-seasons-tie-en"), { columns: ["NUMBER_OF_SEASONS"], cards: ["tie", "tie"] });
+  check("lotb compare birth, date parts dropped", marks("lotb-compare-born-before-en"), { columns: ["BIRTH_YEAR"], cards: ["earliest", "-"] });
+  {
+    // No winners (an older API, a chip): the focus columns, no date part, nobody marked.
+    const f = fx("lotb-compare-born-before-en");
+    const model = api.text2SqlCompareModel(f.result, f.result_columns, { ...f.summary_facts, winners: undefined });
+    check("lotb compare without winners", model.quantities.map((q) => q.column.name), ["BIRTH_YEAR"]);
+    check("lotb compare without winners marks nobody", model.cards.every((c) => c.marks.every((m) => !m.wins && !m.tie)), true);
+  }
+  check("lotb mark text en", ["max", "min", "earliest", "latest"].map((e) => api.text2SqlCompareMarkText(e, "en")), ["Top", "Lowest", "First", "Last"]);
+  check("lotb mark text fr", ["max", "min", "earliest", "latest"].map((e) => api.text2SqlCompareMarkText(e, "fr")), ["En tête", "Minimum", "En premier", "En dernier"]);
+
+  check("lotb caption compare en", caption("lotb-compare-yes-no-runtime-en", "en"), "Two films side by side; Titanic leads on runtime, 3 h 14.");
+  check("lotb caption compare fr", caption("lotb-compare-yes-no-runtime-fr", "fr"), "Deux films côte à côte ; Titanic l'emporte en durée, 3 h 14.");
+  check("lotb spoken compare en", spoken("lotb-compare-yes-no-runtime-en", "en"), "Two films side by side; Titanic leads on runtime, 3 hours 14 minutes.");
+  check("lotb caption compare three", caption("lotb-compare-three-revenue-en", "en"), "Three films side by side; Jurassic Park leads on revenue, $1.1B.");
+  check("lotb caption compare godfather", caption("lotb-compare-godfather-runtime-en", "en"), "Three films side by side; The Godfather Part II leads on runtime, 3 h 22.");
+  check("lotb caption compare two quantities", caption("lotb-compare-two-focus-en", "en"), "Two films side by side; Avatar leads on budget, $237M, and on revenue, $2.9B.");
+  check("lotb caption compare tie", caption("lotb-compare-seasons-tie-en", "en"), "Two series side by side; tied on seasons, 5.");
+  check("lotb caption compare tie fr", caption("lotb-compare-seasons-tie-en", "fr"), "Deux séries côte à côte ; à égalité en saisons, 5.");
+  check("lotb caption born first en", caption("lotb-compare-born-first-en", "en"), "Two people side by side; Charlie Chaplin comes first (1889).");
+  check("lotb caption born before fr", caption("lotb-compare-born-before-fr", "fr"), "Deux personnes côte à côte ; Alfred Hitchcock vient en premier (1899).");
+  check("lotb spoken summary compare", api.text2SqlSpokenSummary({ upstream: fx("lotb-compare-yes-no-runtime-fr"), has_more: false }),
+    "Deux films côte à côte ; Titanic l'emporte en durée, 3 heures 14 minutes.");
+  check("lotb caption compare after a chip", caption("lotb-compare-yes-no-runtime-en", "en", { rep: "value-cards" }), "Two films; the longest is Titanic, 3 h 14.");
+
+  // Fact card: the row, the fact, the homonyms.
+  const fact = (name) => {
+    const f = fx(name);
+    const model = api.text2SqlFactModel(f.result, f.result_columns, f.summary_facts, f.intent);
+    return { label: model.label, column: model.column.name, value: model.value, others: model.othersCount };
+  };
+  check("lotb fact runtime", fact("lotb-fact-runtime-en"), { label: "Lawrence of Arabia", column: "RUNTIME", value: 228, others: 0 });
+  check("lotb fact vertigo homonyms", fact("lotb-fact-vertigo-homonyms-en"), { label: "Vertigo", column: "DAT_RELEASE", value: "1958-05-28", others: 11 });
+  check("lotb fact chernobyl homonym", fact("lotb-fact-chernobyl-homonym-en"), { label: "Chernobyl", column: "NUMBER_OF_EPISODES", value: 5, others: 1 });
+  check("lotb fact birth year", fact("lotb-fact-birth-year-en"), { label: "Akira Kurosawa", column: "BIRTH_YEAR", value: 1910, others: 0 });
+  check("lotb others text en", api.text2SqlFactOthersText(11, "films", "en"), "11 other titles with this name");
+  check("lotb others text fr", api.text2SqlFactOthersText(11, "films", "fr"), "11 autres titres portent ce nom");
+  check("lotb others text one fr", api.text2SqlFactOthersText(1, "series", "fr"), "1 autre titre porte ce nom");
+  check("lotb others text people", api.text2SqlFactOthersText(2, "people", "en"), "2 other people with this name");
+
+  check("lotb caption fact runtime", caption("lotb-fact-runtime-en", "en"), "Lawrence of Arabia: runtime, 3 h 48.");
+  check("lotb spoken fact runtime", spoken("lotb-fact-runtime-en", "en"), "Lawrence of Arabia: runtime, 3 hours 48 minutes.");
+  check("lotb caption fact revenue", caption("lotb-fact-revenue-en", "en"), "Avatar: revenue, $2.9B.");
+  check("lotb caption fact seasons en", caption("lotb-fact-seasons-en", "en"), "Breaking Bad: seasons, 5.");
+  check("lotb caption fact seasons fr", caption("lotb-fact-seasons-fr", "fr"), "Breaking Bad : saisons, 5.");
+  check("lotb caption fact birth year", caption("lotb-fact-birth-year-en", "en"), "Akira Kurosawa: birth year, 1910.");
+  check("lotb caption fact date fr", caption("lotb-fact-vertigo-date-fr", "fr"), "Sueurs froides : date de sortie, 28 mai 1958.");
+  check("lotb caption fact homonyms", caption("lotb-fact-vertigo-homonyms-en", "en"), "Vertigo: release date, 28 May 1958 (11 other titles with this name).");
+  check("lotb caption fact one homonym", caption("lotb-fact-chernobyl-homonym-en", "en"), "Chernobyl: episodes, 5 (1 other title with this name).");
+  check("lotb caption fact no value", api.text2SqlSummaryLine({
+    ...fx("lotb-fact-runtime-en"),
+    result: [{ data: { ...fx("lotb-fact-runtime-en").result[0].data, RUNTIME: null } }],
+  }, { lang: "en" }), "Lawrence of Arabia: no runtime in the database.");
+  check("lotb caption fact after a chip", caption("lotb-fact-vertigo-homonyms-en", "en", { rep: "card-grid" }), "Twelve films.");
+
+  // Verdict: the word, the sentence of each basis, the evidence form, the empty path.
+  check("lotb verdict word", [api.text2SqlVerdictWord("yes", "en"), api.text2SqlVerdictWord("no", "en"), api.text2SqlVerdictWord("yes", "fr"), api.text2SqlVerdictWord("no", "fr")], ["Yes", "No", "Oui", "Non"]);
+  check("lotb caption verdict one row en", caption("lotb-verdict-yes-en", "en"), "Yes: 1 matching result.");
+  check("lotb caption verdict one row fr", caption("lotb-verdict-yes-fr", "fr"), "Oui : 1 résultat correspondant.");
+  check("lotb caption verdict rows en", caption("lotb-verdict-yes-two-rows-en", "en"), "Yes: 2 matching results.");
+  check("lotb caption verdict rows fr", caption("lotb-verdict-yes-two-rows-fr", "fr"), "Oui : 2 résultats correspondants.");
+  check("lotb caption verdict more pages", caption("lotb-verdict-yes-two-rows-en", "en", { hasMore: true }), "Yes: at least 2 matching results.");
+  check("lotb caption verdict empty en", caption("lotb-verdict-no-empty-en", "en"), "No: nothing in the database matches.");
+  check("lotb caption verdict empty fr", caption("lotb-verdict-no-empty-fr", "fr"), "Non : rien dans la base ne correspond.");
+  check("lotb spoken verdict empty", api.text2SqlSpokenSummary({ upstream: fx("lotb-verdict-no-empty-en"), has_more: false }), "No: nothing in the database matches.");
+  check("lotb caption verdict count zero en", caption("lotb-verdict-count-zero-en", "en"), "No: 0.");
+  check("lotb caption verdict count zero fr", caption("lotb-verdict-count-zero-fr", "fr"), "Non : 0.");
+  check("lotb caption verdict count yes", api.text2SqlSummaryLine({
+    ...fx("lotb-verdict-count-zero-en"),
+    result: [{ data: { AWARD_WIN_COUNT: 3 } }],
+    summary_facts: { ...fx("lotb-verdict-count-zero-en").summary_facts, verdict: "yes" },
+  }, { lang: "fr" }), "Oui : 3.");
+  check("lotb caption verdict after a chip", caption("lotb-verdict-yes-two-rows-en", "en", { rep: "card-grid" }), "Two films.");
+  check("lotb verdict never says false", [
+    "lotb-verdict-no-empty-en", "lotb-verdict-no-empty-fr", "lotb-verdict-count-zero-en", "lotb-verdict-count-zero-fr",
+  ].map((name) => caption(name, name.endsWith("fr") ? "fr" : "en") + api.text2SqlVerdictNote(fx(name), name.endsWith("fr") ? "fr" : "en"))
+    .some((text) => /false|faux|wrong|incorrect/i.test(text)), false);
+  check("lotb verdict note empty", api.text2SqlVerdictNote(fx("lotb-verdict-no-empty-fr"), "fr"), "Rien dans la base ne correspond à cette question.");
+  check("lotb verdict note on rows", api.text2SqlVerdictNote(fx("lotb-verdict-yes-en"), "en"), "");
+  check("lotb evidence entity page", api.text2SqlVerdictEvidence(fx("lotb-verdict-yes-en")), "entity-page");
+  check("lotb evidence poster grid", api.text2SqlVerdictEvidence(fx("lotb-verdict-yes-two-rows-fr")), "card-grid");
+  check("lotb evidence number card", api.text2SqlVerdictEvidence(fx("lotb-verdict-count-zero-en")), "number-card");
+  check("lotb evidence none when empty", api.text2SqlVerdictEvidence(fx("lotb-verdict-no-empty-en")), "");
+  check("lotb evidence older API, one row", api.text2SqlVerdictEvidence({ result: [{ data: { ID_MOVIE: 578 } }] }), "entity-page");
+  {
+    // The empty verdict reaches the dispatch: no row, yet a summary and the verdict representation.
+    const empty = fx("lotb-verdict-no-empty-en");
+    check("lotb empty verdict shape", [empty.result.length, empty.summary_facts.count, empty.representation], [0, 0, "verdict"]);
+  }
+
+  // "Side by side" / "côte à côte", typed or through show_results_as; "as cards" keeps compare cards.
+  check("view: side by side", view("show them side by side"), "compare");
+  check("view: cote a cote", view("Mets-les côte à côte"), "compare");
+  check("view: compare them", view("compare them"), "compare");
+  check("no view: compare two titles", view("Compare Titanic and Avatar"), "");
+  const compareOpts = fx("lotb-compare-yes-no-runtime-en").representation_options;
+  check("view to rep: compare", api.text2SqlRepresentationForView("compare", compareOpts), "compare-cards");
+  check("view to rep: compare not offered", api.text2SqlRepresentationForView("compare", opts), "");
+  check("view to rep: cards keep compare cards", api.text2SqlRepresentationForView("cards", compareOpts, "compare-cards"), "compare-cards");
+  check("view to rep: cards from the table", api.text2SqlRepresentationForView("cards", compareOpts, "table"), "value-cards");
+  check("reply compare fr", api.text2SqlRequestedViewReply({ ok: true, representation: "compare-cards", view: "compare" }, "fr"), "Les voici côte à côte.");
+  check("reply compare refused en", api.text2SqlRequestedViewReply({ ok: false, view: "compare", available: ["timeline", "card-grid", "table"] }, "en"),
+    "This result cannot be shown as cards side by side. Available views: Timeline, Posters, Table.");
 }
 
 console.log(`${passes} passed, ${failures} failed`);

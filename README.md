@@ -251,7 +251,7 @@ The server creates a session with:
 - transcription confidence (VOICE-AGENT-205, 1.2.10): the session asks for `item.input_audio_transcription.logprobs`; every voice `user_transcript` (and `user_transcript_discarded`) carries `asr_logprob_mean`, `asr_logprob_min` and `asr_tokens` in `logs/client.log`, absent when the event has no logprobs.
 - tools: `query_text2sql` plus dedicated detail tools for movies, series, seasons, episodes, persons, companies, networks, collections, topics, lists, movements, technicals, genres, groups, deaths, awards, nominations, locations, and source works (`get_source_work_detail`, VOICE-AGENT-218)
 - `read_based_on` (VOICE-AGENT-218, voice only): reads the "Based on" rail of the movie or series on screen, so "What is it based on?" or "Is it from a book?" is answered from the page with no search and no fetch, the way `play_trailer` reads `videos`. With no movie or series page open it returns `ok: false` and the model falls back to the detail tool of the title under discussion, never to `query_text2sql`.
-- `show_results_as` (VOICE-AGENT-250, voice only): redraws the search result on screen in another form (`view`: `table`, `chart`, `cards`, `posters`, `values`, `bars`, `timeline`, `sequence`, `columns`) from the rows already there, the same local re-render as an override chip and remembered like one, with no new search. When the result does not offer that form it returns `ok: false` with `available_views` and the model says so. The typed path reaches the same code without a tool: a message that is only a view request ("en tableau", "show it as a chart") is answered in the browser before `/text-chat` (UI.md, "Result Views And Override Chips").
+- `show_results_as` (VOICE-AGENT-250, voice only): redraws the search result on screen in another form (`view`: `table`, `chart`, `cards`, `posters`, `values`, `bars`, `timeline`, `sequence`, `columns`, `compare`) from the rows already there, the same local re-render as an override chip and remembered like one, with no new search. When the result does not offer that form it returns `ok: false` with `available_views` and the model says so. The typed path reaches the same code without a tool: a message that is only a view request ("en tableau", "show it as a chart") is answered in the browser before `/text-chat` (UI.md, "Result Views And Override Chips").
 - optional spoken-card focus tool: `focus_result_card`, enabled by default with `ENABLE_STRUCTURED_CARD_FOCUS=true`
 
 Supported voice values in this app:
@@ -956,7 +956,7 @@ python -m py_compile .\app\main.py .\app\__main__.py
 node --check .\app\static\app.js
 ```
 
-Result representations (VOICE-AGENT-246 to -251): the value-card, chip and summary-line helpers of `app.js`, the timeline, sequence and trend-column models, the "as a table" matcher and the table links, run offline against real API responses kept in `tools/fixtures/result-representations/` (`lota-*` for phase 2 lot A):
+Result representations (VOICE-AGENT-246 to -251, phase 2 lot B): the value-card, chip and summary-line helpers of `app.js`, the timeline, sequence and trend-column models, the compare-card, fact-card and verdict models and sentences, the "as a table" matcher and the table links, run offline against real API responses kept in `tools/fixtures/result-representations/` (`lota-*` for phase 2 lot A, `lotb-*` for lot B):
 
 ```powershell
 node .\tools\check-result-representations.mjs

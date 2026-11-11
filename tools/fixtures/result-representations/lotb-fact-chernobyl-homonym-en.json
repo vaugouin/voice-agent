@@ -1,0 +1,172 @@
+{
+ "question": "How many episodes does Chernobyl have?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here’s the recorded episode count for Chernobyl.",
+ "representation": "fact-card",
+ "representation_options": [
+  "fact-card",
+  "value-cards",
+  "card-grid",
+  "compare-cards",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_SERIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "SERIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_FIRST_AIR",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "DAT_LAST_AIR",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null,
+   "ordered": "desc"
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "NUMBER_OF_SEASONS",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "NUMBER_OF_EPISODES",
+   "role": "metric",
+   "unit": "count",
+   "focus": true
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 2,
+  "total": null,
+  "value_column": "NUMBER_OF_EPISODES",
+  "unit": "count",
+  "order": "IMDB_RATING_WEIGHTED",
+  "order_direction": "desc",
+  "top": {
+   "label": "Chernobyl",
+   "id": 196108,
+   "index": 1,
+   "value": 12,
+   "extreme": "max"
+  },
+  "winners": [
+   {
+    "column": "NUMBER_OF_EPISODES",
+    "unit": "count",
+    "role": "metric",
+    "index": 1,
+    "id": 196108,
+    "label": "Chernobyl",
+    "value": 12,
+    "extreme": "max",
+    "tie": false
+   }
+  ],
+  "fact": {
+   "index": 0,
+   "id": 87108,
+   "label": "Chernobyl",
+   "column": "NUMBER_OF_EPISODES",
+   "role": "metric",
+   "unit": "count",
+   "value": 5,
+   "others": 1
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "episodes"
+  ],
+  "focus_columns": [
+   "NUMBER_OF_EPISODES"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_SERIE": 87108,
+    "SERIE_TITLE": "Chernobyl",
+    "DAT_FIRST_AIR": "2019-05-06",
+    "DAT_LAST_AIR": "2019-06-03",
+    "ID_IMDB": "tt7366338",
+    "IMDB_RATING": 9.3,
+    "IMDB_RATING_WEIGHTED": 9.26,
+    "IMDB_VOTES": 1076026,
+    "POSTER_PATH": "/hlLXt2tOPT6RRnjiUmoxyG1LTFi.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 5,
+    "TAGLINE": "What is the cost of lies?",
+    "ID_CRITERION_SPINE": null
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_SERIE": 196108,
+    "SERIE_TITLE": "Chernobyl",
+    "DAT_FIRST_AIR": "2022-03-30",
+    "DAT_LAST_AIR": "2022-05-24",
+    "ID_IMDB": "tt14780354",
+    "IMDB_RATING": 3.9,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 107,
+    "POSTER_PATH": "/c85dop60aR2RVZy3hrMM4Tx5aHK.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 12,
+    "TAGLINE": "",
+    "ID_CRITERION_SPINE": null
+   }
+  }
+ ]
+}
