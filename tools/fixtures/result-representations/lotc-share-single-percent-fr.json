@@ -1,0 +1,68 @@
+{
+ "question": "Quelle part des films d'Alfred Hitchcock est en noir et blanc ?",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici la part, en pourcentage, des films de Alfred Hitchcock réalisés en noir et blanc.",
+ "representation": "share-bar",
+ "representation_options": [
+  "share-bar",
+  "number-card",
+  "table"
+ ],
+ "result_kind": "count",
+ "result_columns": [
+  {
+   "name": "PERCENTAGE_OF_MOVIES",
+   "role": "metric",
+   "unit": "ratio",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 1,
+  "total": null,
+  "value_column": "PERCENTAGE_OF_MOVIES",
+  "unit": "ratio",
+  "order": null,
+  "order_direction": null,
+  "top": null,
+  "share": {
+   "kind": "single",
+   "value_column": "PERCENTAGE_OF_MOVIES",
+   "label_column": null,
+   "scale": 100,
+   "total": null,
+   "parts": [
+    {
+     "index": 0,
+     "label": null,
+     "value": 73.81,
+     "share": 0.7381,
+     "rest": false
+    },
+    {
+     "index": null,
+     "label": null,
+     "value": null,
+     "share": 0.2619,
+     "rest": true
+    }
+   ]
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "share",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "PERCENTAGE_OF_MOVIES": 73.81
+   }
+  }
+ ]
+}

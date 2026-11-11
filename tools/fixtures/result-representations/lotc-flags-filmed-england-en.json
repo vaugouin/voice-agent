@@ -1,0 +1,201 @@
+{
+ "question": "In which countries was Lawrence of Arabia filmed?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the countries where Lawrence of Arabia was filmed.",
+ "representation": "flag-list",
+ "representation_options": [
+  "flag-list",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_LOCATION",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_NAME",
+   "role": "label",
+   "unit": null,
+   "ordered": "asc"
+  },
+  {
+   "name": "LOCATION_TYPE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_SOURCE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "SERIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 5,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": null,
+  "order_direction": null,
+  "top": null,
+  "countries": {
+   "source": "locations",
+   "column": "LOCATION_NAME",
+   "value_column": null,
+   "countries": [
+    {
+     "index": 0,
+     "code": "GB",
+     "label": "England",
+     "value": null,
+     "name": {
+      "en": "United Kingdom",
+      "fr": "Royaume-Uni"
+     },
+     "flag": true
+    },
+    {
+     "index": 1,
+     "code": "JO",
+     "label": "Jordan",
+     "value": null,
+     "name": {
+      "en": "Jordan",
+      "fr": "Jordanie"
+     },
+     "flag": true
+    },
+    {
+     "index": 2,
+     "code": "MA",
+     "label": "Morocco",
+     "value": null,
+     "name": {
+      "en": "Morocco",
+      "fr": "Maroc"
+     },
+     "flag": true
+    },
+    {
+     "index": 3,
+     "code": "ES",
+     "label": "Spain",
+     "value": null,
+     "name": {
+      "en": "Spain",
+      "fr": "Espagne"
+     },
+     "flag": true
+    },
+    {
+     "index": 4,
+     "code": "GB",
+     "label": "United Kingdom",
+     "value": null,
+     "name": {
+      "en": "United Kingdom",
+      "fr": "Royaume-Uni"
+     },
+     "flag": true
+    }
+   ]
+  }
+ },
+ "intent": {
+  "task": "list",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_LOCATION": 112,
+    "LOCATION_NAME": "England",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "MOVIE_COUNT": 1357,
+    "SERIE_COUNT": 82,
+    "IMDB_RATING": 6.24
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_LOCATION": 879,
+    "LOCATION_NAME": "Jordan",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "MOVIE_COUNT": 25,
+    "SERIE_COUNT": 4,
+    "IMDB_RATING": 6.64
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_LOCATION": 416,
+    "LOCATION_NAME": "Morocco",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "MOVIE_COUNT": 227,
+    "SERIE_COUNT": 21,
+    "IMDB_RATING": 6.34
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_LOCATION": 56,
+    "LOCATION_NAME": "Spain",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "MOVIE_COUNT": 533,
+    "SERIE_COUNT": 23,
+    "IMDB_RATING": 6.18
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_LOCATION": 258,
+    "LOCATION_NAME": "United Kingdom",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "MOVIE_COUNT": 73,
+    "SERIE_COUNT": 88,
+    "IMDB_RATING": 6.98
+   }
+  }
+ ]
+}

@@ -1,0 +1,70 @@
+{
+ "question": "What share of the Studio Ghibli films did Hayao Miyazaki direct?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here’s the percentage of Studio Ghibli films directed by Hayao Miyazaki.",
+ "representation": "share-bar",
+ "representation_options": [
+  "share-bar",
+  "number-card",
+  "table"
+ ],
+ "result_kind": "count",
+ "result_columns": [
+  {
+   "name": "DIRECTED_SHARE_PERCENT",
+   "role": "metric",
+   "unit": "ratio",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 1,
+  "total": null,
+  "value_column": "DIRECTED_SHARE_PERCENT",
+  "unit": "ratio",
+  "order": null,
+  "order_direction": null,
+  "top": null,
+  "share": {
+   "kind": "single",
+   "value_column": "DIRECTED_SHARE_PERCENT",
+   "label_column": null,
+   "scale": 100,
+   "total": null,
+   "parts": [
+    {
+     "index": 0,
+     "label": null,
+     "value": 37.5,
+     "share": 0.375,
+     "rest": false
+    },
+    {
+     "index": null,
+     "label": null,
+     "value": null,
+     "share": 0.625,
+     "rest": true
+    }
+   ]
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "count"
+  ],
+  "focus_columns": [],
+  "requested_view": "share",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "DIRECTED_SHARE_PERCENT": 37.5
+   }
+  }
+ ]
+}

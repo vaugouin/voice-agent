@@ -1,0 +1,134 @@
+{
+ "question": "Montre la répartition des séries HBO par statut en camembert",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici la répartition des séries de HBO par statut, prête pour un camembert.",
+ "representation": "share-bar",
+ "representation_options": [
+  "share-bar",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "unknown",
+ "result_columns": [
+  {
+   "name": "STATUS",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "SERIE_COUNT",
+   "role": "metric",
+   "unit": "count",
+   "ordered": "desc",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 5,
+  "total": null,
+  "value_column": "SERIE_COUNT",
+  "unit": "count",
+  "order": "SERIE_COUNT",
+  "order_direction": "desc",
+  "top": {
+   "label": "Ended",
+   "id": null,
+   "index": 0,
+   "value": 277,
+   "extreme": "max"
+  },
+  "share": {
+   "kind": "parts",
+   "value_column": "SERIE_COUNT",
+   "label_column": "STATUS",
+   "scale": 1,
+   "total": 375,
+   "parts": [
+    {
+     "index": 0,
+     "label": "Ended",
+     "value": 277,
+     "share": 0.7387,
+     "rest": false
+    },
+    {
+     "index": 1,
+     "label": "Canceled",
+     "value": 44,
+     "share": 0.1173,
+     "rest": false
+    },
+    {
+     "index": 2,
+     "label": "Returning Series",
+     "value": 42,
+     "share": 0.112,
+     "rest": false
+    },
+    {
+     "index": 3,
+     "label": "Planned",
+     "value": 6,
+     "share": 0.016,
+     "rest": false
+    },
+    {
+     "index": 4,
+     "label": "In Production",
+     "value": 6,
+     "share": 0.016,
+     "rest": false
+    }
+   ]
+  }
+ },
+ "intent": {
+  "task": "count",
+  "focus": [
+   "count"
+  ],
+  "focus_columns": [
+   "SERIE_COUNT"
+  ],
+  "requested_view": "share",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "STATUS": "Ended",
+    "SERIE_COUNT": 277
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "STATUS": "Canceled",
+    "SERIE_COUNT": 44
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "STATUS": "Returning Series",
+    "SERIE_COUNT": 42
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "STATUS": "Planned",
+    "SERIE_COUNT": 6
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "STATUS": "In Production",
+    "SERIE_COUNT": 6
+   }
+  }
+ ]
+}

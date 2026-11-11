@@ -71,7 +71,8 @@ function extractRegion(startMarker, endMarker) {
 // VOICE-AGENT-249 to -251 added the phase 2 helpers (timeline, sequence, trend columns), the
 // "as a table" matcher, which reads its word lists from app/lexicons.json like the page does
 // (window.__LEXICONS__), and the table links, which need detailRequestFromRecord(). Phase 2 lot B
-// (fixtures lotb-*) added the compare-card, fact-card and verdict models and sentences.
+// (fixtures lotb-*) added the compare-card, fact-card and verdict models and sentences, phase 2
+// lot C (fixtures lotc-*) the histogram, share-bar and flag-list models and sentences.
 const lexicons = readFileSync(join(root, "app", "lexicons.json"), "utf8");
 const code = [
   ...["normalizeUiLanguage", "uiText", "prettyLabel", "formatDate", "formatMoney", "formatMinutes",
@@ -87,6 +88,9 @@ const code = [
   "  text2SqlLongDate, text2SqlQuantityText, text2SqlCompareModel, text2SqlCompareMarkText, text2SqlCompareSummary,",
   "  text2SqlFactModel, text2SqlFactOthersText, text2SqlFactSummary, text2SqlVerdictWord, text2SqlVerdictSummary,",
   "  text2SqlVerdictNote, text2SqlVerdictEvidence,",
+  "  text2SqlHistogramModel, text2SqlHistogramSummary, text2SqlHistogramAxisName, text2SqlBinRangeText,",
+  "  text2SqlShareModel, text2SqlShareSummary, text2SqlPercentText, text2SqlFlagEmoji, text2SqlFlagModel,",
+  "  text2SqlFlagSummary, text2SqlCountryName, text2SqlChipOptionsLotC: text2SqlChipOptions,",
   "  setLang: (l) => { activeUiLanguage = l; } };",
 ].join("\n\n");
 const sandbox = { Intl, console };
@@ -539,6 +543,102 @@ check("links: older API, from the keys", linkSummary([], ["ID_PERSON", "PERSON_N
   check("reply compare fr", api.text2SqlRequestedViewReply({ ok: true, representation: "compare-cards", view: "compare" }, "fr"), "Les voici côte à côte.");
   check("reply compare refused en", api.text2SqlRequestedViewReply({ ok: false, view: "compare", available: ["timeline", "card-grid", "table"] }, "en"),
     "This result cannot be shown as cards side by side. Available views: Timeline, Posters, Table.");
+}
+
+// Phase 2 lot C (fixtures lotc-*: live 1.1.20 answers of 2026-11-11, re-classified with the lot C
+// module of fastapi-text2sql). The sentences are the ones t2s-front writes.
+{
+  // Histogram: bins in their own order, the empty bin the API filled in, the ranges, the sentence.
+  const range = api.text2SqlHistogramModel(fx("lotc-histogram-runtime-range-en").summary_facts, "en");
+  check("lotc histogram bars", range.bars.map((b) => [b.axis, b.range, b.value, b.empty, b.peak]), [
+    ["0", "0 to 29 min", 3, false, false], ["30", "30 to 59 min", 0, true, false], ["60", "60 to 89 min", 4, false, false],
+    ["90", "90 to 119 min", 2, false, false], ["120", "120 to 149 min", 5, false, true], ["150", "150 to 179 min", 2, false, false],
+    ["180", "180 to 209 min", 2, false, false],
+  ]);
+  check("lotc histogram heights", range.bars.map((b) => b.pct), [60, 0, 80, 40, 100, 40, 40]);
+  check("lotc histogram bins sorted by start", api.text2SqlHistogramModel(fx("lotc-histogram-raw-rating-en").summary_facts, "en").bars
+    .every((b, i, all) => i === 0 || Number(b.axis) > Number(all[i - 1].axis)), true);
+  check("lotc caption histogram runtime en", caption("lotc-histogram-runtime-range-en", "en"),
+    "18 films in bins of 30 min; the most common bin is 120 to 149 min, 5 films.");
+  check("lotc caption histogram runtime fr", caption("lotc-histogram-runtime-range-fr", "fr"),
+    "18 films, par tranches de 30 min ; la tranche la plus fréquente : 120 à 149 min, 5 films.");
+  check("lotc spoken histogram runtime", spoken("lotc-histogram-runtime-range-en", "en"),
+    "18 films in bins of 30 minutes; the most common bin is 120 to 149 minutes, 5 films.");
+  check("lotc caption histogram width without an end", caption("lotc-histogram-bond-runtime-en", "en"),
+    "27 films in bins of 10 min; the most common bin is 130 to 139 min, 8 films.");
+  check("lotc caption histogram money", caption("lotc-histogram-budget-en", "en"),
+    "31 films in bins of $50M; the most common bin is $0 to $50M, 16 films.");
+  check("lotc spoken histogram money step", spoken("lotc-histogram-budget-en", "en").startsWith("31 films in bins of 50 million dollars;"), true);
+  check("lotc caption histogram no unit", caption("lotc-histogram-rating-band-en", "en"),
+    "14,292 films in 10 bins; the most common bin is 6, 4,133 films.");
+  check("lotc caption histogram series", caption("lotc-histogram-seasons-en", "en"),
+    "375 series in 57 bins; the most common bin is 1, 219 series.");
+  check("lotc histogram axis names", [
+    api.text2SqlHistogramAxisName(range, "en"),
+    api.text2SqlHistogramAxisName(api.text2SqlHistogramModel(fx("lotc-histogram-runtime-range-fr").summary_facts, "fr"), "fr"),
+    api.text2SqlHistogramAxisName(api.text2SqlHistogramModel(fx("lotc-histogram-budget-en").summary_facts, "en"), "en"),
+    api.text2SqlHistogramAxisName(api.text2SqlHistogramModel(fx("lotc-histogram-rating-band-en").summary_facts, "en"), "en"),
+  ], ["Runtime (min), bins of 30 min", "Durée (min), tranches de 30 min", "Budget ($), bins of $50M", "Rating"]);
+  check("lotc histogram text bin", api.text2SqlBinRangeText({ label: "under 90" }, { unit: "minutes" }, "en"), "under 90");
+  check("lotc histogram step of one", api.text2SqlBinRangeText({ low: 3, high: null }, { unit: "count", width: 1 }, "fr"), "3");
+  check("lotc histogram chips", api.text2SqlChipOptionsLotC(fx("lotc-histogram-seasons-en")), ["histogram", "table"]);
+
+  // Share bar: the parts and their labels, GENDER named, one share and its rest, the sentences.
+  check("lotc share gender labels en", api.text2SqlShareModel(fx("lotc-share-gender-codes-en"), "en").segments.map((s) => [s.label, s.valueText, s.pctText]),
+    [["women", "7", "11%"], ["men", "58", "88%"], ["non-binary", "1", "2%"]]);
+  check("lotc share gender labels fr", api.text2SqlShareModel(fx("lotc-share-gender-codes-en"), "fr").segments.map((s) => s.label), ["femmes", "hommes", "non binaire"]);
+  check("lotc caption share parts en", caption("lotc-share-hbo-type-en", "en"),
+    "375 series counted in six parts: Scripted 49%, Miniseries 38%, Documentary 8% and 3 more.");
+  check("lotc caption share parts fr", caption("lotc-share-hbo-type-fr", "fr"),
+    "375 séries comptées en six parts : Scripted 49 %, Miniseries 38 %, Documentary 8 % et 3 autres.");
+  check("lotc caption share as a pie", caption("lotc-share-pie-status-en", "en"),
+    "375 series counted in five parts: Ended 74%, Canceled 12%, Returning Series 11% and 2 more.");
+  check("lotc caption share gender", caption("lotc-share-gender-codes-en", "en"),
+    "66 people counted in three parts: women 11%, men 88%, non-binary 2%.");
+  check("lotc caption share CASE labels fr", caption("lotc-share-gender-labels-fr", "fr"),
+    "65 résultats comptés en deux parts : Femmes 11 %, Hommes 89 %.");
+  check("lotc caption one share en", caption("lotc-share-single-en", "en"), "74% of the whole; the rest, 26%.");
+  check("lotc caption one share fr", caption("lotc-share-single-percent-fr", "fr"), "74 % de l'ensemble ; le reste, 26 %.");
+  check("lotc one share and its rest add up", caption("lotc-share-single-percent-en", "en"), "38% of the whole; the rest, 62%.");
+  check("lotc spoken one share", spoken("lotc-share-single-en", "en"), "74 percent of the whole; the rest, 26 percent.");
+  check("lotc spoken share fr", spoken("lotc-share-gender-labels-fr", "fr"), "65 résultats comptés en deux parts : Femmes 11 pour cent, Hommes 89 pour cent.");
+  check("lotc share rest labelled", api.text2SqlShareModel(fx("lotc-share-single-en"), "fr").segments.map((s) => [s.label, s.rest]),
+    [["film share", false], ["le reste", true]]);
+  check("lotc percent below one", [api.text2SqlPercentText(0.004, "en"), api.text2SqlPercentText(0.004, "fr"), api.text2SqlPercentText(0, "en")], ["<1%", "<1 %", "0%"]);
+  check("lotc share chips one row", api.text2SqlChipOptionsLotC(fx("lotc-share-single-en")), ["share-bar", "table"]);
+  check("lotc share chips parts", api.text2SqlChipOptionsLotC(fx("lotc-share-hbo-type-en")), ["share-bar", "ranked-bars", "table"]);
+
+  // Flag list: the emoji from the code, no flag for a withdrawn code, the names, the sentences.
+  check("lotc flag emoji", [api.text2SqlFlagEmoji("FR"), api.text2SqlFlagEmoji("jp"), api.text2SqlFlagEmoji("1A"), api.text2SqlFlagEmoji("")],
+    ["\u{1F1EB}\u{1F1F7}", "\u{1F1EF}\u{1F1F5}", "", ""]);
+  const noFlag = api.text2SqlFlagModel(fx("lotc-flags-codes-no-flag-en"), "en").items.filter((i) => !i.flag).map((i) => [i.code, i.name]);
+  check("lotc flags without a flag", noFlag, [["YU", "Yugoslavia"], ["SU", "Soviet Union"], ["XC", "Czechoslovakia"], ["XK", "Kosovo"]]);
+  check("lotc flags place names", api.text2SqlFlagModel(fx("lotc-flags-filmed-england-en"), "fr").items.map((i) => [i.code, i.name]),
+    [["GB", "England"], ["JO", "Jordanie"], ["MA", "Maroc"], ["ES", "Espagne"], ["GB", "Royaume-Uni"]]);
+  check("lotc flags bars", api.text2SqlFlagModel(fx("lotc-flags-codes-kurosawa-en"), "en").items.slice(0, 3).map((i) => [i.code, i.valueText, i.pct]),
+    [["JP", "93", 100], ["US", "16", 17], ["IT", "4", 4]]);
+  check("lotc caption flags count en", caption("lotc-flags-codes-kurosawa-en", "en"), "The first 13 countries by number of films; Japan leads with 93 films.");
+  check("lotc caption flags count fr", caption("lotc-flags-codes-kurosawa-fr", "fr"), "Les 13 premiers pays par nombre de films ; Japon arrive en tête avec 93 films.");
+  check("lotc caption flags names en", caption("lotc-flags-filmed-mad-max-en", "en"), "Four countries: Angola, Australia, Namibia and South Africa.");
+  check("lotc caption flags names fr", caption("lotc-flags-filmed-mad-max-fr", "fr"), "Quatre pays : Angola, Australie, Namibie et Afrique du Sud.");
+  check("lotc caption flags repeated", caption("lotc-flags-repeated-lotr-en", "en"), "Two countries: New Zealand and United States.");
+  check("lotc caption flags more pages", caption("lotc-flags-filmed-mad-max-en", "en", { hasMore: true }), "The first four countries: Angola, Australia, Namibia and South Africa.");
+  check("lotc flags chips", [api.text2SqlChipOptionsLotC(fx("lotc-flags-codes-netflix-en")), api.text2SqlChipOptionsLotC(fx("lotc-flags-filmed-mad-max-en"))],
+    [["flag-list", "ranked-bars", "table"], ["flag-list", "card-grid", "table"]]);
+
+  // Views asked for in words: a pie, a histogram, the flags; "as a chart" on a country ranking.
+  check("view: as a pie", view("show it as a pie"), "share");
+  check("view: en camembert", view("Mets-le en camembert"), "share");
+  check("view: histogram", view("as a histogram please"), "histogram");
+  check("view: with the flags", view("show them with flags"), "flags");
+  check("view to rep: share", api.text2SqlRepresentationForView("share", fx("lotc-share-hbo-type-en").representation_options), "share-bar");
+  check("view to rep: chart on flags is the ranking", api.text2SqlRepresentationForView("chart", fx("lotc-flags-codes-kurosawa-en").representation_options), "ranked-bars");
+  check("view to rep: chart on a histogram", api.text2SqlRepresentationForView("chart", fx("lotc-histogram-seasons-en").representation_options), "histogram");
+  check("view to rep: columns on a histogram", api.text2SqlRepresentationForView("columns", fx("lotc-histogram-seasons-en").representation_options), "histogram");
+  check("view to rep: flags not offered", api.text2SqlRepresentationForView("flags", fx("lotc-share-hbo-type-en").representation_options), "");
+  check("reply share fr", api.text2SqlRequestedViewReply({ ok: true, representation: "share-bar", view: "share" }, "fr"), "Voici les parts.");
+  check("lotc labels", ["histogram", "share-bar", "flag-list"].map((rep) => [api.text2SqlRepresentationLabel(rep, "en"), api.text2SqlRepresentationLabel(rep, "fr")]),
+    [["Histogram", "Histogramme"], ["Shares", "Parts"], ["Flags", "Drapeaux"]]);
 }
 
 console.log(`${passes} passed, ${failures} failed`);

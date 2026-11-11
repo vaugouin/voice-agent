@@ -1,0 +1,296 @@
+{
+ "question": "Quels pays ont produit les films d'Akira Kurosawa, et combien chacun ?",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici les pays de production des films de Akira Kurosawa, avec le nombre de films pour chacun.",
+ "representation": "flag-list",
+ "representation_options": [
+  "flag-list",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "unknown",
+ "result_columns": [
+  {
+   "name": "COUNTRY_CODE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_COUNT",
+   "role": "metric",
+   "unit": "count",
+   "ordered": "desc",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 13,
+  "total": null,
+  "value_column": "MOVIE_COUNT",
+  "unit": "count",
+  "order": "MOVIE_COUNT",
+  "order_direction": "desc",
+  "top": {
+   "label": "JP",
+   "id": null,
+   "index": 0,
+   "value": 93,
+   "extreme": "max"
+  },
+  "countries": {
+   "source": "codes",
+   "column": "COUNTRY_CODE",
+   "value_column": "MOVIE_COUNT",
+   "countries": [
+    {
+     "index": 0,
+     "code": "JP",
+     "label": null,
+     "value": 93,
+     "name": {
+      "en": "Japan",
+      "fr": "Japon"
+     },
+     "flag": true
+    },
+    {
+     "index": 1,
+     "code": "US",
+     "label": null,
+     "value": 16,
+     "name": {
+      "en": "United States",
+      "fr": "États-Unis"
+     },
+     "flag": true
+    },
+    {
+     "index": 2,
+     "code": "IT",
+     "label": null,
+     "value": 4,
+     "name": {
+      "en": "Italy",
+      "fr": "Italie"
+     },
+     "flag": true
+    },
+    {
+     "index": 3,
+     "code": "ES",
+     "label": null,
+     "value": 3,
+     "name": {
+      "en": "Spain",
+      "fr": "Espagne"
+     },
+     "flag": true
+    },
+    {
+     "index": 4,
+     "code": "FR",
+     "label": null,
+     "value": 3,
+     "name": {
+      "en": "France",
+      "fr": "France"
+     },
+     "flag": true
+    },
+    {
+     "index": 5,
+     "code": "AR",
+     "label": null,
+     "value": 2,
+     "name": {
+      "en": "Argentina",
+      "fr": "Argentine"
+     },
+     "flag": true
+    },
+    {
+     "index": 6,
+     "code": "DE",
+     "label": null,
+     "value": 2,
+     "name": {
+      "en": "Germany",
+      "fr": "Allemagne"
+     },
+     "flag": true
+    },
+    {
+     "index": 7,
+     "code": "SE",
+     "label": null,
+     "value": 1,
+     "name": {
+      "en": "Sweden",
+      "fr": "Suède"
+     },
+     "flag": true
+    },
+    {
+     "index": 8,
+     "code": "SU",
+     "label": null,
+     "value": 1,
+     "name": {
+      "en": "Soviet Union",
+      "fr": "Union soviétique"
+     },
+     "flag": false
+    },
+    {
+     "index": 9,
+     "code": "TH",
+     "label": null,
+     "value": 1,
+     "name": {
+      "en": "Thailand",
+      "fr": "Thaïlande"
+     },
+     "flag": true
+    },
+    {
+     "index": 10,
+     "code": "GB",
+     "label": null,
+     "value": 1,
+     "name": {
+      "en": "United Kingdom",
+      "fr": "Royaume-Uni"
+     },
+     "flag": true
+    },
+    {
+     "index": 11,
+     "code": "HK",
+     "label": null,
+     "value": 1,
+     "name": {
+      "en": "Hong Kong",
+      "fr": "Hong Kong"
+     },
+     "flag": true
+    },
+    {
+     "index": 12,
+     "code": "ID",
+     "label": null,
+     "value": 1,
+     "name": {
+      "en": "Indonesia",
+      "fr": "Indonésie"
+     },
+     "flag": true
+    }
+   ]
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "count"
+  ],
+  "focus_columns": [
+   "MOVIE_COUNT"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "COUNTRY_CODE": "JP",
+    "MOVIE_COUNT": 93
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "COUNTRY_CODE": "US",
+    "MOVIE_COUNT": 16
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "COUNTRY_CODE": "IT",
+    "MOVIE_COUNT": 4
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "COUNTRY_CODE": "ES",
+    "MOVIE_COUNT": 3
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "COUNTRY_CODE": "FR",
+    "MOVIE_COUNT": 3
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "COUNTRY_CODE": "AR",
+    "MOVIE_COUNT": 2
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "COUNTRY_CODE": "DE",
+    "MOVIE_COUNT": 2
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "COUNTRY_CODE": "SE",
+    "MOVIE_COUNT": 1
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "COUNTRY_CODE": "SU",
+    "MOVIE_COUNT": 1
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "COUNTRY_CODE": "TH",
+    "MOVIE_COUNT": 1
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "COUNTRY_CODE": "GB",
+    "MOVIE_COUNT": 1
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "COUNTRY_CODE": "HK",
+    "MOVIE_COUNT": 1
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "COUNTRY_CODE": "ID",
+    "MOVIE_COUNT": 1
+   }
+  }
+ ]
+}

@@ -1,0 +1,651 @@
+{
+ "question": "How are HBO series distributed by number of seasons?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here’s how HBO series are distributed by number of seasons.",
+ "representation": "histogram",
+ "representation_options": [
+  "histogram",
+  "table"
+ ],
+ "result_kind": "unknown",
+ "result_columns": [
+  {
+   "name": "NUMBER_OF_SEASONS",
+   "role": "metric",
+   "unit": "count",
+   "ordered": "asc",
+   "bin": "low",
+   "focus": true
+  },
+  {
+   "name": "SERIE_COUNT",
+   "role": "metric",
+   "unit": "count",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 18,
+  "total": null,
+  "value_column": "SERIE_COUNT",
+  "unit": "count",
+  "order": "NUMBER_OF_SEASONS",
+  "order_direction": "asc",
+  "top": {
+   "label": null,
+   "id": null,
+   "index": 1,
+   "value": 219,
+   "extreme": "max"
+  },
+  "histogram": {
+   "column": "NUMBER_OF_SEASONS",
+   "high_column": null,
+   "unit": "count",
+   "width": 1,
+   "value_column": "SERIE_COUNT",
+   "bins": [
+    {
+     "index": 0,
+     "low": 0,
+     "high": null,
+     "label": null,
+     "value": 10,
+     "empty": false
+    },
+    {
+     "index": 1,
+     "low": 1,
+     "high": null,
+     "label": null,
+     "value": 219,
+     "empty": false
+    },
+    {
+     "index": 2,
+     "low": 2,
+     "high": null,
+     "label": null,
+     "value": 46,
+     "empty": false
+    },
+    {
+     "index": 3,
+     "low": 3,
+     "high": null,
+     "label": null,
+     "value": 33,
+     "empty": false
+    },
+    {
+     "index": 4,
+     "low": 4,
+     "high": null,
+     "label": null,
+     "value": 23,
+     "empty": false
+    },
+    {
+     "index": 5,
+     "low": 5,
+     "high": null,
+     "label": null,
+     "value": 13,
+     "empty": false
+    },
+    {
+     "index": 6,
+     "low": 6,
+     "high": null,
+     "label": null,
+     "value": 11,
+     "empty": false
+    },
+    {
+     "index": 7,
+     "low": 7,
+     "high": null,
+     "label": null,
+     "value": 6,
+     "empty": false
+    },
+    {
+     "index": 8,
+     "low": 8,
+     "high": null,
+     "label": null,
+     "value": 4,
+     "empty": false
+    },
+    {
+     "index": null,
+     "low": 9,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 10,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": 9,
+     "low": 11,
+     "high": null,
+     "label": null,
+     "value": 1,
+     "empty": false
+    },
+    {
+     "index": 10,
+     "low": 12,
+     "high": null,
+     "label": null,
+     "value": 1,
+     "empty": false
+    },
+    {
+     "index": 11,
+     "low": 13,
+     "high": null,
+     "label": null,
+     "value": 2,
+     "empty": false
+    },
+    {
+     "index": null,
+     "low": 14,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 15,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 16,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 17,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": 12,
+     "low": 18,
+     "high": null,
+     "label": null,
+     "value": 1,
+     "empty": false
+    },
+    {
+     "index": null,
+     "low": 19,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 20,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": 13,
+     "low": 21,
+     "high": null,
+     "label": null,
+     "value": 1,
+     "empty": false
+    },
+    {
+     "index": null,
+     "low": 22,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 23,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": 14,
+     "low": 24,
+     "high": null,
+     "label": null,
+     "value": 1,
+     "empty": false
+    },
+    {
+     "index": null,
+     "low": 25,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 26,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 27,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 28,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": 15,
+     "low": 29,
+     "high": null,
+     "label": null,
+     "value": 1,
+     "empty": false
+    },
+    {
+     "index": null,
+     "low": 30,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 31,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 32,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 33,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 34,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 35,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 36,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 37,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 38,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 39,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 40,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 41,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 42,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 43,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 44,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 45,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 46,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 47,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": 16,
+     "low": 48,
+     "high": null,
+     "label": null,
+     "value": 1,
+     "empty": false
+    },
+    {
+     "index": null,
+     "low": 49,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 50,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 51,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 52,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 53,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 54,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 55,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": 17,
+     "low": 56,
+     "high": null,
+     "label": null,
+     "value": 1,
+     "empty": false
+    }
+   ],
+   "total": 375,
+   "unbinned": 0,
+   "peak": 1
+  }
+ },
+ "intent": {
+  "task": "count",
+  "focus": [
+   "count"
+  ],
+  "focus_columns": [
+   "NUMBER_OF_SEASONS",
+   "SERIE_COUNT"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "NUMBER_OF_SEASONS": 0,
+    "SERIE_COUNT": 10
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "NUMBER_OF_SEASONS": 1,
+    "SERIE_COUNT": 219
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "NUMBER_OF_SEASONS": 2,
+    "SERIE_COUNT": 46
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "NUMBER_OF_SEASONS": 3,
+    "SERIE_COUNT": 33
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "NUMBER_OF_SEASONS": 4,
+    "SERIE_COUNT": 23
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "NUMBER_OF_SEASONS": 5,
+    "SERIE_COUNT": 13
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "NUMBER_OF_SEASONS": 6,
+    "SERIE_COUNT": 11
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "NUMBER_OF_SEASONS": 7,
+    "SERIE_COUNT": 6
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "NUMBER_OF_SEASONS": 8,
+    "SERIE_COUNT": 4
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "NUMBER_OF_SEASONS": 11,
+    "SERIE_COUNT": 1
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "NUMBER_OF_SEASONS": 12,
+    "SERIE_COUNT": 1
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "NUMBER_OF_SEASONS": 13,
+    "SERIE_COUNT": 2
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "NUMBER_OF_SEASONS": 18,
+    "SERIE_COUNT": 1
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "NUMBER_OF_SEASONS": 21,
+    "SERIE_COUNT": 1
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "NUMBER_OF_SEASONS": 24,
+    "SERIE_COUNT": 1
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "NUMBER_OF_SEASONS": 29,
+    "SERIE_COUNT": 1
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "NUMBER_OF_SEASONS": 48,
+    "SERIE_COUNT": 1
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "NUMBER_OF_SEASONS": 56,
+    "SERIE_COUNT": 1
+   }
+  }
+ ]
+}

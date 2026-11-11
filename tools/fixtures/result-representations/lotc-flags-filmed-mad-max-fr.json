@@ -1,0 +1,177 @@
+{
+ "question": "Dans quels pays Mad Max: Fury Road a-t-il été tourné ?",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici les pays où Mad Max: Fury Road a été tourné.",
+ "representation": "flag-list",
+ "representation_options": [
+  "flag-list",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_LOCATION",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_NAME",
+   "role": "label",
+   "unit": null,
+   "ordered": "asc"
+  },
+  {
+   "name": "LOCATION_TYPE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_SOURCE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "SERIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 4,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": null,
+  "order_direction": null,
+  "top": null,
+  "countries": {
+   "source": "locations",
+   "column": "LOCATION_NAME",
+   "value_column": null,
+   "countries": [
+    {
+     "index": 0,
+     "code": "AO",
+     "label": "Angola",
+     "value": null,
+     "name": {
+      "en": "Angola",
+      "fr": "Angola"
+     },
+     "flag": true
+    },
+    {
+     "index": 1,
+     "code": "AU",
+     "label": "Australia",
+     "value": null,
+     "name": {
+      "en": "Australia",
+      "fr": "Australie"
+     },
+     "flag": true
+    },
+    {
+     "index": 2,
+     "code": "NA",
+     "label": "Namibia",
+     "value": null,
+     "name": {
+      "en": "Namibia",
+      "fr": "Namibie"
+     },
+     "flag": true
+    },
+    {
+     "index": 3,
+     "code": "ZA",
+     "label": "South Africa",
+     "value": null,
+     "name": {
+      "en": "South Africa",
+      "fr": "Afrique du Sud"
+     },
+     "flag": true
+    }
+   ]
+  }
+ },
+ "intent": {
+  "task": "list",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_LOCATION": 672,
+    "LOCATION_NAME": "Angola",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "MOVIE_COUNT": 13,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.58
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_LOCATION": 228,
+    "LOCATION_NAME": "Australia",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "MOVIE_COUNT": 394,
+    "SERIE_COUNT": 12,
+    "IMDB_RATING": 6.24
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_LOCATION": 697,
+    "LOCATION_NAME": "Namibia",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "MOVIE_COUNT": 18,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.04
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_LOCATION": 177,
+    "LOCATION_NAME": "South Africa",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "MOVIE_COUNT": 254,
+    "SERIE_COUNT": 32,
+    "IMDB_RATING": 6.06
+   }
+  }
+ ]
+}

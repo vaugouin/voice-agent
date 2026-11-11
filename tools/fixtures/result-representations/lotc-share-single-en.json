@@ -1,0 +1,70 @@
+{
+ "question": "What share of Alfred Hitchcock's films are in black and white?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here’s the share of Alfred Hitchcock’s films that use black and white.",
+ "representation": "share-bar",
+ "representation_options": [
+  "share-bar",
+  "number-card",
+  "table"
+ ],
+ "result_kind": "count",
+ "result_columns": [
+  {
+   "name": "FILM_SHARE",
+   "role": "metric",
+   "unit": null,
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 1,
+  "total": null,
+  "value_column": "FILM_SHARE",
+  "unit": null,
+  "order": null,
+  "order_direction": null,
+  "top": null,
+  "share": {
+   "kind": "single",
+   "value_column": "FILM_SHARE",
+   "label_column": null,
+   "scale": 1,
+   "total": null,
+   "parts": [
+    {
+     "index": 0,
+     "label": null,
+     "value": 0.74,
+     "share": 0.74,
+     "rest": false
+    },
+    {
+     "index": null,
+     "label": null,
+     "value": null,
+     "share": 0.26,
+     "rest": true
+    }
+   ]
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "count"
+  ],
+  "focus_columns": [],
+  "requested_view": "share",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "FILM_SHARE": 0.74
+   }
+  }
+ ]
+}

@@ -1,0 +1,252 @@
+{
+ "question": "Histogram of the runtimes of the James Bond films",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here’s the runtime distribution for the movies in James Bond Collection, grouped into 10-minute intervals.",
+ "representation": "histogram",
+ "representation_options": [
+  "histogram",
+  "table"
+ ],
+ "result_kind": "unknown",
+ "result_columns": [
+  {
+   "name": "RUNTIME_BUCKET_MINUTES",
+   "role": "metric",
+   "unit": "minutes",
+   "ordered": "asc",
+   "bin": "low",
+   "focus": true
+  },
+  {
+   "name": "MOVIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  }
+ ],
+ "summary_facts": {
+  "count": 7,
+  "total": null,
+  "value_column": "MOVIE_COUNT",
+  "unit": "count",
+  "order": "RUNTIME_BUCKET_MINUTES",
+  "order_direction": "asc",
+  "top": {
+   "label": null,
+   "id": null,
+   "index": 4,
+   "value": 8,
+   "extreme": "max"
+  },
+  "histogram": {
+   "column": "RUNTIME_BUCKET_MINUTES",
+   "high_column": null,
+   "unit": "minutes",
+   "width": 10,
+   "value_column": "MOVIE_COUNT",
+   "bins": [
+    {
+     "index": 0,
+     "low": 0,
+     "high": null,
+     "label": null,
+     "value": 1,
+     "empty": false
+    },
+    {
+     "index": null,
+     "low": 10,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 20,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 30,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 40,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 50,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 60,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 70,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 80,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": null,
+     "low": 90,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": 1,
+     "low": 100,
+     "high": null,
+     "label": null,
+     "value": 1,
+     "empty": false
+    },
+    {
+     "index": 2,
+     "low": 110,
+     "high": null,
+     "label": null,
+     "value": 5,
+     "empty": false
+    },
+    {
+     "index": 3,
+     "low": 120,
+     "high": null,
+     "label": null,
+     "value": 7,
+     "empty": false
+    },
+    {
+     "index": 4,
+     "low": 130,
+     "high": null,
+     "label": null,
+     "value": 8,
+     "empty": false
+    },
+    {
+     "index": 5,
+     "low": 140,
+     "high": null,
+     "label": null,
+     "value": 4,
+     "empty": false
+    },
+    {
+     "index": null,
+     "low": 150,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": 6,
+     "low": 160,
+     "high": null,
+     "label": null,
+     "value": 1,
+     "empty": false
+    }
+   ],
+   "total": 27,
+   "unbinned": 0,
+   "peak": 13
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "runtime"
+  ],
+  "focus_columns": [
+   "RUNTIME_BUCKET_MINUTES"
+  ],
+  "requested_view": "chart",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "RUNTIME_BUCKET_MINUTES": 0,
+    "MOVIE_COUNT": 1
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "RUNTIME_BUCKET_MINUTES": 100,
+    "MOVIE_COUNT": 1
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "RUNTIME_BUCKET_MINUTES": 110,
+    "MOVIE_COUNT": 5
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "RUNTIME_BUCKET_MINUTES": 120,
+    "MOVIE_COUNT": 7
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "RUNTIME_BUCKET_MINUTES": 130,
+    "MOVIE_COUNT": 8
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "RUNTIME_BUCKET_MINUTES": 140,
+    "MOVIE_COUNT": 4
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "RUNTIME_BUCKET_MINUTES": 160,
+    "MOVIE_COUNT": 1
+   }
+  }
+ ]
+}

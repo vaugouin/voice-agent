@@ -1,0 +1,177 @@
+{
+ "question": "Combien de films de Stanley Kubrick y a-t-il dans chaque tranche de durée de 30 minutes ?",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici le nombre de films de Stanley Kubrick dans chaque tranche de durée de 30 minutes.",
+ "representation": "histogram",
+ "representation_options": [
+  "histogram",
+  "table"
+ ],
+ "result_kind": "unknown",
+ "result_columns": [
+  {
+   "name": "DUREE_MIN_MINUTES",
+   "role": "metric",
+   "unit": "minutes",
+   "ordered": "asc",
+   "bin": "low"
+  },
+  {
+   "name": "DUREE_MAX_MINUTES",
+   "role": "metric",
+   "unit": "minutes",
+   "bin": "high"
+  },
+  {
+   "name": "FILM_COUNT",
+   "role": "metric",
+   "unit": "count",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 6,
+  "total": null,
+  "value_column": "FILM_COUNT",
+  "unit": "count",
+  "order": "DUREE_MIN_MINUTES",
+  "order_direction": "asc",
+  "top": {
+   "label": null,
+   "id": null,
+   "index": 3,
+   "value": 5,
+   "extreme": "max"
+  },
+  "histogram": {
+   "column": "DUREE_MIN_MINUTES",
+   "high_column": "DUREE_MAX_MINUTES",
+   "unit": "minutes",
+   "width": 30,
+   "value_column": "FILM_COUNT",
+   "bins": [
+    {
+     "index": 0,
+     "low": 0,
+     "high": 29,
+     "label": null,
+     "value": 3,
+     "empty": false
+    },
+    {
+     "index": null,
+     "low": 30,
+     "high": null,
+     "label": null,
+     "value": 0,
+     "empty": true
+    },
+    {
+     "index": 1,
+     "low": 60,
+     "high": 89,
+     "label": null,
+     "value": 4,
+     "empty": false
+    },
+    {
+     "index": 2,
+     "low": 90,
+     "high": 119,
+     "label": null,
+     "value": 2,
+     "empty": false
+    },
+    {
+     "index": 3,
+     "low": 120,
+     "high": 149,
+     "label": null,
+     "value": 5,
+     "empty": false
+    },
+    {
+     "index": 4,
+     "low": 150,
+     "high": 179,
+     "label": null,
+     "value": 2,
+     "empty": false
+    },
+    {
+     "index": 5,
+     "low": 180,
+     "high": 209,
+     "label": null,
+     "value": 2,
+     "empty": false
+    }
+   ],
+   "total": 18,
+   "unbinned": 0,
+   "peak": 4
+  }
+ },
+ "intent": {
+  "task": "count",
+  "focus": [
+   "count"
+  ],
+  "focus_columns": [
+   "FILM_COUNT"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "DUREE_MIN_MINUTES": 0,
+    "DUREE_MAX_MINUTES": 29,
+    "FILM_COUNT": 3
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "DUREE_MIN_MINUTES": 60,
+    "DUREE_MAX_MINUTES": 89,
+    "FILM_COUNT": 4
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "DUREE_MIN_MINUTES": 90,
+    "DUREE_MAX_MINUTES": 119,
+    "FILM_COUNT": 2
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "DUREE_MIN_MINUTES": 120,
+    "DUREE_MAX_MINUTES": 149,
+    "FILM_COUNT": 5
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "DUREE_MIN_MINUTES": 150,
+    "DUREE_MAX_MINUTES": 179,
+    "FILM_COUNT": 2
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "DUREE_MIN_MINUTES": 180,
+    "DUREE_MAX_MINUTES": 209,
+    "FILM_COUNT": 2
+   }
+  }
+ ]
+}

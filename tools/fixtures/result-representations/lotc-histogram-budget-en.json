@@ -1,0 +1,185 @@
+{
+ "question": "How many Christopher Nolan films fall in each budget range of 50 million dollars?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here’s how many Christopher Nolan films fall into each $50 million budget range.",
+ "representation": "histogram",
+ "representation_options": [
+  "histogram",
+  "table"
+ ],
+ "result_kind": "unknown",
+ "result_columns": [
+  {
+   "name": "BUDGET_RANGE_START",
+   "role": "metric",
+   "unit": "usd",
+   "ordered": "asc",
+   "bin": "low"
+  },
+  {
+   "name": "BUDGET_RANGE_END",
+   "role": "metric",
+   "unit": "usd",
+   "bin": "high"
+  },
+  {
+   "name": "MOVIE_COUNT",
+   "role": "metric",
+   "unit": "count",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 7,
+  "total": null,
+  "value_column": "MOVIE_COUNT",
+  "unit": "count",
+  "order": "BUDGET_RANGE_START",
+  "order_direction": "asc",
+  "top": {
+   "label": null,
+   "id": null,
+   "index": 0,
+   "value": 16,
+   "extreme": "max"
+  },
+  "histogram": {
+   "column": "BUDGET_RANGE_START",
+   "high_column": "BUDGET_RANGE_END",
+   "unit": "usd",
+   "width": 50000000,
+   "value_column": "MOVIE_COUNT",
+   "bins": [
+    {
+     "index": 0,
+     "low": 0,
+     "high": 49999999,
+     "label": null,
+     "value": 16,
+     "empty": false
+    },
+    {
+     "index": 1,
+     "low": 50000000,
+     "high": 99999999,
+     "label": null,
+     "value": 1,
+     "empty": false
+    },
+    {
+     "index": 2,
+     "low": 100000000,
+     "high": 149999999,
+     "label": null,
+     "value": 3,
+     "empty": false
+    },
+    {
+     "index": 3,
+     "low": 150000000,
+     "high": 199999999,
+     "label": null,
+     "value": 5,
+     "empty": false
+    },
+    {
+     "index": 4,
+     "low": 200000000,
+     "high": 249999999,
+     "label": null,
+     "value": 2,
+     "empty": false
+    },
+    {
+     "index": 5,
+     "low": 250000000,
+     "high": 299999999,
+     "label": null,
+     "value": 3,
+     "empty": false
+    },
+    {
+     "index": 6,
+     "low": 300000000,
+     "high": 349999999,
+     "label": null,
+     "value": 1,
+     "empty": false
+    }
+   ],
+   "total": 31,
+   "unbinned": 0,
+   "peak": 0
+  }
+ },
+ "intent": {
+  "task": "count",
+  "focus": [
+   "count"
+  ],
+  "focus_columns": [
+   "MOVIE_COUNT"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "BUDGET_RANGE_START": 0.0,
+    "BUDGET_RANGE_END": 49999999.0,
+    "MOVIE_COUNT": 16
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "BUDGET_RANGE_START": 50000000.0,
+    "BUDGET_RANGE_END": 99999999.0,
+    "MOVIE_COUNT": 1
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "BUDGET_RANGE_START": 100000000.0,
+    "BUDGET_RANGE_END": 149999999.0,
+    "MOVIE_COUNT": 3
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "BUDGET_RANGE_START": 150000000.0,
+    "BUDGET_RANGE_END": 199999999.0,
+    "MOVIE_COUNT": 5
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "BUDGET_RANGE_START": 200000000.0,
+    "BUDGET_RANGE_END": 249999999.0,
+    "MOVIE_COUNT": 2
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "BUDGET_RANGE_START": 250000000.0,
+    "BUDGET_RANGE_END": 299999999.0,
+    "MOVIE_COUNT": 3
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "BUDGET_RANGE_START": 300000000.0,
+    "BUDGET_RANGE_END": 349999999.0,
+    "MOVIE_COUNT": 1
+   }
+  }
+ ]
+}

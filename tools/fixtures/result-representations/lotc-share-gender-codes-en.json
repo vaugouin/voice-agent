@@ -1,0 +1,106 @@
+{
+ "question": "What is the gender split of the cast of Oppenheimer?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here’s the cast of Oppenheimer broken down by recorded gender.",
+ "representation": "share-bar",
+ "representation_options": [
+  "share-bar",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "unknown",
+ "result_columns": [
+  {
+   "name": "GENDER",
+   "role": "label",
+   "unit": null,
+   "ordered": "asc"
+  },
+  {
+   "name": "CAST_COUNT",
+   "role": "metric",
+   "unit": "count",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 3,
+  "total": null,
+  "value_column": "CAST_COUNT",
+  "unit": "count",
+  "order": null,
+  "order_direction": null,
+  "top": {
+   "label": 2,
+   "id": null,
+   "index": 1,
+   "value": 58,
+   "extreme": "max"
+  },
+  "share": {
+   "kind": "parts",
+   "value_column": "CAST_COUNT",
+   "label_column": "GENDER",
+   "scale": 1,
+   "total": 66,
+   "parts": [
+    {
+     "index": 0,
+     "label": 1,
+     "value": 7,
+     "share": 0.1061,
+     "rest": false
+    },
+    {
+     "index": 1,
+     "label": 2,
+     "value": 58,
+     "share": 0.8788,
+     "rest": false
+    },
+    {
+     "index": 2,
+     "label": 3,
+     "value": 1,
+     "share": 0.0152,
+     "rest": false
+    }
+   ]
+  }
+ },
+ "intent": {
+  "task": "count",
+  "focus": [
+   "count"
+  ],
+  "focus_columns": [
+   "CAST_COUNT"
+  ],
+  "requested_view": "share",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "GENDER": 1,
+    "CAST_COUNT": 7
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "GENDER": 2,
+    "CAST_COUNT": 58
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "GENDER": 3,
+    "CAST_COUNT": 1
+   }
+  }
+ ]
+}

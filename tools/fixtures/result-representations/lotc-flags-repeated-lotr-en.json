@@ -1,0 +1,150 @@
+{
+ "question": "What are the production countries of The Lord of the Rings: The Fellowship of the Ring?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the production countries for The Lord of the Rings: The Fellowship of the Ring.",
+ "representation": "flag-list",
+ "representation_options": [
+  "flag-list",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "COUNTRY_CODE",
+   "role": "other",
+   "unit": null,
+   "ordered": "asc"
+  }
+ ],
+ "summary_facts": {
+  "count": 2,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": null,
+  "order_direction": null,
+  "top": null,
+  "countries": {
+   "source": "repeated",
+   "column": "COUNTRY_CODE",
+   "value_column": null,
+   "countries": [
+    {
+     "index": 0,
+     "code": "NZ",
+     "label": null,
+     "value": null,
+     "name": {
+      "en": "New Zealand",
+      "fr": "Nouvelle-Zélande"
+     },
+     "flag": true
+    },
+    {
+     "index": 1,
+     "code": "US",
+     "label": null,
+     "value": null,
+     "name": {
+      "en": "United States",
+      "fr": "États-Unis"
+     },
+     "flag": true
+    }
+   ]
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 120,
+    "MOVIE_TITLE": "The Lord of the Rings: The Fellowship of the Ring",
+    "DAT_RELEASE": "2001-12-18",
+    "ID_IMDB": "tt0120737",
+    "IMDB_RATING": 8.9,
+    "IMDB_RATING_WEIGHTED": 8.88,
+    "IMDB_VOTES": 2251341,
+    "POSTER_PATH": "/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg",
+    "RUNTIME": 179,
+    "ID_CRITERION_SPINE": null,
+    "COUNTRY_CODE": "NZ"
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 120,
+    "MOVIE_TITLE": "The Lord of the Rings: The Fellowship of the Ring",
+    "DAT_RELEASE": "2001-12-18",
+    "ID_IMDB": "tt0120737",
+    "IMDB_RATING": 8.9,
+    "IMDB_RATING_WEIGHTED": 8.88,
+    "IMDB_VOTES": 2251341,
+    "POSTER_PATH": "/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg",
+    "RUNTIME": 179,
+    "ID_CRITERION_SPINE": null,
+    "COUNTRY_CODE": "US"
+   }
+  }
+ ]
+}

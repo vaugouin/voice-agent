@@ -1,0 +1,148 @@
+{
+ "question": "How are HBO series split by type?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here’s how HBO’s series break down by type.",
+ "representation": "share-bar",
+ "representation_options": [
+  "share-bar",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "unknown",
+ "result_columns": [
+  {
+   "name": "SERIE_TYPE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "SERIE_COUNT",
+   "role": "metric",
+   "unit": "count",
+   "ordered": "desc",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 6,
+  "total": null,
+  "value_column": "SERIE_COUNT",
+  "unit": "count",
+  "order": "SERIE_COUNT",
+  "order_direction": "desc",
+  "top": {
+   "label": "Scripted",
+   "id": null,
+   "index": 0,
+   "value": 182,
+   "extreme": "max"
+  },
+  "share": {
+   "kind": "parts",
+   "value_column": "SERIE_COUNT",
+   "label_column": "SERIE_TYPE",
+   "scale": 1,
+   "total": 375,
+   "parts": [
+    {
+     "index": 0,
+     "label": "Scripted",
+     "value": 182,
+     "share": 0.4853,
+     "rest": false
+    },
+    {
+     "index": 1,
+     "label": "Miniseries",
+     "value": 144,
+     "share": 0.384,
+     "rest": false
+    },
+    {
+     "index": 2,
+     "label": "Documentary",
+     "value": 29,
+     "share": 0.0773,
+     "rest": false
+    },
+    {
+     "index": 3,
+     "label": "Talk Show",
+     "value": 9,
+     "share": 0.024,
+     "rest": false
+    },
+    {
+     "index": 4,
+     "label": "Reality",
+     "value": 6,
+     "share": 0.016,
+     "rest": false
+    },
+    {
+     "index": 5,
+     "label": "News",
+     "value": 5,
+     "share": 0.0133,
+     "rest": false
+    }
+   ]
+  }
+ },
+ "intent": {
+  "task": "count",
+  "focus": [
+   "count"
+  ],
+  "focus_columns": [
+   "SERIE_COUNT"
+  ],
+  "requested_view": "share",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "SERIE_TYPE": "Scripted",
+    "SERIE_COUNT": 182
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "SERIE_TYPE": "Miniseries",
+    "SERIE_COUNT": 144
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "SERIE_TYPE": "Documentary",
+    "SERIE_COUNT": 29
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "SERIE_TYPE": "Talk Show",
+    "SERIE_COUNT": 9
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "SERIE_TYPE": "Reality",
+    "SERIE_COUNT": 6
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "SERIE_TYPE": "News",
+    "SERIE_COUNT": 5
+   }
+  }
+ ]
+}

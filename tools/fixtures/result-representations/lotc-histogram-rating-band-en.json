@@ -1,0 +1,217 @@
+{
+ "question": "What is the distribution of IMDb ratings of the films released in 2023?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here’s how IMDb ratings are distributed across films released in 2023, grouped into one-point rating bands.",
+ "representation": "histogram",
+ "representation_options": [
+  "histogram",
+  "table"
+ ],
+ "result_kind": "unknown",
+ "result_columns": [
+  {
+   "name": "RATING_BAND",
+   "role": "metric",
+   "unit": null,
+   "ordered": "asc",
+   "bin": "low",
+   "focus": true
+  },
+  {
+   "name": "FILM_COUNT",
+   "role": "metric",
+   "unit": "count"
+  }
+ ],
+ "summary_facts": {
+  "count": 10,
+  "total": null,
+  "value_column": "FILM_COUNT",
+  "unit": "count",
+  "order": "RATING_BAND",
+  "order_direction": "asc",
+  "top": {
+   "label": null,
+   "id": null,
+   "index": 5,
+   "value": 4133,
+   "extreme": "max"
+  },
+  "histogram": {
+   "column": "RATING_BAND",
+   "high_column": null,
+   "unit": null,
+   "width": 1,
+   "value_column": "FILM_COUNT",
+   "bins": [
+    {
+     "index": 0,
+     "low": 1,
+     "high": null,
+     "label": null,
+     "value": 67,
+     "empty": false
+    },
+    {
+     "index": 1,
+     "low": 2,
+     "high": null,
+     "label": null,
+     "value": 235,
+     "empty": false
+    },
+    {
+     "index": 2,
+     "low": 3,
+     "high": null,
+     "label": null,
+     "value": 694,
+     "empty": false
+    },
+    {
+     "index": 3,
+     "low": 4,
+     "high": null,
+     "label": null,
+     "value": 1435,
+     "empty": false
+    },
+    {
+     "index": 4,
+     "low": 5,
+     "high": null,
+     "label": null,
+     "value": 2893,
+     "empty": false
+    },
+    {
+     "index": 5,
+     "low": 6,
+     "high": null,
+     "label": null,
+     "value": 4133,
+     "empty": false
+    },
+    {
+     "index": 6,
+     "low": 7,
+     "high": null,
+     "label": null,
+     "value": 3141,
+     "empty": false
+    },
+    {
+     "index": 7,
+     "low": 8,
+     "high": null,
+     "label": null,
+     "value": 1306,
+     "empty": false
+    },
+    {
+     "index": 8,
+     "low": 9,
+     "high": null,
+     "label": null,
+     "value": 375,
+     "empty": false
+    },
+    {
+     "index": 9,
+     "low": 10,
+     "high": null,
+     "label": null,
+     "value": 13,
+     "empty": false
+    }
+   ],
+   "total": 14292,
+   "unbinned": 0,
+   "peak": 5
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "rating"
+  ],
+  "focus_columns": [
+   "RATING_BAND"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "RATING_BAND": 1.0,
+    "FILM_COUNT": 67
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "RATING_BAND": 2.0,
+    "FILM_COUNT": 235
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "RATING_BAND": 3.0,
+    "FILM_COUNT": 694
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "RATING_BAND": 4.0,
+    "FILM_COUNT": 1435
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "RATING_BAND": 5.0,
+    "FILM_COUNT": 2893
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "RATING_BAND": 6.0,
+    "FILM_COUNT": 4133
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "RATING_BAND": 7.0,
+    "FILM_COUNT": 3141
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "RATING_BAND": 8.0,
+    "FILM_COUNT": 1306
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "RATING_BAND": 9.0,
+    "FILM_COUNT": 375
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "RATING_BAND": 10.0,
+    "FILM_COUNT": 13
+   }
+  }
+ ]
+}

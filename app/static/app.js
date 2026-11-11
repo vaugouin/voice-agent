@@ -3126,6 +3126,16 @@ function renderText2SqlRepresentation(rep, container, rows, upstream) {
   if (rep === "verdict") {
     return renderVerdict(container, rows, columns, upstream);
   }
+  // Phase 2 lot C (FASTAPI-TEXT2SQL, 2026-11-11): the histogram, the share bar, the flag list.
+  if (rep === "histogram") {
+    return renderHistogram(container, rows, columns, upstream);
+  }
+  if (rep === "share-bar") {
+    return renderShareBar(container, rows, columns, upstream);
+  }
+  if (rep === "flag-list") {
+    return renderFlagList(container, rows, columns, upstream);
+  }
   // number-card | stat-strip: the scalar family, one card per metric column.
   return renderScalarCards(container, rows, columns);
 }
@@ -3731,6 +3741,221 @@ function renderVerdict(container, rows, columns, upstream) {
   container.append(root);
 }
 
+// Phase 2 lot C, `histogram`: one column per bin of summary_facts.histogram, in bin order (never
+// sorted by count), the bins touching each other as a histogram's do; an empty bin the API
+// filled in is drawn as a gap on the axis, labelled like the others. Each column carries its
+// range and its count as an aria label and a title; the counts are printed over the columns when
+// there are twelve bins or fewer, the peak's always. A long axis scrolls inside its box.
+function renderHistogram(container, rows, columns, upstream) {
+  const model = text2SqlHistogramModel(upstream?.summary_facts, activeUiLanguage);
+  if (!model) {
+    return renderRawTable(container, rows, columns);
+  }
+  const fr = t2sLang() === "fr";
+  const few = model.bars.length <= 12;
+  const labelEvery = few ? 1 : Math.ceil(model.bars.length / 12);
+  const root = document.createElement("div");
+  root.className = "t2sHisto";
+  const axisName = document.createElement("div");
+  axisName.className = "t2sHistoAxisName";
+  axisName.textContent = text2SqlHistogramAxisName(model, activeUiLanguage);
+  const plot = document.createElement("div");
+  plot.className = "t2sHistoPlot";
+  plot.setAttribute("role", "list");
+  plot.setAttribute("aria-label", axisName.textContent);
+  plot.style.minWidth = `${model.bars.length * (few ? 40 : 14)}px`;
+  model.bars.forEach((bar, i) => {
+    const col = document.createElement("div");
+    col.className = "t2sHistoCol";
+    col.setAttribute("role", "listitem");
+    const description = `${bar.range}${fr ? " : " : ": "}${bar.valueText}`;
+    col.title = description;
+    col.setAttribute("aria-label", description);
+    const area = document.createElement("div");
+    area.className = "t2sHistoArea";
+    area.setAttribute("aria-hidden", "true");
+    const value = document.createElement("div");
+    value.className = "t2sHistoValue";
+    if ((few && !bar.empty) || bar.peak) {
+      value.textContent = bar.valueText;
+    }
+    const fill = document.createElement("div");
+    fill.className = "t2sHistoFill";
+    if (bar.peak) {
+      fill.classList.add("isPeak");
+    }
+    if (bar.empty) {
+      fill.classList.add("isEmpty");
+    }
+    fill.style.height = `${bar.pct}%`;
+    area.append(value, fill);
+    const label = document.createElement("div");
+    label.className = "t2sHistoLabel";
+    label.setAttribute("aria-hidden", "true");
+    label.textContent = i % labelEvery === 0 || bar.peak ? bar.axis : "";
+    col.append(area, label);
+    plot.append(col);
+  });
+  const scroller = document.createElement("div");
+  scroller.className = "t2sHistoScroll";
+  scroller.append(plot);
+  root.append(scroller, axisName);
+  if (model.unbinned > 0) {
+    const note = document.createElement("p");
+    note.className = "t2sHistoNote";
+    note.textContent = text2SqlHistogramUnbinnedText(model, activeUiLanguage);
+    root.append(note);
+  }
+  container.append(root);
+}
+
+// Phase 2 lot C, `share-bar`: one 100% bar, a segment per part of summary_facts.share in the
+// API's order, the percentage written on every segment wide enough to hold it; below, the legend
+// lists every part with its swatch, its label, its number and its percentage, so nothing is read
+// from the colour alone. One share alone is the part and the rest, the rest striped.
+function renderShareBar(container, rows, columns, upstream) {
+  const model = text2SqlShareModel(upstream, activeUiLanguage);
+  if (!model) {
+    return renderRawTable(container, rows, columns);
+  }
+  const root = document.createElement("div");
+  root.className = "t2sShare";
+  const bar = document.createElement("div");
+  bar.className = "t2sShareBar";
+  bar.setAttribute("aria-hidden", "true");
+  const legend = document.createElement("ul");
+  legend.className = "t2sShareLegend";
+  model.segments.forEach((segment, i) => {
+    const hue = segment.rest ? "rest" : String(i % 8);
+    const part = document.createElement("div");
+    part.className = "t2sShareSeg";
+    part.dataset.hue = hue;
+    part.style.flexGrow = String(Math.max(segment.share, 0.0001));
+    part.title = `${capitalizeFirst(segment.label)} ${segment.pctText}`;
+    if (segment.share >= 0.12) {
+      part.textContent = segment.pctText;
+    }
+    bar.append(part);
+    const item = document.createElement("li");
+    item.className = "t2sShareItem";
+    const swatch = document.createElement("span");
+    swatch.className = "t2sShareSwatch";
+    swatch.dataset.hue = hue;
+    swatch.setAttribute("aria-hidden", "true");
+    const name = document.createElement("span");
+    name.className = "t2sShareName";
+    name.textContent = capitalizeFirst(segment.label);
+    const numbers = document.createElement("span");
+    numbers.className = "t2sShareNumbers";
+    numbers.textContent = segment.valueText ? `${segment.valueText} · ${segment.pctText}` : segment.pctText;
+    item.append(swatch, name, numbers);
+    const record = Number.isInteger(segment.index) ? (rows[segment.index]?.data || rows[segment.index]) : null;
+    if (record && typeof record === "object") {
+      makeText2SqlRowOpenable(item, record);
+    }
+    legend.append(item);
+  });
+  root.append(bar, legend);
+  container.append(root);
+}
+
+// Phase 2 lot C, `flag-list`: one row per country of summary_facts.countries, in row order: the
+// flag, the name, and the count with a thin bar when the rows carry one. The flag is the emoji of
+// the two regional-indicator letters of the ISO code, which Windows draws as two letters, so the
+// code shows in a small badge and the emoji replaces it only where text2SqlFlagEmojiSupported()
+// saw a flag drawn (class t2sFlagEmojiOk on the root element). The name is always written. A
+// location row opens its sheet like a grid card.
+let t2sFlagEmojiChecked = false;
+function text2SqlFlagEmojiSupported() {
+  if (t2sFlagEmojiChecked) {
+    return document.documentElement.classList.contains("t2sFlagEmojiOk");
+  }
+  t2sFlagEmojiChecked = true;
+  let ok = false;
+  try {
+    const canvas = document.createElement("canvas");
+    canvas.width = 24;
+    canvas.height = 24;
+    const ctx = canvas.getContext("2d", { willReadFrequently: true });
+    if (ctx) {
+      ctx.textBaseline = "top";
+      ctx.font = "20px sans-serif";
+      ctx.fillText("\u{1F1EB}\u{1F1F7}", 0, 0);
+      const data = ctx.getImageData(0, 0, 24, 24).data;
+      for (let i = 0; i < data.length; i += 4) {
+        const [r, g, b, a] = [data[i], data[i + 1], data[i + 2], data[i + 3]];
+        if (a > 0 && (Math.abs(r - g) > 40 || Math.abs(g - b) > 40 || Math.abs(r - b) > 40)) {
+          ok = true;
+          break;
+        }
+      }
+    }
+  } catch (_error) {
+    ok = false;
+  }
+  if (ok) {
+    document.documentElement.classList.add("t2sFlagEmojiOk");
+  }
+  return ok;
+}
+
+function buildText2SqlFlag(item) {
+  const flag = document.createElement("span");
+  flag.className = "t2sFlag";
+  flag.setAttribute("aria-hidden", "true");
+  if (item.flag) {
+    const emoji = document.createElement("span");
+    emoji.className = "t2sFlagEmoji";
+    emoji.textContent = item.flag;
+    flag.append(emoji);
+  }
+  const code = document.createElement("span");
+  code.className = item.flag ? "t2sFlagCode" : "t2sFlagCode isAlways";
+  code.textContent = item.code || "?";
+  flag.append(code);
+  return flag;
+}
+
+function renderFlagList(container, rows, columns, upstream) {
+  const model = text2SqlFlagModel(upstream, activeUiLanguage);
+  if (!model) {
+    return renderRawTable(container, rows, columns);
+  }
+  text2SqlFlagEmojiSupported();
+  const list = document.createElement("ul");
+  list.className = "t2sFlags";
+  model.items.forEach((item) => {
+    const li = document.createElement("li");
+    li.className = "t2sFlagRow";
+    const name = document.createElement("span");
+    name.className = "t2sFlagName";
+    name.textContent = item.name;
+    li.append(buildText2SqlFlag(item), name);
+    if (item.valueText) {
+      const body = document.createElement("span");
+      body.className = "t2sFlagBody";
+      const track = document.createElement("span");
+      track.className = "t2sBarTrack";
+      track.setAttribute("aria-hidden", "true");
+      const fill = document.createElement("span");
+      fill.className = "t2sBarFill";
+      fill.style.width = `${item.pct}%`;
+      track.append(fill);
+      const value = document.createElement("span");
+      value.className = "t2sFlagValue";
+      value.textContent = item.valueText;
+      body.append(track, value);
+      li.append(body);
+    }
+    const record = Number.isInteger(item.index) ? (rows[item.index]?.data || rows[item.index]) : null;
+    if (model.source === "locations" && record && typeof record === "object") {
+      makeText2SqlRowOpenable(li, record);
+    }
+    list.append(li);
+  });
+  container.append(list);
+}
+
 function renderRawTable(container, rows, columns) {
   const records = rows.map((item) => item?.data || item).filter((r) => r && typeof r === "object");
   if (!records.length) {
@@ -3805,10 +4030,12 @@ function renderRawTable(container, rows, columns) {
 // below (no DOM) are pinned by tools/check-result-representations.mjs.
 // VOICE-AGENT-249: `timeline`, `sequence-strip` and `trend-columns` (FASTAPI-TEXT2SQL phase 2
 // lot A) joined the list; before that an API sending them fell back to the front's own chooser.
-// Phase 2 lot B: `compare-cards`, `fact-card` and `verdict` joined them on 2026-11-11.
+// Phase 2 lot B: `compare-cards`, `fact-card` and `verdict` joined them on 2026-11-11, and phase 2
+// lot C `histogram`, `share-bar` and `flag-list` the same day.
 const T2S_KNOWN_REPRESENTATIONS = [
   "entity-page", "card-grid", "value-cards", "number-card", "stat-strip", "ranked-bars", "table",
   "timeline", "sequence-strip", "trend-columns", "compare-cards", "fact-card", "verdict",
+  "histogram", "share-bar", "flag-list",
 ];
 // Chips only where switching means something: several entity rows, or a table of them. An
 // entity page and a one-row number keep their single form (VOICE-AGENT-247), even though the
@@ -3816,9 +4043,10 @@ const T2S_KNOWN_REPRESENTATIONS = [
 // A fact card and a verdict stand on a one-row shape, yet they get chips: the API lists them
 // first over that shape's own options, and their `table` (or poster grid) is a real alternative.
 // The entity page and the number card beside them stay out of the chips, as before.
+// One share alone (phase 2 lot C) stands on a one-row shape too: its chips are the bar and the table.
 const T2S_SWITCHABLE_REPRESENTATIONS = [
   "card-grid", "value-cards", "ranked-bars", "table", "timeline", "sequence-strip", "trend-columns",
-  "compare-cards", "fact-card", "verdict",
+  "compare-cards", "fact-card", "verdict", "histogram", "share-bar", "flag-list",
 ];
 // The two forms that ARE the answer to the question (a yes or no, the one value asked for): a
 // remembered chip choice from an earlier list never replaces them; a chip on this result still does.
@@ -3835,6 +4063,9 @@ const T2S_REPRESENTATION_LABELS = {
   "compare-cards": ["Side by side", "Côte à côte"],
   "fact-card": ["Fact", "Fait"],
   verdict: ["Yes / No", "Oui / Non"],
+  histogram: ["Histogram", "Histogramme"],
+  "share-bar": ["Shares", "Parts"],
+  "flag-list": ["Flags", "Drapeaux"],
 };
 // Column names the summary line and the value cards name in words. Anything else falls back to
 // prettyLabel() of the column name, in lower case.
@@ -4154,6 +4385,16 @@ function text2SqlSummaryLine(upstream, { rep = "", lang = "", spoken = false, ha
   }
   if (shown === "fact-card") {
     return text2SqlFactSummary(upstream, { lang, spoken });
+  }
+  // Phase 2 lot C: one share stands on one row, so these come before the one-item forms.
+  if (shown === "histogram") {
+    return text2SqlHistogramSummary(upstream, { lang, spoken });
+  }
+  if (shown === "share-bar") {
+    return text2SqlShareSummary(upstream, { lang, spoken });
+  }
+  if (shown === "flag-list") {
+    return text2SqlFlagSummary(upstream, { lang, spoken, hasMore });
   }
   if (["entity-page", "number-card", "stat-strip"].includes(shown)) {
     return "";
@@ -4782,15 +5023,18 @@ const T2S_REQUESTED_VIEW_FILLERS = new Set(LEXICONS.representation_request_fille
 // card-grid); the first one the result offers wins.
 const T2S_REQUESTED_VIEW_TARGETS = {
   table: ["table"],
-  chart: ["ranked-bars", "trend-columns", "timeline"],
+  chart: ["ranked-bars", "trend-columns", "timeline", "histogram"],
   cards: ["value-cards", "card-grid"],
   posters: ["card-grid", "value-cards"],
   values: ["value-cards"],
   bars: ["ranked-bars"],
   timeline: ["timeline"],
   sequence: ["sequence-strip"],
-  columns: ["trend-columns"],
+  columns: ["trend-columns", "histogram"],
   compare: ["compare-cards"],
+  histogram: ["histogram"],
+  share: ["share-bar"],
+  flags: ["flag-list"],
 };
 const T2S_REQUESTED_VIEW_NOUNS = {
   table: ["a table", "en tableau"],
@@ -4803,6 +5047,9 @@ const T2S_REQUESTED_VIEW_NOUNS = {
   sequence: ["a numbered sequence", "dans l'ordre"],
   columns: ["columns", "en colonnes"],
   compare: ["cards side by side", "côte à côte"],
+  histogram: ["a histogram", "en histogramme"],
+  share: ["shares of a whole", "en parts"],
+  flags: ["flags", "avec les drapeaux"],
 };
 const T2S_REQUESTED_VIEW_DONE = {
   table: ["Here it is as a table.", "Voici le résultat en tableau."],
@@ -4815,6 +5062,9 @@ const T2S_REQUESTED_VIEW_DONE = {
   "compare-cards": ["Here they are side by side.", "Les voici côte à côte."],
   "fact-card": ["Here is the fact.", "Voici le fait."],
   verdict: ["Here is the answer, yes or no.", "Voici la réponse, oui ou non."],
+  histogram: ["Here it is as a histogram.", "Voici l'histogramme."],
+  "share-bar": ["Here are the shares.", "Voici les parts."],
+  "flag-list": ["Here are the countries with their flags.", "Voici les pays et leurs drapeaux."],
 };
 
 function text2SqlRequestedView(text) {
@@ -4963,6 +5213,354 @@ function text2SqlSpokenSummary(output) {
     spoken: true,
     hasMore: Boolean(output?.has_more),
   });
+}
+
+// Phase 2 lot C (contract tables `histogram`, `share-bar`, `flag-list`). Pure functions, no DOM,
+// pinned by tools/check-result-representations.mjs with the lotc-* fixtures; the same sentences
+// as t2s-front (f_t2srep_caption_histogram, _share, _flags). Digits are shared by both languages,
+// as everywhere in the contract.
+// TMDb's gender code, the label of a share part on GENDER: 0 not set, 1 women, 2 men, 3 non-binary.
+const T2S_GENDER_LABELS = {
+  0: ["not set", "non renseigné"],
+  1: ["women", "femmes"],
+  2: ["men", "hommes"],
+  3: ["non-binary", "non binaire"],
+};
+
+function text2SqlPlainNumber(value) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) {
+    return String(value ?? "");
+  }
+  return new Intl.NumberFormat("en-US", { maximumFractionDigits: 2 }).format(n);
+}
+
+// What a count column counts, as the noun of the sentence: FILM_COUNT counts films.
+function text2SqlCountedNounKey(valueColumn) {
+  const name = String(valueColumn || "").toUpperCase();
+  if (/MOVIE|FILM/.test(name)) {
+    return "films";
+  }
+  if (/SERIE|SHOW/.test(name)) {
+    return "series";
+  }
+  if (/PERSON|PEOPLE|CAST|ACTOR|ACTRESS|DIRECTOR|WINNER|CREW|MEMBER/.test(name)) {
+    return "people";
+  }
+  return "results";
+}
+
+function text2SqlCountedNoun(valueColumn, count, lang) {
+  const entry = T2S_ROW_NOUNS[text2SqlCountedNounKey(valueColumn)];
+  const one = Number(count) === 1;
+  return t2sLang(lang) === "fr" ? entry[one ? 3 : 2] : entry[one ? 1 : 0];
+}
+
+// A bin boundary: minutes and plain numbers as numbers, money in the short form ($50M).
+function text2SqlBinValueText(value, unit) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) {
+    return String(value ?? "");
+  }
+  if (unit === "usd") {
+    return n === 0 ? "$0" : formatMoney(n);
+  }
+  return text2SqlPlainNumber(n);
+}
+
+// "120 to 149 min": the bin's own end, else start + width - 1 for whole numbers; the start alone
+// for a step of 1 or a fractional step. A text bin is its label.
+function text2SqlBinRangeText(bin, histogram, lang, spoken = false) {
+  if (bin?.label !== null && bin?.label !== undefined && String(bin.label).trim() !== "") {
+    return String(bin.label);
+  }
+  const fr = t2sLang(lang) === "fr";
+  const unit = histogram?.unit || null;
+  const low = Number(bin?.low);
+  let high = bin?.high === null || bin?.high === undefined ? null : Number(bin.high);
+  const width = Number(histogram?.width);
+  if (high === null && Number.isInteger(low) && Number.isInteger(width) && width > 1) {
+    high = low + width - 1;
+  }
+  const suffix = unit === "minutes" ? (spoken ? " minutes" : " min") : "";
+  const lowText = text2SqlBinValueText(low, unit);
+  if (high === null || !Number.isFinite(high) || high === low) {
+    return `${lowText}${suffix}`;
+  }
+  return `${lowText} ${fr ? "à" : "to"} ${text2SqlBinValueText(high, unit)}${suffix}`;
+}
+
+function text2SqlHistogramModel(facts, lang) {
+  const histogram = facts?.histogram;
+  const bins = Array.isArray(histogram?.bins) ? histogram.bins : [];
+  if (bins.length < 2) {
+    return null;
+  }
+  const values = bins.map((b) => (Number.isFinite(Number(b?.value)) ? Number(b.value) : 0));
+  const max = Math.max(...values);
+  const peak = Number.isInteger(Number(histogram.peak)) ? Number(histogram.peak) : values.indexOf(max);
+  const bars = bins.map((bin, i) => {
+    const value = values[i];
+    return {
+      axis: bin?.label !== null && bin?.label !== undefined && String(bin.label).trim() !== ""
+        ? String(bin.label)
+        : text2SqlBinValueText(bin?.low, histogram.unit),
+      range: text2SqlBinRangeText(bin, histogram, lang),
+      value,
+      valueText: text2SqlPlainNumber(value),
+      pct: max > 0 ? (value > 0 ? Math.max(1, Math.round((value / max) * 100)) : 0) : 0,
+      empty: Boolean(bin?.empty) || value === 0,
+      peak: i === peak,
+      index: Number.isInteger(bin?.index) ? bin.index : null,
+    };
+  });
+  return {
+    bars,
+    unit: histogram.unit || null,
+    width: Number.isFinite(Number(histogram.width)) && histogram.width !== null ? Number(histogram.width) : null,
+    column: histogram.column || "",
+    valueColumn: histogram.value_column || facts?.value_column || "",
+    total: Number(histogram.total) || values.reduce((a, b) => a + b, 0),
+    unbinned: Number(histogram.unbinned) || 0,
+  };
+}
+
+// The axis title under the columns: the quantity cut into bins, and the bin width when known.
+function text2SqlHistogramAxisName(model, lang) {
+  const fr = t2sLang(lang) === "fr";
+  const name = String(model?.column || "").replace(/_(?:BUCKET|BAND|BIN|RANGE|START|MIN|LOW|FROM|DEBUT)(?:_MINUTES)?$/i, "").replace(/_(?:BUCKET|BAND|BIN|RANGE)$/i, "");
+  let quantity = text2SqlMetricLabel(name || model?.column, lang);
+  if (/^(duree|duration|runtime)/i.test(name)) {
+    quantity = text2SqlMetricLabel("RUNTIME", lang);
+  }
+  const unit = model?.unit === "minutes" ? " (min)" : model?.unit === "usd" ? " ($)" : "";
+  const step = model?.width && (model.unit === "minutes" || model.unit === "usd")
+    ? `, ${fr ? "tranches de" : "bins of"} ${model.unit === "usd" ? text2SqlBinValueText(model.width, "usd") : `${text2SqlPlainNumber(model.width)} min`}`
+    : "";
+  return `${capitalizeFirst(quantity)}${unit}${step}`;
+}
+
+function text2SqlHistogramUnbinnedText(model, lang) {
+  const fr = t2sLang(lang) === "fr";
+  const n = model?.unbinned || 0;
+  const noun = text2SqlCountedNoun(model?.valueColumn, n, lang);
+  return fr ? `${text2SqlPlainNumber(n)} ${noun} sans valeur, hors tranches.` : `${text2SqlPlainNumber(n)} ${noun} with no value, outside the bins.`;
+}
+
+// "18 films in bins of 30 min; the most common bin is 120 to 149 min, 5 films."
+function text2SqlHistogramSummary(upstream, { lang = "", spoken = false } = {}) {
+  const language = t2sLang(lang);
+  const fr = language === "fr";
+  const model = text2SqlHistogramModel(upstream?.summary_facts, language);
+  if (!model) {
+    return "";
+  }
+  const histogram = upstream.summary_facts.histogram;
+  const noun = text2SqlCountedNoun(model.valueColumn, model.total, language);
+  let step;
+  if (model.width && model.unit === "minutes") {
+    const w = spoken ? spokenMetricValue(model.width, "minutes", language) : `${text2SqlPlainNumber(model.width)} min`;
+    step = fr ? `par tranches de ${w}` : `in bins of ${w}`;
+  } else if (model.width && model.unit === "usd") {
+    const w = spoken ? spokenMetricValue(model.width, "usd", language) : text2SqlBinValueText(model.width, "usd");
+    step = fr ? `par tranches de ${w}` : `in bins of ${w}`;
+  } else {
+    step = fr ? `en ${model.bars.length} tranches` : `in ${model.bars.length} bins`;
+  }
+  const lead = fr ? `${text2SqlPlainNumber(model.total)} ${noun}, ${step}` : `${text2SqlPlainNumber(model.total)} ${noun} ${step}`;
+  const bar = model.bars.find((b) => b.peak);
+  if (!bar || !bar.value) {
+    return `${capitalizeFirst(lead)}.`;
+  }
+  const range = text2SqlBinRangeText(histogram.bins[model.bars.indexOf(bar)], histogram, language, spoken);
+  const count = `${bar.valueText} ${text2SqlCountedNoun(model.valueColumn, bar.value, language)}`;
+  const tail = fr ? `la tranche la plus fréquente : ${range}, ${count}` : `the most common bin is ${range}, ${count}`;
+  return `${capitalizeFirst(lead)}${fr ? " ; " : "; "}${tail}.`;
+}
+
+function text2SqlPercentText(share, lang, spoken = false) {
+  const fr = t2sLang(lang) === "fr";
+  const pct = Number(share) * 100;
+  if (!Number.isFinite(pct)) {
+    return "";
+  }
+  if (pct > 0 && pct < 1) {
+    if (spoken) {
+      return fr ? "moins de 1 pour cent" : "less than 1 percent";
+    }
+    return fr ? "<1 %" : "<1%";
+  }
+  const n = String(Math.round(pct));
+  if (spoken) {
+    return fr ? `${n} pour cent` : `${n} percent`;
+  }
+  return fr ? `${n} %` : `${n}%`;
+}
+
+// The parts of summary_facts.share, labelled: a GENDER code by its word, the rest of one share as
+// "the rest", one share alone by its column's name.
+function text2SqlShareModel(upstream, lang) {
+  const share = upstream?.summary_facts?.share;
+  const parts = Array.isArray(share?.parts) ? share.parts : [];
+  if (!parts.length) {
+    return null;
+  }
+  const fr = t2sLang(lang) === "fr";
+  const gender = /GENDER|SEXE/i.test(String(share.label_column || ""));
+  // One share and its rest always add up to 100 once rounded: 38% and 62%, never 38% and 63%.
+  const restOf = (part) => {
+    const shown = parts.find((p) => !p?.rest);
+    return share.kind === "single" && part?.rest && shown ? (100 - Math.round((Number(shown.share) || 0) * 100)) / 100 : Number(part?.share);
+  };
+  const segments = parts.map((part, i) => {
+    let label;
+    if (part?.rest) {
+      label = fr ? "le reste" : "the rest";
+    } else if (share.kind === "single") {
+      label = text2SqlMetricLabel(share.value_column, lang);
+    } else if (gender && T2S_GENDER_LABELS[String(part?.label)]) {
+      label = T2S_GENDER_LABELS[String(part.label)][fr ? 1 : 0];
+    } else {
+      label = String(part?.label ?? "").trim() || (fr ? "sans valeur" : "no value");
+    }
+    const value = part?.value === null || part?.value === undefined ? null : Number(part.value);
+    return {
+      label,
+      share: Number(part?.share) || 0,
+      pctShare: restOf(part),
+      pctText: text2SqlPercentText(restOf(part), lang),
+      value,
+      valueText: share.kind === "single" || value === null || !Number.isFinite(value) ? "" : text2SqlPlainNumber(value),
+      rest: Boolean(part?.rest),
+      index: Number.isInteger(part?.index) ? part.index : null,
+      order: i,
+    };
+  });
+  return { kind: share.kind === "single" ? "single" : "parts", segments, total: share.total, valueColumn: share.value_column || "" };
+}
+
+// "368 series counted in six parts: Scripted 49%, Miniseries 38%, Documentary 8% and 3 more."
+// One share: "74% of the whole; the rest, 26%."
+function text2SqlShareSummary(upstream, { lang = "", spoken = false } = {}) {
+  const language = t2sLang(lang);
+  const fr = language === "fr";
+  const model = text2SqlShareModel(upstream, language);
+  if (!model) {
+    return "";
+  }
+  const pct = (segment) => text2SqlPercentText(segment.pctShare, language, spoken);
+  if (model.kind === "single") {
+    const [part, rest] = model.segments;
+    const head = fr ? `${pct(part)} de l'ensemble` : `${pct(part)} of the whole`;
+    return rest ? `${head}${fr ? " ; le reste, " : "; the rest, "}${pct(rest)}.` : `${head}.`;
+  }
+  const key = text2SqlCountedNounKey(model.valueColumn);
+  const noun = text2SqlCountedNoun(model.valueColumn, model.total, language);
+  const k = model.segments.length;
+  const counted = fr ? (T2S_ROW_NOUNS[key][4] === "f" ? "comptées" : "comptés") : "counted";
+  const kWord = text2SqlCountWord(k, "f", language);
+  const lead = fr
+    ? `${text2SqlPlainNumber(model.total)} ${noun} ${counted} en ${kWord} parts`
+    : `${text2SqlPlainNumber(model.total)} ${noun} counted in ${kWord} parts`;
+  const named = model.segments.slice(0, 3).map((s) => `${s.label} ${pct(s)}`);
+  let list = named.join(", ");
+  if (k > 3) {
+    list += fr ? ` et ${k - 3} ${k - 3 === 1 ? "autre" : "autres"}` : ` and ${k - 3} more`;
+  }
+  return `${capitalizeFirst(lead)}${fr ? " : " : ": "}${list}.`;
+}
+
+function text2SqlFlagEmoji(code) {
+  const text = String(code || "").toUpperCase();
+  if (!/^[A-Z]{2}$/.test(text)) {
+    return "";
+  }
+  return String.fromCodePoint(0x1f1e6 + text.charCodeAt(0) - 65, 0x1f1e6 + text.charCodeAt(1) - 65);
+}
+
+function text2SqlFoldName(text) {
+  return String(text || "").normalize("NFD").replace(/[̀-ͯ]/g, "").toLowerCase().trim();
+}
+
+// The name a row shows: the place's own name when it is not the country's (England stays England
+// under the United Kingdom flag), else the country's name in the UI language.
+function text2SqlCountryName(entry, lang) {
+  const fr = t2sLang(lang) === "fr";
+  const names = entry?.name && typeof entry.name === "object" ? entry.name : null;
+  const label = String(entry?.label || "").trim();
+  if (label && (!names || text2SqlFoldName(label) !== text2SqlFoldName(names.en))) {
+    return label;
+  }
+  return (names && (fr ? names.fr : names.en)) || label || String(entry?.code || "");
+}
+
+function text2SqlFlagModel(upstream, lang) {
+  const countries = upstream?.summary_facts?.countries;
+  const list = Array.isArray(countries?.countries) ? countries.countries : [];
+  if (!list.length) {
+    return null;
+  }
+  const values = list.map((c) => Number(c?.value)).filter((v) => Number.isFinite(v));
+  const max = values.length ? Math.max(...values) : 0;
+  const items = list.map((c) => {
+    const value = c?.value === null || c?.value === undefined || !Number.isFinite(Number(c.value)) ? null : Number(c.value);
+    const code = String(c?.code || "").toUpperCase();
+    return {
+      code,
+      flag: c?.flag && code ? text2SqlFlagEmoji(code) : "",
+      name: text2SqlCountryName(c, lang),
+      value,
+      valueText: value === null ? "" : text2SqlPlainNumber(value),
+      pct: value !== null && max > 0 ? Math.max(2, Math.round((value / max) * 100)) : 0,
+      index: Number.isInteger(c?.index) ? c.index : null,
+    };
+  });
+  return { items, valueColumn: countries.value_column || "", source: countries.source || "" };
+}
+
+// With a count: "The first 13 countries by number of films; Japan leads with 93 films."
+// Without: "Four countries: Angola, Australia, Namibia and South Africa."
+function text2SqlFlagSummary(upstream, { lang = "", spoken = false, hasMore = false } = {}) {
+  const language = t2sLang(lang);
+  const fr = language === "fr";
+  const model = text2SqlFlagModel(upstream, language);
+  if (!model) {
+    return "";
+  }
+  const n = model.items.length;
+  const facts = upstream?.summary_facts || {};
+  const order = String(facts.order || "");
+  const nText = n <= 12 && n > 1 ? text2SqlCountWord(n, "m", language) : String(n);
+  const countries = fr ? "pays" : n === 1 ? "country" : "countries";
+  const withValues = model.items.some((item) => item.value !== null);
+  if (withValues) {
+    const ranking = Boolean(order) && order !== "collection" && order !== "date";
+    let lead;
+    if (ranking || hasMore) {
+      lead = fr ? `les ${nText} premiers pays` : `the first ${nText} countries`;
+      if (ranking) {
+        lead += ` ${fr ? "par" : "by"} ${text2SqlMetricLabel(order, language)}`;
+      }
+    } else {
+      lead = `${text2SqlCountWord(n, "m", language)} ${countries}`;
+    }
+    const top = model.items.reduce((best, item) => (item.value !== null && (best === null || item.value > best.value) ? item : best), null);
+    const count = `${top.valueText} ${text2SqlCountedNoun(model.valueColumn, top.value, language)}`;
+    const tail = fr ? `${top.name} arrive en tête avec ${count}` : `${top.name} leads with ${count}`;
+    return `${capitalizeFirst(lead)}${fr ? " ; " : "; "}${tail}.`;
+  }
+  const names = model.items.map((item) => item.name).filter(Boolean);
+  const shown = names.slice(0, 5);
+  let list;
+  if (names.length > 5) {
+    list = `${shown.join(", ")} ${fr ? `et ${names.length - 5} autres` : `and ${names.length - 5} more`}`;
+  } else if (shown.length > 1) {
+    list = `${shown.slice(0, -1).join(", ")} ${fr ? "et" : "and"} ${shown[shown.length - 1]}`;
+  } else {
+    list = shown.join("");
+  }
+  const lead = hasMore ? (fr ? `les ${nText} premiers pays` : `the first ${nText} countries`) : `${text2SqlCountWord(n, "m", language)} ${countries}`;
+  return `${capitalizeFirst(lead)}${fr ? " : " : ": "}${list}.`;
 }
 
 // One result row as a poster card, with the value(s) under it when value cards are being drawn.

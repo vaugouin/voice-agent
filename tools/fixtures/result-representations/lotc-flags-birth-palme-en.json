@@ -1,0 +1,491 @@
+{
+ "question": "Which countries of birth are the most common among the directors of Palme d'Or winners?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the most common birth countries among Directing professionals who won Palme d'Or.",
+ "representation": "flag-list",
+ "representation_options": [
+  "flag-list",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "unknown",
+ "result_columns": [
+  {
+   "name": "COUNTRY_OF_BIRTH",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "WINNER_COUNT",
+   "role": "metric",
+   "unit": "count",
+   "ordered": "desc",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 24,
+  "total": null,
+  "value_column": "WINNER_COUNT",
+  "unit": "count",
+  "order": "WINNER_COUNT",
+  "order_direction": "desc",
+  "top": {
+   "label": "US",
+   "id": null,
+   "index": 0,
+   "value": 13,
+   "extreme": "max"
+  },
+  "countries": {
+   "source": "codes",
+   "column": "COUNTRY_OF_BIRTH",
+   "value_column": "WINNER_COUNT",
+   "countries": [
+    {
+     "index": 0,
+     "code": "US",
+     "label": null,
+     "value": 13,
+     "name": {
+      "en": "United States",
+      "fr": "États-Unis"
+     },
+     "flag": true
+    },
+    {
+     "index": 1,
+     "code": "IT",
+     "label": null,
+     "value": 11,
+     "name": {
+      "en": "Italy",
+      "fr": "Italie"
+     },
+     "flag": true
+    },
+    {
+     "index": 2,
+     "code": "FR",
+     "label": null,
+     "value": 8,
+     "name": {
+      "en": "France",
+      "fr": "France"
+     },
+     "flag": true
+    },
+    {
+     "index": 3,
+     "code": "GR",
+     "label": null,
+     "value": 3,
+     "name": {
+      "en": "Greece",
+      "fr": "Grèce"
+     },
+     "flag": true
+    },
+    {
+     "index": 4,
+     "code": "IR",
+     "label": null,
+     "value": 3,
+     "name": {
+      "en": "Iran",
+      "fr": "Iran"
+     },
+     "flag": true
+    },
+    {
+     "index": 5,
+     "code": "JP",
+     "label": null,
+     "value": 3,
+     "name": {
+      "en": "Japan",
+      "fr": "Japon"
+     },
+     "flag": true
+    },
+    {
+     "index": 6,
+     "code": "ES",
+     "label": null,
+     "value": 2,
+     "name": {
+      "en": "Spain",
+      "fr": "Espagne"
+     },
+     "flag": true
+    },
+    {
+     "index": 7,
+     "code": "SE",
+     "label": null,
+     "value": 2,
+     "name": {
+      "en": "Sweden",
+      "fr": "Suède"
+     },
+     "flag": true
+    },
+    {
+     "index": 8,
+     "code": "TR",
+     "label": null,
+     "value": 2,
+     "name": {
+      "en": "Türkiye",
+      "fr": "Turquie"
+     },
+     "flag": true
+    },
+    {
+     "index": 9,
+     "code": "IN",
+     "label": null,
+     "value": 2,
+     "name": {
+      "en": "India",
+      "fr": "Inde"
+     },
+     "flag": true
+    },
+    {
+     "index": 10,
+     "code": "DE",
+     "label": null,
+     "value": 2,
+     "name": {
+      "en": "Germany",
+      "fr": "Allemagne"
+     },
+     "flag": true
+    },
+    {
+     "index": 11,
+     "code": "PL",
+     "label": null,
+     "value": 1,
+     "name": {
+      "en": "Poland",
+      "fr": "Pologne"
+     },
+     "flag": true
+    },
+    {
+     "index": 12,
+     "code": "RO",
+     "label": null,
+     "value": 1,
+     "name": {
+      "en": "Romania",
+      "fr": "Roumanie"
+     },
+     "flag": true
+    },
+    {
+     "index": 13,
+     "code": "GB",
+     "label": null,
+     "value": 1,
+     "name": {
+      "en": "United Kingdom",
+      "fr": "Royaume-Uni"
+     },
+     "flag": true
+    },
+    {
+     "index": 14,
+     "code": "GE",
+     "label": null,
+     "value": 1,
+     "name": {
+      "en": "Georgia",
+      "fr": "Géorgie"
+     },
+     "flag": true
+    },
+    {
+     "index": 15,
+     "code": "TN",
+     "label": null,
+     "value": 1,
+     "name": {
+      "en": "Tunisia",
+      "fr": "Tunisie"
+     },
+     "flag": true
+    },
+    {
+     "index": 16,
+     "code": null,
+     "label": null,
+     "value": 1,
+     "name": null,
+     "flag": false
+    },
+    {
+     "index": 17,
+     "code": "AT",
+     "label": null,
+     "value": 1,
+     "name": {
+      "en": "Austria",
+      "fr": "Autriche"
+     },
+     "flag": true
+    },
+    {
+     "index": 18,
+     "code": "BA",
+     "label": null,
+     "value": 1,
+     "name": {
+      "en": "Bosnia and Herzegovina",
+      "fr": "Bosnie-Herzégovine"
+     },
+     "flag": true
+    },
+    {
+     "index": 19,
+     "code": "CH",
+     "label": null,
+     "value": 1,
+     "name": {
+      "en": "Switzerland",
+      "fr": "Suisse"
+     },
+     "flag": true
+    },
+    {
+     "index": 20,
+     "code": "CN",
+     "label": null,
+     "value": 1,
+     "name": {
+      "en": "China",
+      "fr": "Chine"
+     },
+     "flag": true
+    },
+    {
+     "index": 21,
+     "code": "KR",
+     "label": null,
+     "value": 1,
+     "name": {
+      "en": "South Korea",
+      "fr": "Corée du Sud"
+     },
+     "flag": true
+    },
+    {
+     "index": 22,
+     "code": "DK",
+     "label": null,
+     "value": 1,
+     "name": {
+      "en": "Denmark",
+      "fr": "Danemark"
+     },
+     "flag": true
+    },
+    {
+     "index": 23,
+     "code": "NZ",
+     "label": null,
+     "value": 1,
+     "name": {
+      "en": "New Zealand",
+      "fr": "Nouvelle-Zélande"
+     },
+     "flag": true
+    }
+   ]
+  }
+ },
+ "intent": {
+  "task": "rank",
+  "focus": [
+   "count"
+  ],
+  "focus_columns": [
+   "WINNER_COUNT"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "COUNTRY_OF_BIRTH": "US",
+    "WINNER_COUNT": 13
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "COUNTRY_OF_BIRTH": "IT",
+    "WINNER_COUNT": 11
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "COUNTRY_OF_BIRTH": "FR",
+    "WINNER_COUNT": 8
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "COUNTRY_OF_BIRTH": "GR",
+    "WINNER_COUNT": 3
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "COUNTRY_OF_BIRTH": "IR",
+    "WINNER_COUNT": 3
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "COUNTRY_OF_BIRTH": "JP",
+    "WINNER_COUNT": 3
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "COUNTRY_OF_BIRTH": "ES",
+    "WINNER_COUNT": 2
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "COUNTRY_OF_BIRTH": "SE",
+    "WINNER_COUNT": 2
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "COUNTRY_OF_BIRTH": "TR",
+    "WINNER_COUNT": 2
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "COUNTRY_OF_BIRTH": "IN",
+    "WINNER_COUNT": 2
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "COUNTRY_OF_BIRTH": "DE",
+    "WINNER_COUNT": 2
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "COUNTRY_OF_BIRTH": "PL",
+    "WINNER_COUNT": 1
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "COUNTRY_OF_BIRTH": "RO",
+    "WINNER_COUNT": 1
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "COUNTRY_OF_BIRTH": "GB",
+    "WINNER_COUNT": 1
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "COUNTRY_OF_BIRTH": "GE",
+    "WINNER_COUNT": 1
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "COUNTRY_OF_BIRTH": "TN",
+    "WINNER_COUNT": 1
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "COUNTRY_OF_BIRTH": "",
+    "WINNER_COUNT": 1
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "COUNTRY_OF_BIRTH": "AT",
+    "WINNER_COUNT": 1
+   }
+  },
+  {
+   "index": 18,
+   "data": {
+    "COUNTRY_OF_BIRTH": "BA",
+    "WINNER_COUNT": 1
+   }
+  },
+  {
+   "index": 19,
+   "data": {
+    "COUNTRY_OF_BIRTH": "CH",
+    "WINNER_COUNT": 1
+   }
+  },
+  {
+   "index": 20,
+   "data": {
+    "COUNTRY_OF_BIRTH": "CN",
+    "WINNER_COUNT": 1
+   }
+  },
+  {
+   "index": 21,
+   "data": {
+    "COUNTRY_OF_BIRTH": "KR",
+    "WINNER_COUNT": 1
+   }
+  },
+  {
+   "index": 22,
+   "data": {
+    "COUNTRY_OF_BIRTH": "DK",
+    "WINNER_COUNT": 1
+   }
+  },
+  {
+   "index": 23,
+   "data": {
+    "COUNTRY_OF_BIRTH": "NZ",
+    "WINNER_COUNT": 1
+   }
+  }
+ ]
+}

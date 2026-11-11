@@ -1,0 +1,89 @@
+{
+ "question": "Quelle est la répartition par genre (femmes, hommes) de la distribution d'Oppenheimer ?",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici le nombre de femmes et d’hommes dans la distribution d’Oppenheimer.",
+ "representation": "share-bar",
+ "representation_options": [
+  "share-bar",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "unknown",
+ "result_columns": [
+  {
+   "name": "GENRE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "NOMBRE",
+   "role": "metric",
+   "unit": null,
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 2,
+  "total": null,
+  "value_column": "NOMBRE",
+  "unit": null,
+  "order": null,
+  "order_direction": null,
+  "top": {
+   "label": "Hommes",
+   "id": null,
+   "index": 1,
+   "value": 58,
+   "extreme": "max"
+  },
+  "share": {
+   "kind": "parts",
+   "value_column": "NOMBRE",
+   "label_column": "GENRE",
+   "scale": 1,
+   "total": 65,
+   "parts": [
+    {
+     "index": 0,
+     "label": "Femmes",
+     "value": 7,
+     "share": 0.1077,
+     "rest": false
+    },
+    {
+     "index": 1,
+     "label": "Hommes",
+     "value": 58,
+     "share": 0.8923,
+     "rest": false
+    }
+   ]
+  }
+ },
+ "intent": {
+  "task": "count",
+  "focus": [
+   "count"
+  ],
+  "focus_columns": [],
+  "requested_view": "share",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "GENRE": "Femmes",
+    "NOMBRE": 7
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "GENRE": "Hommes",
+    "NOMBRE": 58
+   }
+  }
+ ]
+}
