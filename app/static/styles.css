@@ -2667,6 +2667,29 @@ button.detailVisualCard:hover {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+/* sequence-strip: the numbered posters in one row, in order, scrolled inside the grid's own
+   frame with a snap point per card (never wrapped like the plain grid, never wider than the
+   page); the rows of Load more join the end of the row. Mirror of t2s-front's
+   .t2sShowSequence grid. */
+.search-poster-card-grid.t2sSequenceStrip {
+  grid-template-columns: none;
+  grid-auto-flow: column;
+  grid-auto-columns: 160px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scroll-snap-type: x proximity;
+  scroll-padding-inline: 1rem;
+  scrollbar-width: thin;
+}
+.t2sSequenceStrip .search-poster-card {
+  scroll-snap-align: start;
+}
+@media (max-width: 520px) {
+  .search-poster-card-grid.t2sSequenceStrip {
+    grid-auto-columns: 136px;
+  }
+}
 .t2sRankBadge {
   position: absolute;
   top: 6px;

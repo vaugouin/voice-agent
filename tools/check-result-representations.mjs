@@ -78,7 +78,7 @@ const code = [
     "detailRequestFromRecord"].map(extractFunction),
   extractRegion("// VOICE-AGENT-246 / -247 / -248 (FASTAPI-TEXT2SQL-354)", "// One result row as a poster card"),
   "globalThis.api = { text2SqlRepresentationOptions, text2SqlChipOptions, resolveText2SqlRepresentation,",
-  "  text2SqlValueColumns, formatCardValue, spokenMetricValue, text2SqlSummaryLine, text2SqlSpokenSummary,",
+  "  text2SqlValueColumns, formatCardValue, spokenMetricValue, text2SqlSummaryLine, text2SqlSpokenSummary, text2SqlViewSummaryLine,",
   "  pickBarMetric, text2SqlRepresentationLabel, text2SqlYearOf, text2SqlDateColumn, text2SqlYearSpan,",
   "  text2SqlIsDecadeColumn, text2SqlPeriodLabel, text2SqlTrendModel, text2SqlTimelineModel,",
   "  text2SqlRequestedView, text2SqlRepresentationForView, text2SqlRequestedViewReply,",
@@ -275,6 +275,24 @@ check("spoken trend years fr", spoken("lota-trend-films-per-year-fr", "fr"), "De
 check("spoken trend usd en", spoken("lota-trend-avg-budget-usd-en", "en"), "From 2000 to 2099; the peak is 2028, 11.1 million dollars.");
 check("caption trend minutes", caption("lota-trend-avg-runtime-decade-en", "en"), "From the 1870s to the 2090s; the peak is the 1990s, 1 h 09.");
 check("spoken summary of a timeline", api.text2SqlSpokenSummary({ upstream: fx("lota-timeline-alien-en"), has_more: false }), "Four films, from 1979 to 1997.");
+
+// After Load more, the caption of a timeline or a sequence counts every row on hand and says
+// "the first N" only while another page may follow; other forms keep the first page's sentence.
+{
+  const nolan = fx("lota-timeline-nolan-en");
+  const alien = fx("lota-timeline-alien-en");
+  const rows = [...nolan.result, ...alien.result];
+  const base = { upstream: nolan, rows: nolan.result, rep: "timeline", lang: "en", hasMore: true, moreNow: true };
+  check("view caption, first page", api.text2SqlViewSummaryLine(base), "The first 18 films, from 1990 to 2026.");
+  check("view caption, two pages, more to come", api.text2SqlViewSummaryLine({ ...base, rows }), "The first 22 films, from 1979 to 2026.");
+  check("view caption, every page loaded", api.text2SqlViewSummaryLine({ ...base, rows, moreNow: false }), "22 films, from 1979 to 2026.");
+  const mcu = fx("lota-sequence-mcu-54rows-en");
+  check("view caption, a sequence over two pages", api.text2SqlViewSummaryLine({ upstream: mcu, rows: [...mcu.result, ...mcu.result], rep: "sequence-strip", lang: "en", hasMore: true, moreNow: false }),
+    "108 films in release order, from 2008 to 2027.");
+  const lotr = fx("2568-en-value-cards-budget-release-order");
+  check("view caption, value cards keep the first page", api.text2SqlViewSummaryLine({ upstream: lotr, rows: [...lotr.result, ...lotr.result], rep: "value-cards", lang: "en", hasMore: true, moreNow: false }),
+    caption("2568-en-value-cards-budget-release-order", "en", { hasMore: true }));
+}
 
 // Trend model: the value column of summary_facts, decades labelled, heights relative to the max.
 {

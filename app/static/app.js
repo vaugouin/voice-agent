@@ -4371,6 +4371,26 @@ function text2SqlTableLinkRecord(record, link) {
   return detailRequestFromRecord(target) ? target : null;
 }
 
+// The caption of a view host. A timeline or a sequence says the count and the span of the rows
+// on screen, so after a Load more it counts every page so far, and "the first N" holds only
+// while another page may follow (`view.moreNow`). The other forms keep the sentence of the first
+// page: their extremum was computed on it, and "the first N" stays true of it.
+function text2SqlViewSummaryLine(view) {
+  const upstream = view?.upstream || {};
+  const rows = Array.isArray(view?.rows) ? view.rows : [];
+  const facts = upstream.summary_facts;
+  const live = (view?.rep === "timeline" || view?.rep === "sequence-strip")
+    && facts && typeof facts === "object"
+    && rows.length > (Array.isArray(upstream.result) ? upstream.result.length : 0);
+  if (!live) {
+    return text2SqlSummaryLine(upstream, { rep: view?.rep, lang: view?.lang, hasMore: Boolean(view?.hasMore) });
+  }
+  return text2SqlSummaryLine(
+    { ...upstream, result: rows, summary_facts: { ...facts, count: rows.length } },
+    { rep: view.rep, lang: view.lang, hasMore: Boolean(view.moreNow) },
+  );
+}
+
 // The spoken line handed to the Realtime model beside the tool output (VOICE-AGENT-248).
 function text2SqlSpokenSummary(output) {
   const upstream = output?.upstream && typeof output.upstream === "object" ? output.upstream : {};
@@ -4477,7 +4497,7 @@ function updateText2SqlViewChrome(view) {
     chip.setAttribute("aria-pressed", chip.dataset.representation === view.rep ? "true" : "false");
   });
   if (view.caption) {
-    const line = text2SqlSummaryLine(view.upstream, { rep: view.rep, lang: view.lang, hasMore: view.hasMore });
+    const line = text2SqlViewSummaryLine(view);
     view.caption.textContent = line;
     view.caption.hidden = !line;
   }
@@ -7284,11 +7304,13 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
   if (append) {
     if (t2sView && t2sView.body?.isConnected) {
       t2sView.rows.push(...rows);
+      t2sView.moreNow = reusableText2SqlQuestionHash(output, upstream, args, rows, Number(output.rows_per_page || upstream.rows_per_page || rows.length || 0)).has_more;
       if (!T2S_GRID_REPRESENTATIONS.includes(t2sView.rep)) {
         renderText2SqlView(t2sView);
         rowsAlreadyDrawn = true;
         grid = null;
       }
+      updateText2SqlViewChrome(t2sView);
     } else {
       activeValueColumns = [];
     }
@@ -7400,6 +7422,7 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
         caption,
         lang: uiLanguage,
         hasMore: Boolean(pagination.has_more),
+        moreNow: Boolean(pagination.has_more),
       };
       const viewGrid = renderText2SqlView(t2sView);
       updateText2SqlViewChrome(t2sView);
