@@ -70,6 +70,14 @@ override both. Recognised keys: VPS_HOST, VPS_PORT, VPS_USER, VPS_SYNC_<suffix>,
 VPS_KEY_FILE, VPS_KEY_PASSPHRASE, VPS_SSH_PASSWORD, VPS_DELETE. The .env is
 git/docker-ignored.
 
+No passphrase prompt: with an encrypted VPS_KEY_FILE, load the key once into the
+Windows OpenSSH agent and the script uses it from there (VOICE-AGENT-260). In an
+administrator PowerShell, once per machine:
+  Set-Service ssh-agent -StartupType Automatic; Start-Service ssh-agent
+then, as the normal user, once (the agent keeps the key across reboots):
+  ssh-add $HOME\.ssh\id_ed25519_ovhpv7
+`ssh-add -l` lists the loaded keys.
+
 VPS_KEY_FILE accepts three path forms, all resolved by resolve_path():
 `~/.ssh/id_ed25519` (portable, preferred), `%USERPROFILE%\.ssh\id_ed25519` /
 `$HOME/...` (environment variables), and a RELATIVE path, which is anchored to
@@ -809,10 +817,14 @@ def connect(args) -> paramiko.SSHClient:
         passphrase = args.key_passphrase or os.environ.get("VPS_KEY_PASSPHRASE")
         if passphrase:
             kwargs["passphrase"] = passphrase
-        # Offer only the key we were given: without this, paramiko also tries every
-        # other key it finds and the failure message names the wrong one.
+        # Do not scan ~/.ssh for other key files: the failure message would name the
+        # wrong one. The Windows OpenSSH agent IS consulted, though: paramiko tries the
+        # key file first, and when it is encrypted and no passphrase was given it moves
+        # on to the keys loaded in the agent (`ssh-add`, once). That is what lets an
+        # unattended run go through without a prompt and without the passphrase in the
+        # .env. Without an agent or a matching key in it, the prompt below still comes.
         kwargs["look_for_keys"] = False
-        kwargs["allow_agent"] = False
+        kwargs["allow_agent"] = True
     else:
         password = args.password or os.environ.get("VPS_SSH_PASSWORD")
         if not password:

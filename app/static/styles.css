@@ -1185,6 +1185,99 @@ details.queryDetails summary {
   transform: rotate(90deg);
 }
 
+/* VOICE-AGENT-261: the "Was this result right?" row, last line of the answer block. The global
+   `button` rule (96 x 42 px, padding 18px, filled green) is reset on the small buttons, as on the
+   scatter dots, or each thumb becomes a slab. Wraps onto two lines at 390 px: prompt and thumbs,
+   then the comment field on its own full-width line. */
+.resultFeedback {
+  grid-column: 1 / -1;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 8px;
+  min-width: 0;
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+}
+
+.resultFeedbackPrompt {
+  margin-right: 2px;
+}
+
+.resultFeedbackButton {
+  min-width: 0;
+  min-height: 0;
+  width: 36px;
+  height: 32px;
+  padding: 0;
+  display: inline-grid;
+  place-items: center;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  background: #171b20;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1;
+  opacity: 0.8;
+}
+
+.resultFeedbackButton:hover {
+  opacity: 1;
+  border-color: var(--accent-secondary);
+}
+
+.resultFeedbackButton[aria-pressed="true"] {
+  opacity: 1;
+  border-color: var(--accent-secondary);
+  background: #20333a;
+}
+
+.resultFeedbackForm:not([hidden]) {
+  flex: 1 1 260px;
+  display: flex;
+  gap: 6px;
+  min-width: 0;
+}
+
+.resultFeedbackComment {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 32px;
+  padding: 0 10px;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+  font: inherit;
+  /* 16px stops iOS Safari zooming the page when the field takes focus. */
+  font-size: 16px;
+}
+
+.resultFeedbackSend,
+.resultFeedbackSkip {
+  min-width: 0;
+  min-height: 32px;
+  padding: 0 12px;
+  font-size: 0.85rem;
+}
+
+.resultFeedbackSkip {
+  color: var(--text-secondary);
+  border: 1px solid var(--border);
+  background: transparent;
+}
+
+.resultFeedbackStatus {
+  flex: 1 1 100%;
+  margin: 0;
+  min-height: 0;
+  color: var(--text-secondary);
+}
+
+.resultFeedbackStatus:empty {
+  display: none;
+}
+
 .queryDetailsDock {
   min-width: 0;
 }
@@ -5428,3 +5521,4 @@ body:not(.cinemaRender) .cinemaControls {
     width: auto;
   }
 }
+

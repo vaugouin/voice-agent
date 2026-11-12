@@ -7,7 +7,7 @@ import unicodedata
 import uuid
 from datetime import date, datetime, timezone
 from pathlib import Path
-from typing import Any, NamedTuple
+from typing import Any, Literal, NamedTuple
 from urllib.parse import quote, urlencode
 from zoneinfo import ZoneInfo
 
@@ -712,6 +712,24 @@ class ClientLogRequest(BaseModel):
     level: str = "info"
     event: str
     data: dict[str, Any] | None = None
+
+
+class FeedbackRequest(BaseModel):
+    # VOICE-AGENT-261: a thumbs up or down on one text2sql search result, with an optional
+    # comment, forwarded to the API's POST /feedback (FASTAPI-TEXT2SQL-061). The context fields
+    # are copied by the browser from the search response it painted (`output.upstream`), so the
+    # API can tie the verdict to its cache row and request. The limits mirror the API's own
+    # (comment 2000, question 4000): a refusal here is cheaper than a round trip for a 422.
+    # `client` is not accepted from the browser: the route fixes it to "voice-agent".
+    rating: Literal[1, -1]
+    comment: str | None = Field(default=None, max_length=2000)
+    question: str = Field(min_length=1, max_length=4000)
+    question_hashed: str | None = Field(default=None, max_length=200)
+    request_id: str | None = Field(default=None, max_length=200)
+    api_version: str | None = Field(default=None, max_length=100)
+    sql_query: str | None = Field(default=None, max_length=50000)
+    result_entity: str | None = Field(default=None, max_length=200)
+    ui_language: str | None = Field(default=None, max_length=20)
 
 
 DETAIL_ENTITY_CONFIG = {
@@ -4782,6 +4800,10 @@ HARNESS_LOG_EVENTS = frozenset({
     # absent, it is invisible, and a log cannot tell the two apart.
     "look_capture",
     "look_capture_error",
+    # VOICE-AGENT-261: a thumbs up or down on a search result, written by the server's
+    # /feedback route (the comment cut to 200 characters), and its failures.
+    "result_feedback_sent",
+    "result_feedback_error",
     # VOICE-AGENT-180, and this one is a measurement instrument before it is a log. The ticket
     # asks for a verdict that cannot be obtained from a desktop: does opening the system camera
     # survive a live voice session on an iPhone and on an iPad? Every capture now writes the
@@ -4852,3 +4874,87 @@ def write_client_log(event: str, data: dict[str, Any], level: str = "info") -> N
 async def client_log(payload: ClientLogRequest) -> dict[str, bool]:
     write_client_log(payload.event, payload.data or {}, payload.level)
     return {"ok": True}
+
+
+FEEDBACK_LOG_COMMENT_CHARS = 200
+
+
+@app.post("/feedback")
+async def result_feedback(payload: FeedbackRequest) -> Any:
+    """Forward one thumbs up or down on a search result to the API (VOICE-AGENT-261).
+
+    Sent ONCE, never through `_post_text2sql_with_retry()`: a feedback row is a vote, and a
+    retry after a 5xx or a read timeout could record it twice (the API may have written the row
+    before the error reached us). A failed vote says so to the user, who can click again.
+
+    The API's answer passes through on success (`id_feedback`, `status`, `cache_bypassed`,
+    `api_version`). A 4xx keeps its status with the API's detail, so a 422 stays a 422; a 5xx
+    (503 when the feedback store is down) or a transport error becomes a clean 502.
+    The log line keeps the comment to its first FEEDBACK_LOG_COMMENT_CHARS characters.
+    """
+    comment = (payload.comment or "").strip()
+    request_json = {
+        "rating": payload.rating,
+        "comment": comment or None,
+        "client": "voice-agent",
+        "ui_language": normalize_ui_language(payload.ui_language) if payload.ui_language else None,
+        "question": payload.question,
+        "question_hashed": payload.question_hashed,
+        "request_id": payload.request_id,
+        "api_version": payload.api_version,
+        "sql_query": payload.sql_query,
+        "result_entity": payload.result_entity,
+    }
+    log_data: dict[str, Any] = {
+        "rating": payload.rating,
+        "question": payload.question[:300],
+        "question_hashed": payload.question_hashed,
+        "request_id": payload.request_id,
+        "api_version": payload.api_version,
+        "result_entity": payload.result_entity,
+        "ui_language": request_json["ui_language"],
+        "comment": comment[:FEEDBACK_LOG_COMMENT_CHARS],
+        "comment_length": len(comment),
+    }
+    timeout = float(os.getenv("TEXT2SQL_FEEDBACK_TIMEOUT_SECONDS", "15"))
+    try:
+        async with httpx.AsyncClient(timeout=timeout) as client:
+            response = await client.post(
+                f"{text2sql_base_url()}/feedback", json=request_json, headers=text2sql_headers()
+            )
+    except httpx.HTTPError as exc:
+        write_client_log(
+            "result_feedback_error",
+            {**log_data, "error": str(exc) or type(exc).__name__},
+            "error",
+        )
+        raise HTTPException(status_code=502, detail="feedback service unreachable") from exc
+
+    try:
+        body: Any = response.json()
+    except ValueError:
+        body = response.text[:500]
+
+    if response.status_code >= 400:
+        write_client_log(
+            "result_feedback_error",
+            {**log_data, "upstream_status": response.status_code},
+            "error",
+        )
+        if 400 <= response.status_code < 500:
+            detail = body.get("detail", body) if isinstance(body, dict) else body
+            raise HTTPException(status_code=response.status_code, detail=detail)
+        raise HTTPException(
+            status_code=502,
+            detail={"upstream_status": response.status_code, "message": "feedback not recorded"},
+        )
+
+    write_client_log(
+        "result_feedback_sent",
+        {
+            **log_data,
+            "id_feedback": body.get("id_feedback") if isinstance(body, dict) else None,
+            "cache_bypassed": body.get("cache_bypassed") if isinstance(body, dict) else None,
+        },
+    )
+    return body

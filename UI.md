@@ -821,7 +821,20 @@ Content:
 - optional `.errorText`: rendered if `output.error` or `upstream.error` exists.
 - optional `.t2sCaption` (VOICE-AGENT-248): the summary line, right under `.answerText`, built by `text2SqlSummaryLine()` from `upstream.summary_facts` in the UI language (count, order, one extremum: "Three films in collection order; the longest is The Return of the King, 3 h 21."). Present only on a result drawn through the view host below; hidden when the line is empty (no `summary_facts`, or the form on screen is an entity page, a number card or a stat strip). The view body points at it with `aria-describedby`.
 - optional `.queryDetailsToggle`: rendered only when at least one query-detail string exists.
+- optional `.resultFeedback` (VOICE-AGENT-261): the last line of the block, "Was this result right?" / "Ce résultat est-il juste ?", described below.
 - global `#queryDetailsDock`: inserted after the answer block when a toggle exists.
+
+Result feedback row (`.resultFeedback`, built by `buildResultFeedbackRow()`):
+
+- Present once per search: built only when the answer block is built for a new search (`append` false). A Load more page and a view chip switch never rebuild the answer block, so they never add a second pair. Also present on an error or an empty result. Absent when the output carries no upstream body or no question.
+- Content: the prompt, a 👍 and a 👎 button (`aria-pressed`, `aria-label` "Yes, this result is right" / "No, this result is wrong"), a hidden `form.resultFeedbackForm` (one-line `input.resultFeedbackComment`, `Send`, `Skip`), and `p.resultFeedbackStatus` (`role="status"`, `aria-live="polite"`, hidden while empty). Labels are in the result's language, taken when the row is built.
+- Idle: both thumbs `aria-pressed="false"`, form hidden, status empty.
+- Choosing: a click on a thumb presses it (the other is released), clears the status and shows the form. With a fine pointer the caret goes to the comment field; on a touch screen it does not, so the keyboard does not cover the result.
+- Sending: `Send` or Enter posts the vote with the trimmed comment, `Skip` or Escape posts it without one, to `POST /feedback` (README, "Result Feedback"). Buttons and field are disabled and the status reads "Sending…".
+- Recorded: form hidden and emptied, the chosen thumb stays pressed, the status thanks the user; after 👎 it adds that the answer will be recomputed next time. The vote is remembered for the page's lifetime by request id (else question hash and question), so Back to the same search shows it pressed with its thanks.
+- Failed: the form stays open with the comment kept, the status asks to try again; Send retries.
+- Changing: a click on the other thumb reopens the form with that choice and posts a new vote. A click on the thumb already recorded does nothing.
+- Layout: spans both grid columns of the block, wraps at 390 px (prompt and thumbs on one line, the form on the next). The global `button` rule is reset on the thumbs, Send and Skip. The comment field is 16 px so iOS Safari does not zoom on focus.
 
 Query details content is assembled from:
 

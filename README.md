@@ -345,6 +345,19 @@ TEXT2SQL_API_KEY_NAME=X-API-Key
 TEXT2SQL_API_KEY_VALUE=...
 ```
 
+### Result Feedback (VOICE-AGENT-261)
+
+Each search answer ends with a "Was this result right?" row (thumbs up, thumbs down, optional one-line comment; UI.md, "Text2SQL Answer Block"). The browser never calls the API: it posts to this server.
+
+```text
+POST /feedback
+{"rating": -1, "comment": "wrong director", "question": "...", "question_hashed": "...",
+ "request_id": "...", "api_version": "...", "sql_query": "...", "result_entity": "movie",
+ "ui_language": "fr"}
+```
+
+The context fields come from the search response the screen was painted from (`output.upstream`, the API's own body; `question_hashed` is read there because the top-level copy is nulled when there is no next page). The server validates the body (`rating` 1 or -1, `question` 1 to 4000 characters, `comment` at most 2000; anything else is a 422), fixes `client` to `"voice-agent"` and forwards it **once**, with no retry, to `{TEXT2SQL_BASE_URL}/feedback` (FASTAPI-TEXT2SQL-061) with the usual API key header: a retry after a 5xx or a read timeout could record the same vote twice. On success it returns the API's body (`id_feedback`, `status: "recorded"`, `cache_bypassed`, `api_version`); an API 4xx keeps its status and detail, an API 5xx (503 when the feedback store is down) or a transport error becomes a 502. The timeout is `TEXT2SQL_FEEDBACK_TIMEOUT_SECONDS` (not in the example, default 15). A thumbs down tells the API to bypass its cache for that question, so the user is told the answer will be recomputed next time. Each vote writes `result_feedback_sent` or `result_feedback_error` to the client log, with the comment cut to its first 200 characters and its full length.
+
 ### Picture Search
 
 A typed turn that carries a photo adds one string to the same request:
@@ -757,7 +770,7 @@ The file is in fact one per day, `logs/client-YYYYMMDD.log`. Each entry's `ts` i
 
 At startup, `docker logs -f voice-agent` prints a `[voice-agent] version <x>` banner followed by a `[voice-agent] persona '<slug>', voice '<name>' (from <source>), N loaded, core ok|MISSING` line (VOICE-AGENT-118); an unknown `AGENT_SOUL` prints a `WARNING` line above it. Read that persona line first when persona or voice behaviour looks wrong: it settles which character is active, where its voice came from, and whether `souls/_core.md` shipped.
 
-Only the events listed in `HARNESS_LOG_EVENTS` (`app/main.py`) are written; the browser posts many more to `/client-log`, and the server drops them at write time. Kept today: tool calls and their outputs (`tool_call_start`, `tool_call_success`, `tool_call_error`, `tool_output_truncated`, `tool_output_send_error`), turns (`user_transcript`, `user_transcript_discarded`, `speech_started`, `speech_stopped`, `assistant_transcript`, `realtime_text_sent`, `text_chat_*`), Brief me and deep answers (`brief_*`, `deep_answer_*`), the guards (`pronoun_query_returned`, `meta_talk_detected`, `forced_search_render_skipped`, `forced_verbose_refetch`), the holding line, card focus and disambiguation events, `session_persona`, the splash and showcase, the Look events (`look_capture`, `look_capture_error`, `look_session_guard`, `look_voice_turn`) and `microphone_track_replaced`.
+Only the events listed in `HARNESS_LOG_EVENTS` (`app/main.py`) are written; the browser posts many more to `/client-log`, and the server drops them at write time. Kept today: tool calls and their outputs (`tool_call_start`, `tool_call_success`, `tool_call_error`, `tool_output_truncated`, `tool_output_send_error`), turns (`user_transcript`, `user_transcript_discarded`, `speech_started`, `speech_stopped`, `assistant_transcript`, `realtime_text_sent`, `text_chat_*`), Brief me and deep answers (`brief_*`, `deep_answer_*`), the guards (`pronoun_query_returned`, `meta_talk_detected`, `forced_search_render_skipped`, `forced_verbose_refetch`), the holding line, card focus and disambiguation events, `session_persona`, the splash and showcase, the Look events (`look_capture`, `look_capture_error`, `look_session_guard`, `look_voice_turn`), the result feedback (`result_feedback_sent`, `result_feedback_error`) and `microphone_track_replaced`.
 
 Not kept: WebRTC, ICE and data-channel state (`peer_connection_state`, `peer_connection_stats`, `data_channel_close`), page lifecycle and visibility, `realtime_support`, keepalive, watchdog and reconnect events, retained-context seeding, dictation and `look_drop`. To read one of them, it has to be added to `HARNESS_LOG_EVENTS`.
 

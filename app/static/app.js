@@ -1133,6 +1133,209 @@ function buildQueryDetailsToggle(detailsText) {
   return button;
 }
 
+// VOICE-AGENT-261: a thumbs up or down, with an optional one-line comment, on ONE text2sql
+// search result. The row is built once per search, in the answer block of
+// renderText2SqlResult(), never on a Load more page (append) and never by a view chip (the chips
+// redraw the view host, not the answer block), so a search never carries two pairs. The context
+// is the search response the screen was painted from (`output.upstream`): its own `question`,
+// `question_hashed` (the top-level copy is nulled when there is no next page), `request_id`,
+// `api_version`, `sql_query` and `result_entity`, which is what lets the API tie the vote to its
+// cache row and request (FASTAPI-TEXT2SQL-061). The browser posts to this server's /feedback,
+// never to the API, and that route sends it once (no retry, a vote must not count twice).
+// A recorded vote is remembered for the page's lifetime (resultFeedbackVotes), so going Back to
+// the same search shows the choice already made instead of inviting a second vote.
+const resultFeedbackVotes = new Map();
+
+function resultFeedbackContext(output, args, upstream, uiLanguage) {
+  if (!upstream || typeof upstream !== "object" || !Object.keys(upstream).length) {
+    return null;
+  }
+  const question = String(upstream.question || args?.query || output?.query || "").trim();
+  if (!question) {
+    return null;
+  }
+  const field = (value, max) => {
+    const clean = value === null || value === undefined ? "" : String(value);
+    return clean ? clean.slice(0, max) : null;
+  };
+  return {
+    question: question.slice(0, 4000),
+    question_hashed: field(upstream.question_hashed, 200),
+    request_id: field(upstream.request_id, 200),
+    api_version: field(upstream.api_version, 100),
+    sql_query: field(upstream.sql_query || output?.sql_query, 50000),
+    result_entity: field(upstream.result_entity, 200),
+    ui_language: uiLanguage,
+  };
+}
+
+function resultFeedbackKey(context) {
+  return context.request_id || `${context.question_hashed || ""}|${context.question}`;
+}
+
+function buildResultFeedbackRow(context) {
+  if (!context) {
+    return null;
+  }
+  // Every string is taken now, in the language of this result: the status line is written after
+  // an await, when activeUiLanguage may already belong to a later turn.
+  const text = {
+    prompt: uiText("Was this result right?", "Ce résultat est-il juste ?"),
+    up: uiText("Yes, this result is right", "Oui, ce résultat est juste"),
+    down: uiText("No, this result is wrong", "Non, ce résultat est faux"),
+    comment: uiText("Optional comment", "Commentaire facultatif"),
+    placeholder: uiText("Add a comment (optional)", "Un commentaire ? (facultatif)"),
+    send: uiText("Send", "Envoyer"),
+    skip: uiText("Skip", "Passer"),
+    sending: uiText("Sending…", "Envoi…"),
+    thanksUp: uiText("Thanks, noted.", "Merci, c'est noté."),
+    thanksDown: uiText(
+      "Thanks. This answer will be recomputed next time.",
+      "Merci. Cette réponse sera recalculée la prochaine fois."
+    ),
+    failed: uiText(
+      "Your feedback could not be sent. Try again.",
+      "Votre avis n'a pas pu être envoyé. Réessayez."
+    ),
+  };
+  const key = resultFeedbackKey(context);
+
+  const row = document.createElement("div");
+  row.className = "resultFeedback";
+  row.setAttribute("role", "group");
+  row.setAttribute("aria-label", text.prompt);
+
+  const prompt = document.createElement("span");
+  prompt.className = "resultFeedbackPrompt";
+  prompt.textContent = text.prompt;
+
+  const makeButton = (rating, glyph, label) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "resultFeedbackButton";
+    button.dataset.rating = String(rating);
+    button.setAttribute("aria-pressed", "false");
+    button.setAttribute("aria-label", label);
+    button.title = label;
+    button.textContent = glyph;
+    return button;
+  };
+  const upButton = makeButton(1, "👍", text.up);
+  const downButton = makeButton(-1, "👎", text.down);
+
+  const form = document.createElement("form");
+  form.className = "resultFeedbackForm";
+  form.hidden = true;
+  const input = document.createElement("input");
+  input.type = "text";
+  input.className = "resultFeedbackComment";
+  input.maxLength = 2000;
+  input.autocomplete = "off";
+  input.enterKeyHint = "send";
+  input.placeholder = text.placeholder;
+  input.setAttribute("aria-label", text.comment);
+  const sendButton = document.createElement("button");
+  sendButton.type = "submit";
+  sendButton.className = "resultFeedbackSend";
+  sendButton.textContent = text.send;
+  const skipButton = document.createElement("button");
+  skipButton.type = "button";
+  skipButton.className = "resultFeedbackSkip";
+  skipButton.textContent = text.skip;
+  form.append(input, sendButton, skipButton);
+
+  const status = document.createElement("p");
+  status.className = "resultFeedbackStatus";
+  status.setAttribute("role", "status");
+  status.setAttribute("aria-live", "polite");
+
+  row.append(prompt, upButton, downButton, form, status);
+
+  let pendingRating = 0;
+  let busy = false;
+  const setPressed = (rating) => {
+    upButton.setAttribute("aria-pressed", String(rating === 1));
+    downButton.setAttribute("aria-pressed", String(rating === -1));
+  };
+  const recordedRating = () => resultFeedbackVotes.get(key)?.rating || 0;
+  const thanks = (rating) => (rating < 0 ? text.thanksDown : text.thanksUp);
+  if (recordedRating()) {
+    setPressed(recordedRating());
+    status.textContent = thanks(recordedRating());
+  }
+
+  const choose = (rating) => {
+    if (busy) {
+      return;
+    }
+    // The same choice twice, once recorded, is not a second vote.
+    if (rating === recordedRating() && form.hidden) {
+      return;
+    }
+    pendingRating = rating;
+    setPressed(rating);
+    status.textContent = "";
+    form.hidden = false;
+    // No automatic focus on a touch screen: the keyboard would cover the result for a comment
+    // that is optional. With a mouse, the caret waits in the field (Enter sends, Escape skips).
+    if (window.matchMedia?.("(pointer: fine)").matches) {
+      input.focus({ preventScroll: true });
+    }
+  };
+
+  const submit = async (withComment) => {
+    if (busy || !pendingRating) {
+      return;
+    }
+    busy = true;
+    const rating = pendingRating;
+    const comment = withComment ? input.value.trim() : "";
+    [upButton, downButton, sendButton, skipButton].forEach((button) => { button.disabled = true; });
+    input.disabled = true;
+    status.textContent = text.sending;
+    try {
+      const response = await fetch(appUrl("feedback"), {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...context, rating, ...(comment ? { comment } : {}) }),
+      });
+      const body = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        throw new Error(typeof body.detail === "string" ? body.detail : `HTTP ${response.status}`);
+      }
+      resultFeedbackVotes.set(key, { rating, id_feedback: body.id_feedback ?? null });
+      pendingRating = 0;
+      input.value = "";
+      form.hidden = true;
+      status.textContent = thanks(rating);
+    } catch (error) {
+      // The form stays open with the comment typed, so a second Send is the retry.
+      setPressed(rating);
+      status.textContent = text.failed;
+    } finally {
+      busy = false;
+      [upButton, downButton, sendButton, skipButton].forEach((button) => { button.disabled = false; });
+      input.disabled = false;
+    }
+  };
+
+  upButton.addEventListener("click", () => choose(1));
+  downButton.addEventListener("click", () => choose(-1));
+  form.addEventListener("submit", (event) => {
+    event.preventDefault();
+    submit(true);
+  });
+  skipButton.addEventListener("click", () => submit(false));
+  input.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      event.stopPropagation();
+      submit(false);
+    }
+  });
+  return row;
+}
+
 function cloneHistoryValue(value) {
   if (value === null || value === undefined) {
     return value;
@@ -9857,6 +10060,15 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
     const detailsToggle = buildQueryDetailsToggle(detailsText);
     if (detailsToggle) {
       answerBlock.append(detailsToggle);
+    }
+    // VOICE-AGENT-261: one feedback pair per search, here and only here (see
+    // buildResultFeedbackRow). Also on an error or an empty result: a wrong "nothing found" is
+    // the verdict most worth having. Absent when there is no upstream body to point at.
+    if (!append) {
+      const feedbackRow = buildResultFeedbackRow(resultFeedbackContext(output, args, upstream, uiLanguage));
+      if (feedbackRow) {
+        answerBlock.append(feedbackRow);
+      }
     }
     resultsContent.append(answerBlock);
     resultsContent.append(queryDetailsDock);
