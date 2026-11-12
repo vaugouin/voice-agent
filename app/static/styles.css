@@ -5183,3 +5183,114 @@ body:not(.cinemaRender) .cinemaControls {
   font-size: 0.82rem;
   overflow-wrap: anywhere;
 }
+/* Phase 3 lot C: hierarchy. One section per outer group (heading with its name and count), a
+   third level as nested sections, the leaves as compact rows in a grid of columns that falls to
+   one column on a phone. Headings and lists, no collapsing; the same markup as t2s-front. */
+.t2sHier {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin: 12px 0;
+  min-width: 0;
+}
+.t2sHierGroup {
+  min-width: 0;
+  padding: 10px 12px 12px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+.t2sHierGroup.t2sHierInner {
+  margin-top: 10px;
+  padding: 0 0 0 12px;
+  background: transparent;
+  border: 0;
+  border-left: 2px solid var(--border);
+  border-radius: 0;
+}
+.t2sHierHead {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  min-width: 0;
+  margin: 0 0 8px;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--text-primary);
+}
+.t2sHierInner > .t2sHierHead {
+  font-size: 0.92rem;
+  color: var(--text-secondary);
+}
+.t2sHierName {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+.t2sHierName.isUnnamed {
+  font-style: italic;
+  color: var(--text-secondary);
+}
+.t2sHierName.t2sRowOpenable:hover,
+.t2sHierName.t2sRowOpenable:focus-visible {
+  text-decoration: underline;
+}
+.t2sHierCount {
+  flex: 0 0 auto;
+  padding: 1px 8px;
+  border-radius: 999px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.t2sHierLeaves {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr));
+  gap: 8px;
+}
+.t2sHierLeaf {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  padding: 6px 10px 6px 6px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.t2sHierThumb {
+  flex: 0 0 auto;
+  width: 36px;
+  height: 54px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--bg-secondary);
+}
+.t2sHierThumb.isEmpty {
+  display: block;
+  border: 1px dashed var(--border);
+}
+.t2sHierText {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+}
+.t2sHierTitle {
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.t2sHierSub {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+  font-variant-numeric: tabular-nums;
+}
+.t2sHierLeaf.t2sRowOpenable:hover .t2sHierTitle,
+.t2sHierLeaf.t2sRowOpenable:focus-visible .t2sHierTitle {
+  text-decoration: underline;
+}

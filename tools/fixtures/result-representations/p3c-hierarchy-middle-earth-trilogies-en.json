@@ -1,0 +1,232 @@
+{
+ "question": "Show the Middle-earth films grouped by trilogy",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the Middle-Earth: Movies, TV Shows films organized by trilogy.",
+ "representation": "hierarchy",
+ "representation_options": [
+  "hierarchy",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "TRILOGY_NAME",
+   "role": "label",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 6,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "collection",
+  "order_direction": null,
+  "top": null,
+  "hierarchy": {
+   "levels": [
+    {
+     "column": "TRILOGY_NAME",
+     "id_column": null,
+     "kind": "trilogy",
+     "count": 2
+    }
+   ],
+   "leaf": {
+    "id_column": "ID_MOVIE",
+    "label_column": "MOVIE_TITLE",
+    "image": true,
+    "count": 6
+   },
+   "count": 6,
+   "shared": 0,
+   "ungrouped": 0,
+   "even": true,
+   "largest": 0,
+   "groups": [
+    {
+     "label": "The Hobbit Collection",
+     "id": null,
+     "count": 3,
+     "rows": [
+      0,
+      1,
+      2
+     ]
+    },
+    {
+     "label": "The Lord of the Rings Collection",
+     "id": null,
+     "count": 3,
+     "rows": [
+      3,
+      4,
+      5
+     ]
+    }
+   ]
+  }
+ },
+ "intent": {
+  "task": "list",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "hierarchy",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 49051,
+    "MOVIE_TITLE": "The Hobbit: An Unexpected Journey",
+    "DAT_RELEASE": "2012-12-12",
+    "ID_IMDB": "tt0903624",
+    "IMDB_RATING": 7.8,
+    "IMDB_RATING_WEIGHTED": 7.78,
+    "IMDB_VOTES": 941073,
+    "POSTER_PATH": "/yHA9Fc37VmpUA5UncTxxo3rTGVA.jpg",
+    "RUNTIME": 169,
+    "ID_CRITERION_SPINE": null,
+    "TRILOGY_NAME": "The Hobbit Collection"
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 57158,
+    "MOVIE_TITLE": "The Hobbit: The Desolation of Smaug",
+    "DAT_RELEASE": "2013-12-11",
+    "ID_IMDB": "tt1170358",
+    "IMDB_RATING": 7.8,
+    "IMDB_RATING_WEIGHTED": 7.78,
+    "IMDB_VOTES": 764792,
+    "POSTER_PATH": "/xQYiXsheRCDBA39DOrmaw1aSpbk.jpg",
+    "RUNTIME": 161,
+    "ID_CRITERION_SPINE": null,
+    "TRILOGY_NAME": "The Hobbit Collection"
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 122917,
+    "MOVIE_TITLE": "The Hobbit: The Battle of the Five Armies",
+    "DAT_RELEASE": "2014-12-10",
+    "ID_IMDB": "tt2310332",
+    "IMDB_RATING": 7.4,
+    "IMDB_RATING_WEIGHTED": 7.39,
+    "IMDB_VOTES": 628638,
+    "POSTER_PATH": "/xT98tLqatZPQApyRmlPL12LtiWp.jpg",
+    "RUNTIME": 144,
+    "ID_CRITERION_SPINE": null,
+    "TRILOGY_NAME": "The Hobbit Collection"
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_MOVIE": 120,
+    "MOVIE_TITLE": "The Lord of the Rings: The Fellowship of the Ring",
+    "DAT_RELEASE": "2001-12-18",
+    "ID_IMDB": "tt0120737",
+    "IMDB_RATING": 8.9,
+    "IMDB_RATING_WEIGHTED": 8.88,
+    "IMDB_VOTES": 2251341,
+    "POSTER_PATH": "/6oom5QYQ2yQTMJIbnvbkBL9cHo6.jpg",
+    "RUNTIME": 179,
+    "ID_CRITERION_SPINE": null,
+    "TRILOGY_NAME": "The Lord of the Rings Collection"
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_MOVIE": 121,
+    "MOVIE_TITLE": "The Lord of the Rings: The Two Towers",
+    "DAT_RELEASE": "2002-12-18",
+    "ID_IMDB": "tt0167261",
+    "IMDB_RATING": 8.8,
+    "IMDB_RATING_WEIGHTED": 8.78,
+    "IMDB_VOTES": 1996185,
+    "POSTER_PATH": "/5VTN0pR8gcqV3EPUHHfMGnJYN9L.jpg",
+    "RUNTIME": 179,
+    "ID_CRITERION_SPINE": null,
+    "TRILOGY_NAME": "The Lord of the Rings Collection"
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_MOVIE": 122,
+    "MOVIE_TITLE": "The Lord of the Rings: The Return of the King",
+    "DAT_RELEASE": "2003-12-17",
+    "ID_IMDB": "tt0167260",
+    "IMDB_RATING": 9.0,
+    "IMDB_RATING_WEIGHTED": 8.98,
+    "IMDB_VOTES": 2207007,
+    "POSTER_PATH": "/rCzpDGLbOoPwLjy3OAm5NUPOTrC.jpg",
+    "RUNTIME": 201,
+    "ID_CRITERION_SPINE": null,
+    "TRILOGY_NAME": "The Lord of the Rings Collection"
+   }
+  }
+ ]
+}

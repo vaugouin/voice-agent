@@ -1503,7 +1503,8 @@ def show_results_as_tool_definition() -> dict[str, Any]:
             "or decade), compare (two to four cards side by side, the winner marked), histogram "
             "(counts per bin of one quantity), share (the parts of a whole as one bar, 'as a "
             "pie'), flags (countries with their flags), scatter (one dot per title over two "
-            "quantities, x against y) or map (countries shaded on a world map). Returns ok false "
+            "quantities, x against y), map (countries shaded on a world map) or groups (the "
+            "rows under their groups, 'grouped by trilogy'). Returns ok false "
             "with the available views when this result cannot be shown that way."
         ),
         "parameters": {
@@ -2154,8 +2155,8 @@ REPRESENTATION_REQUEST_INSTRUCTIONS = (
     "When the user asks to see the results already on screen in another form, without naming "
     "a new subject or filter ('show it as a table', 'as a chart', 'with the posters', 'on a "
     "timeline', 'side by side', 'as a pie', 'with the flags', 'as a scatter plot', 'on a "
-    "map', 'en tableau', 'en graphique', 'en frise', 'côte à côte', 'en camembert', 'en nuage "
-    "de points', 'sur une carte', 'avec les affiches'), call "
+    "map', 'in groups', 'en tableau', 'en graphique', 'en frise', 'côte à côte', 'en camembert', "
+    "'en nuage de points', 'sur une carte', 'par groupe', 'avec les affiches'), call "
     "show_results_as with that view, never query_text2sql and never a detail tool: it redraws "
     "the same rows. Then confirm in a few words. If it returns ok false, say in one short "
     "sentence that this result cannot be shown that way and name the available_views; do not "

@@ -1,0 +1,830 @@
+{
+ "question": "Quelles collections composent l'univers cinématographique Marvel, avec les films de chacune ?",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici les collections qui partagent des films avec Univers cinématographique Marvel, accompagnées des films concernés.",
+ "representation": "hierarchy",
+ "representation_options": [
+  "hierarchy",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_T2S_COLLECTION",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "COLLECTION_NAME",
+   "role": "label",
+   "unit": null,
+   "ordered": "asc"
+  },
+  {
+   "name": "COLLECTION_SOURCE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "COLLECTION_TYPE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "WIKIPEDIA_IMAGE_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "OVERVIEW",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "SERIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 37,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": null,
+  "order_direction": null,
+  "top": null,
+  "hierarchy": {
+   "levels": [
+    {
+     "column": "COLLECTION_NAME",
+     "id_column": "ID_T2S_COLLECTION",
+     "kind": "collection",
+     "count": 12
+    }
+   ],
+   "leaf": {
+    "id_column": "ID_MOVIE",
+    "label_column": "MOVIE_TITLE",
+    "image": false,
+    "count": 37
+   },
+   "count": 37,
+   "shared": 0,
+   "ungrouped": 0,
+   "even": false,
+   "largest": 10,
+   "groups": [
+    {
+     "label": "Ant-Man Collection",
+     "id": 1776,
+     "count": 3,
+     "rows": [
+      0,
+      1,
+      2
+     ]
+    },
+    {
+     "label": "Black Panther Collection",
+     "id": 2234,
+     "count": 2,
+     "rows": [
+      3,
+      4
+     ]
+    },
+    {
+     "label": "Captain America Collection",
+     "id": 717,
+     "count": 4,
+     "rows": [
+      5,
+      6,
+      7,
+      8
+     ]
+    },
+    {
+     "label": "Captain Marvel Collection",
+     "id": 2516,
+     "count": 2,
+     "rows": [
+      9,
+      10
+     ]
+    },
+    {
+     "label": "Deadpool Collection",
+     "id": 1875,
+     "count": 1,
+     "rows": [
+      11
+     ]
+    },
+    {
+     "label": "Doctor Strange Collection",
+     "id": 2487,
+     "count": 2,
+     "rows": [
+      12,
+      13
+     ]
+    },
+    {
+     "label": "Guardians of the Galaxy Collection",
+     "id": 1299,
+     "count": 3,
+     "rows": [
+      14,
+      15,
+      16
+     ]
+    },
+    {
+     "label": "Iron Man Collection",
+     "id": 716,
+     "count": 3,
+     "rows": [
+      17,
+      18,
+      19
+     ]
+    },
+    {
+     "label": "Spider-Man (MCU) Collection",
+     "id": 2238,
+     "count": 4,
+     "rows": [
+      20,
+      21,
+      22,
+      23
+     ]
+    },
+    {
+     "label": "Team Thor Collection",
+     "id": 2891,
+     "count": 3,
+     "rows": [
+      24,
+      25,
+      26
+     ]
+    },
+    {
+     "label": "The Avengers Collection",
+     "id": 380,
+     "count": 6,
+     "rows": [
+      27,
+      28,
+      29,
+      30,
+      31,
+      32
+     ]
+    },
+    {
+     "label": "Thor Collection",
+     "id": 718,
+     "count": 4,
+     "rows": [
+      33,
+      34,
+      35,
+      36
+     ]
+    }
+   ]
+  }
+ },
+ "intent": {
+  "task": "list",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "hierarchy",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_T2S_COLLECTION": 1776,
+    "COLLECTION_NAME": "Ant-Man Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/hAH2Rt2WvfMBK2tZDLMNuUTUwxG.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 3,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.73,
+    "ID_MOVIE": 102899,
+    "MOVIE_TITLE": "Ant-Man"
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_T2S_COLLECTION": 1776,
+    "COLLECTION_NAME": "Ant-Man Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/r3Vapr4sdXOhHBThTNtfuijKe5V.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 3,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.73,
+    "ID_MOVIE": 363088,
+    "MOVIE_TITLE": "Ant-Man et la Guêpe"
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_T2S_COLLECTION": 1776,
+    "COLLECTION_NAME": "Ant-Man Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/2hq8EKF6kaUyOxB9KhmIb5JUxEe.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 3,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.73,
+    "ID_MOVIE": 640146,
+    "MOVIE_TITLE": "Ant-Man et la Guêpe : Quantumania"
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_T2S_COLLECTION": 2234,
+    "COLLECTION_NAME": "Black Panther Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/g94IcdzPswTYl1ISdgn2EwvaZtt.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 3,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.95,
+    "ID_MOVIE": 284054,
+    "MOVIE_TITLE": "Black Panther"
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_T2S_COLLECTION": 2234,
+    "COLLECTION_NAME": "Black Panther Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/rNTKgJdJ8tyfpiUug5ittECK8CS.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 3,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.95,
+    "ID_MOVIE": 505642,
+    "MOVIE_TITLE": "Black Panther : Wakanda Forever"
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_T2S_COLLECTION": 717,
+    "COLLECTION_NAME": "Captain America Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/wDRXmiAEJdhNIcuetM4016fOCx8.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 4,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.0,
+    "ID_MOVIE": 822119,
+    "MOVIE_TITLE": "Captain America : Brave New World"
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_T2S_COLLECTION": 717,
+    "COLLECTION_NAME": "Captain America Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/i2nc9IAP1xRWoa3MgeR7ldsshkV.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 4,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.0,
+    "ID_MOVIE": 271110,
+    "MOVIE_TITLE": "Captain America : Civil War"
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_T2S_COLLECTION": 717,
+    "COLLECTION_NAME": "Captain America Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/l1SP3gyHA5ZEuf72WKx5ihtZZFO.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 4,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.0,
+    "ID_MOVIE": 1771,
+    "MOVIE_TITLE": "Captain America : First Avenger"
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_T2S_COLLECTION": 717,
+    "COLLECTION_NAME": "Captain America Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/n3Xa8g1sWrUVUal6zk0OoC9ARo1.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 4,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.0,
+    "ID_MOVIE": 100402,
+    "MOVIE_TITLE": "Captain America : Le Soldat de l'hiver"
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_T2S_COLLECTION": 2516,
+    "COLLECTION_NAME": "Captain Marvel Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/aRJAoQ6mqPHAKXjP3CqNyLC8FAh.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.05,
+    "ID_MOVIE": 299537,
+    "MOVIE_TITLE": "Captain Marvel"
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_T2S_COLLECTION": 2516,
+    "COLLECTION_NAME": "Captain Marvel Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/mqAQO6j5gkq6iwCXNbXpzf0RXBU.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.05,
+    "ID_MOVIE": 609681,
+    "MOVIE_TITLE": "The Marvels"
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_T2S_COLLECTION": 1875,
+    "COLLECTION_NAME": "Deadpool Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/7CtRdKd5hQPB2b1apKCqxxQUKSf.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 3,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7,
+    "ID_MOVIE": 533535,
+    "MOVIE_TITLE": "Deadpool & Wolverine"
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_T2S_COLLECTION": 2487,
+    "COLLECTION_NAME": "Doctor Strange Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/7wZ7mx7tY5SgflQKuJmQvwu3wGm.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.15,
+    "ID_MOVIE": 284052,
+    "MOVIE_TITLE": "Doctor Strange"
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "ID_T2S_COLLECTION": 2487,
+    "COLLECTION_NAME": "Doctor Strange Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/arfzjn1tGvXWwkX7eaGVuXsc0mp.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.15,
+    "ID_MOVIE": 453395,
+    "MOVIE_TITLE": "Doctor Strange in the Multiverse of Madness"
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "ID_T2S_COLLECTION": 1299,
+    "COLLECTION_NAME": "Guardians of the Galaxy Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/9a6fGeSV5kffyNPPMWCPhLOhLdJ.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 3,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.83,
+    "ID_MOVIE": 118340,
+    "MOVIE_TITLE": "Les Gardiens de la Galaxie"
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "ID_T2S_COLLECTION": 1299,
+    "COLLECTION_NAME": "Guardians of the Galaxy Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/eJz44lc3IaM68BkJtIkm4ia9xpZ.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 3,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.83,
+    "ID_MOVIE": 283995,
+    "MOVIE_TITLE": "Les Gardiens de la Galaxie Vol. 2"
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "ID_T2S_COLLECTION": 1299,
+    "COLLECTION_NAME": "Guardians of the Galaxy Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/dnyQnKSSqQ8aOEMiE5hYDNJO4dE.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 3,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.83,
+    "ID_MOVIE": 447365,
+    "MOVIE_TITLE": "Les Gardiens de la Galaxie : Volume 3"
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "ID_T2S_COLLECTION": 716,
+    "COLLECTION_NAME": "Iron Man Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/uZrsDJkn0PPnGc51fQhtCqwPPVM.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 3,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.3,
+    "ID_MOVIE": 1726,
+    "MOVIE_TITLE": "Iron Man"
+   }
+  },
+  {
+   "index": 18,
+   "data": {
+    "ID_T2S_COLLECTION": 716,
+    "COLLECTION_NAME": "Iron Man Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/ghomWlBZtAW5K9zjcAvg4dU62AU.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 3,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.3,
+    "ID_MOVIE": 10138,
+    "MOVIE_TITLE": "Iron Man 2"
+   }
+  },
+  {
+   "index": 19,
+   "data": {
+    "ID_T2S_COLLECTION": 716,
+    "COLLECTION_NAME": "Iron Man Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/sE71EBrRMfW0NKMHlXPO55Km88X.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 3,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.3,
+    "ID_MOVIE": 68721,
+    "MOVIE_TITLE": "Iron Man 3"
+   }
+  },
+  {
+   "index": 20,
+   "data": {
+    "ID_T2S_COLLECTION": 2238,
+    "COLLECTION_NAME": "Spider-Man (MCU) Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/6OEtkkzoyusZDm2uMJojlWZSLR9.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 4,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.67,
+    "ID_MOVIE": 969681,
+    "MOVIE_TITLE": "Spider-Man : Brand New Day"
+   }
+  },
+  {
+   "index": 21,
+   "data": {
+    "ID_T2S_COLLECTION": 2238,
+    "COLLECTION_NAME": "Spider-Man (MCU) Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/xVYGzjMaHVwNQ9STT5ZXcz7knsB.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 4,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.67,
+    "ID_MOVIE": 429617,
+    "MOVIE_TITLE": "Spider-Man : Far From Home"
+   }
+  },
+  {
+   "index": 22,
+   "data": {
+    "ID_T2S_COLLECTION": 2238,
+    "COLLECTION_NAME": "Spider-Man (MCU) Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/wFNNv1ZHglNdXJLYiEgpLY5sa9S.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 4,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.67,
+    "ID_MOVIE": 315635,
+    "MOVIE_TITLE": "Spider-Man : Homecoming"
+   }
+  },
+  {
+   "index": 23,
+   "data": {
+    "ID_T2S_COLLECTION": 2238,
+    "COLLECTION_NAME": "Spider-Man (MCU) Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/jwfDFqzxBkXC5bERBZrCEfK9iii.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 4,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.67,
+    "ID_MOVIE": 634649,
+    "MOVIE_TITLE": "Spider-Man : No Way Home"
+   }
+  },
+  {
+   "index": 24,
+   "data": {
+    "ID_T2S_COLLECTION": 2891,
+    "COLLECTION_NAME": "Team Thor Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/3RS6PrXua9vJ6wT0xExdTPaW0RX.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 3,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.13,
+    "ID_MOVIE": 505945,
+    "MOVIE_TITLE": "Team Darryl"
+   }
+  },
+  {
+   "index": 25,
+   "data": {
+    "ID_T2S_COLLECTION": 2891,
+    "COLLECTION_NAME": "Team Thor Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/llVRWHTiOUsI4f5tqsGRTJVtWpR.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 3,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.13,
+    "ID_MOVIE": 413279,
+    "MOVIE_TITLE": "Team Thor : Partie 1"
+   }
+  },
+  {
+   "index": 26,
+   "data": {
+    "ID_T2S_COLLECTION": 2891,
+    "COLLECTION_NAME": "Team Thor Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/qmnJ6D0RgSVegTA0Aqiy4arRJrP.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 3,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.13,
+    "ID_MOVIE": 441829,
+    "MOVIE_TITLE": "Team Thor : Partie 2"
+   }
+  },
+  {
+   "index": 27,
+   "data": {
+    "ID_T2S_COLLECTION": 380,
+    "COLLECTION_NAME": "The Avengers Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/A0tw88n1byyR2vodhJMlFPQGQgF.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 6,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 8.03,
+    "ID_MOVIE": 99861,
+    "MOVIE_TITLE": "Avengers : L'Ère d'Ultron"
+   }
+  },
+  {
+   "index": 28,
+   "data": {
+    "ID_T2S_COLLECTION": 380,
+    "COLLECTION_NAME": "The Avengers Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/cCUxE6EJ9zi1YfdsxU8rWLgqQnN.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 6,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 8.03,
+    "ID_MOVIE": 1003596,
+    "MOVIE_TITLE": "Avengers : Doomsday"
+   }
+  },
+  {
+   "index": 29,
+   "data": {
+    "ID_T2S_COLLECTION": 380,
+    "COLLECTION_NAME": "The Avengers Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/qXekTarZKRrVfnBwhS6xevt6BGU.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 6,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 8.03,
+    "ID_MOVIE": 299534,
+    "MOVIE_TITLE": "Avengers : Endgame"
+   }
+  },
+  {
+   "index": 30,
+   "data": {
+    "ID_T2S_COLLECTION": 380,
+    "COLLECTION_NAME": "The Avengers Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/hSfuKPtyEryeFzapZ8UgZd4aESu.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 6,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 8.03,
+    "ID_MOVIE": 299536,
+    "MOVIE_TITLE": "Avengers : Infinity War"
+   }
+  },
+  {
+   "index": 31,
+   "data": {
+    "ID_T2S_COLLECTION": 380,
+    "COLLECTION_NAME": "The Avengers Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/yFSIUVTCvgYrpalUktulvk3Gi5Y.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 6,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 8.03,
+    "ID_MOVIE": 1003598,
+    "MOVIE_TITLE": "Avengers: Secret Wars"
+   }
+  },
+  {
+   "index": 32,
+   "data": {
+    "ID_T2S_COLLECTION": 380,
+    "COLLECTION_NAME": "The Avengers Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/ylsAO88v2tF0iXRFojPa0UaAJf1.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 6,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 8.03,
+    "ID_MOVIE": 24428,
+    "MOVIE_TITLE": "Avengers"
+   }
+  },
+  {
+   "index": 33,
+   "data": {
+    "ID_T2S_COLLECTION": 718,
+    "COLLECTION_NAME": "Thor Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/q8pF6s9b9veTQvxTqMDIQf9nJKi.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 4,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.93,
+    "ID_MOVIE": 10195,
+    "MOVIE_TITLE": "Thor"
+   }
+  },
+  {
+   "index": 34,
+   "data": {
+    "ID_T2S_COLLECTION": 718,
+    "COLLECTION_NAME": "Thor Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/kSMarEm3ESOOr11dzsep2RZ1ClD.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 4,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.93,
+    "ID_MOVIE": 616037,
+    "MOVIE_TITLE": "Thor : Love and Thunder"
+   }
+  },
+  {
+   "index": 35,
+   "data": {
+    "ID_T2S_COLLECTION": 718,
+    "COLLECTION_NAME": "Thor Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/mAA8RXkgF87jSWWMSf6hgLl73mk.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 4,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.93,
+    "ID_MOVIE": 284053,
+    "MOVIE_TITLE": "Thor : Ragnarok"
+   }
+  },
+  {
+   "index": 36,
+   "data": {
+    "ID_T2S_COLLECTION": 718,
+    "COLLECTION_NAME": "Thor Collection",
+    "COLLECTION_SOURCE": "collection",
+    "COLLECTION_TYPE": "collection",
+    "POSTER_PATH": "/eAIGX0nlwlb5sMb4uDRGNFqMyG9.jpg",
+    "WIKIPEDIA_IMAGE_PATH": "",
+    "MOVIE_COUNT": 4,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.93,
+    "ID_MOVIE": 76338,
+    "MOVIE_TITLE": "Thor : Le Monde des ténèbres"
+   }
+  }
+ ]
+}

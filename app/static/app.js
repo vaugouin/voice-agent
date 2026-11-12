@@ -3198,6 +3198,10 @@ function renderText2SqlRepresentation(rep, container, rows, upstream) {
   if (rep === "map") {
     return renderMap(container, rows, columns, upstream);
   }
+  // Phase 3 lot C (FASTAPI-TEXT2SQL, 2026-11-12): the rows under their groups.
+  if (rep === "hierarchy") {
+    return renderHierarchy(container, rows, columns, upstream);
+  }
   // number-card | stat-strip: the scalar family, one card per metric column.
   return renderScalarCards(container, rows, columns);
 }
@@ -4359,6 +4363,94 @@ function renderScatter(container, rows, columns, upstream) {
   select(model.highlight);
 }
 
+// Phase 3 lot C, `hierarchy`: the rows under their groups, read from summary_facts.hierarchy (the
+// API finds the groups; the front never regroups the rows). Real headings and lists, no script
+// and no collapsing: one section per outer group with its name and count, a third level as
+// nested sections, the leaves as compact rows (a small poster or face only when the leaf is the
+// row's own entity, never the poster of its collection), each opening its sheet like a card; a
+// group with an id the detail tools know opens its own sheet from its name. The model
+// (text2SqlHierarchyModel(), pure, pinned by the check) and the markup are t2s-front's.
+function renderHierarchy(container, rows, columns, upstream) {
+  const model = text2SqlHierarchyModel(upstream, activeUiLanguage);
+  if (!model) {
+    return renderRawTable(container, rows, columns);
+  }
+  const root = document.createElement("div");
+  root.className = "t2sHier";
+  const heading = (group, level) => {
+    const head = document.createElement(level === 0 ? "h3" : "h4");
+    head.className = "t2sHierHead";
+    const name = document.createElement("span");
+    name.className = group.unnamed ? "t2sHierName isUnnamed" : "t2sHierName";
+    name.textContent = group.name;
+    if (group.record) {
+      makeText2SqlRowOpenable(name, group.record);
+    }
+    const count = document.createElement("span");
+    count.className = "t2sHierCount";
+    count.textContent = String(group.count);
+    head.append(name, " ", count);
+    return head;
+  };
+  const leafList = (leaves) => {
+    const list = document.createElement("ul");
+    list.className = "t2sHierLeaves";
+    leaves.forEach((leaf) => {
+      const item = document.createElement("li");
+      item.className = "t2sHierLeaf";
+      const spec = cardSpecFromRecord(leaf.record);
+      const title = leaf.title || spec?.title || "";
+      if (model.image) {
+        if (spec?.imageUrl) {
+          const img = document.createElement("img");
+          img.className = "t2sHierThumb";
+          img.src = spec.imageUrl;
+          img.alt = "";
+          img.loading = "lazy";
+          item.append(img);
+        } else {
+          const empty = document.createElement("span");
+          empty.className = "t2sHierThumb isEmpty";
+          empty.setAttribute("aria-hidden", "true");
+          item.append(empty);
+        }
+      }
+      const text = document.createElement("span");
+      text.className = "t2sHierText";
+      const name = document.createElement("span");
+      name.className = "t2sHierTitle";
+      name.textContent = title;
+      text.append(name);
+      if (leaf.year) {
+        const sub = document.createElement("span");
+        sub.className = "t2sHierSub";
+        sub.textContent = leaf.year;
+        text.append(sub);
+      }
+      item.append(text);
+      makeText2SqlRowOpenable(item, leaf.record);
+      if (item.getAttribute("role") === "button") {
+        item.setAttribute("aria-label", leaf.year ? `${title}, ${leaf.year}` : title);
+      }
+      list.append(item);
+    });
+    return list;
+  };
+  const section = (group, level) => {
+    const box = document.createElement("section");
+    box.className = level === 0 ? "t2sHierGroup" : "t2sHierGroup t2sHierInner";
+    box.append(heading(group, level));
+    if (group.groups.length) {
+      group.groups.forEach((sub) => box.append(section(sub, level + 1)));
+    } else {
+      box.append(leafList(group.leaves));
+    }
+    return box;
+  };
+  model.groups.forEach((group) => root.append(section(group, 0)));
+  container.append(root);
+}
+
 function renderRawTable(container, rows, columns) {
   const records = rows.map((item) => item?.data || item).filter((r) => r && typeof r === "object");
   if (!records.length) {
@@ -4435,11 +4527,11 @@ function renderRawTable(container, rows, columns) {
 // lot A) joined the list; before that an API sending them fell back to the front's own chooser.
 // Phase 2 lot B: `compare-cards`, `fact-card` and `verdict` joined them on 2026-11-11, and phase 2
 // lot C `histogram`, `share-bar` and `flag-list` the same day; phase 3 lot A `scatter` on 2026-11-12,
-// lot B `map` the same day.
+// lot B `map` and lot C `hierarchy` the same day.
 const T2S_KNOWN_REPRESENTATIONS = [
   "entity-page", "card-grid", "value-cards", "number-card", "stat-strip", "ranked-bars", "table",
   "timeline", "sequence-strip", "trend-columns", "compare-cards", "fact-card", "verdict",
-  "histogram", "share-bar", "flag-list", "scatter", "map",
+  "histogram", "share-bar", "flag-list", "scatter", "map", "hierarchy",
 ];
 // Chips only where switching means something: several entity rows, or a table of them. An
 // entity page and a one-row number keep their single form (VOICE-AGENT-247), even though the
@@ -4450,7 +4542,7 @@ const T2S_KNOWN_REPRESENTATIONS = [
 // One share alone (phase 2 lot C) stands on a one-row shape too: its chips are the bar and the table.
 const T2S_SWITCHABLE_REPRESENTATIONS = [
   "card-grid", "value-cards", "ranked-bars", "table", "timeline", "sequence-strip", "trend-columns",
-  "compare-cards", "fact-card", "verdict", "histogram", "share-bar", "flag-list", "scatter", "map",
+  "compare-cards", "fact-card", "verdict", "histogram", "share-bar", "flag-list", "scatter", "map", "hierarchy",
 ];
 // The two forms that ARE the answer to the question (a yes or no, the one value asked for): a
 // remembered chip choice from an earlier list never replaces them; a chip on this result still does.
@@ -4472,6 +4564,7 @@ const T2S_REPRESENTATION_LABELS = {
   "flag-list": ["Flags", "Drapeaux"],
   scatter: ["Scatter", "Nuage de points"],
   map: ["Map", "Carte"],
+  hierarchy: ["Groups", "Groupes"],
 };
 // Column names the summary line and the value cards name in words. Anything else falls back to
 // prettyLabel() of the column name, in lower case.
@@ -4809,6 +4902,10 @@ function text2SqlSummaryLine(upstream, { rep = "", lang = "", spoken = false, ha
   // Phase 3 lot B: the flag-list sentence, placed on the map.
   if (shown === "map") {
     return text2SqlFlagSummary(upstream, { lang, spoken, hasMore, onMap: true });
+  }
+  // Phase 3 lot C.
+  if (shown === "hierarchy") {
+    return text2SqlHierarchySummary(upstream, { lang, spoken, hasMore });
   }
   if (["entity-page", "number-card", "stat-strip"].includes(shown)) {
     return "";
@@ -5451,6 +5548,7 @@ const T2S_REQUESTED_VIEW_TARGETS = {
   flags: ["flag-list"],
   scatter: ["scatter"],
   map: ["map"],
+  groups: ["hierarchy"],
 };
 const T2S_REQUESTED_VIEW_NOUNS = {
   table: ["a table", "en tableau"],
@@ -5468,6 +5566,7 @@ const T2S_REQUESTED_VIEW_NOUNS = {
   flags: ["flags", "avec les drapeaux"],
   scatter: ["a scatter plot", "en nuage de points"],
   map: ["a map", "sur une carte"],
+  groups: ["groups", "par groupe"],
 };
 const T2S_REQUESTED_VIEW_DONE = {
   table: ["Here it is as a table.", "Voici le résultat en tableau."],
@@ -5485,6 +5584,7 @@ const T2S_REQUESTED_VIEW_DONE = {
   "flag-list": ["Here are the countries with their flags.", "Voici les pays et leurs drapeaux."],
   scatter: ["Here it is as a scatter plot.", "Voici le nuage de points."],
   map: ["Here it is on a map.", "Voici la carte."],
+  hierarchy: ["Here it is, grouped.", "Voici le résultat par groupe."],
 };
 
 function text2SqlRequestedView(text) {
@@ -6371,6 +6471,135 @@ function text2SqlScatterSummary(upstream, { lang = "", spoken = false, hasMore =
     text += fr ? ` ; maximum ${yw.of} : ${label}, ${value}` : `; highest ${yw.name}: ${label}, ${value}`;
   }
   return `${text}.`;
+}
+
+// Phase 3 lot C (contract table `hierarchy`). Pure functions, no DOM, pinned by
+// tools/check-result-representations.mjs with the p3c-* fixtures; the same groups, names and
+// sentence as t2s-front (f_t2srep_hierarchy_model(), f_t2srep_caption_hierarchy()). The groups,
+// their order and their counts are the API's (summary_facts.hierarchy), never recomputed.
+// [English plural, French plural, French gender] of what a level groups (`kind`) and of the leaves.
+const T2S_HIERARCHY_KINDS = {
+  trilogy: ["trilogies", "trilogies", "f"], saga: ["sagas", "sagas", "f"], franchise: ["franchises", "franchises", "f"],
+  universe: ["universes", "univers", "m"], collection: ["collections", "collections", "f"], region: ["regions", "régions", "f"],
+  state: ["states", "États", "m"], nation: ["nations", "nations", "f"], country: ["countries", "pays", "m"],
+  province: ["provinces", "provinces", "f"], county: ["counties", "comtés", "m"], department: ["departments", "départements", "m"],
+  city: ["cities", "villes", "f"], actor: ["actors", "acteurs", "m"], director: ["directors", "réalisateurs", "m"],
+  company: ["companies", "sociétés", "f"], network: ["networks", "chaînes", "f"], genre: ["genres", "genres", "m"],
+  person: ["people", "personnes", "f"], group: ["groups", "groupes", "m"],
+};
+const T2S_HIERARCHY_LEAVES = {
+  ID_MOVIE: ["films", "films", "m"], ID_SERIE: ["series", "séries", "f"], ID_CONTENT: ["titles", "titres", "m"],
+  ID_PERSON: ["people", "personnes", "f"], ID_LOCATION: ["places", "lieux", "m"],
+  ID_T2S_COLLECTION: ["collections", "collections", "f"], ID_COLLECTION: ["collections", "collections", "f"],
+  ID_COMPANY: ["companies", "sociétés", "f"], ID_NETWORK: ["networks", "chaînes", "f"],
+};
+
+function text2SqlHierarchyKind(kind) {
+  return T2S_HIERARCHY_KINDS[String(kind || "")] || T2S_HIERARCHY_KINDS.group;
+}
+
+// The leaves' noun: films and series mixed are titles, one type alone takes its own noun.
+function text2SqlHierarchyLeafNoun(idColumn, records) {
+  let key = String(idColumn || "").toUpperCase();
+  if (key === "ID_CONTENT") {
+    const types = new Set(records.map((r) => String(r?.CONTENT_TYPE || "")));
+    if (types.size === 1 && types.has("movie")) {
+      key = "ID_MOVIE";
+    } else if (types.size === 1 && types.has("serie")) {
+      key = "ID_SERIE";
+    }
+  }
+  return T2S_HIERARCHY_LEAVES[key] || ["results", "résultats", "m"];
+}
+
+// {image, groups}, or null without the facts. A group: {name, unnamed, count, record, groups,
+// leaves}; `record` the group's own entity when its level has an id ({ID_T2S_COLLECTION, the name
+// column}); a leaf: {index, record, title, year}. The leaf's record is the whole row when the leaf
+// is the row's own entity (`leaf.image`), else its id and name alone, so a film beside its
+// collection never shows the collection's poster nor opens the collection.
+function text2SqlHierarchyModel(upstream, lang) {
+  const facts = upstream?.summary_facts?.hierarchy;
+  if (!facts || !Array.isArray(facts.groups) || !Array.isArray(facts.levels) || !facts.levels.length || !facts.leaf) {
+    return null;
+  }
+  const fr = t2sLang(lang) === "fr";
+  const records = (Array.isArray(upstream?.result) ? upstream.result : []).map((row) => row?.data || row);
+  const idColumn = String(facts.leaf.id_column || "");
+  const labelColumn = String(facts.leaf.label_column || "");
+  const image = Boolean(facts.leaf.image);
+  const leaf = (index) => {
+    const full = records[index];
+    if (!full || typeof full !== "object") {
+      return null;
+    }
+    const record = image ? full : Object.fromEntries([idColumn, labelColumn, "CONTENT_TYPE"]
+      .filter((key) => key && full[key] !== undefined && full[key] !== null).map((key) => [key, full[key]]));
+    const year = image ? text2SqlYearOf(full.DAT_RELEASE ?? full.DAT_FIRST_AIR ?? null) : null;
+    return { index, record, title: labelColumn && full[labelColumn] != null ? String(full[labelColumn]) : "", year: year === null ? "" : String(year) };
+  };
+  const group = (g, depth) => {
+    const level = facts.levels[depth] || {};
+    const unnamed = g?.label === null || g?.label === undefined || String(g.label).trim() === "";
+    const hasId = !unnamed && level.id_column && g.id !== null && g.id !== undefined && g.id !== "";
+    return {
+      name: unnamed ? (fr ? "Autres" : "Other") : String(g.label),
+      unnamed,
+      count: Number(g?.count) || 0,
+      record: hasId ? { [level.id_column]: g.id, [level.column]: g.label } : null,
+      groups: Array.isArray(g?.groups) ? g.groups.map((sub) => group(sub, depth + 1)) : [],
+      leaves: Array.isArray(g?.rows) ? g.rows.map(leaf).filter(Boolean) : [],
+    };
+  };
+  return { image, groups: facts.groups.map((g) => group(g, 0)) };
+}
+
+// "Six films in two trilogies, three in each." / "Six films en deux trilogies, trois dans
+// chacune."; "37 films in twelve collections; the largest, The Avengers Collection, has six." /
+// "37 films en douze collections ; la plus grande, The Avengers Collection, en compte six.";
+// three levels: "Seven places in five counties and three nations; ..." / "Sept lieux dans cinq
+// comtés et trois nations ; ..."; leaves shared: "44 places in 19 regions (five in more than
+// one); ..." / "44 lieux en 19 régions (cinq dans plusieurs) ; ...". "The first N" while another
+// page may follow. Counts up to twelve in words.
+function text2SqlHierarchySummary(upstream, { lang = "", spoken = false, hasMore = false } = {}) {
+  const facts = upstream?.summary_facts?.hierarchy;
+  if (!facts || !Array.isArray(facts.levels) || !facts.levels.length || !Array.isArray(facts.groups) || !facts.leaf) {
+    return "";
+  }
+  const language = t2sLang(lang);
+  const fr = language === "fr";
+  const records = (Array.isArray(upstream?.result) ? upstream.result : []).map((row) => row?.data || row);
+  const noun = text2SqlHierarchyLeafNoun(facts.leaf.id_column, records);
+  const gender = noun[2];
+  const word = (n, g) => text2SqlCountWord(Number(n) || 0, g, language);
+  const plural = fr ? noun[1] : noun[0];
+  const n = word(facts.leaf.count, gender);
+  let lead = hasMore
+    ? (fr ? `les ${n} ${gender === "f" ? "premières" : "premiers"} ${plural}` : `the first ${n} ${plural}`)
+    : `${n} ${plural}`;
+  const outer = text2SqlHierarchyKind(facts.levels[0].kind);
+  const outerText = `${word(facts.levels[0].count, outer[2])} ${fr ? outer[1] : outer[0]}`;
+  if (facts.levels.length > 1) {
+    const inner = text2SqlHierarchyKind(facts.levels[1].kind);
+    const innerText = `${word(facts.levels[1].count, inner[2])} ${fr ? inner[1] : inner[0]}`;
+    lead += fr ? ` dans ${innerText} et ${outerText}` : ` in ${innerText} and ${outerText}`;
+  } else {
+    lead += fr ? ` en ${outerText}` : ` in ${outerText}`;
+  }
+  const shared = Number(facts.shared) || 0;
+  if (shared > 0) {
+    lead += fr ? ` (${word(shared, gender)} dans plusieurs)` : ` (${word(shared, gender)} in more than one)`;
+  }
+  const top = facts.groups[Number(facts.largest)];
+  let tail = "";
+  if (top && facts.even) {
+    tail = fr ? `, ${word(top.count, gender)} dans ${outer[2] === "f" ? "chacune" : "chacun"}` : `, ${word(top.count, gender)} in each`;
+  } else if (top) {
+    const name = top.label === null || top.label === undefined || String(top.label).trim() === "" ? (fr ? "Autres" : "Other") : String(top.label);
+    tail = fr
+      ? ` ; ${outer[2] === "f" ? "la plus grande" : "le plus grand"}, ${name}, en compte ${word(top.count, gender)}`
+      : `; the largest, ${name}, has ${word(top.count, gender)}`;
+  }
+  return `${capitalizeFirst(lead)}${tail}.`;
 }
 
 // One result row as a poster card, with the value(s) under it when value cards are being drawn.

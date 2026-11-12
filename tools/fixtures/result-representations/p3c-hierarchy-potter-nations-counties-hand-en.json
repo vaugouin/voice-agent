@@ -1,0 +1,298 @@
+{
+ "question": "In which places of the United Kingdom were the Harry Potter films shot, grouped by nation and county?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "",
+ "representation": "hierarchy",
+ "representation_options": [
+  "hierarchy",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_LOCATION",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_NAME",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_TYPE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_SOURCE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "WIKIPEDIA_IMAGE_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "OVERVIEW",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "SERIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "NATION_NAME",
+   "role": "label",
+   "unit": null,
+   "ordered": "asc"
+  },
+  {
+   "name": "COUNTY_NAME",
+   "role": "label",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 7,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": null,
+  "order_direction": null,
+  "top": null,
+  "hierarchy": {
+   "levels": [
+    {
+     "column": "NATION_NAME",
+     "id_column": null,
+     "kind": "nation",
+     "count": 3
+    },
+    {
+     "column": "COUNTY_NAME",
+     "id_column": null,
+     "kind": "county",
+     "count": 5
+    }
+   ],
+   "leaf": {
+    "id_column": "ID_LOCATION",
+    "label_column": "LOCATION_NAME",
+    "image": true,
+    "count": 7
+   },
+   "count": 7,
+   "shared": 0,
+   "ungrouped": 0,
+   "even": false,
+   "largest": 0,
+   "groups": [
+    {
+     "label": "England",
+     "id": null,
+     "count": 5,
+     "groups": [
+      {
+       "label": "Greater London",
+       "id": null,
+       "count": 2,
+       "rows": [
+        0,
+        1
+       ]
+      },
+      {
+       "label": "North Yorkshire",
+       "id": null,
+       "count": 1,
+       "rows": [
+        2
+       ]
+      },
+      {
+       "label": "Oxfordshire",
+       "id": null,
+       "count": 2,
+       "rows": [
+        3,
+        4
+       ]
+      }
+     ]
+    },
+    {
+     "label": "Scotland",
+     "id": null,
+     "count": 1,
+     "groups": [
+      {
+       "label": "Highland",
+       "id": null,
+       "count": 1,
+       "rows": [
+        5
+       ]
+      }
+     ]
+    },
+    {
+     "label": "Wales",
+     "id": null,
+     "count": 1,
+     "groups": [
+      {
+       "label": "Pembrokeshire",
+       "id": null,
+       "count": 1,
+       "rows": [
+        6
+       ]
+      }
+     ]
+    }
+   ]
+  }
+ },
+ "intent": {
+  "task": "list",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "hierarchy",
+  "source": "rules"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_LOCATION": 8390,
+    "LOCATION_NAME": "Leadenhall Market",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/4/46/Leadenhall_Market_In_London_-_Feb_2006_rotated.jpg",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7,
+    "NATION_NAME": "England",
+    "COUNTY_NAME": "Greater London"
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_LOCATION": 8307,
+    "LOCATION_NAME": "London Zoo",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/4/44/Wapiti_from_Wagon_Trails.jpg",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 1,
+    "IMDB_RATING": 5.45,
+    "NATION_NAME": "England",
+    "COUNTY_NAME": "Greater London"
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_LOCATION": 4752,
+    "LOCATION_NAME": "Goathland railway station",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/1/14/Goathland_station.jpg",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7,
+    "NATION_NAME": "England",
+    "COUNTY_NAME": "North Yorkshire"
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_LOCATION": 9037,
+    "LOCATION_NAME": "Christ Church",
+    "LOCATION_TYPE": null,
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b8/Tom_Quad%2C_Christ_Church%2C_Oxford.jpg/3840px-Tom_Quad%2C_Christ_Church%2C_Oxford.jpg",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7,
+    "NATION_NAME": "England",
+    "COUNTY_NAME": "Oxfordshire"
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_LOCATION": 6790,
+    "LOCATION_NAME": "New College",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f2/Chapel_and_Cloisters%2C_New_College.jpg/3840px-Chapel_and_Cloisters%2C_New_College.jpg",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7,
+    "NATION_NAME": "England",
+    "COUNTY_NAME": "Oxfordshire"
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_LOCATION": 11866,
+    "LOCATION_NAME": "Glen Nevis",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/0/0f/UK-Scotland-Glen_Nevis-Steall_Waterfall-2006.jpg",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7,
+    "NATION_NAME": "Scotland",
+    "COUNTY_NAME": "Highland"
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_LOCATION": 4936,
+    "LOCATION_NAME": "Pembrokeshire",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/9/98/Tenby_Harbour_-_geograph.org.uk_-_3983172.jpg",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7,
+    "NATION_NAME": "Wales",
+    "COUNTY_NAME": "Pembrokeshire"
+   }
+  }
+ ]
+}

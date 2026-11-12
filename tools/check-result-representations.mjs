@@ -74,7 +74,8 @@ function extractRegion(startMarker, endMarker) {
 // (fixtures lotb-*) added the compare-card, fact-card and verdict models and sentences, phase 2
 // lot C (fixtures lotc-*) the histogram, share-bar and flag-list models and sentences, phase 3
 // lot A (fixtures p3a-*) the scatter model, ticks and sentences, phase 3 lot B (fixtures p3b-*,
-// and the outline app/static/world-110m.json itself) the map model and its sentences.
+// and the outline app/static/world-110m.json itself) the map model and its sentences, phase 3
+// lot C (fixtures p3c-*) the hierarchy model and its sentence.
 const lexicons = readFileSync(join(root, "app", "lexicons.json"), "utf8");
 const code = [
   ...["normalizeUiLanguage", "uiText", "prettyLabel", "formatDate", "formatMoney", "formatMinutes",
@@ -96,6 +97,7 @@ const code = [
   "  text2SqlScatterModel, text2SqlScatterSummary, text2SqlScatterTicks, text2SqlScatterTickText,",
   "  text2SqlScatterValueText, text2SqlScatterAxisTitle, text2SqlScatterWords,",
   "  text2SqlMapModel, text2SqlMapTone, text2SqlMapStepText,",
+  "  text2SqlHierarchyModel, text2SqlHierarchySummary, text2SqlHierarchyLeafNoun, text2SqlHierarchyKind,",
   "  setLang: (l) => { activeUiLanguage = l; } };",
 ].join("\n\n");
 const sandbox = { Intl, console };
@@ -768,6 +770,68 @@ check("links: older API, from the keys", linkSummary([], ["ID_PERSON", "PERSON_N
   check("view to rep: map", api.text2SqlRepresentationForView("map", fx("lotc-flags-codes-netflix-en").representation_options.concat("map")), "map");
   check("view to rep: map not offered", api.text2SqlRepresentationForView("map", fx("lotc-share-hbo-type-en").representation_options), "");
   check("reply map fr", api.text2SqlRequestedViewReply({ ok: true, representation: "map", view: "map" }, "fr"), "Voici la carte.");
+}
+
+// Phase 3 lot C (fixtures p3c-*: the 1.1.20 answers of evaluations 2920, 2922, 2926 and 2927,
+// re-classified with the phase 3 lot C module of fastapi-text2sql, and one hand-written answer
+// with three levels, the shape the prompt rule asks for). The sentences are t2s-front's.
+{
+  const P = "p3c-hierarchy-";
+  check("p3c caption even en", caption(P + "middle-earth-trilogies-en", "en"), "Six films in two trilogies, three in each.");
+  check("p3c caption even fr", caption(P + "middle-earth-trilogies-en", "fr"), "Six films en deux trilogies, trois dans chacune.");
+  check("p3c caption largest fr", caption(P + "mcu-collections-fr", "fr"),
+    "37 films en douze collections ; la plus grande, The Avengers Collection, en compte six.");
+  check("p3c caption largest en", caption(P + "mcu-collections-fr", "en"),
+    "37 films in twelve collections; the largest, The Avengers Collection, has six.");
+  check("p3c caption shared en", caption(P + "italy-regions-en", "en"),
+    "44 places in 19 regions (five in more than one); the largest, Lazio, has eleven.");
+  check("p3c caption shared fr, more pages", caption(P + "italy-regions-fr", "fr", { hasMore: true }),
+    "Les 42 premiers lieux en 20 régions (sept dans plusieurs) ; la plus grande, Lazio, en compte onze.");
+  check("p3c caption masculine level fr", caption(P + "ford-states-en", "fr"),
+    "Douze lieux en neuf États (trois dans plusieurs) ; le plus grand, California, en compte cinq.");
+  check("p3c caption three levels en", caption(P + "potter-nations-counties-hand-en", "en"),
+    "Seven places in five counties and three nations; the largest, England, has five.");
+  check("p3c caption three levels fr", caption(P + "potter-nations-counties-hand-en", "fr"),
+    "Sept lieux dans cinq comtés et trois nations ; la plus grande, England, en compte cinq.");
+  check("p3c spoken is the caption", spoken(P + "middle-earth-trilogies-en", "en"), "Six films in two trilogies, three in each.");
+  check("p3c more pages en", caption(P + "middle-earth-trilogies-en", "en", { hasMore: true }), "The first six films in two trilogies, three in each.");
+
+  // Model: the API's groups in its order, the leaves by row position, the leaf alone when it
+  // comes after its parent's entity (no collection poster on a film), the group's own record.
+  const me = api.text2SqlHierarchyModel(fx(P + "middle-earth-trilogies-en"), "en");
+  check("p3c groups", me.groups.map((g) => [g.name, g.count, g.leaves.length]),
+    [["The Hobbit Collection", 3, 3], ["The Lord of the Rings Collection", 3, 3]]);
+  check("p3c leaf with year and its row", [me.image, me.groups[1].leaves[0].title, me.groups[1].leaves[0].year, me.groups[1].leaves[0].index,
+    me.groups[1].leaves[0].record.POSTER_PATH !== undefined], [true, "The Lord of the Rings: The Fellowship of the Ring", "2001", 3, true]);
+  const mcu = api.text2SqlHierarchyModel(fx(P + "mcu-collections-fr"), "fr");
+  check("p3c leaf alone after its parent", [mcu.image, mcu.groups[0].leaves[0].record, mcu.groups[0].leaves[0].year],
+    [false, { ID_MOVIE: 102899, MOVIE_TITLE: "Ant-Man" }, ""]);
+  check("p3c group record", mcu.groups[0].record, { ID_T2S_COLLECTION: 1776, COLLECTION_NAME: "Ant-Man Collection" });
+  check("p3c no id, no group record", me.groups[0].record, null);
+  const hand = api.text2SqlHierarchyModel(fx(P + "potter-nations-counties-hand-en"), "en");
+  check("p3c three levels", hand.groups.map((g) => [g.name, g.count, g.leaves.length, g.groups.map((s) => [s.name, s.count, s.leaves.map((l) => l.title)])]),
+    [["England", 5, 0, [["Greater London", 2, ["Leadenhall Market", "London Zoo"]], ["North Yorkshire", 1, ["Goathland railway station"]],
+      ["Oxfordshire", 2, ["Christ Church", "New College"]]]], ["Scotland", 1, 0, [["Highland", 1, ["Glen Nevis"]]]],
+     ["Wales", 1, 0, [["Pembrokeshire", 1, ["Pembrokeshire"]]]]]);
+  const it = api.text2SqlHierarchyModel(fx(P + "italy-regions-en"), "en");
+  check("p3c a shared place under each of its groups", it.groups.filter((g) => g.leaves.some((l) => l.title === "Cirella")).map((g) => g.name),
+    ["Calabria", "Diamante"]);
+  const other = JSON.parse(JSON.stringify(fx(P + "middle-earth-trilogies-en")));
+  other.summary_facts.hierarchy.groups[0].label = null;
+  check("p3c an unnamed group reads Other", [api.text2SqlHierarchyModel(other, "fr").groups[0].name, api.text2SqlHierarchyModel(other, "en").groups[0].unnamed], ["Autres", true]);
+  check("p3c leaf nouns", [api.text2SqlHierarchyLeafNoun("ID_LOCATION", [])[1], api.text2SqlHierarchyLeafNoun("ID_CONTENT", [{ CONTENT_TYPE: "serie" }])[0],
+    api.text2SqlHierarchyLeafNoun("ID_AWARD", [])[0], api.text2SqlHierarchyKind("nope")[1]], ["lieux", "series", "results", "groupes"]);
+  check("p3c no hierarchy facts, no model", api.text2SqlHierarchyModel(fx("lotc-share-hbo-type-en"), "en"), null);
+
+  // Chips, labels and the view asked for in words.
+  check("p3c chips", api.text2SqlChipOptionsLotC(fx(P + "italy-regions-en")), ["hierarchy", "card-grid", "table"]);
+  check("p3c labels", [api.text2SqlRepresentationLabel("hierarchy", "en"), api.text2SqlRepresentationLabel("hierarchy", "fr")], ["Groups", "Groupes"]);
+  check("view: in groups", view("show them in groups"), "groups");
+  check("view: par groupe", view("Affiche-les par groupe"), "groups");
+  check("view: grouped by trilogy is a search", view("grouped by trilogy"), "");
+  check("view to rep: groups", api.text2SqlRepresentationForView("groups", fx(P + "ford-states-en").representation_options), "hierarchy");
+  check("view to rep: groups not offered", api.text2SqlRepresentationForView("groups", fx("lotc-share-hbo-type-en").representation_options), "");
+  check("reply groups fr", api.text2SqlRequestedViewReply({ ok: true, representation: "hierarchy", view: "groups" }, "fr"), "Voici le résultat par groupe.");
 }
 
 console.log(`${passes} passed, ${failures} failed`);
