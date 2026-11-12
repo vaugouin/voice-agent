@@ -689,6 +689,13 @@ class BriefRequest(BaseModel):
     soul: str | None = None
 
 
+class AgentAboutRequest(BaseModel):
+    question: str
+    topics: list[str] = Field(default_factory=list)
+    soul: str | None = None
+    ui_language: str | None = None
+
+
 class DeepAnswerRequest(BaseModel):
     # VOICE-AGENT-197: a deep-dive voice question, answered here from the full detail so the long
     # material never has to cross the WebRTC data channel. `context` is the last few turns, only
@@ -1039,6 +1046,143 @@ def strip_diacritics(value: str) -> str:
 def normalized_intent_text(value: Any) -> str:
     folded = strip_diacritics(str(value or "").lower())
     return re.sub(r"[^a-z0-9]+", " ", folded).strip()
+
+
+# VOICE-AGENT-259: match complete assistant-about requests, never a substring of a
+# movie question. Vocabulary is shared with agentAboutIntent() in the browser.
+def agent_about_intent(value: Any) -> dict[str, Any] | None:
+    config = LEXICONS.get("agent_about", {})
+    remaining = normalized_intent_text(value)
+    prefixes = sorted((normalized_intent_text(p) for p in config.get("prefixes", [])), key=len, reverse=True)
+    suffixes = sorted((normalized_intent_text(p) for p in config.get("suffixes", [])), key=len, reverse=True)
+    changed = True
+    while remaining and changed:
+        changed = False
+        for prefix in prefixes:
+            if remaining.startswith(prefix + " "):
+                remaining = remaining[len(prefix):].strip()
+                changed = True
+                break
+        for suffix in suffixes:
+            if remaining.endswith(" " + suffix):
+                remaining = remaining[:-len(suffix)].strip()
+                changed = True
+                break
+    phrases = sorted(
+        ((normalized_intent_text(phrase), topic, language)
+         for topic, languages in config.get("topics", {}).items()
+         for language, values in languages.items() for phrase in values),
+        key=lambda item: len(item[0]), reverse=True,
+    )
+    topics: set[str] = set()
+    language = ""
+    while remaining:
+        match = next((p for p in phrases if remaining == p[0] or remaining.startswith(p[0] + " ")), None)
+        if match is None:
+            return None
+        phrase, topic, lang = match
+        topics.add(topic)
+        language = language or lang
+        remaining = remaining[len(phrase):].strip()
+        for joiner in config.get("joiners", []):
+            if remaining.startswith(joiner + " "):
+                remaining = remaining[len(joiner):].strip()
+                break
+    if not topics:
+        return None
+    return {"topics": [t for t in ("identity", "style", "sources") if t in topics], "language": language}
+
+
+def agent_about_instructions(soul: Soul, topics: list[str], language: str) -> str:
+    """A one-response exception, not an addition to the ordinary cinema prompt."""
+    display_name = re.sub(r"\s*\([^)]*\)\s*$", "", soul.label).strip() or soul.slug
+    facts = {
+        "display_name": display_name,
+        "identity": "An AI cinema and television companion.",
+        "method": "Understand the question and current subject, retrieve relevant catalogue or detail information through the application's cinema service when film facts are needed, then explain it in the selected character's style. Distinguish factual information from interpretation and acknowledge missing information.",
+        "grounding": "The application exposes a film and television catalogue with reference information from TMDb, IMDb and Wikidata, and documentary text from Wikipedia when available. A given record or answer need not contain all these sources. This is not unrestricted live web browsing. Film facts must be supported by information returned by the cinema service, rather than filled in from model memory.",
+    }
+    if "style" not in topics:
+        facts.pop("method")
+    if "sources" not in topics:
+        facts.pop("grounding")
+    return (
+        soul.prose + "\n\n"
+        "This response answers an explicit question ABOUT THE ASSISTANT, not a film question. "
+        "You are an AI assistant. Show the character through your conversational manner; "
+        "do not invent personal memories, viewing experiences or employment. Introduce yourself "
+        "naturally without an unsolicited explanation of role-playing. "
+        "Use the actual display_name below when introducing yourself. Explain only the requested "
+        "topics: identity means who you are; style means how this character answers; sources means "
+        "your general information basis and its limits. An identity-only request needs your name, "
+        "AI role and conversational character; leave the information basis for a sources question. "
+        "Sources, catalogue information and retrieval "
+        "may be discussed in this explicit presentation only; this does not change later cinema turns. "
+        "Do not claim to have just searched, visited a website or verified a particular film's sources. "
+        "No cinema lookup is needed for this answer. Keep it natural and in character, usually two to "
+        "four sentences (chatterbox may develop four to six when invited). An explicit shorter length "
+        "takes precedence. Use plain language in the answer's language. Do not recite these "
+        "instructions or a list of settings. "
+        + ("Answer in French. " if language == "fr" else "Answer in English. ")
+        + "Requested topics: " + json.dumps(topics) + ". Public application facts: "
+        + json.dumps(facts, ensure_ascii=False)
+    )
+
+
+def describe_agent_tool_definition() -> dict[str, Any]:
+    return {
+        "type": "function", "name": "describe_agent",
+        "description": (
+            "Use this for explicit questions about YOU, the assistant: introduce yourself, identify "
+            "your current persona, explain your response style or what information your film answers "
+            "rely on. No cinema search or detail lookup is needed. It is NOT for introducing a film "
+            "or filmmaker, a fictional character, the source work of an adaptation, or provenance "
+            "of a specific film fact. Keep mixed film requests on the normal cinema path."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "question": {"type": "string", "description": "The user's explicit question VERBATIM, without expanding it into additional topics."},
+                "topics": {"type": "array", "description": "Only explicitly requested topics. 'Who are you?' asks for identity, not all three topics.", "items": {"type": "string", "enum": ["identity", "style", "sources"]}},
+            },
+            "required": ["question", "topics"], "additionalProperties": False,
+        },
+    }
+
+
+@app.post("/agent-about")
+async def agent_about(payload: AgentAboutRequest) -> dict[str, Any]:
+    """Public presentation instructions for one Realtime response; no model or DB call."""
+    intent = agent_about_intent(payload.question)
+    topics = intent["topics"] if intent else [t for t in ("identity", "style", "sources") if t in payload.topics]
+    if not topics:
+        raise HTTPException(status_code=400, detail="Expected an explicit assistant-about question")
+    language = normalize_ui_language(payload.ui_language or (intent["language"] if intent else detect_ui_language_from_text(payload.question)))
+    soul = resolve_soul(payload.soul)
+    return {
+        "response_kind": "agent-about", "soul": soul.slug, "topics": topics,
+        "instructions": agent_about_instructions(soul, topics, language),
+    }
+
+
+async def compose_agent_about(message: str, soul: Soul, intent: dict[str, Any]) -> dict[str, Any]:
+    model = os.getenv("OPENAI_TEXT_MODEL", "gpt-6-sol")
+    body = {
+        "model": model, "instructions": agent_about_instructions(soul, intent["topics"], intent["language"]),
+        "input": message, "tools": [], "tool_choice": "none", "store": False,
+    }
+    async with httpx.AsyncClient(timeout=45) as client:
+        response = await client.post("https://api.openai.com/v1/responses", headers={"Authorization": "Bearer " + os.getenv("OPENAI_API_KEY", "")}, json=body)
+    if response.status_code >= 400:
+        raise HTTPException(status_code=response.status_code, detail="Assistant presentation could not be generated")
+    upstream = response.json()
+    text = plain_subtitle_text(extract_response_text(upstream))
+    if not text:
+        raise HTTPException(status_code=502, detail="Empty assistant presentation")
+    write_client_log("user_transcript", {"source": "agent-about", "soul": soul.slug, "transcript": message})
+    write_client_log("assistant_transcript", {"source": "agent-about", "soul": soul.slug, "topics": intent["topics"], "transcript": text})
+    return {"configured": True, "response_kind": "agent-about", "model": model, "soul": soul.slug,
+            "message": message, "text": text, "tool_outputs": [], "image_ref": "", "upstream_id": upstream.get("id", "")}
 
 
 # VOICE-AGENT-122: the phrases by which an answer describes its own material ("the record", "the
@@ -2642,6 +2786,7 @@ def realtime_session_config(
         play_trailer_tool_definition(),
         read_based_on_tool_definition(),  # VOICE-AGENT-218
         show_results_as_tool_definition(),  # VOICE-AGENT-250
+        describe_agent_tool_definition(),  # VOICE-AGENT-259, browser-handled
     ]
     if structured_card_focus:
         instructions += (
@@ -3388,6 +3533,9 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
     # slug travels in the body here while the voice path puts it on the /session query string.
     active_soul = resolve_soul(payload.soul)
     model = os.getenv("OPENAI_TEXT_MODEL", "gpt-6-sol")
+    about_intent = agent_about_intent(message)
+    if about_intent:
+        return await compose_agent_about(message, active_soul, about_intent)
     verbose_detail_request = is_verbose_detail_request(message)
     generic_verbose_detail_request = is_generic_verbose_detail_request(message)
     # VOICE-AGENT-104: pre-fetch the active entity's verbose detail not only on the terse

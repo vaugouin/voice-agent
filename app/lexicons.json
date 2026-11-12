@@ -2,6 +2,25 @@
   "_comment": "VOICE-AGENT-126: single source of truth for vocabulary shared by the voice (app.js) and text (main.py) paths. Edit here; both modes read it (Python at import, JS via window.__LEXICONS__ injected by the / route). See AGENTS.md.",
   "_comment_asr": "VOICE-AGENT-128: domain bias for the speech-to-text step (audio.input.transcription.prompt on the Realtime session, and the /transcribe upload). Without it the transcriber hears 'back surface' for 'box office' and 'the titan song list' for 'Sight and Sound'. Two lists on purpose: asr_domain_terms is the durable cinema vocabulary, asr_proper_nouns is what the CURRENT demos say out loud and is meant to be edited before a shoot. Keep both short: an over-long prompt makes the transcriber hallucinate the terms it was primed with.",
   "_comment_asr_intro": "The intro carried a French sentence until 2026-08-04, on the reasoning that VOICE-AGENT-102 had removed the language lock and an English-only prompt would tilt detection back toward English. Measured on a recording session, it does the opposite and worse: the transcriber TRANSLATED. 'Ok, show me the movies in the Criterion Collection' came back as 'Ok, montre-moi les films de la collection Criterion', a literal French rendering of the English line, twice in a row, and 'Now, only the dramas' came back as 'Non, only the dramas'. A prompt is a text sample, so a French sample makes a French output plausible for English audio. The intro is now language-neutral and says so explicitly; the proper nouns carry the domain bias on their own, being the same words in both languages.",
+  "agent_about": {
+    "prefixes": ["please", "can you", "could you", "would you", "tell me", "in two sentences", "in one sentence", "briefly", "s il te plait", "s il vous plait", "peux tu", "pourrais tu", "est ce que tu peux", "dis moi", "en deux phrases", "en une phrase", "brievement"],
+    "suffixes": ["please", "s il te plait", "s il vous plait"],
+    "joiners": ["and", "et"],
+    "topics": {
+      "identity": {
+        "en": ["who are you", "who you are", "introduce yourself", "which persona are you using right now", "which persona are you using", "what is your name", "what s your name", "tell me about yourself"],
+        "fr": ["qui es tu", "qui tu es", "presente toi", "te presenter", "quelle persona utilises tu en ce moment", "quelle persona utilises tu", "quel personnage incarnes tu", "comment t appelles tu"]
+      },
+      "style": {
+        "en": ["how do you answer my questions", "how you answer", "how do you answer", "what is distinctive about your response style", "how do you like to explain films", "how do you build an answer", "how do you work", "describe your response style", "what is your response style"],
+        "fr": ["comment reponds tu a mes questions", "comment tu reponds", "comment reponds tu", "qu est ce qui distingue ta maniere de repondre", "comment aimes tu expliquer les films", "comment construis tu une reponse", "comment fonctionnes tu", "comment travailles tu", "decris ta facon de repondre", "quel est ton style de reponse"]
+      },
+      "sources": {
+        "en": ["what do you rely on to answer", "what do you rely on", "what you rely on", "where does your film information come from", "where do you get your information", "what are your sources", "what do you base it on", "what are your answers based on"],
+        "fr": ["sur quoi t appuies tu pour repondre", "sur quoi t appuies tu", "sur quoi tu t appuies", "d ou viennent tes informations sur les films", "d ou viennent tes informations", "quelles sont tes sources", "sur quoi la fondes tu", "sur quoi fondes tu tes reponses"]
+      }
+    }
+  },
   "asr_prompt_intro": [
     "Conversation about cinema and television.",
     "Transcribe exactly what is said, in the language it is spoken. Never translate."

@@ -1256,6 +1256,16 @@ Voice-mode enablement:
 
 ## Persona Response And Recovery
 
+Explicit requests about the assistant (`Who are you?`, `How do you answer?`,
+`What are your sources?`, and French equivalents) leave the current sheet and any
+attached photo unchanged. They do not paint the waiting screen on an empty page.
+They use the normal subtitle lane or the current voice connection; no navigation,
+detail lookup or new film search is needed. Mixed film requests are not intercepted.
+Text-mode presentations use the current Settings selection. Voice presentations,
+including typed requests sent on an open voice connection, use the profile that
+connection actually opened with. Per-response presentation instructions
+expire after that answer, so the next film question uses the ordinary cinema rules.
+
 The four persona choices retain the same selection timing: typed requests use the current
 Settings choice, while an open voice connection keeps the profile it was created with.
 Open explanations differ in stance and length: `video-store` gives and defends a viewing

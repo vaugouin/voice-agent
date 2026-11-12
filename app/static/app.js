@@ -318,6 +318,12 @@ let awaitingToolResponse = false;
 // (e.g. a "still loading" filler the model was speaking), so the response.create that
 // makes the model answer from the tool result is deferred until that response ends.
 let pendingToolResponseRequest = false;
+let pendingToolResponseEvent = null;
+let lastToolResponseEvent = null;
+const DESCRIBE_AGENT_TOOL = "describe_agent";
+let agentAboutGeneration = 0;
+const agentAboutResponseIds = new Set();
+const agentAboutItemResponseIds = new Map();
 // VOICE-AGENT-209: true while response.done is handing several function calls of ONE model
 // turn to handleFunctionCall. Each call used to send its own response.create the moment its
 // output was in, so two calls (get_movie_detail then query_text2sql, 2026-10-09) made the model
@@ -458,6 +464,52 @@ function foldLanguageText(value) {
 
 function normalizedIntentText(value) {
   return foldLanguageText(value).replace(/[^a-z0-9]+/g, " ").trim();
+}
+
+
+// VOICE-AGENT-259: same complete-message parser as agent_about_intent() in Python.
+function agentAboutIntent(value) {
+  const config = LEXICONS.agent_about || {};
+  let remaining = normalizedIntentText(value);
+  const prefixes = (config.prefixes || []).map(normalizedIntentText).sort((a, b) => b.length - a.length);
+  const suffixes = (config.suffixes || []).map(normalizedIntentText).sort((a, b) => b.length - a.length);
+  let changed = true;
+  while (remaining && changed) {
+    changed = false;
+    for (const prefix of prefixes) {
+      if (remaining.startsWith(prefix + " ")) {
+        remaining = remaining.slice(prefix.length).trim();
+        changed = true;
+        break;
+      }
+    }
+    for (const suffix of suffixes) {
+      if (remaining.endsWith(" " + suffix)) {
+        remaining = remaining.slice(0, -suffix.length).trim();
+        changed = true;
+        break;
+      }
+    }
+  }
+  const phrases = Object.entries(config.topics || {}).flatMap(([topic, languages]) =>
+    Object.entries(languages).flatMap(([language, values]) => values.map((phrase) => [normalizedIntentText(phrase), topic, language]))
+  ).sort((a, b) => b[0].length - a[0].length);
+  const topics = new Set();
+  let language = "";
+  while (remaining) {
+    const match = phrases.find(([phrase]) => remaining === phrase || remaining.startsWith(phrase + " "));
+    if (!match) return null;
+    topics.add(match[1]);
+    language ||= match[2];
+    remaining = remaining.slice(match[0].length).trim();
+    for (const joiner of config.joiners || []) {
+      if (remaining.startsWith(joiner + " ")) {
+        remaining = remaining.slice(joiner.length).trim();
+        break;
+      }
+    }
+  }
+  return topics.size ? { topics: ["identity", "style", "sources"].filter((topic) => topics.has(topic)), language } : null;
 }
 
 // VOICE-AGENT-167: the transcriber, handed silence, returns its OWN bias prompt as the
@@ -10077,6 +10129,7 @@ function canSendTypedRealtimeTurn() {
 }
 
 function sendTypedRealtimeTurn(text, { createResponse = true } = {}) {
+  clearAgentAboutRequest();
   const interruptedResponse = Boolean(activeResponseId);
   const interruptedAudio = Boolean(activeAudioResponseId);
   if (interruptedResponse) {
@@ -10214,7 +10267,8 @@ async function sendTextChatMessage(text, { source = "typed", imageRef = "" } = {
   // VOICE-AGENT-158: the second half of this guard is the picture turn. An image with no words is
   // the nominal Look question, so an empty message is only nothing to send when there is no photo
   // behind it either.
-  const attachedImageRef = imageRef || activeLookImageRef();
+  const aboutRequest = agentAboutIntent(text);
+  const attachedImageRef = aboutRequest ? "" : imageRef || activeLookImageRef();
   if (!text && !attachedImageRef) {
     return;
   }
@@ -10260,7 +10314,7 @@ async function sendTextChatMessage(text, { source = "typed", imageRef = "" } = {
   // it from context without searching, and wiping it then would be the VOICE-AGENT-146 lie in
   // reverse: a blank screen while the voice talks about the film that was there.
   const photoTurn = Boolean(imageRef);
-  const pendingTurnPainted = photoTurn || resultsPanel.hidden;
+  const pendingTurnPainted = !aboutRequest && (photoTurn || resultsPanel.hidden);
   if (pendingTurnPainted) {
     setLoadingResults(text, activeUiLanguage, {
       imageUrl: photoTurn ? lookAttachedImage?.objectUrl || "" : "",
@@ -10374,7 +10428,13 @@ async function sendTextMessage() {
   // submission, words or not: attaching filed the image, and THIS is the moment the user asks
   // about it. It comes before everything below, because everything below assumes the photo has
   // already been read.
-  if (armedLookImageRef()) {
+  if (agentAboutIntent(text)) {
+    // An explicit presentation is not a question about the attached picture.
+    if (!canSendTypedRealtimeTurn()) {
+      await sendTextChatMessage(text, { source: "typed" });
+      return;
+    }
+  } else if (armedLookImageRef()) {
     const voicePath = sessionRunning && dc?.readyState === "open";
     const imageRef = consumeArmedLookImage({ trigger: "typed", mode: voicePath ? "voice" : "text" });
     if (voicePath) {
@@ -10613,8 +10673,7 @@ function scheduleToolResponseWatchdog() {
     awaitingToolResponse = false;
     if (!activeResponseId) {
       // Channel is idle but the model never answered the tool output — re-trigger it.
-      pendingToolResponseRequest = false;
-      sendEvent({ type: "response.create" });
+      flushPendingToolResponse(lastToolResponseEvent);
     }
     // If a response is still active, let it finish; clearing awaitingToolResponse above is
     // enough to un-mute the mic so the session is no longer wedged.
@@ -10876,6 +10935,8 @@ function cancelRealtimeOutput(reason = "cancelled") {
   clearResponseFallback();
   clearToolResponseWatchdog(); // VOICE-AGENT-094
   pendingToolResponseRequest = false;
+  pendingToolResponseEvent = null;
+  clearAgentAboutRequest();
   awaitingToolResponse = false;
   if (hadActiveResponse || hadActiveAudio || hadRemoteAudio) {
     clientLog("realtime_output_cancelled", {
@@ -10926,6 +10987,10 @@ function cleanupConnection() {
   awaitingToolResponse = false;
   clearToolResponseWatchdog(); // VOICE-AGENT-094
   pendingToolResponseRequest = false;
+  pendingToolResponseEvent = null;
+  clearAgentAboutRequest();
+  agentAboutResponseIds.clear();
+  agentAboutItemResponseIds.clear();
 }
 
 function scheduleReconnect(reason, delayMs = 1500) {
@@ -13260,7 +13325,26 @@ function sendFunctionCallOutput(callId, output) {
   });
 }
 
-function requestRealtimeResponseAfterToolOutput() {
+function flushPendingToolResponse(fallbackEvent = null) {
+  const event = pendingToolResponseEvent || fallbackEvent || { type: "response.create" };
+  pendingToolResponseRequest = false;
+  pendingToolResponseEvent = null;
+  if (event.response?.metadata?.purpose === "agent_about") lastToolResponseEvent = event;
+  sendEvent(event);
+}
+
+function clearAgentAboutRequest() {
+  agentAboutGeneration += 1;
+  if (pendingToolResponseEvent?.response?.metadata?.purpose === "agent_about") {
+    pendingToolResponseEvent = null;
+    pendingToolResponseRequest = false;
+    awaitingToolResponse = false;
+  }
+  lastToolResponseEvent = null;
+}
+
+function requestRealtimeResponseAfterToolOutput(responseEvent = null) {
+  if (responseEvent) pendingToolResponseEvent = responseEvent;
   if (toolOutputBatchActive) {
     // VOICE-AGENT-209: another call of the same model turn may still be running; response.done
     // sends the one response.create once they are all in.
@@ -13269,8 +13353,7 @@ function requestRealtimeResponseAfterToolOutput() {
     return;
   }
   if (!activeResponseId) {
-    pendingToolResponseRequest = false;
-    sendEvent({ type: "response.create" });
+    flushPendingToolResponse();
     return;
   }
   // A response is active (typically a "still loading" filler the model is speaking). The
@@ -13561,6 +13644,48 @@ function resolveAskAboutRecordTarget(args) {
     return { toolName: lastDetailCall.toolName, args: { ...lastDetailCall.args }, source: "last_call" };
   }
   return null;
+}
+
+async function handleDescribeAgentCall(item, args) {
+  const generation = agentAboutGeneration;
+  const connection = connectionGeneration;
+  const question = String(args?.question || lastUserTranscript || "").trim();
+  const intent = agentAboutIntent(question);
+  let output = { error: "unavailable" };
+  let instructions = "The user asked about the assistant. Say briefly that the presentation could not be prepared, in the user's language. Do not search.";
+  toolCallsInFlight += 1;
+  syncMicrophone("assistant presentation started");
+  try {
+    const response = await fetch(appUrl("agent-about"), {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ question, topics: args?.topics || intent?.topics || [], soul: realtimeSessionSoul,
+        ui_language: intent?.language || activeUiLanguage || "en" }),
+    });
+    if (!response.ok) throw new Error("Assistant presentation unavailable");
+    const body = await response.json();
+    instructions = body.instructions;
+    output = { response_kind: "agent-about", soul: body.soul, topics: body.topics };
+    clientLog("agent_about_ready", { soul: body.soul, topics: body.topics, call_id: item.call_id });
+  } catch (error) {
+    clientLog("agent_about_error", { error: error.message, call_id: item.call_id }, "error");
+  } finally {
+    if (connection === connectionGeneration) {
+      toolCallsInFlight = Math.max(0, toolCallsInFlight - 1);
+      syncMicrophone("assistant presentation finished");
+    }
+  }
+  if (connection !== connectionGeneration || dc?.readyState !== "open") return;
+  if (generation !== agentAboutGeneration) {
+    sendFunctionCallOutput(item.call_id, { cancelled: true });
+    return;
+  }
+  awaitingToolResponse = true;
+  sendFunctionCallOutput(item.call_id, output);
+  requestRealtimeResponseAfterToolOutput({ type: "response.create", response: {
+    instructions, tools: [], tool_choice: "none", metadata: { purpose: "agent_about", request_id: item.call_id },
+  } });
+  scheduleToolResponseWatchdog();
+  syncMicrophone("assistant presentation ready");
 }
 
 async function handleAskAboutRecordCall(item, args) {
@@ -13927,6 +14052,7 @@ async function handleFunctionCall(item) {
       item.name !== PLAY_TRAILER_TOOL &&
       item.name !== READ_BASED_ON_TOOL &&
       item.name !== SHOW_RESULTS_AS_TOOL &&
+      item.name !== DESCRIBE_AGENT_TOOL &&
       !DETAIL_TOOL_ENTITIES[item.name]
     )
   ) {
@@ -13938,6 +14064,12 @@ async function handleFunctionCall(item) {
   handledCallIds.add(item.call_id);
 
   const args = parseFunctionCallArgs(item);
+  // Catch a mistaken search selection for a complete, recognized about question.
+  const aboutSearch = item.name === "query_text2sql" ? agentAboutIntent(args.query) : null;
+  if (item.name === DESCRIBE_AGENT_TOOL || aboutSearch) {
+    await handleDescribeAgentCall(item, aboutSearch ? { question: args.query, topics: aboutSearch.topics } : args);
+    return;
+  }
   if (item.name === STRUCTURED_CARD_FOCUS_TOOL) {
     handleStructuredCardFocusCall(item, args);
     return;
@@ -14364,6 +14496,11 @@ async function handleServerEvent(event) {
   log(event.type, event);
   clientLog("realtime_event", summarizeRealtimeEvent(event), event.type === "error" ? "error" : "info");
 
+  if (event.type === "response.output_item.added" && event.item?.id && event.response_id) {
+    agentAboutItemResponseIds.set(event.item.id, event.response_id);
+    if (agentAboutItemResponseIds.size > 128) agentAboutItemResponseIds.delete(agentAboutItemResponseIds.keys().next().value);
+  }
+
   if (event.type === "input_audio_buffer.speech_started") {
     // VOICE-AGENT-192: logged before the muted early return, so a detection that is ignored
     // still leaves its trace. audio_start_ms already includes the prefix padding.
@@ -14396,6 +14533,7 @@ async function handleServerEvent(event) {
   }
 
   if (event.type === "input_audio_buffer.committed") {
+    clearAgentAboutRequest();
     setStatus("Thinking", "live");
     scheduleResponseFallback();
   }
@@ -14430,7 +14568,7 @@ async function handleServerEvent(event) {
       // VOICE-AGENT-183: a photo attached and not yet asked about arms this turn, and the
       // sentence just spoken IS the question about it. Checked before the verbose re-fetch,
       // because the two are alternatives: one takes over the turn, the other enriches it.
-      if (!startArmedLookTurnFromTranscript(lastUserTranscript)) {
+      if (!agentAboutIntent(lastUserTranscript) && !startArmedLookTurnFromTranscript(lastUserTranscript)) {
         // Option 2: on a background question about the active entity, force a verbose
         // re-fetch + inject grounded context (fire-and-forget; guarded internally).
         maybeForceVerboseActiveEntityRefetch(lastUserTranscript);
@@ -14444,7 +14582,8 @@ async function handleServerEvent(event) {
     if (transcript.trim()) {
       addRetainedContext({ type: "assistant", text: transcript.trim() });
       clientLog("assistant_transcript", { item_id: event.item_id, transcript: transcript.trim() });
-      const metaTalk = metaTalkHits(transcript);
+      const responseId = event.response_id || agentAboutItemResponseIds.get(event.item_id);
+      const metaTalk = agentAboutResponseIds.has(responseId) ? [] : metaTalkHits(transcript);
       if (metaTalk.length) {
         clientLog("meta_talk_detected", { source: "voice", item_id: event.item_id, terms: metaTalk });
       }
@@ -14465,6 +14604,11 @@ async function handleServerEvent(event) {
 
   if (event.type === "response.created") {
     activeResponseId = event.response?.id || null;
+    if (event.response?.metadata?.purpose === "agent_about") {
+      agentAboutResponseIds.add(activeResponseId);
+      if (agentAboutResponseIds.size > 64) agentAboutResponseIds.delete(agentAboutResponseIds.values().next().value);
+      lastToolResponseEvent = null;
+    }
     resetSpokenAudioHighlightState();
     resetRealtimeSpokenSubtitles({ clearVisible: spokenSubtitlesEnabled() });
     awaitingToolResponse = false;
@@ -14527,14 +14671,18 @@ async function handleServerEvent(event) {
     // now so the model actually answers from the tool result instead of stalling. Guarded by
     // !activeResponseId in case a function_call in this response's own output re-armed one.
     if (pendingToolResponseRequest && !activeResponseId) {
-      pendingToolResponseRequest = false;
-      sendEvent({ type: "response.create" });
+      flushPendingToolResponse();
     }
     syncMicrophone("response done");
   }
 
   if (event.type === "error") {
     if (event.error?.code === "conversation_already_has_active_response") {
+      if (lastToolResponseEvent) {
+        pendingToolResponseEvent = lastToolResponseEvent;
+        pendingToolResponseRequest = true;
+        scheduleToolResponseWatchdog();
+      }
       log("response timing", "Realtime still has an active response; waiting for it to finish.");
       return;
     }
