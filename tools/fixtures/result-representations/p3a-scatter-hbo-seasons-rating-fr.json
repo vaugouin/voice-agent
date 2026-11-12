@@ -1,0 +1,1243 @@
+{
+ "question": "Trace le nombre de saisons en fonction de la note IMDb des séries HBO",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici les séries de HBO, avec leur note IMDb et leur nombre de saisons pour réaliser le graphique.",
+ "representation": "scatter",
+ "representation_options": [
+  "scatter",
+  "value-cards",
+  "card-grid",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_SERIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "SERIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_FIRST_AIR",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "DAT_LAST_AIR",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null,
+   "ordered": "asc",
+   "focus": true
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null,
+   "focus": true
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "NUMBER_OF_SEASONS",
+   "role": "metric",
+   "unit": "count",
+   "focus": true
+  },
+  {
+   "name": "NUMBER_OF_EPISODES",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 50,
+  "total": null,
+  "value_column": "IMDB_RATING",
+  "unit": null,
+  "order": "IMDB_RATING",
+  "order_direction": "asc",
+  "top": {
+   "label": "The Idol",
+   "id": 135251,
+   "index": 0,
+   "value": 4.4,
+   "extreme": "min"
+  },
+  "scatter": {
+   "x": {
+    "column": "NUMBER_OF_SEASONS",
+    "quantity": "seasons",
+    "unit": "count",
+    "scale": "linear",
+    "min": 1,
+    "max": 18
+   },
+   "y": {
+    "column": "IMDB_RATING",
+    "quantity": "rating",
+    "unit": "rating",
+    "scale": "linear",
+    "min": 4.4,
+    "max": 6.5
+   },
+   "points": [
+    {
+     "index": 0,
+     "label": "The Idol",
+     "id": 135251,
+     "x": 1,
+     "y": 4.4
+    },
+    {
+     "index": 1,
+     "label": "Funny As Hell",
+     "id": 57870,
+     "x": 1,
+     "y": 4.6
+    },
+    {
+     "index": 2,
+     "label": "Les Contes de l'Histoire Sans Fin",
+     "id": 1479,
+     "x": 1,
+     "y": 5
+    },
+    {
+     "index": 3,
+     "label": "After the Thrones",
+     "id": 66346,
+     "x": 1,
+     "y": 5.1
+    },
+    {
+     "index": 4,
+     "label": "Sex Diaries",
+     "id": 216374,
+     "x": 1,
+     "y": 5.2
+    },
+    {
+     "index": 5,
+     "label": "Time Was",
+     "id": 14963,
+     "x": 1,
+     "y": 5.2
+    },
+    {
+     "index": 6,
+     "label": "Feds",
+     "id": 35958,
+     "x": 1,
+     "y": 5.2
+    },
+    {
+     "index": 7,
+     "label": "Camping",
+     "id": 78101,
+     "x": 1,
+     "y": 5.2
+    },
+    {
+     "index": 8,
+     "label": "Dane Cook's Tourgasm",
+     "id": 16063,
+     "x": 1,
+     "y": 5.3
+    },
+    {
+     "index": 9,
+     "label": "On the Record with Bob Costas",
+     "id": 9331,
+     "x": 4,
+     "y": 5.3
+    },
+    {
+     "index": 10,
+     "label": "Ghost Trackers",
+     "id": 12780,
+     "x": 3,
+     "y": 5.4
+    },
+    {
+     "index": 11,
+     "label": "Maximum Security",
+     "id": 19331,
+     "x": 1,
+     "y": 5.5
+    },
+    {
+     "index": 12,
+     "label": "Rire ou mourir",
+     "id": 32656,
+     "x": 2,
+     "y": 5.6
+    },
+    {
+     "index": 13,
+     "label": "Les Stauffer : au coeur du scandale",
+     "id": 252174,
+     "x": 1,
+     "y": 5.6
+    },
+    {
+     "index": 14,
+     "label": "Seen & Heard: The History of Black Television",
+     "id": 299126,
+     "x": 1,
+     "y": 5.6
+    },
+    {
+     "index": 15,
+     "label": "Chillin Island",
+     "id": 153309,
+     "x": 1,
+     "y": 5.7
+    },
+    {
+     "index": 16,
+     "label": "Meurtre au cimetière",
+     "id": 336418,
+     "x": 1,
+     "y": 5.8
+    },
+    {
+     "index": 17,
+     "label": "Strangers",
+     "id": 23093,
+     "x": 1,
+     "y": 5.8
+    },
+    {
+     "index": 18,
+     "label": "The Anarchists",
+     "id": 204899,
+     "x": 1,
+     "y": 5.9
+    },
+    {
+     "index": 19,
+     "label": "Game Theory with Bomani Jones",
+     "id": 158330,
+     "x": 2,
+     "y": 5.9
+    },
+    {
+     "index": 20,
+     "label": "Behind Closed Doors",
+     "id": 91189,
+     "x": 1,
+     "y": 5.9
+    },
+    {
+     "index": 21,
+     "label": "Le Régime",
+     "id": 206829,
+     "x": 1,
+     "y": 6
+    },
+    {
+     "index": 22,
+     "label": "Hotel Erotica",
+     "id": 8448,
+     "x": 3,
+     "y": 6
+    },
+    {
+     "index": 23,
+     "label": "2 Dope Queens",
+     "id": 75968,
+     "x": 2,
+     "y": 6
+    },
+    {
+     "index": 24,
+     "label": "PAUSE with Sam Jay",
+     "id": 124851,
+     "x": 2,
+     "y": 6
+    },
+    {
+     "index": 25,
+     "label": "Murder in Glitterball City",
+     "id": 312530,
+     "x": 1,
+     "y": 6
+    },
+    {
+     "index": 26,
+     "label": "The Yogurt Shop Murders",
+     "id": 277831,
+     "x": 1,
+     "y": 6.1
+    },
+    {
+     "index": 27,
+     "label": "Room 104",
+     "id": 72581,
+     "x": 4,
+     "y": 6.1
+    },
+    {
+     "index": 28,
+     "label": "RUN",
+     "id": 87393,
+     "x": 1,
+     "y": 6.2
+    },
+    {
+     "index": 29,
+     "label": "I'm Not a Monster: The Lois Riess Murders",
+     "id": 272321,
+     "x": 1,
+     "y": 6.2
+    },
+    {
+     "index": 30,
+     "label": "L'histoire sans fin",
+     "id": 10986,
+     "x": 1,
+     "y": 6.2
+    },
+    {
+     "index": 31,
+     "label": "HBO First Look",
+     "id": 33833,
+     "x": 18,
+     "y": 6.2
+    },
+    {
+     "index": 32,
+     "label": "Condominium",
+     "id": 74199,
+     "x": 1,
+     "y": 6.2
+    },
+    {
+     "index": 33,
+     "label": "The Baby",
+     "id": 115915,
+     "x": 1,
+     "y": 6.3
+    },
+    {
+     "index": 34,
+     "label": "Expériences interdites",
+     "id": 322,
+     "x": 1,
+     "y": 6.3
+    },
+    {
+     "index": 35,
+     "label": "The Invisible Pilot",
+     "id": 195099,
+     "x": 1,
+     "y": 6.3
+    },
+    {
+     "index": 36,
+     "label": "Being Serena",
+     "id": 79174,
+     "x": 1,
+     "y": 6.3
+    },
+    {
+     "index": 37,
+     "label": "Mussolini and I",
+     "id": 87764,
+     "x": 1,
+     "y": 6.3
+    },
+    {
+     "index": 39,
+     "label": "The Man Will Burn",
+     "id": 252884,
+     "x": 1,
+     "y": 6.3
+    },
+    {
+     "index": 40,
+     "label": "Na stojáka",
+     "id": 93127,
+     "x": 2,
+     "y": 6.3
+    },
+    {
+     "index": 41,
+     "label": "The Third Day",
+     "id": 90259,
+     "x": 1,
+     "y": 6.4
+    },
+    {
+     "index": 42,
+     "label": "Hotel Room",
+     "id": 5248,
+     "x": 1,
+     "y": 6.4
+    },
+    {
+     "index": 43,
+     "label": "Mosaic",
+     "id": 75944,
+     "x": 1,
+     "y": 6.4
+    },
+    {
+     "index": 44,
+     "label": "Saving My Tomorrow",
+     "id": 82661,
+     "x": 1,
+     "y": 6.4
+    },
+    {
+     "index": 45,
+     "label": "It's Florida, Man",
+     "id": 273801,
+     "x": 2,
+     "y": 6.4
+    },
+    {
+     "index": 46,
+     "label": "JAŸ-Z in 8",
+     "id": 326440,
+     "x": 1,
+     "y": 6.4
+    },
+    {
+     "index": 47,
+     "label": "Le Transporteur : La Série",
+     "id": 39497,
+     "x": 2,
+     "y": 6.4
+    },
+    {
+     "index": 48,
+     "label": "Fit for a Killer",
+     "id": 313228,
+     "x": 1,
+     "y": 6.4
+    },
+    {
+     "index": 49,
+     "label": "The Franchise",
+     "id": 216619,
+     "x": 1,
+     "y": 6.5
+    }
+   ],
+   "count": 50,
+   "plotted": 49,
+   "left_out": 1,
+   "missing": {
+    "x": 1,
+    "y": 0
+   },
+   "extremes": {
+    "x_min": 0,
+    "x_max": 31,
+    "y_min": 0,
+    "y_max": 48
+   }
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "seasons",
+   "rating"
+  ],
+  "focus_columns": [
+   "IMDB_RATING",
+   "IMDB_RATING_WEIGHTED",
+   "NUMBER_OF_SEASONS"
+  ],
+  "requested_view": "scatter",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_SERIE": 135251,
+    "SERIE_TITLE": "The Idol",
+    "DAT_FIRST_AIR": "2023-06-04",
+    "DAT_LAST_AIR": "2023-07-02",
+    "IMDB_RATING": 4.4,
+    "IMDB_RATING_WEIGHTED": 4.79,
+    "IMDB_VOTES": 117322,
+    "POSTER_PATH": "/boO6WKFJqNBY4RWPqxhattWXHbV.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 5
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_SERIE": 57870,
+    "SERIE_TITLE": "Funny As Hell",
+    "DAT_FIRST_AIR": "2011-03-18",
+    "DAT_LAST_AIR": "2011-04-15",
+    "IMDB_RATING": 4.6,
+    "IMDB_RATING_WEIGHTED": 6.91,
+    "IMDB_VOTES": 532,
+    "POSTER_PATH": "/XTEZsGCdYLVT778nxYHex8FWGw.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 6
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_SERIE": 1479,
+    "SERIE_TITLE": "Les Contes de l'Histoire Sans Fin",
+    "DAT_FIRST_AIR": "2001-10-14",
+    "DAT_LAST_AIR": "2002-01-06",
+    "IMDB_RATING": 5.0,
+    "IMDB_RATING_WEIGHTED": 6.88,
+    "IMDB_VOTES": 1003,
+    "POSTER_PATH": "/5WsO2qPQNdr7njiFg6XurxrEXp1.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 13
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_SERIE": 66346,
+    "SERIE_TITLE": "After the Thrones",
+    "DAT_FIRST_AIR": "2016-04-24",
+    "DAT_LAST_AIR": "2016-06-27",
+    "IMDB_RATING": 5.1,
+    "IMDB_RATING_WEIGHTED": 6.91,
+    "IMDB_VOTES": 687,
+    "POSTER_PATH": "/99lcvv8XJpHIkMzy1mVYJBgDcne.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 10
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_SERIE": 216374,
+    "SERIE_TITLE": "Sex Diaries",
+    "DAT_FIRST_AIR": "2022-12-16",
+    "DAT_LAST_AIR": "2022-12-23",
+    "IMDB_RATING": 5.2,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 140,
+    "POSTER_PATH": "/j5K9XSQzuW6gMiNqrIKahj4Jz9k.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 4
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_SERIE": 14963,
+    "SERIE_TITLE": "Time Was",
+    "DAT_FIRST_AIR": "1979-11-11",
+    "DAT_LAST_AIR": "1979-11-11",
+    "IMDB_RATING": 5.2,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 13,
+    "POSTER_PATH": "/w7lZAfZtH0hUFfzsykQKoxjJUe7.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 6
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_SERIE": 35958,
+    "SERIE_TITLE": "Feds",
+    "DAT_FIRST_AIR": "1997-03-05",
+    "DAT_LAST_AIR": "1997-04-09",
+    "IMDB_RATING": 5.2,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 45,
+    "POSTER_PATH": "/iXQXtJbxpX1rbVLwGUS6N9o18Zs.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 6
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_SERIE": 78101,
+    "SERIE_TITLE": "Camping",
+    "DAT_FIRST_AIR": "2018-10-14",
+    "DAT_LAST_AIR": "2018-12-02",
+    "IMDB_RATING": 5.2,
+    "IMDB_RATING_WEIGHTED": 6.72,
+    "IMDB_VOTES": 3521,
+    "POSTER_PATH": "/3ykZmmCVIlScUywQyqZKDBfkzX4.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 8
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_SERIE": 16063,
+    "SERIE_TITLE": "Dane Cook's Tourgasm",
+    "DAT_FIRST_AIR": "2006-06-11",
+    "DAT_LAST_AIR": "2006-08-04",
+    "IMDB_RATING": 5.3,
+    "IMDB_RATING_WEIGHTED": 6.93,
+    "IMDB_VOTES": 555,
+    "POSTER_PATH": "/yFDrnvbg2GVd9zYP6m8UqgL9oM.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 9
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_SERIE": 9331,
+    "SERIE_TITLE": "On the Record with Bob Costas",
+    "DAT_FIRST_AIR": "2001-02-14",
+    "DAT_LAST_AIR": "2004-06-18",
+    "IMDB_RATING": 5.3,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 33,
+    "POSTER_PATH": "/cKzDoxTWO57iZygYPgMWSbaTPA3.jpg",
+    "NUMBER_OF_SEASONS": 4,
+    "NUMBER_OF_EPISODES": 48
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_SERIE": 12780,
+    "SERIE_TITLE": "Ghost Trackers",
+    "DAT_FIRST_AIR": "2005-10-05",
+    "DAT_LAST_AIR": "2008-08-01",
+    "IMDB_RATING": 5.4,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 89,
+    "POSTER_PATH": "/jag74WYdwctVH0ddYi9CvpS4lkm.jpg",
+    "NUMBER_OF_SEASONS": 3,
+    "NUMBER_OF_EPISODES": 36
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_SERIE": 19331,
+    "SERIE_TITLE": "Maximum Security",
+    "DAT_FIRST_AIR": "1984-07-03",
+    "DAT_LAST_AIR": "1985-04-09",
+    "IMDB_RATING": 5.5,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 49,
+    "POSTER_PATH": null,
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 7
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_SERIE": 32656,
+    "SERIE_TITLE": "Rire ou mourir",
+    "DAT_FIRST_AIR": "2010-02-15",
+    "DAT_LAST_AIR": "2011-03-25",
+    "IMDB_RATING": 5.6,
+    "IMDB_RATING_WEIGHTED": 6.89,
+    "IMDB_VOTES": 1386,
+    "POSTER_PATH": "/yNCtHclvPFYucADqdEszIBZS8OK.jpg",
+    "NUMBER_OF_SEASONS": 2,
+    "NUMBER_OF_EPISODES": 22
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "ID_SERIE": 252174,
+    "SERIE_TITLE": "Les Stauffer : au coeur du scandale",
+    "DAT_FIRST_AIR": "2025-01-15",
+    "DAT_LAST_AIR": "2025-01-29",
+    "IMDB_RATING": 5.6,
+    "IMDB_RATING_WEIGHTED": 6.93,
+    "IMDB_VOTES": 716,
+    "POSTER_PATH": "/eWnju8bJhB6peZgDdGCLGjCPvrq.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 3
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "ID_SERIE": 299126,
+    "SERIE_TITLE": "Seen & Heard: The History of Black Television",
+    "DAT_FIRST_AIR": "2025-09-09",
+    "DAT_LAST_AIR": "2025-09-10",
+    "IMDB_RATING": 5.6,
+    "IMDB_RATING_WEIGHTED": null,
+    "IMDB_VOTES": null,
+    "POSTER_PATH": "/ier0S5KokLWZkS4ynqxKK0IaeTZ.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 2
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "ID_SERIE": 153309,
+    "SERIE_TITLE": "Chillin Island",
+    "DAT_FIRST_AIR": "2021-12-17",
+    "DAT_LAST_AIR": "2022-01-28",
+    "IMDB_RATING": 5.7,
+    "IMDB_RATING_WEIGHTED": 6.95,
+    "IMDB_VOTES": 277,
+    "POSTER_PATH": "/rdVGHAyeQMARAW1yhqIpGltgBb1.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 6
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "ID_SERIE": 336418,
+    "SERIE_TITLE": "Meurtre au cimetière",
+    "DAT_FIRST_AIR": "2026-10-11",
+    "DAT_LAST_AIR": "2026-10-25",
+    "IMDB_RATING": 5.8,
+    "IMDB_RATING_WEIGHTED": 6.95,
+    "IMDB_VOTES": 441,
+    "POSTER_PATH": "/aSD3YkLuTBnoYgyTCXtZRAxezNP.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 3
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "ID_SERIE": 23093,
+    "SERIE_TITLE": "Strangers",
+    "DAT_FIRST_AIR": "1996-04-19",
+    "DAT_LAST_AIR": "1996-07-12",
+    "IMDB_RATING": 5.8,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 56,
+    "POSTER_PATH": "/zGlUnBeXYKrFJejuwNC6oSi9bID.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 13
+   }
+  },
+  {
+   "index": 18,
+   "data": {
+    "ID_SERIE": 204899,
+    "SERIE_TITLE": "The Anarchists",
+    "DAT_FIRST_AIR": "2022-07-10",
+    "DAT_LAST_AIR": "2022-08-14",
+    "IMDB_RATING": 5.9,
+    "IMDB_RATING_WEIGHTED": 6.92,
+    "IMDB_VOTES": 1135,
+    "POSTER_PATH": "/1KK0u33xUQ0Z87lMoRD11NomFja.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 6
+   }
+  },
+  {
+   "index": 19,
+   "data": {
+    "ID_SERIE": 158330,
+    "SERIE_TITLE": "Game Theory with Bomani Jones",
+    "DAT_FIRST_AIR": "2022-03-13",
+    "DAT_LAST_AIR": "2023-03-31",
+    "IMDB_RATING": 5.9,
+    "IMDB_RATING_WEIGHTED": 6.95,
+    "IMDB_VOTES": 348,
+    "POSTER_PATH": "/djcEDl60FT9wMk6P2Rop69zUvd4.jpg",
+    "NUMBER_OF_SEASONS": 2,
+    "NUMBER_OF_EPISODES": 16
+   }
+  },
+  {
+   "index": 20,
+   "data": {
+    "ID_SERIE": 91189,
+    "SERIE_TITLE": "Behind Closed Doors",
+    "DAT_FIRST_AIR": "2019-07-16",
+    "DAT_LAST_AIR": "2019-07-17",
+    "IMDB_RATING": 5.9,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": null,
+    "POSTER_PATH": "/xN99dd8VrDf7K0MRMl3lWS7FaA5.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 2
+   }
+  },
+  {
+   "index": 21,
+   "data": {
+    "ID_SERIE": 206829,
+    "SERIE_TITLE": "Le Régime",
+    "DAT_FIRST_AIR": "2024-03-03",
+    "DAT_LAST_AIR": "2024-04-07",
+    "IMDB_RATING": 6.0,
+    "IMDB_RATING_WEIGHTED": 6.56,
+    "IMDB_VOTES": 15333,
+    "POSTER_PATH": "/jLq01oBDbyXEFoLmVUme1qDJTda.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 6
+   }
+  },
+  {
+   "index": 22,
+   "data": {
+    "ID_SERIE": 8448,
+    "SERIE_TITLE": "Hotel Erotica",
+    "DAT_FIRST_AIR": "2002-10-04",
+    "DAT_LAST_AIR": "2006-03-31",
+    "IMDB_RATING": 6.0,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 338,
+    "POSTER_PATH": "/sFrSeQD2SEntJVlSBKGXALQWGTB.jpg",
+    "NUMBER_OF_SEASONS": 3,
+    "NUMBER_OF_EPISODES": 39
+   }
+  },
+  {
+   "index": 23,
+   "data": {
+    "ID_SERIE": 75968,
+    "SERIE_TITLE": "2 Dope Queens",
+    "DAT_FIRST_AIR": "2018-02-02",
+    "DAT_LAST_AIR": "2019-03-01",
+    "IMDB_RATING": 6.0,
+    "IMDB_RATING_WEIGHTED": 6.94,
+    "IMDB_VOTES": 765,
+    "POSTER_PATH": "/m8Pd2UHm7WEkXgDbElszSvu0GWd.jpg",
+    "NUMBER_OF_SEASONS": 2,
+    "NUMBER_OF_EPISODES": 8
+   }
+  },
+  {
+   "index": 24,
+   "data": {
+    "ID_SERIE": 124851,
+    "SERIE_TITLE": "PAUSE with Sam Jay",
+    "DAT_FIRST_AIR": "2021-05-21",
+    "DAT_LAST_AIR": "2022-07-08",
+    "IMDB_RATING": 6.0,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 297,
+    "POSTER_PATH": "/e5mvDT8k9ZXlBzW9vxq3ruRMVt5.jpg",
+    "NUMBER_OF_SEASONS": 2,
+    "NUMBER_OF_EPISODES": 14
+   }
+  },
+  {
+   "index": 25,
+   "data": {
+    "ID_SERIE": 312530,
+    "SERIE_TITLE": "Murder in Glitterball City",
+    "DAT_FIRST_AIR": "2026-02-19",
+    "DAT_LAST_AIR": "2026-02-19",
+    "IMDB_RATING": 6.0,
+    "IMDB_RATING_WEIGHTED": 6.94,
+    "IMDB_VOTES": 800,
+    "POSTER_PATH": "/47vLjLQi3tIspWLs0vdgIxzXeE0.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 2
+   }
+  },
+  {
+   "index": 26,
+   "data": {
+    "ID_SERIE": 277831,
+    "SERIE_TITLE": "The Yogurt Shop Murders",
+    "DAT_FIRST_AIR": "2025-08-03",
+    "DAT_LAST_AIR": "2026-05-22",
+    "IMDB_RATING": 6.1,
+    "IMDB_RATING_WEIGHTED": 6.88,
+    "IMDB_VOTES": 2493,
+    "POSTER_PATH": "/r25wcu2RZcWzq6GtR8MPD7i25OS.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 5
+   }
+  },
+  {
+   "index": 27,
+   "data": {
+    "ID_SERIE": 72581,
+    "SERIE_TITLE": "Room 104",
+    "DAT_FIRST_AIR": "2017-07-28",
+    "DAT_LAST_AIR": "2020-10-09",
+    "IMDB_RATING": 6.1,
+    "IMDB_RATING_WEIGHTED": 6.76,
+    "IMDB_VOTES": 6673,
+    "POSTER_PATH": "/2aIOcKiKevM4a8rHPZBwfkf4iBY.jpg",
+    "NUMBER_OF_SEASONS": 4,
+    "NUMBER_OF_EPISODES": 48
+   }
+  },
+  {
+   "index": 28,
+   "data": {
+    "ID_SERIE": 87393,
+    "SERIE_TITLE": "RUN",
+    "DAT_FIRST_AIR": "2020-04-12",
+    "DAT_LAST_AIR": "2020-05-24",
+    "IMDB_RATING": 6.2,
+    "IMDB_RATING_WEIGHTED": 6.75,
+    "IMDB_VOTES": 8322,
+    "POSTER_PATH": "/rbYfDspa6vUTAxif5SZJABgB8pr.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 7
+   }
+  },
+  {
+   "index": 29,
+   "data": {
+    "ID_SERIE": 272321,
+    "SERIE_TITLE": "I'm Not a Monster: The Lois Riess Murders",
+    "DAT_FIRST_AIR": "2024-10-15",
+    "DAT_LAST_AIR": "2024-10-16",
+    "IMDB_RATING": 6.2,
+    "IMDB_RATING_WEIGHTED": 6.94,
+    "IMDB_VOTES": 885,
+    "POSTER_PATH": "/s0tDoINXZu8QAbXbZZBhkge5ukM.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 2
+   }
+  },
+  {
+   "index": 30,
+   "data": {
+    "ID_SERIE": 10986,
+    "SERIE_TITLE": "L'histoire sans fin",
+    "DAT_FIRST_AIR": "1995-12-02",
+    "DAT_LAST_AIR": "1996-05-25",
+    "IMDB_RATING": 6.2,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 341,
+    "POSTER_PATH": "/1QB4B0Hu9NoaJw5NekSnslgQwTC.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 26
+   }
+  },
+  {
+   "index": 31,
+   "data": {
+    "ID_SERIE": 33833,
+    "SERIE_TITLE": "HBO First Look",
+    "DAT_FIRST_AIR": "1992-06-12",
+    "DAT_LAST_AIR": "2011-12-19",
+    "IMDB_RATING": 6.2,
+    "IMDB_RATING_WEIGHTED": 6.95,
+    "IMDB_VOTES": 498,
+    "POSTER_PATH": "/1R6pR4X5usNA7rPbt9q7a96S6HK.jpg",
+    "NUMBER_OF_SEASONS": 18,
+    "NUMBER_OF_EPISODES": 87
+   }
+  },
+  {
+   "index": 32,
+   "data": {
+    "ID_SERIE": 74199,
+    "SERIE_TITLE": "Condominium",
+    "DAT_FIRST_AIR": "1980-04-06",
+    "DAT_LAST_AIR": "1980-04-07",
+    "IMDB_RATING": 6.2,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 184,
+    "POSTER_PATH": "/9AS3vrblZwMcs82J7MFx0R45flu.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 2
+   }
+  },
+  {
+   "index": 33,
+   "data": {
+    "ID_SERIE": 115915,
+    "SERIE_TITLE": "The Baby",
+    "DAT_FIRST_AIR": "2022-04-24",
+    "DAT_LAST_AIR": "2022-06-12",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.86,
+    "IMDB_VOTES": 4304,
+    "POSTER_PATH": "/pFpZNexdMLM1nLALKHVDhPbuMtM.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 8
+   }
+  },
+  {
+   "index": 34,
+   "data": {
+    "ID_SERIE": 322,
+    "SERIE_TITLE": "Expériences interdites",
+    "DAT_FIRST_AIR": "1997-06-07",
+    "DAT_LAST_AIR": "1997-07-23",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 478,
+    "POSTER_PATH": "/lA4zvjHMICXl5XDpShfemcNSDNv.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 8
+   }
+  },
+  {
+   "index": 35,
+   "data": {
+    "ID_SERIE": 195099,
+    "SERIE_TITLE": "The Invisible Pilot",
+    "DAT_FIRST_AIR": "2022-04-04",
+    "DAT_LAST_AIR": "2022-04-18",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.93,
+    "IMDB_VOTES": 1230,
+    "POSTER_PATH": "/5T5FQ6nIssxojVioynA0G103Yer.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 3
+   }
+  },
+  {
+   "index": 36,
+   "data": {
+    "ID_SERIE": 79174,
+    "SERIE_TITLE": "Being Serena",
+    "DAT_FIRST_AIR": "2018-05-02",
+    "DAT_LAST_AIR": "2018-05-30",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 479,
+    "POSTER_PATH": "/p3HmCe0ZI2GEAD3N2BIpZtRKu5u.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 5
+   }
+  },
+  {
+   "index": 37,
+   "data": {
+    "ID_SERIE": 87764,
+    "SERIE_TITLE": "Mussolini and I",
+    "DAT_FIRST_AIR": "1985-09-08",
+    "DAT_LAST_AIR": "1985-09-11",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 509,
+    "POSTER_PATH": "/2PQGwnxcYqAdgXd8Gq0vbhCo03R.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 4
+   }
+  },
+  {
+   "index": 38,
+   "data": {
+    "ID_SERIE": 45602,
+    "SERIE_TITLE": "All Signs of Death",
+    "DAT_FIRST_AIR": null,
+    "DAT_LAST_AIR": null,
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 61,
+    "POSTER_PATH": null,
+    "NUMBER_OF_SEASONS": 0,
+    "NUMBER_OF_EPISODES": 0
+   }
+  },
+  {
+   "index": 39,
+   "data": {
+    "ID_SERIE": 252884,
+    "SERIE_TITLE": "The Man Will Burn",
+    "DAT_FIRST_AIR": "2026-07-09",
+    "DAT_LAST_AIR": "2026-07-30",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 513,
+    "POSTER_PATH": "/xhQSWQBAn5fFGXBIEq22NvUhV8s.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 4
+   }
+  },
+  {
+   "index": 40,
+   "data": {
+    "ID_SERIE": 93127,
+    "SERIE_TITLE": "Na stojáka",
+    "DAT_FIRST_AIR": "2004-01-01",
+    "DAT_LAST_AIR": "2013-02-27",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 57,
+    "POSTER_PATH": "/d6RZroiKAf3UtMThhBsq1GAZ6kR.jpg",
+    "NUMBER_OF_SEASONS": 2,
+    "NUMBER_OF_EPISODES": 138
+   }
+  },
+  {
+   "index": 41,
+   "data": {
+    "ID_SERIE": 90259,
+    "SERIE_TITLE": "The Third Day",
+    "DAT_FIRST_AIR": "2020-09-14",
+    "DAT_LAST_AIR": "2020-10-19",
+    "IMDB_RATING": 6.4,
+    "IMDB_RATING_WEIGHTED": 6.75,
+    "IMDB_VOTES": 13113,
+    "POSTER_PATH": "/cW3xE7FKgkXRE1RdZyvUJIoDBFg.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 6
+   }
+  },
+  {
+   "index": 42,
+   "data": {
+    "ID_SERIE": 5248,
+    "SERIE_TITLE": "Hotel Room",
+    "DAT_FIRST_AIR": "1993-01-08",
+    "DAT_LAST_AIR": "1993-01-08",
+    "IMDB_RATING": 6.4,
+    "IMDB_RATING_WEIGHTED": 6.93,
+    "IMDB_VOTES": 1626,
+    "POSTER_PATH": "/jU3uo305wjkoKPUKh7GtO1ICwE3.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 3
+   }
+  },
+  {
+   "index": 43,
+   "data": {
+    "ID_SERIE": 75944,
+    "SERIE_TITLE": "Mosaic",
+    "DAT_FIRST_AIR": "2018-01-22",
+    "DAT_LAST_AIR": "2018-01-26",
+    "IMDB_RATING": 6.4,
+    "IMDB_RATING_WEIGHTED": 6.88,
+    "IMDB_VOTES": 4065,
+    "POSTER_PATH": "/kTmUn0TS1TW1hFB7IGwZDpwFWaS.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 6
+   }
+  },
+  {
+   "index": 44,
+   "data": {
+    "ID_SERIE": 82661,
+    "SERIE_TITLE": "Saving My Tomorrow",
+    "DAT_FIRST_AIR": "2014-12-15",
+    "DAT_LAST_AIR": "2017-01-01",
+    "IMDB_RATING": 6.4,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 78,
+    "POSTER_PATH": "/oSzDamCXbpqGoUjL7xkgJzhG2JU.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 6
+   }
+  },
+  {
+   "index": 45,
+   "data": {
+    "ID_SERIE": 273801,
+    "SERIE_TITLE": "It's Florida, Man",
+    "DAT_FIRST_AIR": "2024-10-18",
+    "DAT_LAST_AIR": "2026-01-02",
+    "IMDB_RATING": 6.4,
+    "IMDB_RATING_WEIGHTED": 6.91,
+    "IMDB_VOTES": 2489,
+    "POSTER_PATH": "/yrGQwoY9XUglAlCDzsIlr3ws4pM.jpg",
+    "NUMBER_OF_SEASONS": 2,
+    "NUMBER_OF_EPISODES": 12
+   }
+  },
+  {
+   "index": 46,
+   "data": {
+    "ID_SERIE": 326440,
+    "SERIE_TITLE": "JAŸ-Z in 8",
+    "DAT_FIRST_AIR": "2026-09-18",
+    "DAT_LAST_AIR": "2026-10-09",
+    "IMDB_RATING": 6.4,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 293,
+    "POSTER_PATH": "/ncwa0H2NxO64sHnY3Xda0pWtdcl.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 8
+   }
+  },
+  {
+   "index": 47,
+   "data": {
+    "ID_SERIE": 39497,
+    "SERIE_TITLE": "Le Transporteur : La Série",
+    "DAT_FIRST_AIR": "2013-01-04",
+    "DAT_LAST_AIR": "2014-12-14",
+    "IMDB_RATING": 6.4,
+    "IMDB_RATING_WEIGHTED": 6.81,
+    "IMDB_VOTES": 8150,
+    "POSTER_PATH": "/x0brTDewWtTzxQKe9yyc9TTMbJm.jpg",
+    "NUMBER_OF_SEASONS": 2,
+    "NUMBER_OF_EPISODES": 24
+   }
+  },
+  {
+   "index": 48,
+   "data": {
+    "ID_SERIE": 313228,
+    "SERIE_TITLE": "Fit for a Killer",
+    "DAT_FIRST_AIR": "2026-02-20",
+    "DAT_LAST_AIR": "2026-03-06",
+    "IMDB_RATING": 6.4,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 178,
+    "POSTER_PATH": "/3pcmkcUSVbpgKvKLvM7kpDJivUU.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 3
+   }
+  },
+  {
+   "index": 49,
+   "data": {
+    "ID_SERIE": 216619,
+    "SERIE_TITLE": "The Franchise",
+    "DAT_FIRST_AIR": "2024-10-06",
+    "DAT_LAST_AIR": "2024-11-24",
+    "IMDB_RATING": 6.5,
+    "IMDB_RATING_WEIGHTED": 6.86,
+    "IMDB_VOTES": 6309,
+    "POSTER_PATH": "/kWitzLQnweAcYFyjzVblkoByQDO.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 8
+   }
+  }
+ ]
+}

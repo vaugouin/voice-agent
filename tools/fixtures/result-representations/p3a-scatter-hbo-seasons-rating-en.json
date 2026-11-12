@@ -1,0 +1,1250 @@
+{
+ "question": "Plot the number of seasons against the IMDb rating of HBO series",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are HBO series with their season counts and IMDb ratings, ready to plot.",
+ "representation": "scatter",
+ "representation_options": [
+  "scatter",
+  "value-cards",
+  "card-grid",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_SERIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "SERIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_FIRST_AIR",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "DAT_LAST_AIR",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null,
+   "focus": true
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null,
+   "ordered": "desc",
+   "focus": true
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "NUMBER_OF_SEASONS",
+   "role": "metric",
+   "unit": "count",
+   "focus": true
+  },
+  {
+   "name": "NUMBER_OF_EPISODES",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 50,
+  "total": null,
+  "value_column": "IMDB_RATING",
+  "unit": null,
+  "order": "IMDB_RATING_WEIGHTED",
+  "order_direction": "desc",
+  "top": {
+   "label": "Band of Brothers",
+   "id": 4613,
+   "index": 0,
+   "value": 9.4,
+   "extreme": "max"
+  },
+  "scatter": {
+   "x": {
+    "column": "NUMBER_OF_SEASONS",
+    "quantity": "seasons",
+    "unit": "count",
+    "scale": "linear",
+    "min": 1,
+    "max": 13
+   },
+   "y": {
+    "column": "IMDB_RATING",
+    "quantity": "rating",
+    "unit": "rating",
+    "scale": "linear",
+    "min": 7.9,
+    "max": 9.4
+   },
+   "points": [
+    {
+     "index": 0,
+     "label": "Band of Brothers",
+     "id": 4613,
+     "x": 1,
+     "y": 9.4
+    },
+    {
+     "index": 1,
+     "label": "Chernobyl",
+     "id": 87108,
+     "x": 1,
+     "y": 9.3
+    },
+    {
+     "index": 2,
+     "label": "The Wire",
+     "id": 1438,
+     "x": 5,
+     "y": 9.3
+    },
+    {
+     "index": 3,
+     "label": "Game of Thrones",
+     "id": 1399,
+     "x": 8,
+     "y": 9.2
+    },
+    {
+     "index": 4,
+     "label": "The Sopranos",
+     "id": 1398,
+     "x": 6,
+     "y": 9.2
+    },
+    {
+     "index": 5,
+     "label": "True Detective",
+     "id": 46648,
+     "x": 5,
+     "y": 8.8
+    },
+    {
+     "index": 6,
+     "label": "Succession",
+     "id": 76331,
+     "x": 4,
+     "y": 8.8
+    },
+    {
+     "index": 7,
+     "label": "Curb Your Enthusiasm",
+     "id": 4546,
+     "x": 12,
+     "y": 8.8
+    },
+    {
+     "index": 8,
+     "label": "Rome",
+     "id": 1891,
+     "x": 2,
+     "y": 8.7
+    },
+    {
+     "index": 9,
+     "label": "Six Feet Under",
+     "id": 1274,
+     "x": 5,
+     "y": 8.7
+    },
+    {
+     "index": 10,
+     "label": "Last Week Tonight with John Oliver",
+     "id": 60694,
+     "x": 13,
+     "y": 8.8
+    },
+    {
+     "index": 11,
+     "label": "A Knight of the Seven Kingdoms",
+     "id": 224372,
+     "x": 1,
+     "y": 8.6
+    },
+    {
+     "index": 12,
+     "label": "The Penguin",
+     "id": 194764,
+     "x": 1,
+     "y": 8.6
+    },
+    {
+     "index": 13,
+     "label": "Oz",
+     "id": 3322,
+     "x": 6,
+     "y": 8.7
+    },
+    {
+     "index": 14,
+     "label": "The Newsroom",
+     "id": 15621,
+     "x": 3,
+     "y": 8.6
+    },
+    {
+     "index": 15,
+     "label": "Deadwood",
+     "id": 1406,
+     "x": 3,
+     "y": 8.6
+    },
+    {
+     "index": 16,
+     "label": "Boardwalk Empire",
+     "id": 1621,
+     "x": 5,
+     "y": 8.5
+    },
+    {
+     "index": 17,
+     "label": "The Last of Us",
+     "id": 100088,
+     "x": 2,
+     "y": 8.4
+    },
+    {
+     "index": 18,
+     "label": "Westworld",
+     "id": 63247,
+     "x": 4,
+     "y": 8.4
+    },
+    {
+     "index": 19,
+     "label": "Silicon Valley",
+     "id": 60573,
+     "x": 6,
+     "y": 8.5
+    },
+    {
+     "index": 20,
+     "label": "Big Little Lies",
+     "id": 66292,
+     "x": 2,
+     "y": 8.4
+    },
+    {
+     "index": 21,
+     "label": "Mare of Easttown",
+     "id": 115004,
+     "x": 1,
+     "y": 8.4
+    },
+    {
+     "index": 22,
+     "label": "The Night Of",
+     "id": 66276,
+     "x": 1,
+     "y": 8.4
+    },
+    {
+     "index": 23,
+     "label": "Entourage",
+     "id": 1940,
+     "x": 8,
+     "y": 8.4
+    },
+    {
+     "index": 24,
+     "label": "House of the Dragon",
+     "id": 94997,
+     "x": 3,
+     "y": 8.2
+    },
+    {
+     "index": 25,
+     "label": "Flight of the Conchords",
+     "id": 2742,
+     "x": 2,
+     "y": 8.5
+    },
+    {
+     "index": 26,
+     "label": "Barry",
+     "id": 73107,
+     "x": 4,
+     "y": 8.3
+    },
+    {
+     "index": 27,
+     "label": "The Pacific",
+     "id": 16997,
+     "x": 1,
+     "y": 8.3
+    },
+    {
+     "index": 28,
+     "label": "The Leftovers",
+     "id": 54344,
+     "x": 3,
+     "y": 8.3
+    },
+    {
+     "index": 29,
+     "label": "The Jinx",
+     "id": 61929,
+     "x": 2,
+     "y": 8.5
+    },
+    {
+     "index": 30,
+     "label": "Veep",
+     "id": 2947,
+     "x": 7,
+     "y": 8.4
+    },
+    {
+     "index": 31,
+     "label": "Generation Kill",
+     "id": 17035,
+     "x": 1,
+     "y": 8.4
+    },
+    {
+     "index": 32,
+     "label": "Watchmen",
+     "id": 79788,
+     "x": 1,
+     "y": 8.2
+    },
+    {
+     "index": 33,
+     "label": "Euphoria",
+     "id": 85552,
+     "x": 3,
+     "y": 8.1
+    },
+    {
+     "index": 34,
+     "label": "Carnivàle",
+     "id": 185,
+     "x": 2,
+     "y": 8.4
+    },
+    {
+     "index": 35,
+     "label": "The Rehearsal",
+     "id": 204284,
+     "x": 2,
+     "y": 8.5
+    },
+    {
+     "index": 36,
+     "label": "Extras",
+     "id": 2693,
+     "x": 2,
+     "y": 8.3
+    },
+    {
+     "index": 37,
+     "label": "The White Lotus",
+     "id": 111803,
+     "x": 3,
+     "y": 8
+    },
+    {
+     "index": 38,
+     "label": "Eastbound & Down",
+     "id": 8624,
+     "x": 4,
+     "y": 8.2
+    },
+    {
+     "index": 39,
+     "label": "John Adams",
+     "id": 15114,
+     "x": 1,
+     "y": 8.4
+    },
+    {
+     "index": 40,
+     "label": "Sharp Objects",
+     "id": 70453,
+     "x": 1,
+     "y": 8
+    },
+    {
+     "index": 41,
+     "label": "The Righteous Gemstones",
+     "id": 82782,
+     "x": 4,
+     "y": 8.1
+    },
+    {
+     "index": 42,
+     "label": "True Blood",
+     "id": 10545,
+     "x": 7,
+     "y": 7.9
+    },
+    {
+     "index": 43,
+     "label": "The Gilded Age",
+     "id": 81723,
+     "x": 4,
+     "y": 8.1
+    },
+    {
+     "index": 44,
+     "label": "Winning Time: The Rise of the Lakers Dynasty",
+     "id": 124067,
+     "x": 2,
+     "y": 8.3
+    },
+    {
+     "index": 45,
+     "label": "IT: Welcome to Derry",
+     "id": 200875,
+     "x": 2,
+     "y": 7.9
+    },
+    {
+     "index": 46,
+     "label": "How To with John Wilson",
+     "id": 110971,
+     "x": 3,
+     "y": 8.7
+    },
+    {
+     "index": 47,
+     "label": "Task",
+     "id": 228305,
+     "x": 2,
+     "y": 7.9
+    },
+    {
+     "index": 48,
+     "label": "Olive Kitteridge",
+     "id": 61585,
+     "x": 1,
+     "y": 8.2
+    },
+    {
+     "index": 49,
+     "label": "Angels in America",
+     "id": 11245,
+     "x": 1,
+     "y": 8.1
+    }
+   ],
+   "count": 50,
+   "plotted": 50,
+   "left_out": 0,
+   "missing": {
+    "x": 0,
+    "y": 0
+   },
+   "extremes": {
+    "x_min": 0,
+    "x_max": 10,
+    "y_min": 42,
+    "y_max": 0
+   }
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "seasons",
+   "rating"
+  ],
+  "focus_columns": [
+   "IMDB_RATING",
+   "IMDB_RATING_WEIGHTED",
+   "NUMBER_OF_SEASONS"
+  ],
+  "requested_view": "scatter",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_SERIE": 4613,
+    "SERIE_TITLE": "Band of Brothers",
+    "DAT_FIRST_AIR": "2001-09-09",
+    "DAT_LAST_AIR": "2001-11-04",
+    "IMDB_RATING": 9.4,
+    "IMDB_RATING_WEIGHTED": 9.32,
+    "IMDB_VOTES": 612446,
+    "POSTER_PATH": "/eLdcio9HBKzsdIJGeD80oObDfkr.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 10
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_SERIE": 87108,
+    "SERIE_TITLE": "Chernobyl",
+    "DAT_FIRST_AIR": "2019-05-06",
+    "DAT_LAST_AIR": "2019-06-03",
+    "IMDB_RATING": 9.3,
+    "IMDB_RATING_WEIGHTED": 9.26,
+    "IMDB_VOTES": 1076026,
+    "POSTER_PATH": "/hlLXt2tOPT6RRnjiUmoxyG1LTFi.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 5
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_SERIE": 1438,
+    "SERIE_TITLE": "The Wire",
+    "DAT_FIRST_AIR": "2002-06-02",
+    "DAT_LAST_AIR": "2008-03-09",
+    "IMDB_RATING": 9.3,
+    "IMDB_RATING_WEIGHTED": 9.2,
+    "IMDB_VOTES": 443988,
+    "POSTER_PATH": "/4lbclFySvugI51fwsyxBTOm4DqK.jpg",
+    "NUMBER_OF_SEASONS": 5,
+    "NUMBER_OF_EPISODES": 60
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_SERIE": 1399,
+    "SERIE_TITLE": "Game of Thrones",
+    "DAT_FIRST_AIR": "2011-04-17",
+    "DAT_LAST_AIR": "2019-05-19",
+    "IMDB_RATING": 9.2,
+    "IMDB_RATING_WEIGHTED": 9.18,
+    "IMDB_VOTES": 2683068,
+    "POSTER_PATH": "/1XS1oqL89opfnbLl8WnZY1O1uJx.jpg",
+    "NUMBER_OF_SEASONS": 8,
+    "NUMBER_OF_EPISODES": 73
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_SERIE": 1398,
+    "SERIE_TITLE": "The Sopranos",
+    "DAT_FIRST_AIR": "1999-01-10",
+    "DAT_LAST_AIR": "2007-06-10",
+    "IMDB_RATING": 9.2,
+    "IMDB_RATING_WEIGHTED": 9.13,
+    "IMDB_VOTES": 605666,
+    "POSTER_PATH": "/rTc7ZXdroqjkKivFPvCPX0Ru7uw.jpg",
+    "NUMBER_OF_SEASONS": 6,
+    "NUMBER_OF_EPISODES": 86
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_SERIE": 46648,
+    "SERIE_TITLE": "True Detective",
+    "DAT_FIRST_AIR": "2014-01-12",
+    "DAT_LAST_AIR": "2024-02-18",
+    "IMDB_RATING": 8.8,
+    "IMDB_RATING_WEIGHTED": 8.75,
+    "IMDB_VOTES": 778661,
+    "POSTER_PATH": "/cuV2O5ZyDLHSOWzg3nLVljp1ubw.jpg",
+    "NUMBER_OF_SEASONS": 5,
+    "NUMBER_OF_EPISODES": 30
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_SERIE": 76331,
+    "SERIE_TITLE": "Succession",
+    "DAT_FIRST_AIR": "2018-06-03",
+    "DAT_LAST_AIR": "2023-05-28",
+    "IMDB_RATING": 8.8,
+    "IMDB_RATING_WEIGHTED": 8.7,
+    "IMDB_VOTES": 372708,
+    "POSTER_PATH": "/z0XiwdrCQ9yVIr4O0pxzaAYRxdW.jpg",
+    "NUMBER_OF_SEASONS": 4,
+    "NUMBER_OF_EPISODES": 39
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_SERIE": 4546,
+    "SERIE_TITLE": "Curb Your Enthusiasm",
+    "DAT_FIRST_AIR": "2000-10-15",
+    "DAT_LAST_AIR": "2024-04-07",
+    "IMDB_RATING": 8.8,
+    "IMDB_RATING_WEIGHTED": 8.6,
+    "IMDB_VOTES": 170012,
+    "POSTER_PATH": "/pjRRB1NCFJzCb0euvpia4rKDov1.jpg",
+    "NUMBER_OF_SEASONS": 12,
+    "NUMBER_OF_EPISODES": 120
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_SERIE": 1891,
+    "SERIE_TITLE": "Rome",
+    "DAT_FIRST_AIR": "2005-08-28",
+    "DAT_LAST_AIR": "2007-03-25",
+    "IMDB_RATING": 8.7,
+    "IMDB_RATING_WEIGHTED": 8.54,
+    "IMDB_VOTES": 208553,
+    "POSTER_PATH": "/1A1BwgWO3Sw379VEhR0vkTuE3XW.jpg",
+    "NUMBER_OF_SEASONS": 2,
+    "NUMBER_OF_EPISODES": 22
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_SERIE": 1274,
+    "SERIE_TITLE": "Six Feet Under",
+    "DAT_FIRST_AIR": "2001-06-03",
+    "DAT_LAST_AIR": "2005-08-21",
+    "IMDB_RATING": 8.7,
+    "IMDB_RATING_WEIGHTED": 8.51,
+    "IMDB_VOTES": 171850,
+    "POSTER_PATH": "/sCgzLaVlFy8KxtxRPvt1V5MNTDb.jpg",
+    "NUMBER_OF_SEASONS": 5,
+    "NUMBER_OF_EPISODES": 63
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_SERIE": 60694,
+    "SERIE_TITLE": "Last Week Tonight with John Oliver",
+    "DAT_FIRST_AIR": "2014-04-27",
+    "DAT_LAST_AIR": "2026-11-01",
+    "IMDB_RATING": 8.8,
+    "IMDB_RATING_WEIGHTED": 8.5,
+    "IMDB_VOTES": 106326,
+    "POSTER_PATH": "/fuuEjEr69uvRtGaQw70JfvdrUwb.jpg",
+    "NUMBER_OF_SEASONS": 13,
+    "NUMBER_OF_EPISODES": 380
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_SERIE": 224372,
+    "SERIE_TITLE": "A Knight of the Seven Kingdoms",
+    "DAT_FIRST_AIR": "2026-01-18",
+    "DAT_LAST_AIR": "2026-02-22",
+    "IMDB_RATING": 8.6,
+    "IMDB_RATING_WEIGHTED": 8.49,
+    "IMDB_VOTES": 293834,
+    "POSTER_PATH": "/k8yARbD9iYn2nRX2HvsopfKDN2r.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 6
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_SERIE": 194764,
+    "SERIE_TITLE": "The Penguin",
+    "DAT_FIRST_AIR": "2024-09-19",
+    "DAT_LAST_AIR": "2024-11-10",
+    "IMDB_RATING": 8.6,
+    "IMDB_RATING_WEIGHTED": 8.48,
+    "IMDB_VOTES": 254213,
+    "POSTER_PATH": "/vOWcqC4oDQws1doDWLO7d3dh5qc.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 8
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "ID_SERIE": 3322,
+    "SERIE_TITLE": "Oz",
+    "DAT_FIRST_AIR": "1997-07-12",
+    "DAT_LAST_AIR": "2003-02-23",
+    "IMDB_RATING": 8.7,
+    "IMDB_RATING_WEIGHTED": 8.44,
+    "IMDB_VOTES": 118530,
+    "POSTER_PATH": "/oTQ9PUnCgf9CimYeWuDGp8iaT07.jpg",
+    "NUMBER_OF_SEASONS": 6,
+    "NUMBER_OF_EPISODES": 56
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "ID_SERIE": 15621,
+    "SERIE_TITLE": "The Newsroom",
+    "DAT_FIRST_AIR": "2012-06-24",
+    "DAT_LAST_AIR": "2014-12-14",
+    "IMDB_RATING": 8.6,
+    "IMDB_RATING_WEIGHTED": 8.38,
+    "IMDB_VOTES": 137296,
+    "POSTER_PATH": "/pOC3DmU47X98Sv5vaPnmgjG30eY.jpg",
+    "NUMBER_OF_SEASONS": 3,
+    "NUMBER_OF_EPISODES": 25
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "ID_SERIE": 1406,
+    "SERIE_TITLE": "Deadwood",
+    "DAT_FIRST_AIR": "2004-03-21",
+    "DAT_LAST_AIR": "2006-08-27",
+    "IMDB_RATING": 8.6,
+    "IMDB_RATING_WEIGHTED": 8.38,
+    "IMDB_VOTES": 130997,
+    "POSTER_PATH": "/fWwxYAuqY4Na7fKI3Qq2nFWCwG8.jpg",
+    "NUMBER_OF_SEASONS": 3,
+    "NUMBER_OF_EPISODES": 36
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "ID_SERIE": 1621,
+    "SERIE_TITLE": "Boardwalk Empire",
+    "DAT_FIRST_AIR": "2010-09-19",
+    "DAT_LAST_AIR": "2014-10-26",
+    "IMDB_RATING": 8.5,
+    "IMDB_RATING_WEIGHTED": 8.37,
+    "IMDB_VOTES": 221287,
+    "POSTER_PATH": "/zyHLWVmqS8m7bxABJjcDFMYLdF8.jpg",
+    "NUMBER_OF_SEASONS": 5,
+    "NUMBER_OF_EPISODES": 56
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "ID_SERIE": 100088,
+    "SERIE_TITLE": "The Last of Us",
+    "DAT_FIRST_AIR": "2023-01-15",
+    "DAT_LAST_AIR": "2025-05-25",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.36,
+    "IMDB_VOTES": 756048,
+    "POSTER_PATH": "/dmo6TYuuJgaYinXBPjrgG9mB5od.jpg",
+    "NUMBER_OF_SEASONS": 2,
+    "NUMBER_OF_EPISODES": 16
+   }
+  },
+  {
+   "index": 18,
+   "data": {
+    "ID_SERIE": 63247,
+    "SERIE_TITLE": "Westworld",
+    "DAT_FIRST_AIR": "2016-10-02",
+    "DAT_LAST_AIR": "2022-08-14",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.35,
+    "IMDB_VOTES": 563120,
+    "POSTER_PATH": "/8MfgyFHf7XEboZJPZXCIDqqiz6e.jpg",
+    "NUMBER_OF_SEASONS": 4,
+    "NUMBER_OF_EPISODES": 36
+   }
+  },
+  {
+   "index": 19,
+   "data": {
+    "ID_SERIE": 60573,
+    "SERIE_TITLE": "Silicon Valley",
+    "DAT_FIRST_AIR": "2014-04-06",
+    "DAT_LAST_AIR": "2019-12-08",
+    "IMDB_RATING": 8.5,
+    "IMDB_RATING_WEIGHTED": 8.35,
+    "IMDB_VOTES": 185318,
+    "POSTER_PATH": "/4ptpmWBVD9HY9hMh8Cbs6SMiy7p.jpg",
+    "NUMBER_OF_SEASONS": 6,
+    "NUMBER_OF_EPISODES": 53
+   }
+  },
+  {
+   "index": 20,
+   "data": {
+    "ID_SERIE": 66292,
+    "SERIE_TITLE": "Big Little Lies",
+    "DAT_FIRST_AIR": "2017-02-19",
+    "DAT_LAST_AIR": "2019-07-21",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.29,
+    "IMDB_VOTES": 249744,
+    "POSTER_PATH": "/zxGkno93ExrTMsJVllH6mzQ652z.jpg",
+    "NUMBER_OF_SEASONS": 2,
+    "NUMBER_OF_EPISODES": 14
+   }
+  },
+  {
+   "index": 21,
+   "data": {
+    "ID_SERIE": 115004,
+    "SERIE_TITLE": "Mare of Easttown",
+    "DAT_FIRST_AIR": "2021-04-18",
+    "DAT_LAST_AIR": "2021-05-30",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.28,
+    "IMDB_VOTES": 230202,
+    "POSTER_PATH": "/78aK4Msbr22A5PGa6PZV0pAvdwf.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 7
+   }
+  },
+  {
+   "index": 22,
+   "data": {
+    "ID_SERIE": 66276,
+    "SERIE_TITLE": "The Night Of",
+    "DAT_FIRST_AIR": "2016-07-10",
+    "DAT_LAST_AIR": "2016-08-28",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.27,
+    "IMDB_VOTES": 202848,
+    "POSTER_PATH": "/q13XJHdnsmxQL9rXRcnNDrZGHjO.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 8
+   }
+  },
+  {
+   "index": 23,
+   "data": {
+    "ID_SERIE": 1940,
+    "SERIE_TITLE": "Entourage",
+    "DAT_FIRST_AIR": "2004-07-18",
+    "DAT_LAST_AIR": "2011-09-11",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.26,
+    "IMDB_VOTES": 186047,
+    "POSTER_PATH": "/pDueLVvdrR2jSMrQ2pFXI9ff5zB.jpg",
+    "NUMBER_OF_SEASONS": 8,
+    "NUMBER_OF_EPISODES": 96
+   }
+  },
+  {
+   "index": 24,
+   "data": {
+    "ID_SERIE": 94997,
+    "SERIE_TITLE": "House of the Dragon",
+    "DAT_FIRST_AIR": "2022-08-21",
+    "DAT_LAST_AIR": "2026-08-09",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 8.16,
+    "IMDB_VOTES": 577608,
+    "POSTER_PATH": "/7V0Ebks0GgpKvQ7QbLAIdX5dos4.jpg",
+    "NUMBER_OF_SEASONS": 3,
+    "NUMBER_OF_EPISODES": 26
+   }
+  },
+  {
+   "index": 25,
+   "data": {
+    "ID_SERIE": 2742,
+    "SERIE_TITLE": "Flight of the Conchords",
+    "DAT_FIRST_AIR": "2007-06-17",
+    "DAT_LAST_AIR": "2009-03-22",
+    "IMDB_RATING": 8.5,
+    "IMDB_RATING_WEIGHTED": 8.15,
+    "IMDB_VOTES": 70538,
+    "POSTER_PATH": "/ynboK8qiOTz0X44r59LpfF8jBP5.jpg",
+    "NUMBER_OF_SEASONS": 2,
+    "NUMBER_OF_EPISODES": 22
+   }
+  },
+  {
+   "index": 26,
+   "data": {
+    "ID_SERIE": 73107,
+    "SERIE_TITLE": "Barry",
+    "DAT_FIRST_AIR": "2018-03-25",
+    "DAT_LAST_AIR": "2023-05-28",
+    "IMDB_RATING": 8.3,
+    "IMDB_RATING_WEIGHTED": 8.13,
+    "IMDB_VOTES": 147176,
+    "POSTER_PATH": "/j1XpwD11f0BAEI7pX6UdMhUVX2F.jpg",
+    "NUMBER_OF_SEASONS": 4,
+    "NUMBER_OF_EPISODES": 32
+   }
+  },
+  {
+   "index": 27,
+   "data": {
+    "ID_SERIE": 16997,
+    "SERIE_TITLE": "The Pacific",
+    "DAT_FIRST_AIR": "2010-03-14",
+    "DAT_LAST_AIR": "2010-05-16",
+    "IMDB_RATING": 8.3,
+    "IMDB_RATING_WEIGHTED": 8.13,
+    "IMDB_VOTES": 146945,
+    "POSTER_PATH": "/x9Y1IMFdY8Ma222KcQadFEau0EB.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 10
+   }
+  },
+  {
+   "index": 28,
+   "data": {
+    "ID_SERIE": 54344,
+    "SERIE_TITLE": "The Leftovers",
+    "DAT_FIRST_AIR": "2014-06-29",
+    "DAT_LAST_AIR": "2017-06-04",
+    "IMDB_RATING": 8.3,
+    "IMDB_RATING_WEIGHTED": 8.12,
+    "IMDB_VOTES": 135925,
+    "POSTER_PATH": "/NKJdryIFHr245Umq6gXsf7oULW.jpg",
+    "NUMBER_OF_SEASONS": 3,
+    "NUMBER_OF_EPISODES": 28
+   }
+  },
+  {
+   "index": 29,
+   "data": {
+    "ID_SERIE": 61929,
+    "SERIE_TITLE": "The Jinx",
+    "DAT_FIRST_AIR": "2015-02-08",
+    "DAT_LAST_AIR": "2024-05-26",
+    "IMDB_RATING": 8.5,
+    "IMDB_RATING_WEIGHTED": 8.1,
+    "IMDB_VOTES": 59885,
+    "POSTER_PATH": "/qY3rk9hH6dzgDrIkonxxHBF3rp8.jpg",
+    "NUMBER_OF_SEASONS": 2,
+    "NUMBER_OF_EPISODES": 12
+   }
+  },
+  {
+   "index": 30,
+   "data": {
+    "ID_SERIE": 2947,
+    "SERIE_TITLE": "Veep",
+    "DAT_FIRST_AIR": "2012-04-22",
+    "DAT_LAST_AIR": "2019-05-12",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.08,
+    "IMDB_VOTES": 73373,
+    "POSTER_PATH": "/cdd78fGdaA3EbK2ToZRWcaaB1fx.jpg",
+    "NUMBER_OF_SEASONS": 7,
+    "NUMBER_OF_EPISODES": 65
+   }
+  },
+  {
+   "index": 31,
+   "data": {
+    "ID_SERIE": 17035,
+    "SERIE_TITLE": "Generation Kill",
+    "DAT_FIRST_AIR": "2008-07-13",
+    "DAT_LAST_AIR": "2008-08-24",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.06,
+    "IMDB_VOTES": 66103,
+    "POSTER_PATH": "/wiihoYOODwh82xVzPoiaztlg6c9.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 7
+   }
+  },
+  {
+   "index": 32,
+   "data": {
+    "ID_SERIE": 79788,
+    "SERIE_TITLE": "Watchmen",
+    "DAT_FIRST_AIR": "2019-10-20",
+    "DAT_LAST_AIR": "2019-12-15",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 8.05,
+    "IMDB_VOTES": 149399,
+    "POSTER_PATH": "/m8rWq3j73ZGhDuSCZWMMoE9ePH1.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 9
+   }
+  },
+  {
+   "index": 33,
+   "data": {
+    "ID_SERIE": 85552,
+    "SERIE_TITLE": "Euphoria",
+    "DAT_FIRST_AIR": "2019-06-16",
+    "DAT_LAST_AIR": "2026-05-31",
+    "IMDB_RATING": 8.1,
+    "IMDB_RATING_WEIGHTED": 8.03,
+    "IMDB_VOTES": 327932,
+    "POSTER_PATH": "/aJrG7OkoTMPWG5c8opz8a93AZPY.jpg",
+    "NUMBER_OF_SEASONS": 3,
+    "NUMBER_OF_EPISODES": 24
+   }
+  },
+  {
+   "index": 34,
+   "data": {
+    "ID_SERIE": 185,
+    "SERIE_TITLE": "Carnivàle",
+    "DAT_FIRST_AIR": "2003-09-14",
+    "DAT_LAST_AIR": "2005-03-27",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 7.98,
+    "IMDB_VOTES": 50191,
+    "POSTER_PATH": "/5pKvfZ3qLuKJd8PQfKcPxN9jTO9.jpg",
+    "NUMBER_OF_SEASONS": 2,
+    "NUMBER_OF_EPISODES": 24
+   }
+  },
+  {
+   "index": 35,
+   "data": {
+    "ID_SERIE": 204284,
+    "SERIE_TITLE": "The Rehearsal",
+    "DAT_FIRST_AIR": "2022-07-15",
+    "DAT_LAST_AIR": "2025-05-25",
+    "IMDB_RATING": 8.5,
+    "IMDB_RATING_WEIGHTED": 7.98,
+    "IMDB_VOTES": 40400,
+    "POSTER_PATH": "/mIevNYxovnH4sR22qkUmAgS5vdv.jpg",
+    "NUMBER_OF_SEASONS": 2,
+    "NUMBER_OF_EPISODES": 12
+   }
+  },
+  {
+   "index": 36,
+   "data": {
+    "ID_SERIE": 2693,
+    "SERIE_TITLE": "Extras",
+    "DAT_FIRST_AIR": "2005-07-21",
+    "DAT_LAST_AIR": "2006-10-19",
+    "IMDB_RATING": 8.3,
+    "IMDB_RATING_WEIGHTED": 7.97,
+    "IMDB_VOTES": 64255,
+    "POSTER_PATH": "/oxiA2O4wRBCOzvfxYjNKZQuitQc.jpg",
+    "NUMBER_OF_SEASONS": 2,
+    "NUMBER_OF_EPISODES": 12
+   }
+  },
+  {
+   "index": 37,
+   "data": {
+    "ID_SERIE": 111803,
+    "SERIE_TITLE": "The White Lotus",
+    "DAT_FIRST_AIR": "2021-07-11",
+    "DAT_LAST_AIR": "2025-04-06",
+    "IMDB_RATING": 8.0,
+    "IMDB_RATING_WEIGHTED": 7.94,
+    "IMDB_VOTES": 338400,
+    "POSTER_PATH": "/gbSaK9v1CbcYH1ISgbM7XObD2dW.jpg",
+    "NUMBER_OF_SEASONS": 3,
+    "NUMBER_OF_EPISODES": 21
+   }
+  },
+  {
+   "index": 38,
+   "data": {
+    "ID_SERIE": 8624,
+    "SERIE_TITLE": "Eastbound & Down",
+    "DAT_FIRST_AIR": "2009-02-15",
+    "DAT_LAST_AIR": "2013-11-17",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 7.92,
+    "IMDB_VOTES": 71645,
+    "POSTER_PATH": "/z8urEcscCYugJzu5jGwcVdZAGOw.jpg",
+    "NUMBER_OF_SEASONS": 4,
+    "NUMBER_OF_EPISODES": 29
+   }
+  },
+  {
+   "index": 39,
+   "data": {
+    "ID_SERIE": 15114,
+    "SERIE_TITLE": "John Adams",
+    "DAT_FIRST_AIR": "2008-03-16",
+    "DAT_LAST_AIR": "2008-04-20",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 7.92,
+    "IMDB_VOTES": 40838,
+    "POSTER_PATH": "/34qRIcLKkTpmM9x9gzm9nKvo5pW.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 7
+   }
+  },
+  {
+   "index": 40,
+   "data": {
+    "ID_SERIE": 70453,
+    "SERIE_TITLE": "Sharp Objects",
+    "DAT_FIRST_AIR": "2018-07-08",
+    "DAT_LAST_AIR": "2018-08-26",
+    "IMDB_RATING": 8.0,
+    "IMDB_RATING_WEIGHTED": 7.87,
+    "IMDB_VOTES": 143158,
+    "POSTER_PATH": "/1SGovj2qDdkJexvhFiXllj9EYfu.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 8
+   }
+  },
+  {
+   "index": 41,
+   "data": {
+    "ID_SERIE": 82782,
+    "SERIE_TITLE": "The Righteous Gemstones",
+    "DAT_FIRST_AIR": "2019-08-18",
+    "DAT_LAST_AIR": "2025-05-04",
+    "IMDB_RATING": 8.1,
+    "IMDB_RATING_WEIGHTED": 7.83,
+    "IMDB_VOTES": 67999,
+    "POSTER_PATH": "/bKb54fgtMrS54VMMl8KdDIFlG3g.jpg",
+    "NUMBER_OF_SEASONS": 4,
+    "NUMBER_OF_EPISODES": 36
+   }
+  },
+  {
+   "index": 42,
+   "data": {
+    "ID_SERIE": 10545,
+    "SERIE_TITLE": "True Blood",
+    "DAT_FIRST_AIR": "2008-09-07",
+    "DAT_LAST_AIR": "2014-08-24",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.83,
+    "IMDB_VOTES": 274244,
+    "POSTER_PATH": "/ktEp6fzL4xzCWsSVtrcH8JaQNQy.jpg",
+    "NUMBER_OF_SEASONS": 7,
+    "NUMBER_OF_EPISODES": 80
+   }
+  },
+  {
+   "index": 43,
+   "data": {
+    "ID_SERIE": 81723,
+    "SERIE_TITLE": "The Gilded Age",
+    "DAT_FIRST_AIR": "2022-01-24",
+    "DAT_LAST_AIR": "2026-11-01",
+    "IMDB_RATING": 8.1,
+    "IMDB_RATING_WEIGHTED": 7.79,
+    "IMDB_VOTES": 55892,
+    "POSTER_PATH": "/tdsuFe0JVLqjxfptElRA9YFJcUE.jpg",
+    "NUMBER_OF_SEASONS": 4,
+    "NUMBER_OF_EPISODES": 33
+   }
+  },
+  {
+   "index": 44,
+   "data": {
+    "ID_SERIE": 124067,
+    "SERIE_TITLE": "Winning Time: The Rise of the Lakers Dynasty",
+    "DAT_FIRST_AIR": "2022-03-06",
+    "DAT_LAST_AIR": "2023-09-17",
+    "IMDB_RATING": 8.3,
+    "IMDB_RATING_WEIGHTED": 7.78,
+    "IMDB_VOTES": 32959,
+    "POSTER_PATH": "/6B9hTge98t52bQofyvs1M370k7n.jpg",
+    "NUMBER_OF_SEASONS": 2,
+    "NUMBER_OF_EPISODES": 17
+   }
+  },
+  {
+   "index": 45,
+   "data": {
+    "ID_SERIE": 200875,
+    "SERIE_TITLE": "IT: Welcome to Derry",
+    "DAT_FIRST_AIR": "2025-10-26",
+    "DAT_LAST_AIR": "2025-12-14",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.77,
+    "IMDB_VOTES": 124774,
+    "POSTER_PATH": "/nyy3BITeIjviv6PFIXtqvc8i6xi.jpg",
+    "NUMBER_OF_SEASONS": 2,
+    "NUMBER_OF_EPISODES": 9
+   }
+  },
+  {
+   "index": 46,
+   "data": {
+    "ID_SERIE": 110971,
+    "SERIE_TITLE": "How To with John Wilson",
+    "DAT_FIRST_AIR": "2020-10-23",
+    "DAT_LAST_AIR": "2023-09-01",
+    "IMDB_RATING": 8.7,
+    "IMDB_RATING_WEIGHTED": 7.76,
+    "IMDB_VOTES": 17723,
+    "POSTER_PATH": "/jpHziYpJniprEFDFwMbOHabgnow.jpg",
+    "NUMBER_OF_SEASONS": 3,
+    "NUMBER_OF_EPISODES": 18
+   }
+  },
+  {
+   "index": 47,
+   "data": {
+    "ID_SERIE": 228305,
+    "SERIE_TITLE": "Task",
+    "DAT_FIRST_AIR": "2025-09-07",
+    "DAT_LAST_AIR": "2025-10-19",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.71,
+    "IMDB_VOTES": 82876,
+    "POSTER_PATH": "/9JdL1aQdAQiyYYQ2xCqbHaEcZt8.jpg",
+    "NUMBER_OF_SEASONS": 2,
+    "NUMBER_OF_EPISODES": 7
+   }
+  },
+  {
+   "index": 48,
+   "data": {
+    "ID_SERIE": 61585,
+    "SERIE_TITLE": "Olive Kitteridge",
+    "DAT_FIRST_AIR": "2014-11-02",
+    "DAT_LAST_AIR": "2014-11-03",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 7.7,
+    "IMDB_VOTES": 30643,
+    "POSTER_PATH": "/2tuB2kGd4is7tFMhcOTfEGB96lm.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 4
+   }
+  },
+  {
+   "index": 49,
+   "data": {
+    "ID_SERIE": 11245,
+    "SERIE_TITLE": "Angels in America",
+    "DAT_FIRST_AIR": "2003-12-07",
+    "DAT_LAST_AIR": "2003-12-14",
+    "IMDB_RATING": 8.1,
+    "IMDB_RATING_WEIGHTED": 7.66,
+    "IMDB_VOTES": 32215,
+    "POSTER_PATH": "/rrV0kCmzcP8oB00gemSZDns90rb.jpg",
+    "NUMBER_OF_SEASONS": 1,
+    "NUMBER_OF_EPISODES": 6
+   }
+  }
+ ]
+}

@@ -1,0 +1,311 @@
+{
+ "question": "How do runtime and box-office revenue relate across the Harry Potter films?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the movies in Harry Potter Collection, with their runtimes and box-office revenues side by side.",
+ "representation": "scatter",
+ "representation_options": [
+  "scatter",
+  "ranked-bars",
+  "card-grid",
+  "value-cards",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes",
+   "ordered": "asc",
+   "focus": true
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "REVENUE",
+   "role": "metric",
+   "unit": "usd",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 8,
+  "total": null,
+  "value_column": "RUNTIME",
+  "unit": "minutes",
+  "order": "RUNTIME",
+  "order_direction": "asc",
+  "top": {
+   "label": "Harry Potter and the Deathly Hallows: Part 2",
+   "id": 12445,
+   "index": 0,
+   "value": 130,
+   "extreme": "min"
+  },
+  "scatter": {
+   "x": {
+    "column": "RUNTIME",
+    "quantity": "runtime",
+    "unit": "minutes",
+    "scale": "linear",
+    "min": 130,
+    "max": 161
+   },
+   "y": {
+    "column": "REVENUE",
+    "quantity": "revenue",
+    "unit": "usd",
+    "scale": "linear",
+    "min": 789804554,
+    "max": 1341511219
+   },
+   "points": [
+    {
+     "index": 0,
+     "label": "Harry Potter and the Deathly Hallows: Part 2",
+     "id": 12445,
+     "x": 130,
+     "y": 1341511219
+    },
+    {
+     "index": 1,
+     "label": "Harry Potter and the Order of the Phoenix",
+     "id": 675,
+     "x": 138,
+     "y": 938212738
+    },
+    {
+     "index": 2,
+     "label": "Harry Potter and the Prisoner of Azkaban",
+     "id": 673,
+     "x": 141,
+     "y": 789804554
+    },
+    {
+     "index": 3,
+     "label": "Harry Potter and the Deathly Hallows: Part 1",
+     "id": 12444,
+     "x": 146,
+     "y": 954305868
+    },
+    {
+     "index": 4,
+     "label": "Harry Potter and the Philosopher's Stone",
+     "id": 671,
+     "x": 152,
+     "y": 1029374615
+    },
+    {
+     "index": 5,
+     "label": "Harry Potter and the Half-Blood Prince",
+     "id": 767,
+     "x": 153,
+     "y": 933959197
+    },
+    {
+     "index": 6,
+     "label": "Harry Potter and the Goblet of Fire",
+     "id": 674,
+     "x": 157,
+     "y": 895921036
+    },
+    {
+     "index": 7,
+     "label": "Harry Potter and the Chamber of Secrets",
+     "id": 672,
+     "x": 161,
+     "y": 876688482
+    }
+   ],
+   "count": 8,
+   "plotted": 8,
+   "left_out": 0,
+   "missing": {
+    "x": 0,
+    "y": 0
+   },
+   "extremes": {
+    "x_min": 0,
+    "x_max": 7,
+    "y_min": 2,
+    "y_max": 0
+   }
+  }
+ },
+ "intent": {
+  "task": "relate",
+  "focus": [
+   "runtime",
+   "revenue"
+  ],
+  "focus_columns": [
+   "RUNTIME",
+   "REVENUE"
+  ],
+  "requested_view": "scatter",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 12445,
+    "MOVIE_TITLE": "Harry Potter and the Deathly Hallows: Part 2",
+    "DAT_RELEASE": "2011-07-12",
+    "IMDB_RATING": 8.1,
+    "IMDB_RATING_WEIGHTED": 8.08,
+    "IMDB_VOTES": 1069241,
+    "POSTER_PATH": "/c54HpQmuwXjHq2C9wmoACjxoom3.jpg",
+    "RUNTIME": 130,
+    "REVENUE": 1341511219
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 675,
+    "MOVIE_TITLE": "Harry Potter and the Order of the Phoenix",
+    "DAT_RELEASE": "2007-07-08",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.49,
+    "IMDB_VOTES": 716062,
+    "POSTER_PATH": "/5aOyriWkPec0zUDxmHFP9qMmBaj.jpg",
+    "RUNTIME": 138,
+    "REVENUE": 938212738
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 673,
+    "MOVIE_TITLE": "Harry Potter and the Prisoner of Azkaban",
+    "DAT_RELEASE": "2004-05-31",
+    "IMDB_RATING": 8.0,
+    "IMDB_RATING_WEIGHTED": 7.97,
+    "IMDB_VOTES": 784233,
+    "POSTER_PATH": "/aWxwnYoe8p2d2fcxOqtvAtJ72Rw.jpg",
+    "RUNTIME": 141,
+    "REVENUE": 789804554
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_MOVIE": 12444,
+    "MOVIE_TITLE": "Harry Potter and the Deathly Hallows: Part 1",
+    "DAT_RELEASE": "2010-11-17",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.68,
+    "IMDB_VOTES": 679352,
+    "POSTER_PATH": "/iGoXIpQb7Pot00EEdwpwPajheZ5.jpg",
+    "RUNTIME": 146,
+    "REVENUE": 954305868
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_MOVIE": 671,
+    "MOVIE_TITLE": "Harry Potter and the Philosopher's Stone",
+    "DAT_RELEASE": "2001-11-16",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.68,
+    "IMDB_VOTES": 973844,
+    "POSTER_PATH": "/wuMc08IPKEatf9rnMNXvIDxqP4W.jpg",
+    "RUNTIME": 152,
+    "REVENUE": 1029374615
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_MOVIE": 767,
+    "MOVIE_TITLE": "Harry Potter and the Half-Blood Prince",
+    "DAT_RELEASE": "2009-07-15",
+    "IMDB_RATING": 7.6,
+    "IMDB_RATING_WEIGHTED": 7.58,
+    "IMDB_VOTES": 675206,
+    "POSTER_PATH": "/z7uo9zmQdQwU5ZJHFpv2Upl30i1.jpg",
+    "RUNTIME": 153,
+    "REVENUE": 933959197
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_MOVIE": 674,
+    "MOVIE_TITLE": "Harry Potter and the Goblet of Fire",
+    "DAT_RELEASE": "2005-11-16",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.68,
+    "IMDB_VOTES": 769850,
+    "POSTER_PATH": "/fECBtHlr0RB3foNHDiCBXeg9Bv9.jpg",
+    "RUNTIME": 157,
+    "REVENUE": 895921036
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_MOVIE": 672,
+    "MOVIE_TITLE": "Harry Potter and the Chamber of Secrets",
+    "DAT_RELEASE": "2002-11-13",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.49,
+    "IMDB_VOTES": 783102,
+    "POSTER_PATH": "/sdEOH0992YZ0QSxgXNIGLq1ToUi.jpg",
+    "RUNTIME": 161,
+    "REVENUE": 876688482
+   }
+  }
+ ]
+}

@@ -1,0 +1,735 @@
+{
+ "question": "Les films de James Bond : budget en fonction des recettes",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici les films de James Bond Collection, avec leur budget et leurs recettes pour les comparer.",
+ "representation": "scatter",
+ "representation_options": [
+  "scatter",
+  "ranked-bars",
+  "card-grid",
+  "value-cards",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "BUDGET",
+   "role": "metric",
+   "unit": "usd",
+   "focus": true
+  },
+  {
+   "name": "REVENUE",
+   "role": "metric",
+   "unit": "usd",
+   "ordered": "desc",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 27,
+  "total": null,
+  "value_column": "BUDGET",
+  "unit": "usd",
+  "order": "REVENUE",
+  "order_direction": "desc",
+  "top": {
+   "label": "Mourir peut attendre",
+   "id": 370172,
+   "index": 2,
+   "value": 250000000,
+   "extreme": "max"
+  },
+  "scatter": {
+   "x": {
+    "column": "BUDGET",
+    "quantity": "budget",
+    "unit": "usd",
+    "scale": "linear",
+    "min": 1000000,
+    "max": 250000000
+   },
+   "y": {
+    "column": "REVENUE",
+    "quantity": "revenue",
+    "unit": "usd",
+    "scale": "linear",
+    "min": 59000000,
+    "max": 1108594176
+   },
+   "points": [
+    {
+     "index": 0,
+     "label": "Skyfall",
+     "id": 37724,
+     "x": 200000000,
+     "y": 1108594176
+    },
+    {
+     "index": 1,
+     "label": "Spectre",
+     "id": 206647,
+     "x": 245000000,
+     "y": 880707597
+    },
+    {
+     "index": 2,
+     "label": "Mourir peut attendre",
+     "id": 370172,
+     "x": 250000000,
+     "y": 774153024
+    },
+    {
+     "index": 3,
+     "label": "Casino Royale",
+     "id": 36557,
+     "x": 150000000,
+     "y": 599045960
+    },
+    {
+     "index": 4,
+     "label": "Quantum of Solace",
+     "id": 10764,
+     "x": 200000000,
+     "y": 589593688
+    },
+    {
+     "index": 5,
+     "label": "Meurs un autre jour",
+     "id": 36669,
+     "x": 142000000,
+     "y": 431971116
+    },
+    {
+     "index": 6,
+     "label": "Le monde ne suffit pas",
+     "id": 36643,
+     "x": 135000000,
+     "y": 361832400
+    },
+    {
+     "index": 7,
+     "label": "GoldenEye",
+     "id": 710,
+     "x": 60000000,
+     "y": 352194034
+    },
+    {
+     "index": 8,
+     "label": "Demain ne meurt jamais",
+     "id": 714,
+     "x": 110000000,
+     "y": 333011068
+    },
+    {
+     "index": 9,
+     "label": "Moonraker",
+     "id": 698,
+     "x": 34000000,
+     "y": 210308099
+    },
+    {
+     "index": 10,
+     "label": "Rien que pour vos yeux",
+     "id": 699,
+     "x": 28000000,
+     "y": 195300000
+    },
+    {
+     "index": 11,
+     "label": "Tuer n'est pas jouer",
+     "id": 708,
+     "x": 40000000,
+     "y": 191185897
+    },
+    {
+     "index": 12,
+     "label": "Octopussy",
+     "id": 700,
+     "x": 27500000,
+     "y": 187518457
+    },
+    {
+     "index": 13,
+     "label": "L'Espion qui m'aimait",
+     "id": 691,
+     "x": 13500000,
+     "y": 185438673
+    },
+    {
+     "index": 14,
+     "label": "Jamais plus jamais",
+     "id": 36670,
+     "x": 36000000,
+     "y": 160000000
+    },
+    {
+     "index": 15,
+     "label": "Permis de tuer",
+     "id": 709,
+     "x": 32000000,
+     "y": 156167015
+    },
+    {
+     "index": 16,
+     "label": "Dangereusement vôtre",
+     "id": 707,
+     "x": 30000000,
+     "y": 152427960
+    },
+    {
+     "index": 17,
+     "label": "Opération Tonnerre",
+     "id": 660,
+     "x": 9000000,
+     "y": 141200000
+    },
+    {
+     "index": 18,
+     "label": "Vivre et laisser mourir",
+     "id": 253,
+     "x": 7000000,
+     "y": 126400000
+    },
+    {
+     "index": 19,
+     "label": "Goldfinger",
+     "id": 658,
+     "x": 3000000,
+     "y": 124900000
+    },
+    {
+     "index": 20,
+     "label": "Les diamants sont éternels",
+     "id": 681,
+     "x": 7200000,
+     "y": 116019547
+    },
+    {
+     "index": 21,
+     "label": "On ne vit que deux fois",
+     "id": 667,
+     "x": 9500000,
+     "y": 111600000
+    },
+    {
+     "index": 22,
+     "label": "L'Homme au pistolet d'or",
+     "id": 682,
+     "x": 7000000,
+     "y": 97600000
+    },
+    {
+     "index": 23,
+     "label": "Au service secret de Sa Majesté",
+     "id": 668,
+     "x": 7000000,
+     "y": 82000000
+    },
+    {
+     "index": 24,
+     "label": "Bons baisers de Russie",
+     "id": 657,
+     "x": 2000000,
+     "y": 78900000
+    },
+    {
+     "index": 25,
+     "label": "James Bond 007 contre Dr. No",
+     "id": 646,
+     "x": 1000000,
+     "y": 59000000
+    }
+   ],
+   "count": 27,
+   "plotted": 26,
+   "left_out": 1,
+   "missing": {
+    "x": 1,
+    "y": 1
+   },
+   "extremes": {
+    "x_min": 25,
+    "x_max": 2,
+    "y_min": 25,
+    "y_max": 0
+   }
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "budget",
+   "revenue"
+  ],
+  "focus_columns": [
+   "BUDGET",
+   "REVENUE"
+  ],
+  "requested_view": "scatter",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 37724,
+    "MOVIE_TITLE": "Skyfall",
+    "DAT_RELEASE": "2012-10-24",
+    "IMDB_RATING": 7.8,
+    "IMDB_RATING_WEIGHTED": 7.78,
+    "IMDB_VOTES": 783606,
+    "POSTER_PATH": "/nNFECkwmrYoUQ17EnPTcSlRictV.jpg",
+    "RUNTIME": 143,
+    "BUDGET": 200000000,
+    "REVENUE": 1108594176
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 206647,
+    "MOVIE_TITLE": "Spectre",
+    "DAT_RELEASE": "2015-10-26",
+    "IMDB_RATING": 6.8,
+    "IMDB_RATING_WEIGHTED": 6.81,
+    "IMDB_VOTES": 504063,
+    "POSTER_PATH": "/AwCpcShhgRqoVPWhOzs4JiI4dlK.jpg",
+    "RUNTIME": 148,
+    "BUDGET": 245000000,
+    "REVENUE": 880707597
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 370172,
+    "MOVIE_TITLE": "Mourir peut attendre",
+    "DAT_RELEASE": "2021-09-29",
+    "IMDB_RATING": 7.3,
+    "IMDB_RATING_WEIGHTED": 7.29,
+    "IMDB_VOTES": 497549,
+    "POSTER_PATH": "/qseURFLjRBCqFCNCKmS2uwM9IOj.jpg",
+    "RUNTIME": 163,
+    "BUDGET": 250000000,
+    "REVENUE": 774153024
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_MOVIE": 36557,
+    "MOVIE_TITLE": "Casino Royale",
+    "DAT_RELEASE": "2006-11-14",
+    "IMDB_RATING": 8.0,
+    "IMDB_RATING_WEIGHTED": 7.97,
+    "IMDB_VOTES": 758545,
+    "POSTER_PATH": "/1ST7phuvQsaAIIkRyAtESZFLMx9.jpg",
+    "RUNTIME": 144,
+    "BUDGET": 150000000,
+    "REVENUE": 599045960
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_MOVIE": 10764,
+    "MOVIE_TITLE": "Quantum of Solace",
+    "DAT_RELEASE": "2008-10-29",
+    "IMDB_RATING": 6.5,
+    "IMDB_RATING_WEIGHTED": 6.52,
+    "IMDB_VOTES": 505481,
+    "POSTER_PATH": "/QvphhhQiHanVakuQTiXsEMe4cE.jpg",
+    "RUNTIME": 106,
+    "BUDGET": 200000000,
+    "REVENUE": 589593688
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_MOVIE": 36669,
+    "MOVIE_TITLE": "Meurs un autre jour",
+    "DAT_RELEASE": "2002-11-17",
+    "IMDB_RATING": 6.1,
+    "IMDB_RATING_WEIGHTED": 6.17,
+    "IMDB_VOTES": 243441,
+    "POSTER_PATH": "/d3HapjTNnR3mg7dugz47aQZ8rUS.jpg",
+    "RUNTIME": 133,
+    "BUDGET": 142000000,
+    "REVENUE": 431971116
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_MOVIE": 36643,
+    "MOVIE_TITLE": "Le monde ne suffit pas",
+    "DAT_RELEASE": "1999-11-17",
+    "IMDB_RATING": 6.4,
+    "IMDB_RATING_WEIGHTED": 6.45,
+    "IMDB_VOTES": 223160,
+    "POSTER_PATH": "/uoffFMywnkbxQ9Q9FSnyDfuXFEW.jpg",
+    "RUNTIME": 128,
+    "BUDGET": 135000000,
+    "REVENUE": 361832400
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_MOVIE": 710,
+    "MOVIE_TITLE": "GoldenEye",
+    "DAT_RELEASE": "1995-11-16",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 7.18,
+    "IMDB_VOTES": 290172,
+    "POSTER_PATH": "/aMfHCU4Bb2QURqO0rVD06aFs7iq.jpg",
+    "RUNTIME": 130,
+    "BUDGET": 60000000,
+    "REVENUE": 352194034
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_MOVIE": 714,
+    "MOVIE_TITLE": "Demain ne meurt jamais",
+    "DAT_RELEASE": "1997-12-11",
+    "IMDB_RATING": 6.5,
+    "IMDB_RATING_WEIGHTED": 6.54,
+    "IMDB_VOTES": 218691,
+    "POSTER_PATH": "/6sHUh1Zvz5QXDJbSvGErfNatwBD.jpg",
+    "RUNTIME": 119,
+    "BUDGET": 110000000,
+    "REVENUE": 333011068
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_MOVIE": 698,
+    "MOVIE_TITLE": "Moonraker",
+    "DAT_RELEASE": "1979-06-26",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.4,
+    "IMDB_VOTES": 119590,
+    "POSTER_PATH": "/vF11JtjH1PmEvsRo4djEWWmHXvi.jpg",
+    "RUNTIME": 126,
+    "BUDGET": 34000000,
+    "REVENUE": 210308099
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_MOVIE": 699,
+    "MOVIE_TITLE": "Rien que pour vos yeux",
+    "DAT_RELEASE": "1981-06-24",
+    "IMDB_RATING": 6.7,
+    "IMDB_RATING_WEIGHTED": 6.74,
+    "IMDB_VOTES": 118260,
+    "POSTER_PATH": "/hEbE2BhShWEqdcUK0eTZ38IXzGv.jpg",
+    "RUNTIME": 128,
+    "BUDGET": 28000000,
+    "REVENUE": 195300000
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_MOVIE": 708,
+    "MOVIE_TITLE": "Tuer n'est pas jouer",
+    "DAT_RELEASE": "1987-06-29",
+    "IMDB_RATING": 6.7,
+    "IMDB_RATING_WEIGHTED": 6.74,
+    "IMDB_VOTES": 116593,
+    "POSTER_PATH": "/xs8qSK7DuXY6SYLxx8dFEqhsbE6.jpg",
+    "RUNTIME": 130,
+    "BUDGET": 40000000,
+    "REVENUE": 191185897
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_MOVIE": 700,
+    "MOVIE_TITLE": "Octopussy",
+    "DAT_RELEASE": "1983-06-05",
+    "IMDB_RATING": 6.5,
+    "IMDB_RATING_WEIGHTED": 6.57,
+    "IMDB_VOTES": 121780,
+    "POSTER_PATH": "/85Cd9EWOQp3rNGRWeSrvGxFMWhW.jpg",
+    "RUNTIME": 131,
+    "BUDGET": 27500000,
+    "REVENUE": 187518457
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "ID_MOVIE": 691,
+    "MOVIE_TITLE": "L'Espion qui m'aimait",
+    "DAT_RELEASE": "1977-07-07",
+    "IMDB_RATING": 7.0,
+    "IMDB_RATING_WEIGHTED": 7.0,
+    "IMDB_VOTES": 127330,
+    "POSTER_PATH": "/nIjqzDyGwPtM4gFTOXXgidNzcBL.jpg",
+    "RUNTIME": 125,
+    "BUDGET": 13500000,
+    "REVENUE": 185438673
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "ID_MOVIE": 36670,
+    "MOVIE_TITLE": "Jamais plus jamais",
+    "DAT_RELEASE": "1983-10-07",
+    "IMDB_RATING": 6.1,
+    "IMDB_RATING_WEIGHTED": 6.28,
+    "IMDB_VOTES": 79825,
+    "POSTER_PATH": "/j8fcChPA88YlLdXMryDQwNPngPI.jpg",
+    "RUNTIME": 134,
+    "BUDGET": 36000000,
+    "REVENUE": 160000000
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "ID_MOVIE": 709,
+    "MOVIE_TITLE": "Permis de tuer",
+    "DAT_RELEASE": "1989-06-13",
+    "IMDB_RATING": 6.7,
+    "IMDB_RATING_WEIGHTED": 6.74,
+    "IMDB_VOTES": 122494,
+    "POSTER_PATH": "/sMi8NmshOy4avUlYPNMbfpE32aX.jpg",
+    "RUNTIME": 133,
+    "BUDGET": 32000000,
+    "REVENUE": 156167015
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "ID_MOVIE": 707,
+    "MOVIE_TITLE": "Dangereusement vôtre",
+    "DAT_RELEASE": "1985-05-24",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.4,
+    "IMDB_VOTES": 114632,
+    "POSTER_PATH": "/sAgj611I3zvT704Mc6mvL7P0XCa.jpg",
+    "RUNTIME": 131,
+    "BUDGET": 30000000,
+    "REVENUE": 152427960
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "ID_MOVIE": 660,
+    "MOVIE_TITLE": "Opération Tonnerre",
+    "DAT_RELEASE": "1965-12-11",
+    "IMDB_RATING": 6.9,
+    "IMDB_RATING_WEIGHTED": 6.91,
+    "IMDB_VOTES": 140191,
+    "POSTER_PATH": "/8dEXGawwI6aBUrh3RWKAQes9DAL.jpg",
+    "RUNTIME": 130,
+    "BUDGET": 9000000,
+    "REVENUE": 141200000
+   }
+  },
+  {
+   "index": 18,
+   "data": {
+    "ID_MOVIE": 253,
+    "MOVIE_TITLE": "Vivre et laisser mourir",
+    "DAT_RELEASE": "1973-06-27",
+    "IMDB_RATING": 6.7,
+    "IMDB_RATING_WEIGHTED": 6.74,
+    "IMDB_VOTES": 126767,
+    "POSTER_PATH": "/1WskKj2i2rsbYfnIXMHHvVk81Zn.jpg",
+    "RUNTIME": 121,
+    "BUDGET": 7000000,
+    "REVENUE": 126400000
+   }
+  },
+  {
+   "index": 19,
+   "data": {
+    "ID_MOVIE": 658,
+    "MOVIE_TITLE": "Goldfinger",
+    "DAT_RELEASE": "1964-09-20",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.64,
+    "IMDB_VOTES": 221123,
+    "POSTER_PATH": "/8hN3D6rsQ98jSlkeMc43kfQ9pox.jpg",
+    "RUNTIME": 110,
+    "BUDGET": 3000000,
+    "REVENUE": 124900000
+   }
+  },
+  {
+   "index": 20,
+   "data": {
+    "ID_MOVIE": 681,
+    "MOVIE_TITLE": "Les diamants sont éternels",
+    "DAT_RELEASE": "1971-12-14",
+    "IMDB_RATING": 6.5,
+    "IMDB_RATING_WEIGHTED": 6.57,
+    "IMDB_VOTES": 125324,
+    "POSTER_PATH": "/22xB7pVrfnpbN7W7UWD7Adn9UfQ.jpg",
+    "RUNTIME": 120,
+    "BUDGET": 7200000,
+    "REVENUE": 116019547
+   }
+  },
+  {
+   "index": 21,
+   "data": {
+    "ID_MOVIE": 667,
+    "MOVIE_TITLE": "On ne vit que deux fois",
+    "DAT_RELEASE": "1967-06-13",
+    "IMDB_RATING": 6.8,
+    "IMDB_RATING_WEIGHTED": 6.82,
+    "IMDB_VOTES": 129581,
+    "POSTER_PATH": "/ndTrIikus8KmeGnKdStGXvxsQS9.jpg",
+    "RUNTIME": 117,
+    "BUDGET": 9500000,
+    "REVENUE": 111600000
+   }
+  },
+  {
+   "index": 22,
+   "data": {
+    "ID_MOVIE": 682,
+    "MOVIE_TITLE": "L'Homme au pistolet d'or",
+    "DAT_RELEASE": "1974-12-04",
+    "IMDB_RATING": 6.7,
+    "IMDB_RATING_WEIGHTED": 6.74,
+    "IMDB_VOTES": 123817,
+    "POSTER_PATH": "/rWWtStXei0hjNElbtM0J28trLcO.jpg",
+    "RUNTIME": 125,
+    "BUDGET": 7000000,
+    "REVENUE": 97600000
+   }
+  },
+  {
+   "index": 23,
+   "data": {
+    "ID_MOVIE": 668,
+    "MOVIE_TITLE": "Au service secret de Sa Majesté",
+    "DAT_RELEASE": "1969-12-18",
+    "IMDB_RATING": 6.7,
+    "IMDB_RATING_WEIGHTED": 6.74,
+    "IMDB_VOTES": 110836,
+    "POSTER_PATH": "/sHYTFChLjBU7TLQwpcX5BHQNUp9.jpg",
+    "RUNTIME": 142,
+    "BUDGET": 7000000,
+    "REVENUE": 82000000
+   }
+  },
+  {
+   "index": 24,
+   "data": {
+    "ID_MOVIE": 657,
+    "MOVIE_TITLE": "Bons baisers de Russie",
+    "DAT_RELEASE": "1963-10-10",
+    "IMDB_RATING": 7.3,
+    "IMDB_RATING_WEIGHTED": 7.26,
+    "IMDB_VOTES": 161832,
+    "POSTER_PATH": "/eJgA4Bc1mH51lvurUg75Ghq2lqG.jpg",
+    "RUNTIME": 115,
+    "BUDGET": 2000000,
+    "REVENUE": 78900000
+   }
+  },
+  {
+   "index": 25,
+   "data": {
+    "ID_MOVIE": 646,
+    "MOVIE_TITLE": "James Bond 007 contre Dr. No",
+    "DAT_RELEASE": "1962-10-07",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 7.18,
+    "IMDB_VOTES": 199241,
+    "POSTER_PATH": "/txWTVoO9VltSsEghOoxdn8y6UqK.jpg",
+    "RUNTIME": 110,
+    "BUDGET": 1000000,
+    "REVENUE": 59000000
+   }
+  },
+  {
+   "index": 26,
+   "data": {
+    "ID_MOVIE": 1184696,
+    "MOVIE_TITLE": "Untitled James Bond Film",
+    "DAT_RELEASE": "2028-11-15",
+    "IMDB_RATING": null,
+    "IMDB_RATING_WEIGHTED": null,
+    "IMDB_VOTES": null,
+    "POSTER_PATH": "/AqH9lbww9UvHjQNnlKZve6r0iu8.jpg",
+    "RUNTIME": 0,
+    "BUDGET": 0,
+    "REVENUE": 0
+   }
+  }
+ ]
+}

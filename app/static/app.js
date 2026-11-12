@@ -3190,6 +3190,10 @@ function renderText2SqlRepresentation(rep, container, rows, upstream) {
   if (rep === "flag-list") {
     return renderFlagList(container, rows, columns, upstream);
   }
+  // Phase 3 lot A (FASTAPI-TEXT2SQL, 2026-11-12): the scatter plot.
+  if (rep === "scatter") {
+    return renderScatter(container, rows, columns, upstream);
+  }
   // number-card | stat-strip: the scalar family, one card per metric column.
   return renderScalarCards(container, rows, columns);
 }
@@ -4010,6 +4014,172 @@ function renderFlagList(container, rows, columns, upstream) {
   container.append(list);
 }
 
+// Phase 3 lot A, `scatter`: one dot per point of summary_facts.scatter, x across and y up, no
+// chart library. The grid is a small SVG stretched over the plot (its lines keep one pixel at any
+// size); the dots and the tick labels are HTML laid over it by percentage, so the text keeps its
+// size from a 390 px phone to a desktop. Each dot is a 24 px button around a 10 px mark, titled;
+// the first tap (or focus and Enter) shows the title and both values under the plot, a second tap
+// on the same dot opens the entity, as the title under the plot does. The highest point is ringed
+// and shown first. A visually hidden table lists every point for a screen reader.
+function renderScatter(container, rows, columns, upstream) {
+  const model = text2SqlScatterModel(upstream, activeUiLanguage);
+  if (!model) {
+    return renderRawTable(container, rows, columns);
+  }
+  const fr = t2sLang() === "fr";
+  const recordAt = (index) => (Number.isInteger(index) ? (rows[index]?.data || rows[index]) : null);
+  const root = document.createElement("div");
+  root.className = "t2sScatter";
+  const yTitle = document.createElement("div");
+  yTitle.className = "t2sScatterAxisTitle t2sScatterYTitle";
+  yTitle.textContent = model.y.title;
+  const frame = document.createElement("div");
+  frame.className = "t2sScatterFrame";
+  const yTicks = document.createElement("div");
+  yTicks.className = "t2sScatterYTicks";
+  yTicks.setAttribute("aria-hidden", "true");
+  model.y.ticks.forEach((tick) => {
+    const label = document.createElement("span");
+    label.style.top = `${100 - tick.pos}%`;
+    label.textContent = tick.text;
+    yTicks.append(label);
+  });
+  const plot = document.createElement("div");
+  plot.className = "t2sScatterPlot";
+  plot.setAttribute("role", "group");
+  plot.setAttribute("aria-label", `${model.x.title} / ${model.y.title}`);
+  const svgNs = "http://www.w3.org/2000/svg";
+  const grid = document.createElementNS(svgNs, "svg");
+  grid.setAttribute("class", "t2sScatterGrid");
+  grid.setAttribute("viewBox", "0 0 100 100");
+  grid.setAttribute("preserveAspectRatio", "none");
+  grid.setAttribute("aria-hidden", "true");
+  const line = (x1, y1, x2, y2, cls) => {
+    const l = document.createElementNS(svgNs, "line");
+    l.setAttribute("x1", x1);
+    l.setAttribute("y1", y1);
+    l.setAttribute("x2", x2);
+    l.setAttribute("y2", y2);
+    l.setAttribute("class", cls);
+    l.setAttribute("vector-effect", "non-scaling-stroke");
+    grid.append(l);
+  };
+  model.x.ticks.forEach((tick) => line(tick.pos, 0, tick.pos, 100, "t2sScatterGridLine"));
+  model.y.ticks.forEach((tick) => line(0, 100 - tick.pos, 100, 100 - tick.pos, "t2sScatterGridLine"));
+  line(0, 100, 100, 100, "t2sScatterAxisLine");
+  line(0, 0, 0, 100, "t2sScatterAxisLine");
+  plot.append(grid);
+  const detail = document.createElement("div");
+  detail.className = "t2sScatterDetail";
+  detail.setAttribute("aria-live", "polite");
+  const dots = [];
+  let selected = -1;
+  const showDetail = (i) => {
+    const point = model.points[i];
+    const record = recordAt(point.index);
+    detail.replaceChildren();
+    const spec = record && typeof record === "object" ? cardSpecFromRecord(record) : null;
+    if (spec?.imageUrl) {
+      const img = document.createElement("img");
+      img.className = "t2sScatterPoster";
+      img.src = spec.imageUrl;
+      img.alt = "";
+      img.loading = "lazy";
+      detail.append(img);
+    }
+    const text = document.createElement("div");
+    text.className = "t2sScatterDetailText";
+    const title = document.createElement("div");
+    title.className = "t2sScatterDetailTitle";
+    title.textContent = point.label;
+    if (record && typeof record === "object") {
+      makeText2SqlRowOpenable(title, record);
+    }
+    const values = document.createElement("div");
+    values.className = "t2sScatterDetailValues";
+    values.textContent = point.values;
+    text.append(title, values);
+    detail.append(text);
+  };
+  const select = (i) => {
+    if (selected >= 0 && dots[selected]) {
+      dots[selected].classList.remove("isSelected");
+      dots[selected].setAttribute("aria-pressed", "false");
+    }
+    selected = i;
+    dots[i].classList.add("isSelected");
+    dots[i].setAttribute("aria-pressed", "true");
+    showDetail(i);
+  };
+  model.points.forEach((point, i) => {
+    const dot = document.createElement("button");
+    dot.type = "button";
+    dot.className = point.highest ? "t2sScatterDot isHighest" : "t2sScatterDot";
+    dot.style.left = `${point.left}%`;
+    dot.style.top = `${point.top}%`;
+    dot.title = point.aria;
+    dot.setAttribute("aria-label", point.aria);
+    dot.setAttribute("aria-pressed", "false");
+    dot.addEventListener("click", () => {
+      const record = recordAt(point.index);
+      if (selected === i && record && typeof record === "object" && detailRequestFromRecord(record)) {
+        showRecordDetail(record).catch((error) => {
+          log("scatter point open error", error.message);
+        });
+        return;
+      }
+      select(i);
+    });
+    dots.push(dot);
+    plot.append(dot);
+  });
+  const corner = document.createElement("div");
+  corner.className = "t2sScatterCorner";
+  const xTicks = document.createElement("div");
+  xTicks.className = "t2sScatterXTicks";
+  xTicks.setAttribute("aria-hidden", "true");
+  model.x.ticks.forEach((tick) => {
+    const label = document.createElement("span");
+    label.style.left = `${tick.pos}%`;
+    label.textContent = tick.text;
+    xTicks.append(label);
+  });
+  frame.append(yTicks, plot, corner, xTicks);
+  const xTitle = document.createElement("div");
+  xTitle.className = "t2sScatterAxisTitle t2sScatterXTitle";
+  xTitle.textContent = model.x.title;
+  // A table ignores the 1 px box of .srOnly, so it is wrapped in one.
+  const hidden = document.createElement("div");
+  hidden.className = "srOnly";
+  const table = document.createElement("table");
+  const caption = document.createElement("caption");
+  caption.textContent = `${model.x.title} / ${model.y.title}`;
+  const head = document.createElement("tr");
+  [fr ? "Titre" : "Title", model.x.title, model.y.title].forEach((text) => {
+    const th = document.createElement("th");
+    th.scope = "col";
+    th.textContent = text;
+    head.append(th);
+  });
+  const thead = document.createElement("thead");
+  thead.append(head);
+  const tbody = document.createElement("tbody");
+  model.points.forEach((point) => {
+    const tr = document.createElement("tr");
+    [point.label, point.xText, point.yText].forEach((text) => {
+      const td = document.createElement("td");
+      td.textContent = text;
+      tr.append(td);
+    });
+    tbody.append(tr);
+  });
+  table.append(caption, thead, tbody);
+  hidden.append(table);
+  root.append(yTitle, frame, xTitle, detail, hidden);
+  container.append(root);
+  select(model.highlight);
+}
+
 function renderRawTable(container, rows, columns) {
   const records = rows.map((item) => item?.data || item).filter((r) => r && typeof r === "object");
   if (!records.length) {
@@ -4085,11 +4255,11 @@ function renderRawTable(container, rows, columns) {
 // VOICE-AGENT-249: `timeline`, `sequence-strip` and `trend-columns` (FASTAPI-TEXT2SQL phase 2
 // lot A) joined the list; before that an API sending them fell back to the front's own chooser.
 // Phase 2 lot B: `compare-cards`, `fact-card` and `verdict` joined them on 2026-11-11, and phase 2
-// lot C `histogram`, `share-bar` and `flag-list` the same day.
+// lot C `histogram`, `share-bar` and `flag-list` the same day; phase 3 lot A `scatter` on 2026-11-12.
 const T2S_KNOWN_REPRESENTATIONS = [
   "entity-page", "card-grid", "value-cards", "number-card", "stat-strip", "ranked-bars", "table",
   "timeline", "sequence-strip", "trend-columns", "compare-cards", "fact-card", "verdict",
-  "histogram", "share-bar", "flag-list",
+  "histogram", "share-bar", "flag-list", "scatter",
 ];
 // Chips only where switching means something: several entity rows, or a table of them. An
 // entity page and a one-row number keep their single form (VOICE-AGENT-247), even though the
@@ -4100,7 +4270,7 @@ const T2S_KNOWN_REPRESENTATIONS = [
 // One share alone (phase 2 lot C) stands on a one-row shape too: its chips are the bar and the table.
 const T2S_SWITCHABLE_REPRESENTATIONS = [
   "card-grid", "value-cards", "ranked-bars", "table", "timeline", "sequence-strip", "trend-columns",
-  "compare-cards", "fact-card", "verdict", "histogram", "share-bar", "flag-list",
+  "compare-cards", "fact-card", "verdict", "histogram", "share-bar", "flag-list", "scatter",
 ];
 // The two forms that ARE the answer to the question (a yes or no, the one value asked for): a
 // remembered chip choice from an earlier list never replaces them; a chip on this result still does.
@@ -4120,6 +4290,7 @@ const T2S_REPRESENTATION_LABELS = {
   histogram: ["Histogram", "Histogramme"],
   "share-bar": ["Shares", "Parts"],
   "flag-list": ["Flags", "Drapeaux"],
+  scatter: ["Scatter", "Nuage de points"],
 };
 // Column names the summary line and the value cards name in words. Anything else falls back to
 // prettyLabel() of the column name, in lower case.
@@ -4449,6 +4620,10 @@ function text2SqlSummaryLine(upstream, { rep = "", lang = "", spoken = false, ha
   }
   if (shown === "flag-list") {
     return text2SqlFlagSummary(upstream, { lang, spoken, hasMore });
+  }
+  // Phase 3 lot A.
+  if (shown === "scatter") {
+    return text2SqlScatterSummary(upstream, { lang, spoken, hasMore });
   }
   if (["entity-page", "number-card", "stat-strip"].includes(shown)) {
     return "";
@@ -5089,6 +5264,7 @@ const T2S_REQUESTED_VIEW_TARGETS = {
   histogram: ["histogram"],
   share: ["share-bar"],
   flags: ["flag-list"],
+  scatter: ["scatter"],
 };
 const T2S_REQUESTED_VIEW_NOUNS = {
   table: ["a table", "en tableau"],
@@ -5104,6 +5280,7 @@ const T2S_REQUESTED_VIEW_NOUNS = {
   histogram: ["a histogram", "en histogramme"],
   share: ["shares of a whole", "en parts"],
   flags: ["flags", "avec les drapeaux"],
+  scatter: ["a scatter plot", "en nuage de points"],
 };
 const T2S_REQUESTED_VIEW_DONE = {
   table: ["Here it is as a table.", "Voici le résultat en tableau."],
@@ -5119,6 +5296,7 @@ const T2S_REQUESTED_VIEW_DONE = {
   histogram: ["Here it is as a histogram.", "Voici l'histogramme."],
   "share-bar": ["Here are the shares.", "Voici les parts."],
   "flag-list": ["Here are the countries with their flags.", "Voici les pays et leurs drapeaux."],
+  scatter: ["Here it is as a scatter plot.", "Voici le nuage de points."],
 };
 
 function text2SqlRequestedView(text) {
@@ -5615,6 +5793,288 @@ function text2SqlFlagSummary(upstream, { lang = "", spoken = false, hasMore = fa
   }
   const lead = hasMore ? (fr ? `les ${nText} premiers pays` : `the first ${nText} countries`) : `${text2SqlCountWord(n, "m", language)} ${countries}`;
   return `${capitalizeFirst(lead)}${fr ? " : " : ": "}${list}.`;
+}
+
+// Phase 3 lot A (contract table `scatter`). Pure functions, no DOM, pinned by
+// tools/check-result-representations.mjs with the p3a-* fixtures; the same ticks, words and
+// sentences as t2s-front (f_t2srep_scatter_model, f_t2srep_caption_scatter). The points are the
+// API's (summary_facts.scatter): never re-read from the rows, so the two fronts plot the same.
+// [EN name, EN "without ..." object, FR name, FR "sans ..." object, FR "de ..." form]
+const T2S_SCATTER_WORDS = {
+  budget: ["budget", "a budget", "budget", "budget", "du budget"],
+  revenue: ["box-office revenue", "box-office revenue", "recettes", "recettes", "des recettes"],
+  profit: ["profit", "a profit", "bénéfice", "bénéfice", "du bénéfice"],
+  runtime: ["runtime", "a runtime", "durée", "durée", "de la durée"],
+  seasons: ["number of seasons", "a season count", "nombre de saisons", "nombre de saisons", "du nombre de saisons"],
+  episodes: ["number of episodes", "an episode count", "nombre d'épisodes", "nombre d'épisodes", "du nombre d'épisodes"],
+  popularity: ["popularity", "a popularity", "popularité", "popularité", "de la popularité"],
+  age: ["age", "an age", "âge", "âge", "de l'âge"],
+  rating_imdb: ["IMDb rating", "an IMDb rating", "note IMDb", "note IMDb", "de la note IMDb"],
+  rating_tmdb: ["TMDb rating", "a TMDb rating", "note TMDb", "note TMDb", "de la note TMDb"],
+  rating: ["rating", "a rating", "note", "note", "de la note"],
+  votes_imdb: ["IMDb votes", "IMDb votes", "votes IMDb", "votes IMDb", "des votes IMDb"],
+  votes: ["votes", "votes", "votes", "votes", "des votes"],
+  year_birth: ["birth year", "a birth year", "année de naissance", "année de naissance", "de l'année de naissance"],
+  year_death: ["death year", "a death year", "année de décès", "année de décès", "de l'année de décès"],
+  year_air: ["first air year", "a first air date", "année de première diffusion", "date de diffusion", "de l'année de première diffusion"],
+  year_release: ["release year", "a release year", "année de sortie", "année de sortie", "de l'année de sortie"],
+  year: ["year", "a year", "année", "année", "de l'année"],
+};
+
+// The words of one axis: {name, without, of} ("budget", "a budget" / "budget", "du budget").
+function text2SqlScatterWords(axis, lang) {
+  const fr = t2sLang(lang) === "fr";
+  const quantity = String(axis?.quantity || "");
+  const column = String(axis?.column || "").toUpperCase();
+  let key = quantity;
+  if (quantity === "rating") {
+    key = /IMDB/.test(column) ? "rating_imdb" : /VOTE_AVERAGE|TMDB/.test(column) ? "rating_tmdb" : "rating";
+  } else if (quantity === "votes") {
+    key = /IMDB/.test(column) ? "votes_imdb" : "votes";
+  } else if (quantity === "year") {
+    key = /BIRTH/.test(column) ? "year_birth" : /DEATH/.test(column) ? "year_death"
+      : /AIR/.test(column) ? "year_air" : /RELEASE/.test(column) ? "year_release" : "year";
+  }
+  const entry = T2S_SCATTER_WORDS[key];
+  if (entry) {
+    return fr ? { name: entry[2], without: entry[3], of: entry[4] } : { name: entry[0], without: entry[1], of: "" };
+  }
+  const name = text2SqlMetricLabel(axis?.column, lang);
+  return { name, without: name, of: /^[aeiouyéèêàâîôûh]/i.test(name) ? `de l'${name}` : `du ${name}` };
+}
+
+// "Budget ($)", "Runtime (min)", "IMDb votes (log scale)" / "Votes IMDb (échelle log)".
+function text2SqlScatterAxisTitle(axis, lang) {
+  const fr = t2sLang(lang) === "fr";
+  const words = text2SqlScatterWords(axis, lang);
+  const unit = axis?.unit === "usd" ? " ($)" : axis?.unit === "minutes" ? " (min)" : "";
+  const log = axis?.scale === "log" ? (fr ? " (échelle log)" : " (log scale)") : "";
+  return `${capitalizeFirst(words.name)}${unit}${log}`;
+}
+
+function text2SqlTrimNumber(n, digits) {
+  return String(Number(Number(n).toFixed(digits)));
+}
+
+// A tick: money and big counts in the short form ($150M, $1.5B, 10K, 2.5M), a year bare.
+function text2SqlScatterTickText(value, axis) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) {
+    return "";
+  }
+  const unit = axis?.unit || null;
+  if (unit === "year") {
+    return String(Math.round(n));
+  }
+  const abs = Math.abs(n);
+  const short = (v) => {
+    if (v >= 1e9) return `${text2SqlTrimNumber(v / 1e9, 2)}B`;
+    if (v >= 1e6) return `${text2SqlTrimNumber(v / 1e6, 2)}M`;
+    if (v >= 1e3) return `${text2SqlTrimNumber(v / 1e3, 2)}K`;
+    return text2SqlTrimNumber(v, 2);
+  };
+  if (unit === "usd") {
+    return `${n < 0 ? "-" : ""}$${short(abs)}`;
+  }
+  if (abs >= 1000 && unit !== "minutes") {
+    return `${n < 0 ? "-" : ""}${short(abs)}`;
+  }
+  return text2SqlPlainNumber(n);
+}
+
+// A point's value in words: "$160M", "148 min", "1958", "8.4", "2,482,559"; spoken spells the
+// money and the minutes out.
+function text2SqlScatterValueText(value, axis, lang, spoken = false) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) {
+    return "";
+  }
+  const unit = axis?.unit || null;
+  if (spoken && (unit === "usd" || unit === "minutes")) {
+    return spokenMetricValue(n, unit, lang);
+  }
+  if (unit === "usd") {
+    return formatMoney(n) || "$0";
+  }
+  if (unit === "minutes") {
+    return `${text2SqlPlainNumber(n)} min`;
+  }
+  if (unit === "year") {
+    return String(Math.round(n));
+  }
+  if (unit === "rating") {
+    return n.toFixed(1);
+  }
+  return text2SqlPlainNumber(n);
+}
+
+function text2SqlNiceStep(raw) {
+  if (!(raw > 0) || !Number.isFinite(raw)) {
+    return 1;
+  }
+  const power = 10 ** Math.floor(Math.log10(raw));
+  const f = raw / power;
+  const m = f <= 1 ? 1 : f <= 2 ? 2 : f <= 2.5 ? 2.5 : f <= 5 ? 5 : 10;
+  return m * power;
+}
+
+// Four to six round ticks over the axis's values; decades on a log axis. Positions 0 to 100.
+function text2SqlScatterTicks(axis) {
+  const lo0 = Number(axis?.min);
+  const hi0 = Number(axis?.max);
+  if (!Number.isFinite(lo0) || !Number.isFinite(hi0)) {
+    return null;
+  }
+  if (axis?.scale === "log" && lo0 > 0) {
+    let e0 = Math.floor(Math.log10(lo0));
+    let e1 = Math.ceil(Math.log10(hi0));
+    if (e1 <= e0) {
+      e1 = e0 + 1;
+    }
+    const every = e1 - e0 > 6 ? 2 : 1;
+    const ticks = [];
+    for (let e = e0; e <= e1; e += every) {
+      ticks.push(10 ** e);
+    }
+    const span = e1 - e0;
+    return {
+      lo: 10 ** e0,
+      hi: 10 ** e1,
+      log: true,
+      pos: (v) => ((Math.log10(Number(v)) - e0) / span) * 100,
+      ticks: ticks.map((v) => ({ value: v, pos: ((Math.log10(v) - e0) / span) * 100, text: text2SqlScatterTickText(v, axis) })),
+    };
+  }
+  let lo = lo0;
+  let hi = hi0;
+  if (hi === lo) {
+    const pad = lo ? Math.abs(lo) * 0.1 : 1;
+    lo -= pad;
+    hi += pad;
+  }
+  let step = text2SqlNiceStep((hi - lo) / 4);
+  const whole = ["year", "count"].includes(axis?.unit) || ["seasons", "episodes", "year"].includes(axis?.quantity);
+  if (whole) {
+    step = Math.max(1, Math.ceil(step));
+  }
+  let start = Math.floor(lo / step) * step;
+  const end = Math.max(Math.ceil(hi / step) * step, start + step);
+  // A point exactly on the low edge would sit on the axis line, among the tick labels: one more
+  // step on that side, never below 0 for a quantity that cannot be negative. The far edges keep
+  // their round value: a dot there stays inside the frame's margin.
+  if (start === lo && lo !== 0) {
+    start = lo > 0 && start - step < 0 ? 0 : start - step;
+  }
+  const ticks = [];
+  for (let i = 0; i <= 12; i += 1) {
+    const v = Number((start + i * step).toPrecision(12));
+    if (v > end + step / 1000) {
+      break;
+    }
+    ticks.push(v);
+  }
+  const span = end - start;
+  return {
+    lo: start,
+    hi: end,
+    log: false,
+    pos: (v) => ((Number(v) - start) / span) * 100,
+    ticks: ticks.map((v) => ({ value: v, pos: ((v - start) / span) * 100, text: text2SqlScatterTickText(v, axis) })),
+  };
+}
+
+// The plot: the two axes with their titles and ticks, one entry per point with its place (left
+// and top in percent of the plot), its title and both values, the highest point first chosen.
+function text2SqlScatterModel(upstream, lang) {
+  const scatter = upstream?.summary_facts?.scatter;
+  const points = Array.isArray(scatter?.points) ? scatter.points : [];
+  if (!scatter?.x || !scatter?.y || points.length < 2) {
+    return null;
+  }
+  const xTicks = text2SqlScatterTicks(scatter.x);
+  const yTicks = text2SqlScatterTicks(scatter.y);
+  if (!xTicks || !yTicks) {
+    return null;
+  }
+  const fr = t2sLang(lang) === "fr";
+  const xWords = text2SqlScatterWords(scatter.x, lang);
+  const yWords = text2SqlScatterWords(scatter.y, lang);
+  const yMax = Number.isInteger(scatter?.extremes?.y_max) ? scatter.extremes.y_max : -1;
+  const sep = fr ? " : " : ": ";
+  const items = points.map((p, i) => {
+    const xText = text2SqlScatterValueText(p?.x, scatter.x, lang);
+    const yText = text2SqlScatterValueText(p?.y, scatter.y, lang);
+    const label = String(p?.label ?? "").trim() || String(p?.id ?? "");
+    return {
+      index: Number.isInteger(p?.index) ? p.index : null,
+      label,
+      left: Math.round(xTicks.pos(p?.x) * 100) / 100,
+      top: Math.round((100 - yTicks.pos(p?.y)) * 100) / 100,
+      xText,
+      yText,
+      values: `${capitalizeFirst(xWords.name)} ${xText} · ${capitalizeFirst(yWords.name)} ${yText}`,
+      aria: `${label}${sep}${xWords.name} ${xText}, ${yWords.name} ${yText}`,
+      highest: i === yMax,
+    };
+  });
+  return {
+    x: { ...scatter.x, title: text2SqlScatterAxisTitle(scatter.x, lang), name: xWords.name, ticks: xTicks.ticks },
+    y: { ...scatter.y, title: text2SqlScatterAxisTitle(scatter.y, lang), name: yWords.name, ticks: yTicks.ticks },
+    points: items,
+    highlight: yMax >= 0 && yMax < items.length ? yMax : 0,
+    count: Number(scatter.count) || points.length,
+    plotted: Number(scatter.plotted) || points.length,
+  };
+}
+
+// "18 films, runtime against IMDb rating; highest IMDb rating: Paths of Glory, 8.4."
+// "18 of 31 films, budget against box-office revenue (13 without a budget or box-office
+// revenue); highest box-office revenue: The Odyssey, $1.8B."
+// "18 films sur 31, recettes en fonction du budget (13 sans budget ou sans recettes) ; maximum
+// des recettes : L'Odyssée, $1.8B."
+function text2SqlScatterSummary(upstream, { lang = "", spoken = false, hasMore = false } = {}) {
+  const language = t2sLang(lang);
+  const fr = language === "fr";
+  const scatter = upstream?.summary_facts?.scatter;
+  const points = Array.isArray(scatter?.points) ? scatter.points : [];
+  if (!scatter?.x || !scatter?.y || !points.length) {
+    return "";
+  }
+  const count = Number(scatter.count) || points.length;
+  const plotted = Number(scatter.plotted) || points.length;
+  const entry = T2S_ROW_NOUNS[text2SqlRowNounKey(text2SqlResultColumns(upstream), upstream?.result)];
+  const noun = fr ? entry[count === 1 ? 3 : 2] : entry[count === 1 ? 1 : 0];
+  const first = entry[4] === "f" ? "premières" : "premiers";
+  let lead;
+  if (plotted >= count) {
+    lead = hasMore ? (fr ? `les ${count} ${first} ${noun}` : `the first ${count} ${noun}`) : `${count} ${noun}`;
+  } else if (fr) {
+    lead = hasMore ? `${plotted} des ${count} ${first} ${noun}` : `${plotted} ${noun} sur ${count}`;
+  } else {
+    lead = hasMore ? `${plotted} of the first ${count} ${noun}` : `${plotted} of ${count} ${noun}`;
+  }
+  const xw = text2SqlScatterWords(scatter.x, language);
+  const yw = text2SqlScatterWords(scatter.y, language);
+  let text = `${capitalizeFirst(lead)}, ${fr ? `${yw.name} en fonction ${xw.of}` : `${xw.name} against ${yw.name}`}`;
+  const left = count - plotted;
+  if (left > 0) {
+    const mx = Number(scatter?.missing?.x) || 0;
+    const my = Number(scatter?.missing?.y) || 0;
+    let what;
+    if (fr) {
+      what = mx && my ? `sans ${xw.without} ou sans ${yw.without}` : mx ? `sans ${xw.without}` : `sans ${yw.without}`;
+    } else {
+      what = `without ${mx && my ? `${xw.without} or ${yw.without}` : mx ? xw.without : yw.without}`;
+    }
+    text += ` (${left} ${what})`;
+  }
+  const yMax = Number.isInteger(scatter?.extremes?.y_max) ? points[scatter.extremes.y_max] : null;
+  const label = String(yMax?.label ?? "").trim();
+  if (yMax && label) {
+    const value = text2SqlScatterValueText(yMax.y, scatter.y, language, spoken);
+    text += fr ? ` ; maximum ${yw.of} : ${label}, ${value}` : `; highest ${yw.name}: ${label}, ${value}`;
+  }
+  return `${text}.`;
 }
 
 // One result row as a poster card, with the value(s) under it when value cards are being drawn.

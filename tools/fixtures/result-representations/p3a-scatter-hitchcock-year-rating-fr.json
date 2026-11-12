@@ -1,0 +1,1184 @@
+{
+ "question": "Montre la note IMDb des films d'Alfred Hitchcock en fonction de leur année de sortie",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici les notes IMDb des films d’Alfred Hitchcock, classés par année de sortie.",
+ "representation": "scatter",
+ "representation_options": [
+  "scatter",
+  "card-grid",
+  "timeline",
+  "value-cards",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null,
+   "ordered": "asc",
+   "focus": true
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null,
+   "focus": true
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null,
+   "focus": true
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RELEASE_YEAR",
+   "role": "date",
+   "unit": null,
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 50,
+  "total": null,
+  "value_column": "DAT_RELEASE",
+  "unit": null,
+  "order": "date",
+  "order_direction": "asc",
+  "top": null,
+  "scatter": {
+   "x": {
+    "column": "RELEASE_YEAR",
+    "quantity": "year",
+    "unit": "year",
+    "scale": "linear",
+    "min": 1920,
+    "max": 1942
+   },
+   "y": {
+    "column": "IMDB_RATING",
+    "quantity": "rating",
+    "unit": "rating",
+    "scale": "linear",
+    "min": 4.6,
+    "max": 8
+   },
+   "points": [
+    {
+     "index": 0,
+     "label": "The Great Day",
+     "id": 1013211,
+     "x": 1920,
+     "y": 6.8
+    },
+    {
+     "index": 1,
+     "label": "The Call of Youth",
+     "id": 974700,
+     "x": 1921,
+     "y": 7.2
+    },
+    {
+     "index": 2,
+     "label": "The Princess of New York",
+     "id": 1013215,
+     "x": 1921,
+     "y": 6.7
+    },
+    {
+     "index": 3,
+     "label": "The Mystery Road",
+     "id": 787159,
+     "x": 1921,
+     "y": 6.8
+    },
+    {
+     "index": 4,
+     "label": "The Bonnie Brier Bush",
+     "id": 447243,
+     "x": 1921,
+     "y": 7.1
+    },
+    {
+     "index": 5,
+     "label": "Three Live Ghosts",
+     "id": 353141,
+     "x": 1922,
+     "y": 6.3
+    },
+    {
+     "index": 6,
+     "label": "Love's Boomerang",
+     "id": 1595102,
+     "x": 1922,
+     "y": 6.1
+    },
+    {
+     "index": 7,
+     "label": "The Spanish Jade",
+     "id": 1011024,
+     "x": 1922,
+     "y": 6.3
+    },
+    {
+     "index": 8,
+     "label": "The Man From Home",
+     "id": 353132,
+     "x": 1922,
+     "y": 6.3
+    },
+    {
+     "index": 9,
+     "label": "Tell Your Children",
+     "id": 1013219,
+     "x": 1922,
+     "y": 7.1
+    },
+    {
+     "index": 10,
+     "label": "Woman to Woman",
+     "id": 293691,
+     "x": 1923,
+     "y": 7
+    },
+    {
+     "index": 11,
+     "label": "Always Tell Your Wife",
+     "id": 387698,
+     "x": 1923,
+     "y": 6.2
+    },
+    {
+     "index": 12,
+     "label": "The White Shadow",
+     "id": 143534,
+     "x": 1924,
+     "y": 6
+    },
+    {
+     "index": 13,
+     "label": "The Passionate Adventure",
+     "id": 277352,
+     "x": 1924,
+     "y": 6.4
+    },
+    {
+     "index": 14,
+     "label": "Die Prinzessin und der Geiger",
+     "id": 399711,
+     "x": 1925,
+     "y": 6.9
+    },
+    {
+     "index": 15,
+     "label": "Le Jardin du plaisir",
+     "id": 64398,
+     "x": 1925,
+     "y": 5.7
+    },
+    {
+     "index": 16,
+     "label": "The Prude's Fall",
+     "id": 437432,
+     "x": 1925,
+     "y": 6.6
+    },
+    {
+     "index": 18,
+     "label": "Les Cheveux d'or",
+     "id": 2760,
+     "x": 1927,
+     "y": 7.3
+    },
+    {
+     "index": 19,
+     "label": "Le Ring",
+     "id": 36056,
+     "x": 1927,
+     "y": 6.1
+    },
+    {
+     "index": 20,
+     "label": "C'est la vie...",
+     "id": 52782,
+     "x": 1927,
+     "y": 6
+    },
+    {
+     "index": 21,
+     "label": "Laquelle des trois ?",
+     "id": 35832,
+     "x": 1928,
+     "y": 5.8
+    },
+    {
+     "index": 22,
+     "label": "Le passé ne meurt pas",
+     "id": 36055,
+     "x": 1928,
+     "y": 5.4
+    },
+    {
+     "index": 23,
+     "label": "À l'américaine",
+     "id": 36054,
+     "x": 1928,
+     "y": 5.4
+    },
+    {
+     "index": 24,
+     "label": "Sound Test for Blackmail",
+     "id": 319841,
+     "x": 1929,
+     "y": 6.8
+    },
+    {
+     "index": 25,
+     "label": "L'Homme de l'île de Man",
+     "id": 20213,
+     "x": 1929,
+     "y": 6.2
+    },
+    {
+     "index": 26,
+     "label": "Chantage",
+     "id": 543,
+     "x": 1929,
+     "y": 6.9
+    },
+    {
+     "index": 27,
+     "label": "An Elastic Affair",
+     "id": 510844,
+     "x": 1930,
+     "y": 6.9
+    },
+    {
+     "index": 28,
+     "label": "Elstree Calling",
+     "id": 75793,
+     "x": 1930,
+     "y": 4.9
+    },
+    {
+     "index": 29,
+     "label": "Junon et le Paon",
+     "id": 47695,
+     "x": 1930,
+     "y": 4.6
+    },
+    {
+     "index": 30,
+     "label": "Meurtre",
+     "id": 31930,
+     "x": 1930,
+     "y": 6.3
+    },
+    {
+     "index": 31,
+     "label": "The Skin Game",
+     "id": 52748,
+     "x": 1931,
+     "y": 5.7
+    },
+    {
+     "index": 32,
+     "label": "Mary",
+     "id": 97867,
+     "x": 1931,
+     "y": 5.7
+    },
+    {
+     "index": 33,
+     "label": "À l'est de Shanghaï",
+     "id": 36049,
+     "x": 1931,
+     "y": 5.7
+    },
+    {
+     "index": 34,
+     "label": "Numéro 17",
+     "id": 15007,
+     "x": 1932,
+     "y": 5.6
+    },
+    {
+     "index": 35,
+     "label": "Lord Camber's Ladies",
+     "id": 320957,
+     "x": 1932,
+     "y": 6.9
+    },
+    {
+     "index": 36,
+     "label": "Le Chant du Danube",
+     "id": 52907,
+     "x": 1934,
+     "y": 5.7
+    },
+    {
+     "index": 37,
+     "label": "L'homme qui en savait trop",
+     "id": 8208,
+     "x": 1934,
+     "y": 6.7
+    },
+    {
+     "index": 38,
+     "label": "Les 39 Marches",
+     "id": 260,
+     "x": 1935,
+     "y": 7.6
+    },
+    {
+     "index": 39,
+     "label": "Quatre de l'espionnage",
+     "id": 2761,
+     "x": 1936,
+     "y": 6.4
+    },
+    {
+     "index": 40,
+     "label": "Sabotage",
+     "id": 12684,
+     "x": 1936,
+     "y": 7
+    },
+    {
+     "index": 41,
+     "label": "Jeune et Innocent",
+     "id": 2762,
+     "x": 1937,
+     "y": 6.8
+    },
+    {
+     "index": 42,
+     "label": "Une femme disparaît",
+     "id": 940,
+     "x": 1938,
+     "y": 7.7
+    },
+    {
+     "index": 43,
+     "label": "La Taverne de la Jamaïque",
+     "id": 31995,
+     "x": 1939,
+     "y": 6.3
+    },
+    {
+     "index": 44,
+     "label": "Destin dans la nuit",
+     "id": 37956,
+     "x": 1940,
+     "y": 6.5
+    },
+    {
+     "index": 45,
+     "label": "Rebecca",
+     "id": 223,
+     "x": 1940,
+     "y": 8
+    },
+    {
+     "index": 46,
+     "label": "Correspondant 17",
+     "id": 25670,
+     "x": 1940,
+     "y": 7.4
+    },
+    {
+     "index": 47,
+     "label": "Joies matrimoniales",
+     "id": 24197,
+     "x": 1941,
+     "y": 6.3
+    },
+    {
+     "index": 48,
+     "label": "Soupçons",
+     "id": 11462,
+     "x": 1941,
+     "y": 7.2
+    },
+    {
+     "index": 49,
+     "label": "Cinquième Colonne",
+     "id": 31997,
+     "x": 1942,
+     "y": 7.1
+    }
+   ],
+   "count": 50,
+   "plotted": 49,
+   "left_out": 1,
+   "missing": {
+    "x": 0,
+    "y": 1
+   },
+   "extremes": {
+    "x_min": 0,
+    "x_max": 48,
+    "y_min": 28,
+    "y_max": 44
+   }
+  }
+ },
+ "intent": {
+  "task": "trend",
+  "focus": [
+   "rating",
+   "release_date"
+  ],
+  "focus_columns": [
+   "DAT_RELEASE",
+   "IMDB_RATING",
+   "IMDB_RATING_WEIGHTED",
+   "RELEASE_YEAR"
+  ],
+  "requested_view": "scatter",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 1013211,
+    "MOVIE_TITLE": "The Great Day",
+    "DAT_RELEASE": "1920-11-01",
+    "IMDB_RATING": 6.8,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 41,
+    "POSTER_PATH": null,
+    "RUNTIME": 50,
+    "RELEASE_YEAR": 1920
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 974700,
+    "MOVIE_TITLE": "The Call of Youth",
+    "DAT_RELEASE": "1921-03-13",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 30,
+    "POSTER_PATH": null,
+    "RUNTIME": 40,
+    "RELEASE_YEAR": 1921
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 1013215,
+    "MOVIE_TITLE": "The Princess of New York",
+    "DAT_RELEASE": "1921-06-01",
+    "IMDB_RATING": 6.7,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 39,
+    "POSTER_PATH": "/1sFM64AUPgp3XZA7i3DT1TTLFb2.jpg",
+    "RUNTIME": 50,
+    "RELEASE_YEAR": 1921
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_MOVIE": 787159,
+    "MOVIE_TITLE": "The Mystery Road",
+    "DAT_RELEASE": "1921-11-07",
+    "IMDB_RATING": 6.8,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 40,
+    "POSTER_PATH": "/9m6Wj3CLEPzTNFZesqqYGDtPad3.jpg",
+    "RUNTIME": 50,
+    "RELEASE_YEAR": 1921
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_MOVIE": 447243,
+    "MOVIE_TITLE": "The Bonnie Brier Bush",
+    "DAT_RELEASE": "1921-11-27",
+    "IMDB_RATING": 7.1,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 40,
+    "POSTER_PATH": "/cZpxJA7T1KwD8XqZLBVbOi9TCcQ.jpg",
+    "RUNTIME": 50,
+    "RELEASE_YEAR": 1921
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_MOVIE": 353141,
+    "MOVIE_TITLE": "Three Live Ghosts",
+    "DAT_RELEASE": "1922-01-01",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 51,
+    "POSTER_PATH": "/xkewkfqhtZrct6SHwVfINkG53HN.jpg",
+    "RUNTIME": 60,
+    "RELEASE_YEAR": 1922
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_MOVIE": 1595102,
+    "MOVIE_TITLE": "Love's Boomerang",
+    "DAT_RELEASE": "1922-02-19",
+    "IMDB_RATING": 6.1,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 37,
+    "POSTER_PATH": "/oSy3GH70QJIkluPdnIgrjaF6pb5.jpg",
+    "RUNTIME": 62,
+    "RELEASE_YEAR": 1922
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_MOVIE": 1011024,
+    "MOVIE_TITLE": "The Spanish Jade",
+    "DAT_RELEASE": "1922-04-10",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 39,
+    "POSTER_PATH": "/stvo8RspbUiETdanxRD564YplwN.jpg",
+    "RUNTIME": 50,
+    "RELEASE_YEAR": 1922
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_MOVIE": 353132,
+    "MOVIE_TITLE": "The Man From Home",
+    "DAT_RELEASE": "1922-04-30",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 70,
+    "POSTER_PATH": "/dcwZc7eza2u04Ry5O6dvI1mD6oX.jpg",
+    "RUNTIME": 90,
+    "RELEASE_YEAR": 1922
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_MOVIE": 1013219,
+    "MOVIE_TITLE": "Tell Your Children",
+    "DAT_RELEASE": "1922-09-01",
+    "IMDB_RATING": 7.1,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 47,
+    "POSTER_PATH": null,
+    "RUNTIME": 55,
+    "RELEASE_YEAR": 1922
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_MOVIE": 293691,
+    "MOVIE_TITLE": "Woman to Woman",
+    "DAT_RELEASE": "1923-01-02",
+    "IMDB_RATING": 7.0,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 93,
+    "POSTER_PATH": "/dFtGMtpFb5Ing3sd2bP35BBSDZD.jpg",
+    "RUNTIME": 82,
+    "RELEASE_YEAR": 1923
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_MOVIE": 387698,
+    "MOVIE_TITLE": "Always Tell Your Wife",
+    "DAT_RELEASE": "1923-02-10",
+    "IMDB_RATING": 6.2,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 239,
+    "POSTER_PATH": "/yVI9HN6IIuuaRdDo4C3iXa0ewZp.jpg",
+    "RUNTIME": 20,
+    "RELEASE_YEAR": 1923
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_MOVIE": 143534,
+    "MOVIE_TITLE": "The White Shadow",
+    "DAT_RELEASE": "1924-05-05",
+    "IMDB_RATING": 6.0,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 281,
+    "POSTER_PATH": "/7sqoJB0MOhb5UHfMLFNxGEXSSg0.jpg",
+    "RUNTIME": 43,
+    "RELEASE_YEAR": 1924
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "ID_MOVIE": 277352,
+    "MOVIE_TITLE": "The Passionate Adventure",
+    "DAT_RELEASE": "1924-07-01",
+    "IMDB_RATING": 6.4,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 49,
+    "POSTER_PATH": "/h1PZ9Wk4336u4vYcJup6CJtERt7.jpg",
+    "RUNTIME": 78,
+    "RELEASE_YEAR": 1924
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "ID_MOVIE": 399711,
+    "MOVIE_TITLE": "Die Prinzessin und der Geiger",
+    "DAT_RELEASE": "1925-09-04",
+    "IMDB_RATING": 6.9,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 58,
+    "POSTER_PATH": "/zRn1ttm7ZImWbhysjE24gKdbqPe.jpg",
+    "RUNTIME": 96,
+    "RELEASE_YEAR": 1925
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "ID_MOVIE": 64398,
+    "MOVIE_TITLE": "Le Jardin du plaisir",
+    "DAT_RELEASE": "1925-11-03",
+    "IMDB_RATING": 5.7,
+    "IMDB_RATING_WEIGHTED": 6.8,
+    "IMDB_VOTES": 3360,
+    "POSTER_PATH": "/n1Baw9iCgu4UkikKYyHW6IY9QFc.jpg",
+    "RUNTIME": 91,
+    "RELEASE_YEAR": 1925
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "ID_MOVIE": 437432,
+    "MOVIE_TITLE": "The Prude's Fall",
+    "DAT_RELEASE": "1925-11-23",
+    "IMDB_RATING": 6.6,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 50,
+    "POSTER_PATH": null,
+    "RUNTIME": 60,
+    "RELEASE_YEAR": 1925
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "ID_MOVIE": 106439,
+    "MOVIE_TITLE": "The Mountain Eagle",
+    "DAT_RELEASE": "1926-11-01",
+    "IMDB_RATING": null,
+    "IMDB_RATING_WEIGHTED": null,
+    "IMDB_VOTES": null,
+    "POSTER_PATH": "/aakEpkD8ilDrTwsW3QGYiKkKUQt.jpg",
+    "RUNTIME": 89,
+    "RELEASE_YEAR": 1926
+   }
+  },
+  {
+   "index": 18,
+   "data": {
+    "ID_MOVIE": 2760,
+    "MOVIE_TITLE": "Les Cheveux d'or",
+    "DAT_RELEASE": "1927-02-14",
+    "IMDB_RATING": 7.3,
+    "IMDB_RATING_WEIGHTED": 7.11,
+    "IMDB_VOTES": 15448,
+    "POSTER_PATH": "/lqkAySTi31IpzIcxpMGVOZ52iz8.jpg",
+    "RUNTIME": 91,
+    "RELEASE_YEAR": 1927
+   }
+  },
+  {
+   "index": 19,
+   "data": {
+    "ID_MOVIE": 36056,
+    "MOVIE_TITLE": "Le Ring",
+    "DAT_RELEASE": "1927-09-28",
+    "IMDB_RATING": 6.1,
+    "IMDB_RATING_WEIGHTED": 6.82,
+    "IMDB_VOTES": 4425,
+    "POSTER_PATH": "/wyfrBqAlzFR037KqvrYvKIo5akL.jpg",
+    "RUNTIME": 116,
+    "RELEASE_YEAR": 1927
+   }
+  },
+  {
+   "index": 20,
+   "data": {
+    "ID_MOVIE": 52782,
+    "MOVIE_TITLE": "C'est la vie...",
+    "DAT_RELEASE": "1927-10-24",
+    "IMDB_RATING": 6.0,
+    "IMDB_RATING_WEIGHTED": 6.83,
+    "IMDB_VOTES": 3639,
+    "POSTER_PATH": "/nXo9Jqmg5JjRzV7TGEi0vxW316v.jpg",
+    "RUNTIME": 106,
+    "RELEASE_YEAR": 1927
+   }
+  },
+  {
+   "index": 21,
+   "data": {
+    "ID_MOVIE": 35832,
+    "MOVIE_TITLE": "Laquelle des trois ?",
+    "DAT_RELEASE": "1928-02-24",
+    "IMDB_RATING": 5.8,
+    "IMDB_RATING_WEIGHTED": 6.8,
+    "IMDB_VOTES": 3515,
+    "POSTER_PATH": "/qD95ovhKxqP1alIPUeIyHfLVT90.jpg",
+    "RUNTIME": 112,
+    "RELEASE_YEAR": 1928
+   }
+  },
+  {
+   "index": 22,
+   "data": {
+    "ID_MOVIE": 36055,
+    "MOVIE_TITLE": "Le passé ne meurt pas",
+    "DAT_RELEASE": "1928-04-01",
+    "IMDB_RATING": 5.4,
+    "IMDB_RATING_WEIGHTED": 6.75,
+    "IMDB_VOTES": 3417,
+    "POSTER_PATH": "/tMZYODO7FhmfPb120fHIvco385q.jpg",
+    "RUNTIME": 70,
+    "RELEASE_YEAR": 1928
+   }
+  },
+  {
+   "index": 23,
+   "data": {
+    "ID_MOVIE": 36054,
+    "MOVIE_TITLE": "À l'américaine",
+    "DAT_RELEASE": "1928-08-17",
+    "IMDB_RATING": 5.4,
+    "IMDB_RATING_WEIGHTED": 6.77,
+    "IMDB_VOTES": 3076,
+    "POSTER_PATH": "/f334NIaF0j7QPYnrT0iPWPAosgp.jpg",
+    "RUNTIME": 105,
+    "RELEASE_YEAR": 1928
+   }
+  },
+  {
+   "index": 24,
+   "data": {
+    "ID_MOVIE": 319841,
+    "MOVIE_TITLE": "Sound Test for Blackmail",
+    "DAT_RELEASE": "1929-01-01",
+    "IMDB_RATING": 6.8,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 790,
+    "POSTER_PATH": "/bI3Kdy7iQnjVxK0TnORNvRAZcip.jpg",
+    "RUNTIME": 1,
+    "RELEASE_YEAR": 1929
+   }
+  },
+  {
+   "index": 25,
+   "data": {
+    "ID_MOVIE": 20213,
+    "MOVIE_TITLE": "L'Homme de l'île de Man",
+    "DAT_RELEASE": "1929-01-18",
+    "IMDB_RATING": 6.2,
+    "IMDB_RATING_WEIGHTED": 6.85,
+    "IMDB_VOTES": 3726,
+    "POSTER_PATH": "/8FeqdjLBdl1m7niONH6vPZRUMUh.jpg",
+    "RUNTIME": 100,
+    "RELEASE_YEAR": 1929
+   }
+  },
+  {
+   "index": 26,
+   "data": {
+    "ID_MOVIE": 543,
+    "MOVIE_TITLE": "Chantage",
+    "DAT_RELEASE": "1929-07-28",
+    "IMDB_RATING": 6.9,
+    "IMDB_RATING_WEIGHTED": 6.94,
+    "IMDB_VOTES": 13866,
+    "POSTER_PATH": "/eWGFSn8RS6lKO5sHxA0btKFwWDg.jpg",
+    "RUNTIME": 86,
+    "RELEASE_YEAR": 1929
+   }
+  },
+  {
+   "index": 27,
+   "data": {
+    "ID_MOVIE": 510844,
+    "MOVIE_TITLE": "An Elastic Affair",
+    "DAT_RELEASE": "1930-01-19",
+    "IMDB_RATING": 6.9,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 160,
+    "POSTER_PATH": null,
+    "RUNTIME": 10,
+    "RELEASE_YEAR": 1930
+   }
+  },
+  {
+   "index": 28,
+   "data": {
+    "ID_MOVIE": 75793,
+    "MOVIE_TITLE": "Elstree Calling",
+    "DAT_RELEASE": "1930-02-06",
+    "IMDB_RATING": 4.9,
+    "IMDB_RATING_WEIGHTED": 6.91,
+    "IMDB_VOTES": 647,
+    "POSTER_PATH": "/a1fpRkO3YuNBrsBAsWIf3j3kC7o.jpg",
+    "RUNTIME": 83,
+    "RELEASE_YEAR": 1930
+   }
+  },
+  {
+   "index": 29,
+   "data": {
+    "ID_MOVIE": 47695,
+    "MOVIE_TITLE": "Junon et le Paon",
+    "DAT_RELEASE": "1930-06-29",
+    "IMDB_RATING": 4.6,
+    "IMDB_RATING_WEIGHTED": 6.68,
+    "IMDB_VOTES": 2900,
+    "POSTER_PATH": "/tN9yLnFEPfP11uACkgtib0zpDTn.jpg",
+    "RUNTIME": 94,
+    "RELEASE_YEAR": 1930
+   }
+  },
+  {
+   "index": 30,
+   "data": {
+    "ID_MOVIE": 31930,
+    "MOVIE_TITLE": "Meurtre",
+    "DAT_RELEASE": "1930-07-31",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.79,
+    "IMDB_VOTES": 7987,
+    "POSTER_PATH": "/3olkI2ojLylrVkIIGVaO1wJwIQ5.jpg",
+    "RUNTIME": 102,
+    "RELEASE_YEAR": 1930
+   }
+  },
+  {
+   "index": 31,
+   "data": {
+    "ID_MOVIE": 52748,
+    "MOVIE_TITLE": "The Skin Game",
+    "DAT_RELEASE": "1931-02-26",
+    "IMDB_RATING": 5.7,
+    "IMDB_RATING_WEIGHTED": 6.77,
+    "IMDB_VOTES": 4037,
+    "POSTER_PATH": "/tr4l7RRr1t2EOSqLwDBkcudZIaU.jpg",
+    "RUNTIME": 82,
+    "RELEASE_YEAR": 1931
+   }
+  },
+  {
+   "index": 32,
+   "data": {
+    "ID_MOVIE": 97867,
+    "MOVIE_TITLE": "Mary",
+    "DAT_RELEASE": "1931-03-02",
+    "IMDB_RATING": 5.7,
+    "IMDB_RATING_WEIGHTED": 6.9,
+    "IMDB_VOTES": 1161,
+    "POSTER_PATH": "/23LRID8lpnGwahjnVBh6USQPffO.jpg",
+    "RUNTIME": 82,
+    "RELEASE_YEAR": 1931
+   }
+  },
+  {
+   "index": 33,
+   "data": {
+    "ID_MOVIE": 36049,
+    "MOVIE_TITLE": "À l'est de Shanghaï",
+    "DAT_RELEASE": "1931-12-10",
+    "IMDB_RATING": 5.7,
+    "IMDB_RATING_WEIGHTED": 6.71,
+    "IMDB_VOTES": 5463,
+    "POSTER_PATH": "/yr73pqBXBkhb6ioPFIaUhVSCC48.jpg",
+    "RUNTIME": 83,
+    "RELEASE_YEAR": 1931
+   }
+  },
+  {
+   "index": 34,
+   "data": {
+    "ID_MOVIE": 15007,
+    "MOVIE_TITLE": "Numéro 17",
+    "DAT_RELEASE": "1932-07-18",
+    "IMDB_RATING": 5.6,
+    "IMDB_RATING_WEIGHTED": 6.66,
+    "IMDB_VOTES": 6158,
+    "POSTER_PATH": "/ioz3CHiIgtScVKwAZbbw8wuc5zD.jpg",
+    "RUNTIME": 63,
+    "RELEASE_YEAR": 1932
+   }
+  },
+  {
+   "index": 35,
+   "data": {
+    "ID_MOVIE": 320957,
+    "MOVIE_TITLE": "Lord Camber's Ladies",
+    "DAT_RELEASE": "1932-10-27",
+    "IMDB_RATING": 6.9,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 91,
+    "POSTER_PATH": null,
+    "RUNTIME": 0,
+    "RELEASE_YEAR": 1932
+   }
+  },
+  {
+   "index": 36,
+   "data": {
+    "ID_MOVIE": 52907,
+    "MOVIE_TITLE": "Le Chant du Danube",
+    "DAT_RELEASE": "1934-03-15",
+    "IMDB_RATING": 5.7,
+    "IMDB_RATING_WEIGHTED": 6.86,
+    "IMDB_VOTES": 1998,
+    "POSTER_PATH": "/1WvgAx3YOX0ux95cAQVIvhF8VrS.jpg",
+    "RUNTIME": 81,
+    "RELEASE_YEAR": 1934
+   }
+  },
+  {
+   "index": 37,
+   "data": {
+    "ID_MOVIE": 8208,
+    "MOVIE_TITLE": "L'homme qui en savait trop",
+    "DAT_RELEASE": "1934-12-09",
+    "IMDB_RATING": 6.7,
+    "IMDB_RATING_WEIGHTED": 6.83,
+    "IMDB_VOTES": 24033,
+    "POSTER_PATH": "/5UkLomrFOJze5HcZzuTmq3HoND7.jpg",
+    "RUNTIME": 76,
+    "RELEASE_YEAR": 1934
+   }
+  },
+  {
+   "index": 38,
+   "data": {
+    "ID_MOVIE": 260,
+    "MOVIE_TITLE": "Les 39 Marches",
+    "DAT_RELEASE": "1935-06-06",
+    "IMDB_RATING": 7.6,
+    "IMDB_RATING_WEIGHTED": 7.45,
+    "IMDB_VOTES": 67319,
+    "POSTER_PATH": "/8Sf5b4KIWeGbZqR6PQIQCMKDP8i.jpg",
+    "RUNTIME": 86,
+    "RELEASE_YEAR": 1935
+   }
+  },
+  {
+   "index": 39,
+   "data": {
+    "ID_MOVIE": 2761,
+    "MOVIE_TITLE": "Quatre de l'espionnage",
+    "DAT_RELEASE": "1936-05-11",
+    "IMDB_RATING": 6.4,
+    "IMDB_RATING_WEIGHTED": 6.79,
+    "IMDB_VOTES": 9857,
+    "POSTER_PATH": "/xagnBGxMBInNJjfm7igzv8BCBF4.jpg",
+    "RUNTIME": 86,
+    "RELEASE_YEAR": 1936
+   }
+  },
+  {
+   "index": 40,
+   "data": {
+    "ID_MOVIE": 12684,
+    "MOVIE_TITLE": "Sabotage",
+    "DAT_RELEASE": "1936-12-02",
+    "IMDB_RATING": 7.0,
+    "IMDB_RATING_WEIGHTED": 6.99,
+    "IMDB_VOTES": 21176,
+    "POSTER_PATH": "/mmKerQlDEpJ7jtNqag0KTMHfjjt.jpg",
+    "RUNTIME": 77,
+    "RELEASE_YEAR": 1936
+   }
+  },
+  {
+   "index": 41,
+   "data": {
+    "ID_MOVIE": 2762,
+    "MOVIE_TITLE": "Jeune et Innocent",
+    "DAT_RELEASE": "1937-02-17",
+    "IMDB_RATING": 6.8,
+    "IMDB_RATING_WEIGHTED": 6.91,
+    "IMDB_VOTES": 12332,
+    "POSTER_PATH": "/epzVzOrY6Oy7KlcZcKq7vEu5L4E.jpg",
+    "RUNTIME": 83,
+    "RELEASE_YEAR": 1937
+   }
+  },
+  {
+   "index": 42,
+   "data": {
+    "ID_MOVIE": 940,
+    "MOVIE_TITLE": "Une femme disparaît",
+    "DAT_RELEASE": "1938-10-07",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.52,
+    "IMDB_VOTES": 62416,
+    "POSTER_PATH": "/5y7oxSHLzeyxXmbuacc2ddW4gDa.jpg",
+    "RUNTIME": 96,
+    "RELEASE_YEAR": 1938
+   }
+  },
+  {
+   "index": 43,
+   "data": {
+    "ID_MOVIE": 31995,
+    "MOVIE_TITLE": "La Taverne de la Jamaïque",
+    "DAT_RELEASE": "1939-05-11",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.72,
+    "IMDB_VOTES": 12527,
+    "POSTER_PATH": "/8mlhHKZhkHu6ZnjEequih5AxqN6.jpg",
+    "RUNTIME": 100,
+    "RELEASE_YEAR": 1939
+   }
+  },
+  {
+   "index": 44,
+   "data": {
+    "ID_MOVIE": 37956,
+    "MOVIE_TITLE": "Destin dans la nuit",
+    "DAT_RELEASE": "1940-03-01",
+    "IMDB_RATING": 6.5,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 758,
+    "POSTER_PATH": "/fvev9b5FZ4IJplUJpVta6sgmN05.jpg",
+    "RUNTIME": 88,
+    "RELEASE_YEAR": 1940
+   }
+  },
+  {
+   "index": 45,
+   "data": {
+    "ID_MOVIE": 223,
+    "MOVIE_TITLE": "Rebecca",
+    "DAT_RELEASE": "1940-03-23",
+    "IMDB_RATING": 8.0,
+    "IMDB_RATING_WEIGHTED": 7.88,
+    "IMDB_VOTES": 162908,
+    "POSTER_PATH": "/6bHIZsfMDhuRUOCeJwOsp0RZRke.jpg",
+    "RUNTIME": 130,
+    "RELEASE_YEAR": 1940
+   }
+  },
+  {
+   "index": 46,
+   "data": {
+    "ID_MOVIE": 25670,
+    "MOVIE_TITLE": "Correspondant 17",
+    "DAT_RELEASE": "1940-08-16",
+    "IMDB_RATING": 7.4,
+    "IMDB_RATING_WEIGHTED": 7.21,
+    "IMDB_VOTES": 26614,
+    "POSTER_PATH": "/5dEIw7JfnYzHdY8KlgjnOdaSovz.jpg",
+    "RUNTIME": 120,
+    "RELEASE_YEAR": 1940
+   }
+  },
+  {
+   "index": 47,
+   "data": {
+    "ID_MOVIE": 24197,
+    "MOVIE_TITLE": "Joies matrimoniales",
+    "DAT_RELEASE": "1941-01-31",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.72,
+    "IMDB_VOTES": 12380,
+    "POSTER_PATH": "/byj6ZZkK6UeipFpGYYsh98mylIB.jpg",
+    "RUNTIME": 95,
+    "RELEASE_YEAR": 1941
+   }
+  },
+  {
+   "index": 48,
+   "data": {
+    "ID_MOVIE": 11462,
+    "MOVIE_TITLE": "Soupçons",
+    "DAT_RELEASE": "1941-11-14",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 7.13,
+    "IMDB_VOTES": 45943,
+    "POSTER_PATH": "/4Qd1SWfPlcveteg2zkP1k8JoVOd.jpg",
+    "RUNTIME": 99,
+    "RELEASE_YEAR": 1941
+   }
+  },
+  {
+   "index": 49,
+   "data": {
+    "ID_MOVIE": 31997,
+    "MOVIE_TITLE": "Cinquième Colonne",
+    "DAT_RELEASE": "1942-04-22",
+    "IMDB_RATING": 7.1,
+    "IMDB_RATING_WEIGHTED": 7.05,
+    "IMDB_VOTES": 30082,
+    "POSTER_PATH": "/igglxcZag1sm4E5ngN4E7utGX5R.jpg",
+    "RUNTIME": 109,
+    "RELEASE_YEAR": 1942
+   }
+  }
+ ]
+}

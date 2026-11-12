@@ -4895,3 +4895,170 @@ body:not(.cinemaRender) .cinemaControls {
 .t2sShareItem.t2sRowOpenable:hover .t2sShareName {
   text-decoration: underline;
 }
+/* Phase 3 lot A: scatter plot. The grid is an SVG stretched over the plot (non-scaling strokes);
+   the dots and the tick labels are HTML placed by percentage, so text keeps its size at any width.
+   A dot is a 24 px hit area around a 10 px mark; the highest point is ringed, the selected one
+   larger and outlined, so nothing reads from colour alone. */
+.t2sScatter {
+  position: relative;
+  margin: 12px 0;
+  padding: 12px 14px 10px 8px;
+  border-radius: 8px;
+  background: var(--bg-tertiary);
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+.t2sScatterAxisTitle {
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+}
+.t2sScatterYTitle {
+  margin: 0 0 8px 4px;
+}
+.t2sScatterXTitle {
+  margin: 4px 0 0;
+  text-align: center;
+}
+.t2sScatterFrame {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-rows: 260px auto;
+}
+@media (min-width: 700px) {
+  .t2sScatterFrame {
+    grid-template-rows: 340px auto;
+  }
+}
+.t2sScatterYTicks {
+  position: relative;
+  min-width: 38px;
+  padding-right: 6px;
+}
+.t2sScatterYTicks span {
+  position: absolute;
+  right: 6px;
+  transform: translateY(-50%);
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.t2sScatterPlot {
+  position: relative;
+  margin-right: 10px;
+}
+.t2sScatterGrid {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  overflow: visible;
+}
+.t2sScatterGridLine {
+  stroke: rgba(160, 160, 160, 0.18);
+  stroke-width: 1;
+}
+.t2sScatterAxisLine {
+  stroke: var(--border);
+  stroke-width: 2;
+}
+.t2sScatterXTicks {
+  position: relative;
+  height: 1.6em;
+  margin-right: 10px;
+}
+.t2sScatterXTicks span {
+  position: absolute;
+  top: 4px;
+  transform: translateX(-50%);
+  color: var(--text-secondary);
+  font-size: 0.7rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.t2sScatterDot {
+  position: absolute;
+  width: 24px;
+  height: 24px;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+.t2sScatterDot::before {
+  content: "";
+  position: absolute;
+  left: 7px;
+  top: 7px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: rgba(3, 218, 198, 0.78);
+  box-shadow: 0 0 0 1px rgba(11, 11, 15, 0.7);
+}
+.t2sScatterDot.isHighest::after {
+  content: "";
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 14px;
+  height: 14px;
+  border: 2px solid var(--accent-primary);
+  border-radius: 50%;
+}
+.t2sScatterDot:hover::before,
+.t2sScatterDot:focus-visible::before,
+.t2sScatterDot.isSelected::before {
+  left: 5px;
+  top: 5px;
+  width: 14px;
+  height: 14px;
+  background: var(--accent-secondary);
+  box-shadow: 0 0 0 2px var(--text-primary);
+}
+.t2sScatterDot.isSelected {
+  z-index: 2;
+}
+.t2sScatterDot:focus-visible {
+  outline: 2px solid var(--accent-secondary);
+  outline-offset: 1px;
+}
+.t2sScatterDetail {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  min-height: 52px;
+  margin: 10px 0 0 6px;
+}
+.t2sScatterPoster {
+  flex: 0 0 auto;
+  width: 34px;
+  height: 51px;
+  object-fit: cover;
+  border-radius: 3px;
+}
+.t2sScatterDetailText {
+  min-width: 0;
+}
+.t2sScatterDetailTitle {
+  color: var(--text-primary);
+  font-size: 0.95rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+.t2sScatterDetailTitle.t2sRowOpenable {
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: rgba(160, 160, 160, 0.5);
+}
+.t2sScatterDetailValues {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}

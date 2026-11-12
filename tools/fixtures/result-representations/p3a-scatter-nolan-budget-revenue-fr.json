@@ -1,0 +1,739 @@
+{
+ "question": "Trace le budget en fonction des recettes des films de Christopher Nolan",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici les budgets et les recettes des films de Christopher Nolan, prêts à être comparés sur un graphique.",
+ "representation": "scatter",
+ "representation_options": [
+  "scatter",
+  "ranked-bars",
+  "card-grid",
+  "value-cards",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "BUDGET",
+   "role": "metric",
+   "unit": "usd",
+   "focus": true
+  },
+  {
+   "name": "REVENUE",
+   "role": "metric",
+   "unit": "usd",
+   "ordered": "asc",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 31,
+  "total": null,
+  "value_column": "BUDGET",
+  "unit": "usd",
+  "order": "REVENUE",
+  "order_direction": "asc",
+  "top": {
+   "label": "Justice League",
+   "id": 141052,
+   "index": 22,
+   "value": 300000000,
+   "extreme": "max"
+  },
+  "scatter": {
+   "x": {
+    "column": "BUDGET",
+    "quantity": "budget",
+    "unit": "usd",
+    "scale": "linear",
+    "min": 6000,
+    "max": 300000000
+   },
+   "y": {
+    "column": "REVENUE",
+    "quantity": "revenue",
+    "unit": "usd",
+    "scale": "linear",
+    "min": 126052,
+    "max": 1796113523
+   },
+   "points": [
+    {
+     "index": 13,
+     "label": "Following : le suiveur",
+     "id": 11660,
+     "x": 6000,
+     "y": 126052
+    },
+    {
+     "index": 14,
+     "label": "Memento",
+     "id": 77,
+     "x": 9000000,
+     "y": 40060108
+    },
+    {
+     "index": 15,
+     "label": "Transcendance",
+     "id": 157353,
+     "x": 100000000,
+     "y": 103039258
+    },
+    {
+     "index": 16,
+     "label": "Le Prestige",
+     "id": 1124,
+     "x": 40000000,
+     "y": 109676311
+    },
+    {
+     "index": 17,
+     "label": "Insomnia",
+     "id": 320,
+     "x": 46000000,
+     "y": 113714830
+    },
+    {
+     "index": 18,
+     "label": "Tenet",
+     "id": 577922,
+     "x": 205000000,
+     "y": 365304105
+    },
+    {
+     "index": 19,
+     "label": "Sinners",
+     "id": 1233413,
+     "x": 100000000,
+     "y": 371368759
+    },
+    {
+     "index": 20,
+     "label": "Batman Begins",
+     "id": 272,
+     "x": 150000000,
+     "y": 374218673
+    },
+    {
+     "index": 21,
+     "label": "Dunkerque",
+     "id": 374720,
+     "x": 150000000,
+     "y": 549136737
+    },
+    {
+     "index": 22,
+     "label": "Justice League",
+     "id": 141052,
+     "x": 300000000,
+     "y": 661326987
+    },
+    {
+     "index": 23,
+     "label": "Man of Steel",
+     "id": 49521,
+     "x": 225000000,
+     "y": 668045518
+    },
+    {
+     "index": 24,
+     "label": "Interstellar",
+     "id": 157336,
+     "x": 165000000,
+     "y": 746606706
+    },
+    {
+     "index": 25,
+     "label": "Inception",
+     "id": 27205,
+     "x": 160000000,
+     "y": 839030630
+    },
+    {
+     "index": 26,
+     "label": "Batman v Superman : L'Aube de la Justice",
+     "id": 209112,
+     "x": 250000000,
+     "y": 874362803
+    },
+    {
+     "index": 27,
+     "label": "Oppenheimer",
+     "id": 872585,
+     "x": 100000000,
+     "y": 952000000
+    },
+    {
+     "index": 28,
+     "label": "The Dark Knight : Le Chevalier noir",
+     "id": 155,
+     "x": 185000000,
+     "y": 1008480529
+    },
+    {
+     "index": 29,
+     "label": "The Dark Knight Rises",
+     "id": 49026,
+     "x": 250000000,
+     "y": 1081041287
+    },
+    {
+     "index": 30,
+     "label": "L'Odyssée",
+     "id": 1368337,
+     "x": 250000000,
+     "y": 1796113523
+    }
+   ],
+   "count": 31,
+   "plotted": 18,
+   "left_out": 13,
+   "missing": {
+    "x": 10,
+    "y": 12
+   },
+   "extremes": {
+    "x_min": 0,
+    "x_max": 9,
+    "y_min": 0,
+    "y_max": 17
+   }
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "budget",
+   "revenue"
+  ],
+  "focus_columns": [
+   "BUDGET",
+   "REVENUE"
+  ],
+  "requested_view": "scatter",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 43629,
+    "MOVIE_TITLE": "Doodlebug",
+    "DAT_RELEASE": "1997-01-01",
+    "IMDB_RATING": 7.0,
+    "IMDB_RATING_WEIGHTED": 6.99,
+    "IMDB_VOTES": 20636,
+    "POSTER_PATH": "/cXDFFv6yZNW3vUHOKKUPJNnL0So.jpg",
+    "RUNTIME": 3,
+    "BUDGET": 0,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 622678,
+    "MOVIE_TITLE": "The Doll's Breath",
+    "DAT_RELEASE": "2019-09-11",
+    "IMDB_RATING": 4.2,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 80,
+    "POSTER_PATH": "/c0kaZzzx8wpKrx2mC20z4W1Tz3n.jpg",
+    "RUNTIME": 22,
+    "BUDGET": 0,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 791373,
+    "MOVIE_TITLE": "Zack Snyder's Justice League",
+    "DAT_RELEASE": "2021-03-18",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.86,
+    "IMDB_VOTES": 482924,
+    "POSTER_PATH": "/4EOp3YUSQgzOwVOKrejfKK27bK6.jpg",
+    "RUNTIME": 242,
+    "BUDGET": 70000000,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_MOVIE": 804706,
+    "MOVIE_TITLE": "Tarantella",
+    "DAT_RELEASE": "1990-09-12",
+    "IMDB_RATING": 5.1,
+    "IMDB_RATING_WEIGHTED": 6.86,
+    "IMDB_VOTES": 1361,
+    "POSTER_PATH": "/eqFhruWEIRwjkvqgJN48VPuR50Q.jpg",
+    "RUNTIME": 5,
+    "BUDGET": 0,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_MOVIE": 64956,
+    "MOVIE_TITLE": "Inception: The Cobol Job",
+    "DAT_RELEASE": "2010-12-07",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.06,
+    "IMDB_VOTES": 4430,
+    "POSTER_PATH": "/sNxqwtyHMNQwKWoFYDqcYTui5Ok.jpg",
+    "RUNTIME": 15,
+    "BUDGET": 0,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_MOVIE": 126444,
+    "MOVIE_TITLE": "Cinema16: British Short Films",
+    "DAT_RELEASE": "2003-05-05",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 496,
+    "POSTER_PATH": "/iY1FDQM6taKwO7bG6YH09nE8NSs.jpg",
+    "RUNTIME": 203,
+    "BUDGET": 0,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_MOVIE": 1149947,
+    "MOVIE_TITLE": "Oppenheimer, l'homme et la bombe",
+    "DAT_RELEASE": "2023-07-09",
+    "IMDB_RATING": 7.4,
+    "IMDB_RATING_WEIGHTED": 7.02,
+    "IMDB_VOTES": 2944,
+    "POSTER_PATH": "/nHo5pZIIgAq2a9SJOUkfmldQHcB.jpg",
+    "RUNTIME": 88,
+    "BUDGET": 0,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_MOVIE": 456684,
+    "MOVIE_TITLE": "Larceny",
+    "DAT_RELEASE": "1996-07-14",
+    "IMDB_RATING": 5.9,
+    "IMDB_RATING_WEIGHTED": 6.95,
+    "IMDB_VOTES": 349,
+    "POSTER_PATH": "/jBWtTViwpr9xN6PWuzp8WlxTSXB.jpg",
+    "RUNTIME": 9,
+    "BUDGET": 0,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_MOVIE": 1066313,
+    "MOVIE_TITLE": "Setan Alas!",
+    "DAT_RELEASE": "2026-03-05",
+    "IMDB_RATING": 4.9,
+    "IMDB_RATING_WEIGHTED": 6.95,
+    "IMDB_VOTES": 240,
+    "POSTER_PATH": "/6WEqtp38s1iW5VrcH78rOIi8a2Z.jpg",
+    "RUNTIME": 84,
+    "BUDGET": 0,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_MOVIE": 423881,
+    "MOVIE_TITLE": "Sanatorium pod Klepsydrą",
+    "DAT_RELEASE": "2025-04-11",
+    "IMDB_RATING": 5.9,
+    "IMDB_RATING_WEIGHTED": 6.95,
+    "IMDB_VOTES": 389,
+    "POSTER_PATH": "/44M6v9UsKfQ6nxCkSF0yvu0zgqf.jpg",
+    "RUNTIME": 73,
+    "BUDGET": 0,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_MOVIE": 1736356,
+    "MOVIE_TITLE": "The Spot",
+    "DAT_RELEASE": "2023-10-13",
+    "IMDB_RATING": null,
+    "IMDB_RATING_WEIGHTED": null,
+    "IMDB_VOTES": null,
+    "POSTER_PATH": "/yy9Pw69PrdQbNPVEkFKEevCTNXY.jpg",
+    "RUNTIME": 35,
+    "BUDGET": 200,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_MOVIE": 1814989,
+    "MOVIE_TITLE": "Eksik Taraf (Missing Side)",
+    "DAT_RELEASE": "2027-01-10",
+    "IMDB_RATING": null,
+    "IMDB_RATING_WEIGHTED": null,
+    "IMDB_VOTES": null,
+    "POSTER_PATH": null,
+    "RUNTIME": 0,
+    "BUDGET": 250,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_MOVIE": 352114,
+    "MOVIE_TITLE": "Courts métrages Frères Quay",
+    "DAT_RELEASE": "2015-08-19",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.91,
+    "IMDB_VOTES": 2076,
+    "POSTER_PATH": "/fTWzRx8TKAxj8EaNs0wZ17kiqCW.jpg",
+    "RUNTIME": 8,
+    "BUDGET": 0,
+    "REVENUE": 51858
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "ID_MOVIE": 11660,
+    "MOVIE_TITLE": "Following : le suiveur",
+    "DAT_RELEASE": "1999-04-02",
+    "IMDB_RATING": 7.4,
+    "IMDB_RATING_WEIGHTED": 7.33,
+    "IMDB_VOTES": 115185,
+    "POSTER_PATH": "/iLYLgzHXAf6sJUjWBTF7gkFgvYZ.jpg",
+    "RUNTIME": 69,
+    "BUDGET": 6000,
+    "REVENUE": 126052
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "ID_MOVIE": 77,
+    "MOVIE_TITLE": "Memento",
+    "DAT_RELEASE": "2000-10-11",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.38,
+    "IMDB_VOTES": 1466577,
+    "POSTER_PATH": "/nK3cJaUWx1iaQ9Cs08JPtZqVzQ6.jpg",
+    "RUNTIME": 113,
+    "BUDGET": 9000000,
+    "REVENUE": 40060108
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "ID_MOVIE": 157353,
+    "MOVIE_TITLE": "Transcendance",
+    "DAT_RELEASE": "2014-04-16",
+    "IMDB_RATING": 6.2,
+    "IMDB_RATING_WEIGHTED": 6.26,
+    "IMDB_VOTES": 249355,
+    "POSTER_PATH": "/LOtIQ08vaho9Xj7GmAiY76SwKG.jpg",
+    "RUNTIME": 119,
+    "BUDGET": 100000000,
+    "REVENUE": 103039258
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "ID_MOVIE": 1124,
+    "MOVIE_TITLE": "Le Prestige",
+    "DAT_RELEASE": "2006-10-19",
+    "IMDB_RATING": 8.5,
+    "IMDB_RATING_WEIGHTED": 8.48,
+    "IMDB_VOTES": 1640379,
+    "POSTER_PATH": "/37Fr7lY4QBHsuxlLJIfTNxW6nGW.jpg",
+    "RUNTIME": 131,
+    "BUDGET": 40000000,
+    "REVENUE": 109676311
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "ID_MOVIE": 320,
+    "MOVIE_TITLE": "Insomnia",
+    "DAT_RELEASE": "2002-05-24",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 7.19,
+    "IMDB_VOTES": 354114,
+    "POSTER_PATH": "/eJ49J6QXrTJryC61p43NTAULms.jpg",
+    "RUNTIME": 118,
+    "BUDGET": 46000000,
+    "REVENUE": 113714830
+   }
+  },
+  {
+   "index": 18,
+   "data": {
+    "ID_MOVIE": 577922,
+    "MOVIE_TITLE": "Tenet",
+    "DAT_RELEASE": "2020-08-22",
+    "IMDB_RATING": 7.3,
+    "IMDB_RATING_WEIGHTED": 7.29,
+    "IMDB_VOTES": 715982,
+    "POSTER_PATH": "/72SOtZnFhCumLRZhoXlX8g2IkgF.jpg",
+    "RUNTIME": 150,
+    "BUDGET": 205000000,
+    "REVENUE": 365304105
+   }
+  },
+  {
+   "index": 19,
+   "data": {
+    "ID_MOVIE": 1233413,
+    "MOVIE_TITLE": "Sinners",
+    "DAT_RELEASE": "2025-04-16",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.48,
+    "IMDB_VOTES": 541454,
+    "POSTER_PATH": "/yBhRZbBuY1nESvZ3Z6kv6lwJMgs.jpg",
+    "RUNTIME": 138,
+    "BUDGET": 100000000,
+    "REVENUE": 371368759
+   }
+  },
+  {
+   "index": 20,
+   "data": {
+    "ID_MOVIE": 272,
+    "MOVIE_TITLE": "Batman Begins",
+    "DAT_RELEASE": "2005-06-10",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 8.19,
+    "IMDB_VOTES": 1753706,
+    "POSTER_PATH": "/taKcn26BMWnsUcMFSlr5RfGDtFB.jpg",
+    "RUNTIME": 140,
+    "BUDGET": 150000000,
+    "REVENUE": 374218673
+   }
+  },
+  {
+   "index": 21,
+   "data": {
+    "ID_MOVIE": 374720,
+    "MOVIE_TITLE": "Dunkerque",
+    "DAT_RELEASE": "2017-07-19",
+    "IMDB_RATING": 7.8,
+    "IMDB_RATING_WEIGHTED": 7.78,
+    "IMDB_VOTES": 832448,
+    "POSTER_PATH": "/1VOKlC35yrwVKlfBSN52NY4zoF2.jpg",
+    "RUNTIME": 107,
+    "BUDGET": 150000000,
+    "REVENUE": 549136737
+   }
+  },
+  {
+   "index": 22,
+   "data": {
+    "ID_MOVIE": 141052,
+    "MOVIE_TITLE": "Justice League",
+    "DAT_RELEASE": "2017-11-15",
+    "IMDB_RATING": 6.0,
+    "IMDB_RATING_WEIGHTED": 6.04,
+    "IMDB_VOTES": 512074,
+    "POSTER_PATH": "/eMlVBnd5NPHDJ3DkhMzokfnymAB.jpg",
+    "RUNTIME": 120,
+    "BUDGET": 300000000,
+    "REVENUE": 661326987
+   }
+  },
+  {
+   "index": 23,
+   "data": {
+    "ID_MOVIE": 49521,
+    "MOVIE_TITLE": "Man of Steel",
+    "DAT_RELEASE": "2013-06-12",
+    "IMDB_RATING": 7.1,
+    "IMDB_RATING_WEIGHTED": 7.1,
+    "IMDB_VOTES": 880449,
+    "POSTER_PATH": "/3HGq0BI0ukKr53oPiTAgOXQprzc.jpg",
+    "RUNTIME": 143,
+    "BUDGET": 225000000,
+    "REVENUE": 668045518
+   }
+  },
+  {
+   "index": 24,
+   "data": {
+    "ID_MOVIE": 157336,
+    "MOVIE_TITLE": "Interstellar",
+    "DAT_RELEASE": "2014-11-04",
+    "IMDB_RATING": 8.7,
+    "IMDB_RATING_WEIGHTED": 8.69,
+    "IMDB_VOTES": 2632258,
+    "POSTER_PATH": "/1pnigkWWy8W032o9TKDneBa3eVK.jpg",
+    "RUNTIME": 169,
+    "BUDGET": 165000000,
+    "REVENUE": 746606706
+   }
+  },
+  {
+   "index": 25,
+   "data": {
+    "ID_MOVIE": 27205,
+    "MOVIE_TITLE": "Inception",
+    "DAT_RELEASE": "2010-07-15",
+    "IMDB_RATING": 8.8,
+    "IMDB_RATING_WEIGHTED": 8.79,
+    "IMDB_VOTES": 2888117,
+    "POSTER_PATH": "/aej3LRUga5rhgkmRP6XMFw3ejbl.jpg",
+    "RUNTIME": 148,
+    "BUDGET": 160000000,
+    "REVENUE": 839030630
+   }
+  },
+  {
+   "index": 26,
+   "data": {
+    "ID_MOVIE": 209112,
+    "MOVIE_TITLE": "Batman v Superman : L'Aube de la Justice",
+    "DAT_RELEASE": "2016-03-23",
+    "IMDB_RATING": 6.4,
+    "IMDB_RATING_WEIGHTED": 6.41,
+    "IMDB_VOTES": 802195,
+    "POSTER_PATH": "/krEWtXK2K7dg5RyMlx9f5WnI1xd.jpg",
+    "RUNTIME": 152,
+    "BUDGET": 250000000,
+    "REVENUE": 874362803
+   }
+  },
+  {
+   "index": 27,
+   "data": {
+    "ID_MOVIE": 872585,
+    "MOVIE_TITLE": "Oppenheimer",
+    "DAT_RELEASE": "2023-07-19",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 8.18,
+    "IMDB_VOTES": 1111504,
+    "POSTER_PATH": "/boAUuJBeID7VNp4L7LNMQs8mfQS.jpg",
+    "RUNTIME": 181,
+    "BUDGET": 100000000,
+    "REVENUE": 952000000
+   }
+  },
+  {
+   "index": 28,
+   "data": {
+    "ID_MOVIE": 155,
+    "MOVIE_TITLE": "The Dark Knight : Le Chevalier noir",
+    "DAT_RELEASE": "2008-07-16",
+    "IMDB_RATING": 9.1,
+    "IMDB_RATING_WEIGHTED": 9.09,
+    "IMDB_VOTES": 3249082,
+    "POSTER_PATH": "/pyNXnq8QBWoK3b37RS6C3axwUOy.jpg",
+    "RUNTIME": 152,
+    "BUDGET": 185000000,
+    "REVENUE": 1008480529
+   }
+  },
+  {
+   "index": 29,
+   "data": {
+    "ID_MOVIE": 49026,
+    "MOVIE_TITLE": "The Dark Knight Rises",
+    "DAT_RELEASE": "2012-07-17",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.39,
+    "IMDB_VOTES": 2037837,
+    "POSTER_PATH": "/ApcGBERN0p9I0nDOIwJeEmpnLU5.jpg",
+    "RUNTIME": 165,
+    "BUDGET": 250000000,
+    "REVENUE": 1081041287
+   }
+  },
+  {
+   "index": 30,
+   "data": {
+    "ID_MOVIE": 1368337,
+    "MOVIE_TITLE": "L'Odyssée",
+    "DAT_RELEASE": "2026-07-15",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.35,
+    "IMDB_VOTES": 553317,
+    "POSTER_PATH": "/jKf0p3fhO893ROvRuvuSDsZSvK6.jpg",
+    "RUNTIME": 173,
+    "BUDGET": 250000000,
+    "REVENUE": 1796113523
+   }
+  }
+ ]
+}

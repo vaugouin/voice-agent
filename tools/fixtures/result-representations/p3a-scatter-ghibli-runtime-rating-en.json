@@ -1,0 +1,1140 @@
+{
+ "question": "Scatter plot of the runtime and the IMDb rating of the Studio Ghibli films",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the Studio Ghibli films with runtime and IMDb rating data for your scatter plot.",
+ "representation": "scatter",
+ "representation_options": [
+  "scatter",
+  "value-cards",
+  "card-grid",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null,
+   "focus": true
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null,
+   "ordered": "desc",
+   "focus": true
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes",
+   "focus": true
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 50,
+  "total": null,
+  "value_column": "IMDB_RATING",
+  "unit": null,
+  "order": "IMDB_RATING_WEIGHTED",
+  "order_direction": "desc",
+  "top": {
+   "label": "Spirited Away",
+   "id": 129,
+   "index": 0,
+   "value": 8.6,
+   "extreme": "max"
+  },
+  "scatter": {
+   "x": {
+    "column": "RUNTIME",
+    "quantity": "runtime",
+    "unit": "minutes",
+    "scale": "linear",
+    "min": 3,
+    "max": 175
+   },
+   "y": {
+    "column": "IMDB_RATING",
+    "quantity": "rating",
+    "unit": "rating",
+    "scale": "linear",
+    "min": 5.5,
+    "max": 8.6
+   },
+   "points": [
+    {
+     "index": 0,
+     "label": "Spirited Away",
+     "id": 129,
+     "x": 125,
+     "y": 8.6
+    },
+    {
+     "index": 1,
+     "label": "Grave of the Fireflies",
+     "id": 12477,
+     "x": 89,
+     "y": 8.5
+    },
+    {
+     "index": 2,
+     "label": "Princess Mononoke",
+     "id": 128,
+     "x": 134,
+     "y": 8.3
+    },
+    {
+     "index": 3,
+     "label": "Howl's Moving Castle",
+     "id": 4935,
+     "x": 119,
+     "y": 8.2
+    },
+    {
+     "index": 4,
+     "label": "My Neighbor Totoro",
+     "id": 8392,
+     "x": 86,
+     "y": 8.1
+    },
+    {
+     "index": 5,
+     "label": "Castle in the Sky",
+     "id": 10515,
+     "x": 125,
+     "y": 8
+    },
+    {
+     "index": 6,
+     "label": "The Tale of The Princess Kaguya",
+     "id": 149871,
+     "x": 137,
+     "y": 8
+    },
+    {
+     "index": 7,
+     "label": "Kiki's Delivery Service",
+     "id": 16859,
+     "x": 103,
+     "y": 7.8
+    },
+    {
+     "index": 8,
+     "label": "The Wind Rises",
+     "id": 149870,
+     "x": 126,
+     "y": 7.8
+    },
+    {
+     "index": 9,
+     "label": "Whisper of the Heart",
+     "id": 37797,
+     "x": 111,
+     "y": 7.8
+    },
+    {
+     "index": 10,
+     "label": "Porco Rosso",
+     "id": 11621,
+     "x": 93,
+     "y": 7.7
+    },
+    {
+     "index": 11,
+     "label": "Ponyo",
+     "id": 12429,
+     "x": 100,
+     "y": 7.6
+    },
+    {
+     "index": 12,
+     "label": "Arrietty",
+     "id": 51739,
+     "x": 95,
+     "y": 7.6
+    },
+    {
+     "index": 13,
+     "label": "When Marnie Was There",
+     "id": 242828,
+     "x": 103,
+     "y": 7.6
+    },
+    {
+     "index": 14,
+     "label": "Only Yesterday",
+     "id": 15080,
+     "x": 119,
+     "y": 7.6
+    },
+    {
+     "index": 15,
+     "label": "The Red Turtle",
+     "id": 337703,
+     "x": 81,
+     "y": 7.5
+    },
+    {
+     "index": 16,
+     "label": "From Up on Poppy Hill",
+     "id": 83389,
+     "x": 91,
+     "y": 7.4
+    },
+    {
+     "index": 17,
+     "label": "Ghost in the Shell 2: Innocence",
+     "id": 12140,
+     "x": 100,
+     "y": 7.4
+    },
+    {
+     "index": 18,
+     "label": "The Boy and the Heron",
+     "id": 508883,
+     "x": 124,
+     "y": 7.3
+    },
+    {
+     "index": 19,
+     "label": "The Kingdom of Dreams and Madness",
+     "id": 252511,
+     "x": 118,
+     "y": 7.7
+    },
+    {
+     "index": 20,
+     "label": "Pom Poko",
+     "id": 15283,
+     "x": 119,
+     "y": 7.2
+    },
+    {
+     "index": 21,
+     "label": "The Cat Returns",
+     "id": 15370,
+     "x": 75,
+     "y": 7.1
+    },
+    {
+     "index": 22,
+     "label": "Spirited Away: Live on Stage",
+     "id": 1001196,
+     "x": 175,
+     "y": 8.6
+    },
+    {
+     "index": 23,
+     "label": "Mei and the Kittenbus",
+     "id": 158483,
+     "x": 13,
+     "y": 7.9
+    },
+    {
+     "index": 24,
+     "label": "My Neighbors the Yamadas",
+     "id": 16198,
+     "x": 104,
+     "y": 7.1
+    },
+    {
+     "index": 25,
+     "label": "Mr. Dough and the Egg Princess",
+     "id": 214676,
+     "x": 12,
+     "y": 7.5
+    },
+    {
+     "index": 26,
+     "label": "The Day I Bought a Star",
+     "id": 222661,
+     "x": 16,
+     "y": 8.1
+    },
+    {
+     "index": 27,
+     "label": "Mon Mon the Water Spider",
+     "id": 222664,
+     "x": 15,
+     "y": 7.5
+    },
+    {
+     "index": 28,
+     "label": "Boro the Caterpillar",
+     "id": 508884,
+     "x": 14,
+     "y": 7.7
+    },
+    {
+     "index": 29,
+     "label": "House Hunting",
+     "id": 89821,
+     "x": 12,
+     "y": 7.7
+    },
+    {
+     "index": 30,
+     "label": "Isao Takahata and His Tale of The Princess Kaguya",
+     "id": 332406,
+     "x": 86,
+     "y": 7.6
+    },
+    {
+     "index": 31,
+     "label": "The Story of Yanagawa Waterways",
+     "id": 141897,
+     "x": 167,
+     "y": 7.4
+    },
+    {
+     "index": 32,
+     "label": "The Whale Hunt",
+     "id": 222462,
+     "x": 16,
+     "y": 7.4
+    },
+    {
+     "index": 33,
+     "label": "The Birth of \"Princess Mononoke\" Part 1: A Drama on Paper",
+     "id": 1012823,
+     "x": 132,
+     "y": 8.5
+    },
+    {
+     "index": 34,
+     "label": "Koro's Big Day Out",
+     "id": 222475,
+     "x": 14,
+     "y": 7.4
+    },
+    {
+     "index": 35,
+     "label": "A Sumo Wrestler's Tail",
+     "id": 222668,
+     "x": 13,
+     "y": 8.2
+    },
+    {
+     "index": 36,
+     "label": "A Ghibli Artisan - Kazuo Oga Exhibition - The One Who Drew Totoro's Forest",
+     "id": 125142,
+     "x": 72,
+     "y": 8
+    },
+    {
+     "index": 37,
+     "label": "Treasure Hunting",
+     "id": 222673,
+     "x": 9,
+     "y": 7.6
+    },
+    {
+     "index": 38,
+     "label": "Imaginary Flying Machines",
+     "id": 222480,
+     "x": 6,
+     "y": 7.2
+    },
+    {
+     "index": 39,
+     "label": "Ghiblies: Episode 2",
+     "id": 40576,
+     "x": 24,
+     "y": 7
+    },
+    {
+     "index": 40,
+     "label": "The Invention of Imaginary Machines of Destruction",
+     "id": 701351,
+     "x": 6,
+     "y": 6.8
+    },
+    {
+     "index": 41,
+     "label": "The Art of 'Spirited Away'",
+     "id": 698296,
+     "x": 15,
+     "y": 6.9
+    },
+    {
+     "index": 42,
+     "label": "Princess Mononoke in the U.S.A.",
+     "id": 605863,
+     "x": 20,
+     "y": 6.2
+    },
+    {
+     "index": 43,
+     "label": "The Night of Taneyamagahara",
+     "id": 54058,
+     "x": 27,
+     "y": 5.9
+    },
+    {
+     "index": 44,
+     "label": "Iblard Time",
+     "id": 21534,
+     "x": 30,
+     "y": 6.7
+    },
+    {
+     "index": 45,
+     "label": "Ghiblies",
+     "id": 222471,
+     "x": 12,
+     "y": 6
+    },
+    {
+     "index": 46,
+     "label": "Giant God Warrior Appears in Tokyo",
+     "id": 188541,
+     "x": 10,
+     "y": 6.6
+    },
+    {
+     "index": 47,
+     "label": "Zen - Grogu and Dust Bunnies",
+     "id": 1044343,
+     "x": 3,
+     "y": 5.5
+    },
+    {
+     "index": 48,
+     "label": "Ocean Waves",
+     "id": 21057,
+     "x": 72,
+     "y": 6.6
+    },
+    {
+     "index": 49,
+     "label": "Tales from Earthsea",
+     "id": 37933,
+     "x": 116,
+     "y": 6.3
+    }
+   ],
+   "count": 50,
+   "plotted": 50,
+   "left_out": 0,
+   "missing": {
+    "x": 0,
+    "y": 0
+   },
+   "extremes": {
+    "x_min": 47,
+    "x_max": 22,
+    "y_min": 47,
+    "y_max": 0
+   }
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "runtime",
+   "rating"
+  ],
+  "focus_columns": [
+   "IMDB_RATING",
+   "IMDB_RATING_WEIGHTED",
+   "RUNTIME"
+  ],
+  "requested_view": "scatter",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 129,
+    "MOVIE_TITLE": "Spirited Away",
+    "DAT_RELEASE": "2001-07-20",
+    "IMDB_RATING": 8.6,
+    "IMDB_RATING_WEIGHTED": 8.57,
+    "IMDB_VOTES": 993149,
+    "POSTER_PATH": "/39wmItIWsg5sZMyRUHLkWBcuVCM.jpg",
+    "RUNTIME": 125
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 12477,
+    "MOVIE_TITLE": "Grave of the Fireflies",
+    "DAT_RELEASE": "1988-04-16",
+    "IMDB_RATING": 8.5,
+    "IMDB_RATING_WEIGHTED": 8.42,
+    "IMDB_VOTES": 401008,
+    "POSTER_PATH": "/k9tv1rXZbOhH7eiCk378x61kNQ1.jpg",
+    "RUNTIME": 89
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 128,
+    "MOVIE_TITLE": "Princess Mononoke",
+    "DAT_RELEASE": "1997-07-12",
+    "IMDB_RATING": 8.3,
+    "IMDB_RATING_WEIGHTED": 8.25,
+    "IMDB_VOTES": 494215,
+    "POSTER_PATH": "/cMYCDADoLKLbB83g4WnJegaZimC.jpg",
+    "RUNTIME": 134
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_MOVIE": 4935,
+    "MOVIE_TITLE": "Howl's Moving Castle",
+    "DAT_RELEASE": "2004-09-09",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 8.15,
+    "IMDB_VOTES": 525519,
+    "POSTER_PATH": "/13kOl2v0nD2OLbVSHnHk8GUFEhO.jpg",
+    "RUNTIME": 119
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_MOVIE": 8392,
+    "MOVIE_TITLE": "My Neighbor Totoro",
+    "DAT_RELEASE": "1988-04-16",
+    "IMDB_RATING": 8.1,
+    "IMDB_RATING_WEIGHTED": 8.05,
+    "IMDB_VOTES": 443089,
+    "POSTER_PATH": "/rtGDOeG9LzoerkDGZF9dnVeLppL.jpg",
+    "RUNTIME": 86
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_MOVIE": 10515,
+    "MOVIE_TITLE": "Castle in the Sky",
+    "DAT_RELEASE": "1986-08-02",
+    "IMDB_RATING": 8.0,
+    "IMDB_RATING_WEIGHTED": 7.9,
+    "IMDB_VOTES": 201704,
+    "POSTER_PATH": "/41XxSsJc5OrulP0m7TrrUeO2hoz.jpg",
+    "RUNTIME": 125
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_MOVIE": 149871,
+    "MOVIE_TITLE": "The Tale of The Princess Kaguya",
+    "DAT_RELEASE": "2013-11-23",
+    "IMDB_RATING": 8.0,
+    "IMDB_RATING_WEIGHTED": 7.75,
+    "IMDB_VOTES": 63626,
+    "POSTER_PATH": "/cQidJuA546OSSXKWXoiCeINDxuj.jpg",
+    "RUNTIME": 137
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_MOVIE": 16859,
+    "MOVIE_TITLE": "Kiki's Delivery Service",
+    "DAT_RELEASE": "1989-07-29",
+    "IMDB_RATING": 7.8,
+    "IMDB_RATING_WEIGHTED": 7.72,
+    "IMDB_VOTES": 193614,
+    "POSTER_PATH": "/Aufa4YdZIv4AXpR9rznwVA5SEfd.jpg",
+    "RUNTIME": 103
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_MOVIE": 149870,
+    "MOVIE_TITLE": "The Wind Rises",
+    "DAT_RELEASE": "2013-07-20",
+    "IMDB_RATING": 7.8,
+    "IMDB_RATING_WEIGHTED": 7.67,
+    "IMDB_VOTES": 116085,
+    "POSTER_PATH": "/jfwSexzlIzaOgxP9A8bTA6t8YYb.jpg",
+    "RUNTIME": 126
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_MOVIE": 37797,
+    "MOVIE_TITLE": "Whisper of the Heart",
+    "DAT_RELEASE": "1995-07-15",
+    "IMDB_RATING": 7.8,
+    "IMDB_RATING_WEIGHTED": 7.64,
+    "IMDB_VOTES": 85553,
+    "POSTER_PATH": "/5FROLD8zpWFs9ja7aYho1uOMJHg.jpg",
+    "RUNTIME": 111
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_MOVIE": 11621,
+    "MOVIE_TITLE": "Porco Rosso",
+    "DAT_RELEASE": "1992-07-18",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.59,
+    "IMDB_VOTES": 119622,
+    "POSTER_PATH": "/8mIvSvnVBApfORL9N6S38Q7wD6A.jpg",
+    "RUNTIME": 93
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_MOVIE": 12429,
+    "MOVIE_TITLE": "Ponyo",
+    "DAT_RELEASE": "2008-07-19",
+    "IMDB_RATING": 7.6,
+    "IMDB_RATING_WEIGHTED": 7.54,
+    "IMDB_VOTES": 190510,
+    "POSTER_PATH": "/yp8vEZflGynlEylxEesbYasc06i.jpg",
+    "RUNTIME": 100
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_MOVIE": 51739,
+    "MOVIE_TITLE": "Arrietty",
+    "DAT_RELEASE": "2010-07-16",
+    "IMDB_RATING": 7.6,
+    "IMDB_RATING_WEIGHTED": 7.51,
+    "IMDB_VOTES": 119972,
+    "POSTER_PATH": "/3lSRaSjDp2nkXMQkzzjpRi3035O.jpg",
+    "RUNTIME": 95
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "ID_MOVIE": 242828,
+    "MOVIE_TITLE": "When Marnie Was There",
+    "DAT_RELEASE": "2014-07-19",
+    "IMDB_RATING": 7.6,
+    "IMDB_RATING_WEIGHTED": 7.43,
+    "IMDB_VOTES": 56778,
+    "POSTER_PATH": "/vug1dvDI1tSa60Z8qjCuUE7ntkO.jpg",
+    "RUNTIME": 103
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "ID_MOVIE": 15080,
+    "MOVIE_TITLE": "Only Yesterday",
+    "DAT_RELEASE": "1991-07-20",
+    "IMDB_RATING": 7.6,
+    "IMDB_RATING_WEIGHTED": 7.4,
+    "IMDB_VOTES": 43450,
+    "POSTER_PATH": "/tOSnFE9e82iH3ZAzSTtuOkBsabJ.jpg",
+    "RUNTIME": 119
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "ID_MOVIE": 337703,
+    "MOVIE_TITLE": "The Red Turtle",
+    "DAT_RELEASE": "2016-03-27",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.33,
+    "IMDB_VOTES": 42911,
+    "POSTER_PATH": "/wOBU3SLjQ9358Km9YWYasPZyebp.jpg",
+    "RUNTIME": 81
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "ID_MOVIE": 83389,
+    "MOVIE_TITLE": "From Up on Poppy Hill",
+    "DAT_RELEASE": "2011-07-16",
+    "IMDB_RATING": 7.4,
+    "IMDB_RATING_WEIGHTED": 7.29,
+    "IMDB_VOTES": 60886,
+    "POSTER_PATH": "/rRLYX4RZIyloHSJwvZKAhphAjiB.jpg",
+    "RUNTIME": 91
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "ID_MOVIE": 12140,
+    "MOVIE_TITLE": "Ghost in the Shell 2: Innocence",
+    "DAT_RELEASE": "2004-03-06",
+    "IMDB_RATING": 7.4,
+    "IMDB_RATING_WEIGHTED": 7.26,
+    "IMDB_VOTES": 43333,
+    "POSTER_PATH": "/1ZJRbLDVr90KLtKdmTT4WZhT26E.jpg",
+    "RUNTIME": 100
+   }
+  },
+  {
+   "index": 18,
+   "data": {
+    "ID_MOVIE": 508883,
+    "MOVIE_TITLE": "The Boy and the Heron",
+    "DAT_RELEASE": "2023-07-14",
+    "IMDB_RATING": 7.3,
+    "IMDB_RATING_WEIGHTED": 7.26,
+    "IMDB_VOTES": 152704,
+    "POSTER_PATH": "/4GKye5dR4uJyYbcyTveSue1gATD.jpg",
+    "RUNTIME": 124
+   }
+  },
+  {
+   "index": 19,
+   "data": {
+    "ID_MOVIE": 252511,
+    "MOVIE_TITLE": "The Kingdom of Dreams and Madness",
+    "DAT_RELEASE": "2013-11-16",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.13,
+    "IMDB_VOTES": 6031,
+    "POSTER_PATH": "/ice7zuzzwcuKO5SJG7aTqYZC3EI.jpg",
+    "RUNTIME": 118
+   }
+  },
+  {
+   "index": 20,
+   "data": {
+    "ID_MOVIE": 15283,
+    "MOVIE_TITLE": "Pom Poko",
+    "DAT_RELEASE": "1994-07-16",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 7.12,
+    "IMDB_VOTES": 39800,
+    "POSTER_PATH": "/gyoJmFf24MOUc4TTu97sd0cHIQF.jpg",
+    "RUNTIME": 119
+   }
+  },
+  {
+   "index": 21,
+   "data": {
+    "ID_MOVIE": 15370,
+    "MOVIE_TITLE": "The Cat Returns",
+    "DAT_RELEASE": "2002-07-19",
+    "IMDB_RATING": 7.1,
+    "IMDB_RATING_WEIGHTED": 7.07,
+    "IMDB_VOTES": 74206,
+    "POSTER_PATH": "/pqyY7IEWkCWNZ7EuRStQaJITEta.jpg",
+    "RUNTIME": 75
+   }
+  },
+  {
+   "index": 22,
+   "data": {
+    "ID_MOVIE": 1001196,
+    "MOVIE_TITLE": "Spirited Away: Live on Stage",
+    "DAT_RELEASE": "2023-04-23",
+    "IMDB_RATING": 8.6,
+    "IMDB_RATING_WEIGHTED": 7.05,
+    "IMDB_VOTES": 1118,
+    "POSTER_PATH": "/gKNTbRtOZbcY58uhYJC2Lu1n0vl.jpg",
+    "RUNTIME": 175
+   }
+  },
+  {
+   "index": 23,
+   "data": {
+    "ID_MOVIE": 158483,
+    "MOVIE_TITLE": "Mei and the Kittenbus",
+    "DAT_RELEASE": "2002-10-01",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.05,
+    "IMDB_VOTES": 1930,
+    "POSTER_PATH": "/v3dXeBTOuZMZKC4B3MXa553E2Xb.jpg",
+    "RUNTIME": 13
+   }
+  },
+  {
+   "index": 24,
+   "data": {
+    "ID_MOVIE": 16198,
+    "MOVIE_TITLE": "My Neighbors the Yamadas",
+    "DAT_RELEASE": "1999-07-17",
+    "IMDB_RATING": 7.1,
+    "IMDB_RATING_WEIGHTED": 7.03,
+    "IMDB_VOTES": 18113,
+    "POSTER_PATH": "/nj0ijnOozQtu52r0ncut769G1FX.jpg",
+    "RUNTIME": 104
+   }
+  },
+  {
+   "index": 25,
+   "data": {
+    "ID_MOVIE": 214676,
+    "MOVIE_TITLE": "Mr. Dough and the Egg Princess",
+    "DAT_RELEASE": "2010-11-20",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.0,
+    "IMDB_VOTES": 988,
+    "POSTER_PATH": "/fZF5MFxbieqLvPhkBCnKvbtcz4U.jpg",
+    "RUNTIME": 12
+   }
+  },
+  {
+   "index": 26,
+   "data": {
+    "ID_MOVIE": 222661,
+    "MOVIE_TITLE": "The Day I Bought a Star",
+    "DAT_RELEASE": "2006-01-03",
+    "IMDB_RATING": 8.1,
+    "IMDB_RATING_WEIGHTED": 6.99,
+    "IMDB_VOTES": 404,
+    "POSTER_PATH": "/lAZ9WRAQQHMdUjkGc1KuxBPZl9I.jpg",
+    "RUNTIME": 16
+   }
+  },
+  {
+   "index": 27,
+   "data": {
+    "ID_MOVIE": 222664,
+    "MOVIE_TITLE": "Mon Mon the Water Spider",
+    "DAT_RELEASE": "2006-01-03",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 492,
+    "POSTER_PATH": "/iVliWPZgWL7ScQ0KnThgSNcVI21.jpg",
+    "RUNTIME": 15
+   }
+  },
+  {
+   "index": 28,
+   "data": {
+    "ID_MOVIE": 508884,
+    "MOVIE_TITLE": "Boro the Caterpillar",
+    "DAT_RELEASE": "2018-03-21",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 322,
+    "POSTER_PATH": "/1hSkWvzTKxEyDPqQCoi6fbVsOFW.jpg",
+    "RUNTIME": 14
+   }
+  },
+  {
+   "index": 29,
+   "data": {
+    "ID_MOVIE": 89821,
+    "MOVIE_TITLE": "House Hunting",
+    "DAT_RELEASE": "2006-01-03",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 253,
+    "POSTER_PATH": "/sPFHgUxYUNMXQwxAEBgSjACO6ju.jpg",
+    "RUNTIME": 12
+   }
+  },
+  {
+   "index": 30,
+   "data": {
+    "ID_MOVIE": 332406,
+    "MOVIE_TITLE": "Isao Takahata and His Tale of The Princess Kaguya",
+    "DAT_RELEASE": "2014-11-27",
+    "IMDB_RATING": 7.6,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 216,
+    "POSTER_PATH": "/wPH4sOVnPK2uwOqwQFaeJPNu1mi.jpg",
+    "RUNTIME": 86
+   }
+  },
+  {
+   "index": 31,
+   "data": {
+    "ID_MOVIE": 141897,
+    "MOVIE_TITLE": "The Story of Yanagawa Waterways",
+    "DAT_RELEASE": "1987-08-15",
+    "IMDB_RATING": 7.4,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 240,
+    "POSTER_PATH": "/9JPpBBfo9sAdDMZjJCv5elD0XUX.jpg",
+    "RUNTIME": 167
+   }
+  },
+  {
+   "index": 32,
+   "data": {
+    "ID_MOVIE": 222462,
+    "MOVIE_TITLE": "The Whale Hunt",
+    "DAT_RELEASE": "2001-10-01",
+    "IMDB_RATING": 7.4,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 233,
+    "POSTER_PATH": "/ygmxjyem83hSk4J6ya9cCED7RtG.jpg",
+    "RUNTIME": 16
+   }
+  },
+  {
+   "index": 33,
+   "data": {
+    "ID_MOVIE": 1012823,
+    "MOVIE_TITLE": "The Birth of \"Princess Mononoke\" Part 1: A Drama on Paper",
+    "DAT_RELEASE": "2001-11-21",
+    "IMDB_RATING": 8.5,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 59,
+    "POSTER_PATH": "/4wVK1ldzkVOR9yLJFJNH1Ru9au5.jpg",
+    "RUNTIME": 132
+   }
+  },
+  {
+   "index": 34,
+   "data": {
+    "ID_MOVIE": 222475,
+    "MOVIE_TITLE": "Koro's Big Day Out",
+    "DAT_RELEASE": "2002-01-03",
+    "IMDB_RATING": 7.4,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 212,
+    "POSTER_PATH": "/o487mJmUukdkW6JvwJnYdW4AIko.jpg",
+    "RUNTIME": 14
+   }
+  },
+  {
+   "index": 35,
+   "data": {
+    "ID_MOVIE": 222668,
+    "MOVIE_TITLE": "A Sumo Wrestler's Tail",
+    "DAT_RELEASE": "2010-01-03",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 71,
+    "POSTER_PATH": "/fuJ4cQhHIm7xJ9ZqtDCUqFhOkj1.jpg",
+    "RUNTIME": 13
+   }
+  },
+  {
+   "index": 36,
+   "data": {
+    "ID_MOVIE": 125142,
+    "MOVIE_TITLE": "A Ghibli Artisan - Kazuo Oga Exhibition - The One Who Drew Totoro's Forest",
+    "DAT_RELEASE": "2007-12-19",
+    "IMDB_RATING": 8.0,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 57,
+    "POSTER_PATH": "/xi8z6MjzTovVDg8Rho6atJCcKjL.jpg",
+    "RUNTIME": 72
+   }
+  },
+  {
+   "index": 37,
+   "data": {
+    "ID_MOVIE": 222673,
+    "MOVIE_TITLE": "Treasure Hunting",
+    "DAT_RELEASE": "2011-06-04",
+    "IMDB_RATING": 7.6,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 62,
+    "POSTER_PATH": "/fVDbS6AHKA2aPtb2dOnmz6OcoJv.jpg",
+    "RUNTIME": 9
+   }
+  },
+  {
+   "index": 38,
+   "data": {
+    "ID_MOVIE": 222480,
+    "MOVIE_TITLE": "Imaginary Flying Machines",
+    "DAT_RELEASE": "2002-10-02",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 82,
+    "POSTER_PATH": "/A2VBbRtIuZKh9Rtpv1OcYzsVk9z.jpg",
+    "RUNTIME": 6
+   }
+  },
+  {
+   "index": 39,
+   "data": {
+    "ID_MOVIE": 40576,
+    "MOVIE_TITLE": "Ghiblies: Episode 2",
+    "DAT_RELEASE": "2002-07-19",
+    "IMDB_RATING": 7.0,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 325,
+    "POSTER_PATH": "/dpfjRWsLTafJR4PXsnSqQqghZXJ.jpg",
+    "RUNTIME": 24
+   }
+  },
+  {
+   "index": 40,
+   "data": {
+    "ID_MOVIE": 701351,
+    "MOVIE_TITLE": "The Invention of Imaginary Machines of Destruction",
+    "DAT_RELEASE": "2002-10-02",
+    "IMDB_RATING": 6.8,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 33,
+    "POSTER_PATH": "/6xqBQgRZCf2rGCJeWAO4whiVKPn.jpg",
+    "RUNTIME": 6
+   }
+  },
+  {
+   "index": 41,
+   "data": {
+    "ID_MOVIE": 698296,
+    "MOVIE_TITLE": "The Art of 'Spirited Away'",
+    "DAT_RELEASE": "2003-04-15",
+    "IMDB_RATING": 6.9,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 103,
+    "POSTER_PATH": "/x1iaVnI4mTaETwAKTLyIAKFwQSJ.jpg",
+    "RUNTIME": 15
+   }
+  },
+  {
+   "index": 42,
+   "data": {
+    "ID_MOVIE": 605863,
+    "MOVIE_TITLE": "Princess Mononoke in the U.S.A.",
+    "DAT_RELEASE": "2001-11-21",
+    "IMDB_RATING": 6.2,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 12,
+    "POSTER_PATH": "/s5KCFgPW13loHnzOTCh7GrLI5Zu.jpg",
+    "RUNTIME": 20
+   }
+  },
+  {
+   "index": 43,
+   "data": {
+    "ID_MOVIE": 54058,
+    "MOVIE_TITLE": "The Night of Taneyamagahara",
+    "DAT_RELEASE": "2006-07-07",
+    "IMDB_RATING": 5.9,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 163,
+    "POSTER_PATH": "/fHVeh0kWUvA9CbkppgD1a98C0Xn.jpg",
+    "RUNTIME": 27
+   }
+  },
+  {
+   "index": 44,
+   "data": {
+    "ID_MOVIE": 21534,
+    "MOVIE_TITLE": "Iblard Time",
+    "DAT_RELEASE": "2007-07-04",
+    "IMDB_RATING": 6.7,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 766,
+    "POSTER_PATH": "/za9WHMsAD1NsUrpG275cARVxQxV.jpg",
+    "RUNTIME": 30
+   }
+  },
+  {
+   "index": 45,
+   "data": {
+    "ID_MOVIE": 222471,
+    "MOVIE_TITLE": "Ghiblies",
+    "DAT_RELEASE": "2000-04-08",
+    "IMDB_RATING": 6.0,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 227,
+    "POSTER_PATH": "/81GgoQrVMrqdq3wvJcNad0YC21s.jpg",
+    "RUNTIME": 12
+   }
+  },
+  {
+   "index": 46,
+   "data": {
+    "ID_MOVIE": 188541,
+    "MOVIE_TITLE": "Giant God Warrior Appears in Tokyo",
+    "DAT_RELEASE": "2012-07-10",
+    "IMDB_RATING": 6.6,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 734,
+    "POSTER_PATH": "/oObJQ17AL0cD1KijlbX63K7Tm3u.jpg",
+    "RUNTIME": 10
+   }
+  },
+  {
+   "index": 47,
+   "data": {
+    "ID_MOVIE": 1044343,
+    "MOVIE_TITLE": "Zen - Grogu and Dust Bunnies",
+    "DAT_RELEASE": "2022-11-11",
+    "IMDB_RATING": 5.5,
+    "IMDB_RATING_WEIGHTED": 6.83,
+    "IMDB_VOTES": 2189,
+    "POSTER_PATH": "/llIo6963ASw6SwwAt1c3GhUqLdk.jpg",
+    "RUNTIME": 3
+   }
+  },
+  {
+   "index": 48,
+   "data": {
+    "ID_MOVIE": 21057,
+    "MOVIE_TITLE": "Ocean Waves",
+    "DAT_RELEASE": "1993-10-09",
+    "IMDB_RATING": 6.6,
+    "IMDB_RATING_WEIGHTED": 6.77,
+    "IMDB_VOTES": 24109,
+    "POSTER_PATH": "/fSR1LLMIJZ6WcQEkM82yKy4F9vQ.jpg",
+    "RUNTIME": 72
+   }
+  },
+  {
+   "index": 49,
+   "data": {
+    "ID_MOVIE": 37933,
+    "MOVIE_TITLE": "Tales from Earthsea",
+    "DAT_RELEASE": "2006-07-29",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.5,
+    "IMDB_VOTES": 49564,
+    "POSTER_PATH": "/y0VnJt4eRPMjA1hpJ8f1EFoVaSf.jpg",
+    "RUNTIME": 116
+   }
+  }
+ ]
+}

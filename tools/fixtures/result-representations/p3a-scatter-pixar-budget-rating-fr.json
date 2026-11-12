@@ -1,0 +1,859 @@
+{
+ "question": "Un plus gros budget donne-t-il une meilleure note IMDb aux films Pixar ?",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici les budgets et les notes IMDb des films de Pixar pour voir s’ils évoluent ensemble.",
+ "representation": "scatter",
+ "representation_options": [
+  "scatter",
+  "ranked-bars",
+  "card-grid",
+  "value-cards",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null,
+   "focus": true
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null,
+   "focus": true
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "BUDGET",
+   "role": "metric",
+   "unit": "usd",
+   "ordered": "desc",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 34,
+  "total": null,
+  "value_column": "IMDB_RATING",
+  "unit": null,
+  "order": "BUDGET",
+  "order_direction": "desc",
+  "top": {
+   "label": "WALL·E",
+   "id": 10681,
+   "index": 12,
+   "value": 8.4,
+   "extreme": "max"
+  },
+  "scatter": {
+   "x": {
+    "column": "BUDGET",
+    "quantity": "budget",
+    "unit": "usd",
+    "scale": "linear",
+    "min": 9859,
+    "max": 250000000
+   },
+   "y": {
+    "column": "IMDB_RATING",
+    "quantity": "rating",
+    "unit": "rating",
+    "scale": "linear",
+    "min": 6.1,
+    "max": 8.4
+   },
+   "points": [
+    {
+     "index": 0,
+     "label": "Toy Story 5",
+     "id": 1084244,
+     "x": 250000000,
+     "y": 7.3
+    },
+    {
+     "index": 1,
+     "label": "Élémentaire",
+     "id": 976573,
+     "x": 200000000,
+     "y": 7
+    },
+    {
+     "index": 2,
+     "label": "Luca",
+     "id": 508943,
+     "x": 200000000,
+     "y": 7.4
+    },
+    {
+     "index": 3,
+     "label": "Le Monde de Dory",
+     "id": 127380,
+     "x": 200000000,
+     "y": 7.2
+    },
+    {
+     "index": 4,
+     "label": "En avant",
+     "id": 508439,
+     "x": 200000000,
+     "y": 7.3
+    },
+    {
+     "index": 5,
+     "label": "Monstres Academy",
+     "id": 62211,
+     "x": 200000000,
+     "y": 7.2
+    },
+    {
+     "index": 6,
+     "label": "Toy Story 3",
+     "id": 10193,
+     "x": 200000000,
+     "y": 8.3
+    },
+    {
+     "index": 7,
+     "label": "Les Indestructibles 2",
+     "id": 260513,
+     "x": 200000000,
+     "y": 7.5
+    },
+    {
+     "index": 8,
+     "label": "Cars 2",
+     "id": 49013,
+     "x": 200000000,
+     "y": 6.2
+    },
+    {
+     "index": 9,
+     "label": "Buzz l'Éclair",
+     "id": 718789,
+     "x": 200000000,
+     "y": 6.1
+    },
+    {
+     "index": 10,
+     "label": "Vice-versa 2",
+     "id": 1022789,
+     "x": 200000000,
+     "y": 7.5
+    },
+    {
+     "index": 11,
+     "label": "Rebelle",
+     "id": 62177,
+     "x": 185000000,
+     "y": 7.1
+    },
+    {
+     "index": 12,
+     "label": "WALL·E",
+     "id": 10681,
+     "x": 180000000,
+     "y": 8.4
+    },
+    {
+     "index": 13,
+     "label": "Le Voyage d'Arlo",
+     "id": 105864,
+     "x": 175000000,
+     "y": 6.7
+    },
+    {
+     "index": 14,
+     "label": "Toy Story 4",
+     "id": 301528,
+     "x": 175000000,
+     "y": 7.6
+    },
+    {
+     "index": 15,
+     "label": "Alerte rouge",
+     "id": 508947,
+     "x": 175000000,
+     "y": 6.9
+    },
+    {
+     "index": 16,
+     "label": "Coco",
+     "id": 354912,
+     "x": 175000000,
+     "y": 8.4
+    },
+    {
+     "index": 17,
+     "label": "Vice-versa",
+     "id": 150540,
+     "x": 175000000,
+     "y": 8.1
+    },
+    {
+     "index": 18,
+     "label": "Cars 3",
+     "id": 260514,
+     "x": 175000000,
+     "y": 6.7
+    },
+    {
+     "index": 19,
+     "label": "Là-haut",
+     "id": 14160,
+     "x": 175000000,
+     "y": 8.3
+    },
+    {
+     "index": 20,
+     "label": "Soul",
+     "id": 508442,
+     "x": 150000000,
+     "y": 8
+    },
+    {
+     "index": 21,
+     "label": "Elio",
+     "id": 1022787,
+     "x": 150000000,
+     "y": 6.6
+    },
+    {
+     "index": 22,
+     "label": "Ratatouille",
+     "id": 2062,
+     "x": 150000000,
+     "y": 8.1
+    },
+    {
+     "index": 23,
+     "label": "Jumpers",
+     "id": 1327819,
+     "x": 150000000,
+     "y": 7.2
+    },
+    {
+     "index": 24,
+     "label": "Monstres & Cie",
+     "id": 585,
+     "x": 130000000,
+     "y": 8.1
+    },
+    {
+     "index": 25,
+     "label": "Cars : Quatre roues",
+     "id": 920,
+     "x": 120000000,
+     "y": 7.3
+    },
+    {
+     "index": 26,
+     "label": "Le Monde de Nemo",
+     "id": 12,
+     "x": 94000000,
+     "y": 8.2
+    },
+    {
+     "index": 27,
+     "label": "Les Indestructibles",
+     "id": 9806,
+     "x": 92000000,
+     "y": 8
+    },
+    {
+     "index": 28,
+     "label": "Toy Story 2",
+     "id": 863,
+     "x": 90000000,
+     "y": 7.9
+    },
+    {
+     "index": 29,
+     "label": "1001 Pattes",
+     "id": 9487,
+     "x": 80000000,
+     "y": 7.2
+    },
+    {
+     "index": 30,
+     "label": "Toy Story",
+     "id": 862,
+     "x": 30000000,
+     "y": 8.3
+    },
+    {
+     "index": 31,
+     "label": "Tin Toy",
+     "id": 13927,
+     "x": 300000,
+     "y": 6.4
+    },
+    {
+     "index": 32,
+     "label": "Ciao Alberto",
+     "id": 876716,
+     "x": 45223,
+     "y": 6.9
+    },
+    {
+     "index": 33,
+     "label": "Automaton",
+     "id": 899613,
+     "x": 9859,
+     "y": 6.6
+    }
+   ],
+   "count": 34,
+   "plotted": 34,
+   "left_out": 0,
+   "missing": {
+    "x": 0,
+    "y": 0
+   },
+   "extremes": {
+    "x_min": 33,
+    "x_max": 0,
+    "y_min": 9,
+    "y_max": 12
+   }
+  }
+ },
+ "intent": {
+  "task": "relate",
+  "focus": [
+   "budget",
+   "rating"
+  ],
+  "focus_columns": [
+   "IMDB_RATING",
+   "IMDB_RATING_WEIGHTED",
+   "BUDGET"
+  ],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 1084244,
+    "MOVIE_TITLE": "Toy Story 5",
+    "DAT_RELEASE": "2026-06-17",
+    "IMDB_RATING": 7.3,
+    "IMDB_RATING_WEIGHTED": 7.25,
+    "IMDB_VOTES": 107083,
+    "POSTER_PATH": "/b2bt3UomRX41rHHZmIsSNmXzidU.jpg",
+    "RUNTIME": 102,
+    "BUDGET": 250000000
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 976573,
+    "MOVIE_TITLE": "Élémentaire",
+    "DAT_RELEASE": "2023-06-14",
+    "IMDB_RATING": 7.0,
+    "IMDB_RATING_WEIGHTED": 7.0,
+    "IMDB_VOTES": 171261,
+    "POSTER_PATH": "/rzY5kUJJ1zGfingV2oHyyxtlGNa.jpg",
+    "RUNTIME": 102,
+    "BUDGET": 200000000
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 508943,
+    "MOVIE_TITLE": "Luca",
+    "DAT_RELEASE": "2021-06-17",
+    "IMDB_RATING": 7.4,
+    "IMDB_RATING_WEIGHTED": 7.36,
+    "IMDB_VOTES": 229840,
+    "POSTER_PATH": "/bADnZZZdzQtajVwJ8MVWYlQ6Iq2.jpg",
+    "RUNTIME": 95,
+    "BUDGET": 200000000
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_MOVIE": 127380,
+    "MOVIE_TITLE": "Le Monde de Dory",
+    "DAT_RELEASE": "2016-06-16",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 7.19,
+    "IMDB_VOTES": 341982,
+    "POSTER_PATH": "/t2YKLraPb8cqPHXVp5BN0ZGJypI.jpg",
+    "RUNTIME": 97,
+    "BUDGET": 200000000
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_MOVIE": 508439,
+    "MOVIE_TITLE": "En avant",
+    "DAT_RELEASE": "2020-02-29",
+    "IMDB_RATING": 7.3,
+    "IMDB_RATING_WEIGHTED": 7.27,
+    "IMDB_VOTES": 190487,
+    "POSTER_PATH": "/bmw9CnL8itbhAW4Gq7dPpUQ73hZ.jpg",
+    "RUNTIME": 102,
+    "BUDGET": 200000000
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_MOVIE": 62211,
+    "MOVIE_TITLE": "Monstres Academy",
+    "DAT_RELEASE": "2013-06-19",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 7.19,
+    "IMDB_VOTES": 433496,
+    "POSTER_PATH": "/dyFoZ2c8J3VLoHxzDTwaTnG1YYE.jpg",
+    "RUNTIME": 104,
+    "BUDGET": 200000000
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_MOVIE": 10193,
+    "MOVIE_TITLE": "Toy Story 3",
+    "DAT_RELEASE": "2010-06-16",
+    "IMDB_RATING": 8.3,
+    "IMDB_RATING_WEIGHTED": 8.27,
+    "IMDB_VOTES": 996255,
+    "POSTER_PATH": "/zycAhl8iwRxu1NQ0tITqA6KXHIM.jpg",
+    "RUNTIME": 103,
+    "BUDGET": 200000000
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_MOVIE": 260513,
+    "MOVIE_TITLE": "Les Indestructibles 2",
+    "DAT_RELEASE": "2018-06-14",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.47,
+    "IMDB_VOTES": 380139,
+    "POSTER_PATH": "/Apish2YD3QIAepzxZ96VLkqEZo3.jpg",
+    "RUNTIME": 118,
+    "BUDGET": 200000000
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_MOVIE": 49013,
+    "MOVIE_TITLE": "Cars 2",
+    "DAT_RELEASE": "2011-06-11",
+    "IMDB_RATING": 6.2,
+    "IMDB_RATING_WEIGHTED": 6.26,
+    "IMDB_VOTES": 266701,
+    "POSTER_PATH": "/qCoaNNfH6lS7qkZDYhWkQpiQpnM.jpg",
+    "RUNTIME": 106,
+    "BUDGET": 200000000
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_MOVIE": 718789,
+    "MOVIE_TITLE": "Buzz l'Éclair",
+    "DAT_RELEASE": "2022-06-15",
+    "IMDB_RATING": 6.1,
+    "IMDB_RATING_WEIGHTED": 6.21,
+    "IMDB_VOTES": 139797,
+    "POSTER_PATH": "/7Xr68P8h2V7P9rwh7Eb6wwpSTUR.jpg",
+    "RUNTIME": 105,
+    "BUDGET": 200000000
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_MOVIE": 1022789,
+    "MOVIE_TITLE": "Vice-versa 2",
+    "DAT_RELEASE": "2024-06-11",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.46,
+    "IMDB_VOTES": 263512,
+    "POSTER_PATH": "/9Jic8z9NEeCEmSJFgFHZF1lWMFo.jpg",
+    "RUNTIME": 97,
+    "BUDGET": 200000000
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_MOVIE": 62177,
+    "MOVIE_TITLE": "Rebelle",
+    "DAT_RELEASE": "2012-06-21",
+    "IMDB_RATING": 7.1,
+    "IMDB_RATING_WEIGHTED": 7.09,
+    "IMDB_VOTES": 487946,
+    "POSTER_PATH": "/rFLhPoKAqg4CBQdwTs8sQlbao5M.jpg",
+    "RUNTIME": 93,
+    "BUDGET": 185000000
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_MOVIE": 10681,
+    "MOVIE_TITLE": "WALL·E",
+    "DAT_RELEASE": "2008-06-26",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.38,
+    "IMDB_VOTES": 1349369,
+    "POSTER_PATH": "/4ImYwxnu4bOitzS9TDLnantF8mn.jpg",
+    "RUNTIME": 98,
+    "BUDGET": 180000000
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "ID_MOVIE": 105864,
+    "MOVIE_TITLE": "Le Voyage d'Arlo",
+    "DAT_RELEASE": "2015-11-14",
+    "IMDB_RATING": 6.7,
+    "IMDB_RATING_WEIGHTED": 6.73,
+    "IMDB_VOTES": 143511,
+    "POSTER_PATH": "/vvYCGP9ePgSlNXy4lyJSBMClKbA.jpg",
+    "RUNTIME": 93,
+    "BUDGET": 175000000
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "ID_MOVIE": 301528,
+    "MOVIE_TITLE": "Toy Story 4",
+    "DAT_RELEASE": "2019-06-19",
+    "IMDB_RATING": 7.6,
+    "IMDB_RATING_WEIGHTED": 7.56,
+    "IMDB_VOTES": 333371,
+    "POSTER_PATH": "/qWtRA6rfUNm81A7ITDrq6WkfCNy.jpg",
+    "RUNTIME": 100,
+    "BUDGET": 175000000
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "ID_MOVIE": 508947,
+    "MOVIE_TITLE": "Alerte rouge",
+    "DAT_RELEASE": "2022-03-10",
+    "IMDB_RATING": 6.9,
+    "IMDB_RATING_WEIGHTED": 6.91,
+    "IMDB_VOTES": 178492,
+    "POSTER_PATH": "/wmcbGp8IbEkYWQmCJWSRfzeCdP9.jpg",
+    "RUNTIME": 100,
+    "BUDGET": 175000000
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "ID_MOVIE": 354912,
+    "MOVIE_TITLE": "Coco",
+    "DAT_RELEASE": "2017-10-27",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.36,
+    "IMDB_VOTES": 734679,
+    "POSTER_PATH": "/sZqcEV3KhDITHlUBmyj1a3RRvT9.jpg",
+    "RUNTIME": 105,
+    "BUDGET": 175000000
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "ID_MOVIE": 150540,
+    "MOVIE_TITLE": "Vice-versa",
+    "DAT_RELEASE": "2015-06-17",
+    "IMDB_RATING": 8.1,
+    "IMDB_RATING_WEIGHTED": 8.08,
+    "IMDB_VOTES": 938640,
+    "POSTER_PATH": "/KUhrtJN02RNt3Sxc4IMTa1d9Lt.jpg",
+    "RUNTIME": 95,
+    "BUDGET": 175000000
+   }
+  },
+  {
+   "index": 18,
+   "data": {
+    "ID_MOVIE": 260514,
+    "MOVIE_TITLE": "Cars 3",
+    "DAT_RELEASE": "2017-06-15",
+    "IMDB_RATING": 6.7,
+    "IMDB_RATING_WEIGHTED": 6.73,
+    "IMDB_VOTES": 159637,
+    "POSTER_PATH": "/nouuVzN51YSBsjwJt5WwSVXOuv6.jpg",
+    "RUNTIME": 102,
+    "BUDGET": 175000000
+   }
+  },
+  {
+   "index": 19,
+   "data": {
+    "ID_MOVIE": 14160,
+    "MOVIE_TITLE": "Là-haut",
+    "DAT_RELEASE": "2009-05-28",
+    "IMDB_RATING": 8.3,
+    "IMDB_RATING_WEIGHTED": 8.28,
+    "IMDB_VOTES": 1263018,
+    "POSTER_PATH": "/k55kMEPkxGej70udPcVNqhTiwBz.jpg",
+    "RUNTIME": 96,
+    "BUDGET": 175000000
+   }
+  },
+  {
+   "index": 20,
+   "data": {
+    "ID_MOVIE": 508442,
+    "MOVIE_TITLE": "Soul",
+    "DAT_RELEASE": "2020-12-25",
+    "IMDB_RATING": 8.0,
+    "IMDB_RATING_WEIGHTED": 7.96,
+    "IMDB_VOTES": 461186,
+    "POSTER_PATH": "/c6Q7te0PPyL4rzlGkDByVeTKFYg.jpg",
+    "RUNTIME": 101,
+    "BUDGET": 150000000
+   }
+  },
+  {
+   "index": 21,
+   "data": {
+    "ID_MOVIE": 1022787,
+    "MOVIE_TITLE": "Elio",
+    "DAT_RELEASE": "2025-06-18",
+    "IMDB_RATING": 6.6,
+    "IMDB_RATING_WEIGHTED": 6.71,
+    "IMDB_VOTES": 49371,
+    "POSTER_PATH": "/omj3uHYX60hX6IBCjJCDPi7kwYC.jpg",
+    "RUNTIME": 98,
+    "BUDGET": 150000000
+   }
+  },
+  {
+   "index": 22,
+   "data": {
+    "ID_MOVIE": 2062,
+    "MOVIE_TITLE": "Ratatouille",
+    "DAT_RELEASE": "2007-06-28",
+    "IMDB_RATING": 8.1,
+    "IMDB_RATING_WEIGHTED": 8.08,
+    "IMDB_VOTES": 973273,
+    "POSTER_PATH": "/iFcWBdTPeHQDS3OQxBcH3QaYXYv.jpg",
+    "RUNTIME": 111,
+    "BUDGET": 150000000
+   }
+  },
+  {
+   "index": 23,
+   "data": {
+    "ID_MOVIE": 1327819,
+    "MOVIE_TITLE": "Jumpers",
+    "DAT_RELEASE": "2026-03-04",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 7.16,
+    "IMDB_VOTES": 90556,
+    "POSTER_PATH": "/gme8X6Y0b1wutuW6kB039i9NwCr.jpg",
+    "RUNTIME": 104,
+    "BUDGET": 150000000
+   }
+  },
+  {
+   "index": 24,
+   "data": {
+    "ID_MOVIE": 585,
+    "MOVIE_TITLE": "Monstres & Cie",
+    "DAT_RELEASE": "2001-11-01",
+    "IMDB_RATING": 8.1,
+    "IMDB_RATING_WEIGHTED": 8.08,
+    "IMDB_VOTES": 1097648,
+    "POSTER_PATH": "/rIjzsrY8xQ4M4ZthmVqHtiqsioQ.jpg",
+    "RUNTIME": 92,
+    "BUDGET": 130000000
+   }
+  },
+  {
+   "index": 25,
+   "data": {
+    "ID_MOVIE": 920,
+    "MOVIE_TITLE": "Cars : Quatre roues",
+    "DAT_RELEASE": "2006-06-08",
+    "IMDB_RATING": 7.3,
+    "IMDB_RATING_WEIGHTED": 7.29,
+    "IMDB_VOTES": 554076,
+    "POSTER_PATH": "/hvHw7ASXEK8x3EawlOtwYXrovdo.jpg",
+    "RUNTIME": 117,
+    "BUDGET": 120000000
+   }
+  },
+  {
+   "index": 26,
+   "data": {
+    "ID_MOVIE": 12,
+    "MOVIE_TITLE": "Le Monde de Nemo",
+    "DAT_RELEASE": "2003-05-30",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 8.18,
+    "IMDB_VOTES": 1231243,
+    "POSTER_PATH": "/8zR2vXoXfdlknEYjfHvCbb1rJbI.jpg",
+    "RUNTIME": 100,
+    "BUDGET": 94000000
+   }
+  },
+  {
+   "index": 27,
+   "data": {
+    "ID_MOVIE": 9806,
+    "MOVIE_TITLE": "Les Indestructibles",
+    "DAT_RELEASE": "2004-10-27",
+    "IMDB_RATING": 8.0,
+    "IMDB_RATING_WEIGHTED": 7.98,
+    "IMDB_VOTES": 922781,
+    "POSTER_PATH": "/1FLKNiL41KPRgByj4uwlIqrpD6f.jpg",
+    "RUNTIME": 115,
+    "BUDGET": 92000000
+   }
+  },
+  {
+   "index": 28,
+   "data": {
+    "ID_MOVIE": 863,
+    "MOVIE_TITLE": "Toy Story 2",
+    "DAT_RELEASE": "1999-10-30",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.87,
+    "IMDB_VOTES": 688357,
+    "POSTER_PATH": "/144DDQdfZxAK5xyPTETmygzGGuH.jpg",
+    "RUNTIME": 92,
+    "BUDGET": 90000000
+   }
+  },
+  {
+   "index": 29,
+   "data": {
+    "ID_MOVIE": 9487,
+    "MOVIE_TITLE": "1001 Pattes",
+    "DAT_RELEASE": "1998-11-25",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 7.19,
+    "IMDB_VOTES": 342989,
+    "POSTER_PATH": "/wtGgCxW4TylnDAXtIf3yuXixipC.jpg",
+    "RUNTIME": 95,
+    "BUDGET": 80000000
+   }
+  },
+  {
+   "index": 30,
+   "data": {
+    "ID_MOVIE": 862,
+    "MOVIE_TITLE": "Toy Story",
+    "DAT_RELEASE": "1995-11-22",
+    "IMDB_RATING": 8.3,
+    "IMDB_RATING_WEIGHTED": 8.28,
+    "IMDB_VOTES": 1206554,
+    "POSTER_PATH": "/4cWLRhub0yY9VJpdw0nqoTPYyiN.jpg",
+    "RUNTIME": 81,
+    "BUDGET": 30000000
+   }
+  },
+  {
+   "index": 31,
+   "data": {
+    "ID_MOVIE": 13927,
+    "MOVIE_TITLE": "Tin Toy",
+    "DAT_RELEASE": "1988-08-01",
+    "IMDB_RATING": 6.4,
+    "IMDB_RATING_WEIGHTED": 6.76,
+    "IMDB_VOTES": 12697,
+    "POSTER_PATH": "/yRjtvmRXgZoY8P9Ug28G9OITD9E.jpg",
+    "RUNTIME": 5,
+    "BUDGET": 300000
+   }
+  },
+  {
+   "index": 32,
+   "data": {
+    "ID_MOVIE": 876716,
+    "MOVIE_TITLE": "Ciao Alberto",
+    "DAT_RELEASE": "2021-11-11",
+    "IMDB_RATING": 6.9,
+    "IMDB_RATING_WEIGHTED": 6.95,
+    "IMDB_VOTES": 9464,
+    "POSTER_PATH": "/jrfgfSc5d7wNlez1TSz8U0fggnZ.jpg",
+    "RUNTIME": 7,
+    "BUDGET": 45223
+   }
+  },
+  {
+   "index": 33,
+   "data": {
+    "ID_MOVIE": 899613,
+    "MOVIE_TITLE": "Automaton",
+    "DAT_RELEASE": "2020-08-24",
+    "IMDB_RATING": 6.6,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 22,
+    "POSTER_PATH": "/eh0fWebZj4HgeU0HRABp1gvHYzz.jpg",
+    "RUNTIME": 4,
+    "BUDGET": 9859
+   }
+  }
+ ]
+}

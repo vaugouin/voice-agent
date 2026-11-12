@@ -1,0 +1,1140 @@
+{
+ "question": "Nuage de points de la durée et de la note IMDb des films du Studio Ghibli",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici les films de Studio Ghibli avec leur durée et leur note IMDb pour créer le nuage de points.",
+ "representation": "scatter",
+ "representation_options": [
+  "scatter",
+  "value-cards",
+  "card-grid",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null,
+   "focus": true
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null,
+   "ordered": "desc",
+   "focus": true
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes",
+   "focus": true
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 50,
+  "total": null,
+  "value_column": "IMDB_RATING",
+  "unit": null,
+  "order": "IMDB_RATING_WEIGHTED",
+  "order_direction": "desc",
+  "top": {
+   "label": "Le Voyage de Chihiro",
+   "id": 129,
+   "index": 0,
+   "value": 8.6,
+   "extreme": "max"
+  },
+  "scatter": {
+   "x": {
+    "column": "RUNTIME",
+    "quantity": "runtime",
+    "unit": "minutes",
+    "scale": "linear",
+    "min": 3,
+    "max": 175
+   },
+   "y": {
+    "column": "IMDB_RATING",
+    "quantity": "rating",
+    "unit": "rating",
+    "scale": "linear",
+    "min": 5.5,
+    "max": 8.6
+   },
+   "points": [
+    {
+     "index": 0,
+     "label": "Le Voyage de Chihiro",
+     "id": 129,
+     "x": 125,
+     "y": 8.6
+    },
+    {
+     "index": 1,
+     "label": "Le Tombeau des Lucioles",
+     "id": 12477,
+     "x": 89,
+     "y": 8.5
+    },
+    {
+     "index": 2,
+     "label": "Princesse Mononoké",
+     "id": 128,
+     "x": 134,
+     "y": 8.3
+    },
+    {
+     "index": 3,
+     "label": "Le Château ambulant",
+     "id": 4935,
+     "x": 119,
+     "y": 8.2
+    },
+    {
+     "index": 4,
+     "label": "Mon voisin Totoro",
+     "id": 8392,
+     "x": 86,
+     "y": 8.1
+    },
+    {
+     "index": 5,
+     "label": "Le Château dans le ciel",
+     "id": 10515,
+     "x": 125,
+     "y": 8
+    },
+    {
+     "index": 6,
+     "label": "Le Conte de la princesse Kaguya",
+     "id": 149871,
+     "x": 137,
+     "y": 8
+    },
+    {
+     "index": 7,
+     "label": "Kiki la petite sorcière",
+     "id": 16859,
+     "x": 103,
+     "y": 7.8
+    },
+    {
+     "index": 8,
+     "label": "Le Vent se lève",
+     "id": 149870,
+     "x": 126,
+     "y": 7.8
+    },
+    {
+     "index": 9,
+     "label": "Si tu tends l'oreille",
+     "id": 37797,
+     "x": 111,
+     "y": 7.8
+    },
+    {
+     "index": 10,
+     "label": "Porco Rosso",
+     "id": 11621,
+     "x": 93,
+     "y": 7.7
+    },
+    {
+     "index": 11,
+     "label": "Ponyo sur la falaise",
+     "id": 12429,
+     "x": 100,
+     "y": 7.6
+    },
+    {
+     "index": 12,
+     "label": "Arrietty, le petit monde des chapardeurs",
+     "id": 51739,
+     "x": 95,
+     "y": 7.6
+    },
+    {
+     "index": 13,
+     "label": "Souvenirs de Marnie",
+     "id": 242828,
+     "x": 103,
+     "y": 7.6
+    },
+    {
+     "index": 14,
+     "label": "Souvenirs goutte à goutte",
+     "id": 15080,
+     "x": 119,
+     "y": 7.6
+    },
+    {
+     "index": 15,
+     "label": "La Tortue rouge",
+     "id": 337703,
+     "x": 81,
+     "y": 7.5
+    },
+    {
+     "index": 16,
+     "label": "La colline aux coquelicots",
+     "id": 83389,
+     "x": 91,
+     "y": 7.4
+    },
+    {
+     "index": 17,
+     "label": "Ghost in the Shell 2 : Innocence",
+     "id": 12140,
+     "x": 100,
+     "y": 7.4
+    },
+    {
+     "index": 18,
+     "label": "Le Garçon et le Héron",
+     "id": 508883,
+     "x": 124,
+     "y": 7.3
+    },
+    {
+     "index": 19,
+     "label": "Le royaume des rêves et de la folie",
+     "id": 252511,
+     "x": 118,
+     "y": 7.7
+    },
+    {
+     "index": 20,
+     "label": "Pompoko",
+     "id": 15283,
+     "x": 119,
+     "y": 7.2
+    },
+    {
+     "index": 21,
+     "label": "Le Royaume des chats",
+     "id": 15370,
+     "x": 75,
+     "y": 7.1
+    },
+    {
+     "index": 22,
+     "label": "Spirited Away: Live on Stage",
+     "id": 1001196,
+     "x": 175,
+     "y": 8.6
+    },
+    {
+     "index": 23,
+     "label": "Mei et le Chatonbus",
+     "id": 158483,
+     "x": 13,
+     "y": 7.9
+    },
+    {
+     "index": 24,
+     "label": "Mes voisins les Yamada",
+     "id": 16198,
+     "x": 104,
+     "y": 7.1
+    },
+    {
+     "index": 25,
+     "label": "Levain et princesse Oeuf",
+     "id": 214676,
+     "x": 12,
+     "y": 7.5
+    },
+    {
+     "index": 26,
+     "label": "Le jour où j'ai acheté une étoile",
+     "id": 222661,
+     "x": 16,
+     "y": 8.1
+    },
+    {
+     "index": 27,
+     "label": "Monmon l'argyronète",
+     "id": 222664,
+     "x": 15,
+     "y": 7.5
+    },
+    {
+     "index": 28,
+     "label": "Boro la chenille",
+     "id": 508884,
+     "x": 14,
+     "y": 7.7
+    },
+    {
+     "index": 29,
+     "label": "À la recherche d'un logis",
+     "id": 89821,
+     "x": 12,
+     "y": 7.7
+    },
+    {
+     "index": 30,
+     "label": "高畑勲、『かぐや姫の物語』をつくる。〜ジブリ第7スタジオ、933日の伝説〜",
+     "id": 332406,
+     "x": 86,
+     "y": 7.6
+    },
+    {
+     "index": 31,
+     "label": "L'histoire des canaux de Yanagawa",
+     "id": 141897,
+     "x": 167,
+     "y": 7.4
+    },
+    {
+     "index": 32,
+     "label": "La Chasse à la baleine",
+     "id": 222462,
+     "x": 16,
+     "y": 7.4
+    },
+    {
+     "index": 33,
+     "label": "「もののけ姫」はこうして生まれた 第1章",
+     "id": 1012823,
+     "x": 132,
+     "y": 8.5
+    },
+    {
+     "index": 34,
+     "label": "La grande balade de Koro",
+     "id": 222475,
+     "x": 14,
+     "y": 7.4
+    },
+    {
+     "index": 35,
+     "label": "Le sumo coui-coui",
+     "id": 222668,
+     "x": 13,
+     "y": 8.2
+    },
+    {
+     "index": 36,
+     "label": "Un artisan Ghibli : exposition Kazuo Oga, celui qui à dessiné la forêt de Totoro",
+     "id": 125142,
+     "x": 72,
+     "y": 8
+    },
+    {
+     "index": 37,
+     "label": "La Chasse au trésor",
+     "id": 222673,
+     "x": 9,
+     "y": 7.6
+    },
+    {
+     "index": 38,
+     "label": "Les machines volantes imaginaires",
+     "id": 222480,
+     "x": 6,
+     "y": 7.2
+    },
+    {
+     "index": 39,
+     "label": "Les Ghiblies, épisode 2",
+     "id": 40576,
+     "x": 24,
+     "y": 7
+    },
+    {
+     "index": 40,
+     "label": "L'invention des machines de destruction imaginaires",
+     "id": 701351,
+     "x": 6,
+     "y": 6.8
+    },
+    {
+     "index": 41,
+     "label": "The Art of 'Spirited Away'",
+     "id": 698296,
+     "x": 15,
+     "y": 6.9
+    },
+    {
+     "index": 42,
+     "label": "もののけ姫 in U.S.A.",
+     "id": 605863,
+     "x": 20,
+     "y": 6.2
+    },
+    {
+     "index": 43,
+     "label": "Une nuit sur le Taneyamagahara",
+     "id": 54058,
+     "x": 27,
+     "y": 5.9
+    },
+    {
+     "index": 44,
+     "label": "Le moment Iblard",
+     "id": 21534,
+     "x": 30,
+     "y": 6.7
+    },
+    {
+     "index": 45,
+     "label": "Les Ghiblies",
+     "id": 222471,
+     "x": 12,
+     "y": 6
+    },
+    {
+     "index": 46,
+     "label": "Et voilà dans Tokyo le dieu-soldat géant",
+     "id": 188541,
+     "x": 10,
+     "y": 6.6
+    },
+    {
+     "index": 47,
+     "label": "Zen : Grogu et les Susuwatari",
+     "id": 1044343,
+     "x": 3,
+     "y": 5.5
+    },
+    {
+     "index": 48,
+     "label": "Je peux entendre l'océan",
+     "id": 21057,
+     "x": 72,
+     "y": 6.6
+    },
+    {
+     "index": 49,
+     "label": "Les Contes de Terremer",
+     "id": 37933,
+     "x": 116,
+     "y": 6.3
+    }
+   ],
+   "count": 50,
+   "plotted": 50,
+   "left_out": 0,
+   "missing": {
+    "x": 0,
+    "y": 0
+   },
+   "extremes": {
+    "x_min": 47,
+    "x_max": 22,
+    "y_min": 47,
+    "y_max": 0
+   }
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "runtime",
+   "rating"
+  ],
+  "focus_columns": [
+   "IMDB_RATING",
+   "IMDB_RATING_WEIGHTED",
+   "RUNTIME"
+  ],
+  "requested_view": "scatter",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 129,
+    "MOVIE_TITLE": "Le Voyage de Chihiro",
+    "DAT_RELEASE": "2001-07-20",
+    "IMDB_RATING": 8.6,
+    "IMDB_RATING_WEIGHTED": 8.57,
+    "IMDB_VOTES": 993149,
+    "POSTER_PATH": "/12TAqK0AUgdcYE9ZYZ9r7ASbH5Q.jpg",
+    "RUNTIME": 125
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 12477,
+    "MOVIE_TITLE": "Le Tombeau des Lucioles",
+    "DAT_RELEASE": "1988-04-16",
+    "IMDB_RATING": 8.5,
+    "IMDB_RATING_WEIGHTED": 8.42,
+    "IMDB_VOTES": 401008,
+    "POSTER_PATH": "/o9yJxxHEkeJQRIbBex4q7zy3LzZ.jpg",
+    "RUNTIME": 89
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 128,
+    "MOVIE_TITLE": "Princesse Mononoké",
+    "DAT_RELEASE": "1997-07-12",
+    "IMDB_RATING": 8.3,
+    "IMDB_RATING_WEIGHTED": 8.25,
+    "IMDB_VOTES": 494215,
+    "POSTER_PATH": "/1AfSDxBTYYtQRVY2V1ISgxXNPVx.jpg",
+    "RUNTIME": 134
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_MOVIE": 4935,
+    "MOVIE_TITLE": "Le Château ambulant",
+    "DAT_RELEASE": "2004-09-09",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 8.15,
+    "IMDB_VOTES": 525519,
+    "POSTER_PATH": "/45PVXJUYfH6yIINcQKelQ0SJPvh.jpg",
+    "RUNTIME": 119
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_MOVIE": 8392,
+    "MOVIE_TITLE": "Mon voisin Totoro",
+    "DAT_RELEASE": "1988-04-16",
+    "IMDB_RATING": 8.1,
+    "IMDB_RATING_WEIGHTED": 8.05,
+    "IMDB_VOTES": 443089,
+    "POSTER_PATH": "/eEpy8IiR8N0S6mgkdAjDCMlMYQO.jpg",
+    "RUNTIME": 86
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_MOVIE": 10515,
+    "MOVIE_TITLE": "Le Château dans le ciel",
+    "DAT_RELEASE": "1986-08-02",
+    "IMDB_RATING": 8.0,
+    "IMDB_RATING_WEIGHTED": 7.9,
+    "IMDB_VOTES": 201704,
+    "POSTER_PATH": "/7tTUs77uOWee6GIOMB6OhtLgslI.jpg",
+    "RUNTIME": 125
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_MOVIE": 149871,
+    "MOVIE_TITLE": "Le Conte de la princesse Kaguya",
+    "DAT_RELEASE": "2013-11-23",
+    "IMDB_RATING": 8.0,
+    "IMDB_RATING_WEIGHTED": 7.75,
+    "IMDB_VOTES": 63626,
+    "POSTER_PATH": "/yBbJpLFmwdEHzeyeEstoi9mM5lX.jpg",
+    "RUNTIME": 137
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_MOVIE": 16859,
+    "MOVIE_TITLE": "Kiki la petite sorcière",
+    "DAT_RELEASE": "1989-07-29",
+    "IMDB_RATING": 7.8,
+    "IMDB_RATING_WEIGHTED": 7.72,
+    "IMDB_VOTES": 193614,
+    "POSTER_PATH": "/tdOJxx6PCzjPYViSnk0OPQ80X2d.jpg",
+    "RUNTIME": 103
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_MOVIE": 149870,
+    "MOVIE_TITLE": "Le Vent se lève",
+    "DAT_RELEASE": "2013-07-20",
+    "IMDB_RATING": 7.8,
+    "IMDB_RATING_WEIGHTED": 7.67,
+    "IMDB_VOTES": 116085,
+    "POSTER_PATH": "/bQcNJ8inwZuxAZ965jRCjjCti0D.jpg",
+    "RUNTIME": 126
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_MOVIE": 37797,
+    "MOVIE_TITLE": "Si tu tends l'oreille",
+    "DAT_RELEASE": "1995-07-15",
+    "IMDB_RATING": 7.8,
+    "IMDB_RATING_WEIGHTED": 7.64,
+    "IMDB_VOTES": 85553,
+    "POSTER_PATH": "/y0MAMtcsKSCTq1WJbdsiBa5fckY.jpg",
+    "RUNTIME": 111
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_MOVIE": 11621,
+    "MOVIE_TITLE": "Porco Rosso",
+    "DAT_RELEASE": "1992-07-18",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.59,
+    "IMDB_VOTES": 119622,
+    "POSTER_PATH": "/o5QGUhhOICBR4C9ZZqBAeocrVde.jpg",
+    "RUNTIME": 93
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_MOVIE": 12429,
+    "MOVIE_TITLE": "Ponyo sur la falaise",
+    "DAT_RELEASE": "2008-07-19",
+    "IMDB_RATING": 7.6,
+    "IMDB_RATING_WEIGHTED": 7.54,
+    "IMDB_VOTES": 190510,
+    "POSTER_PATH": "/ud7spJ4CH0UlsBz5n3KcXTaCNH2.jpg",
+    "RUNTIME": 100
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_MOVIE": 51739,
+    "MOVIE_TITLE": "Arrietty, le petit monde des chapardeurs",
+    "DAT_RELEASE": "2010-07-16",
+    "IMDB_RATING": 7.6,
+    "IMDB_RATING_WEIGHTED": 7.51,
+    "IMDB_VOTES": 119972,
+    "POSTER_PATH": "/1rlhCRuz2GYrJEKjYPfK2IJv8aD.jpg",
+    "RUNTIME": 95
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "ID_MOVIE": 242828,
+    "MOVIE_TITLE": "Souvenirs de Marnie",
+    "DAT_RELEASE": "2014-07-19",
+    "IMDB_RATING": 7.6,
+    "IMDB_RATING_WEIGHTED": 7.43,
+    "IMDB_VOTES": 56778,
+    "POSTER_PATH": "/cc1UKEQCw7BJA7uWnZbd2tfqM4.jpg",
+    "RUNTIME": 103
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "ID_MOVIE": 15080,
+    "MOVIE_TITLE": "Souvenirs goutte à goutte",
+    "DAT_RELEASE": "1991-07-20",
+    "IMDB_RATING": 7.6,
+    "IMDB_RATING_WEIGHTED": 7.4,
+    "IMDB_VOTES": 43450,
+    "POSTER_PATH": "/aBf149q4uq1GxRqQMuWXWZCODSx.jpg",
+    "RUNTIME": 119
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "ID_MOVIE": 337703,
+    "MOVIE_TITLE": "La Tortue rouge",
+    "DAT_RELEASE": "2016-03-27",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.33,
+    "IMDB_VOTES": 42911,
+    "POSTER_PATH": "/9l8RTLOd9wxDDakQ453F2SulRJw.jpg",
+    "RUNTIME": 81
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "ID_MOVIE": 83389,
+    "MOVIE_TITLE": "La colline aux coquelicots",
+    "DAT_RELEASE": "2011-07-16",
+    "IMDB_RATING": 7.4,
+    "IMDB_RATING_WEIGHTED": 7.29,
+    "IMDB_VOTES": 60886,
+    "POSTER_PATH": "/rpv5r09jKELCC6A9lwB9sOvYTNi.jpg",
+    "RUNTIME": 91
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "ID_MOVIE": 12140,
+    "MOVIE_TITLE": "Ghost in the Shell 2 : Innocence",
+    "DAT_RELEASE": "2004-03-06",
+    "IMDB_RATING": 7.4,
+    "IMDB_RATING_WEIGHTED": 7.26,
+    "IMDB_VOTES": 43333,
+    "POSTER_PATH": "/dz1Sfgcg9wwIQGKs5WdsjxfegnK.jpg",
+    "RUNTIME": 100
+   }
+  },
+  {
+   "index": 18,
+   "data": {
+    "ID_MOVIE": 508883,
+    "MOVIE_TITLE": "Le Garçon et le Héron",
+    "DAT_RELEASE": "2023-07-14",
+    "IMDB_RATING": 7.3,
+    "IMDB_RATING_WEIGHTED": 7.26,
+    "IMDB_VOTES": 152704,
+    "POSTER_PATH": "/f9EoS3lVr644WXO8YPRvBiTS1K.jpg",
+    "RUNTIME": 124
+   }
+  },
+  {
+   "index": 19,
+   "data": {
+    "ID_MOVIE": 252511,
+    "MOVIE_TITLE": "Le royaume des rêves et de la folie",
+    "DAT_RELEASE": "2013-11-16",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.13,
+    "IMDB_VOTES": 6031,
+    "POSTER_PATH": "/ice7zuzzwcuKO5SJG7aTqYZC3EI.jpg",
+    "RUNTIME": 118
+   }
+  },
+  {
+   "index": 20,
+   "data": {
+    "ID_MOVIE": 15283,
+    "MOVIE_TITLE": "Pompoko",
+    "DAT_RELEASE": "1994-07-16",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 7.12,
+    "IMDB_VOTES": 39800,
+    "POSTER_PATH": "/nAVZD6hU25569b2tngFcC3c4qj5.jpg",
+    "RUNTIME": 119
+   }
+  },
+  {
+   "index": 21,
+   "data": {
+    "ID_MOVIE": 15370,
+    "MOVIE_TITLE": "Le Royaume des chats",
+    "DAT_RELEASE": "2002-07-19",
+    "IMDB_RATING": 7.1,
+    "IMDB_RATING_WEIGHTED": 7.07,
+    "IMDB_VOTES": 74206,
+    "POSTER_PATH": "/eY97YUIyKfQNVugLa3MXVYX4nrw.jpg",
+    "RUNTIME": 75
+   }
+  },
+  {
+   "index": 22,
+   "data": {
+    "ID_MOVIE": 1001196,
+    "MOVIE_TITLE": "Spirited Away: Live on Stage",
+    "DAT_RELEASE": "2023-04-23",
+    "IMDB_RATING": 8.6,
+    "IMDB_RATING_WEIGHTED": 7.05,
+    "IMDB_VOTES": 1118,
+    "POSTER_PATH": "/gKNTbRtOZbcY58uhYJC2Lu1n0vl.jpg",
+    "RUNTIME": 175
+   }
+  },
+  {
+   "index": 23,
+   "data": {
+    "ID_MOVIE": 158483,
+    "MOVIE_TITLE": "Mei et le Chatonbus",
+    "DAT_RELEASE": "2002-10-01",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.05,
+    "IMDB_VOTES": 1930,
+    "POSTER_PATH": "/v3dXeBTOuZMZKC4B3MXa553E2Xb.jpg",
+    "RUNTIME": 13
+   }
+  },
+  {
+   "index": 24,
+   "data": {
+    "ID_MOVIE": 16198,
+    "MOVIE_TITLE": "Mes voisins les Yamada",
+    "DAT_RELEASE": "1999-07-17",
+    "IMDB_RATING": 7.1,
+    "IMDB_RATING_WEIGHTED": 7.03,
+    "IMDB_VOTES": 18113,
+    "POSTER_PATH": "/xq1EMjywZHl8AJV8Vv6zWCO4XRZ.jpg",
+    "RUNTIME": 104
+   }
+  },
+  {
+   "index": 25,
+   "data": {
+    "ID_MOVIE": 214676,
+    "MOVIE_TITLE": "Levain et princesse Oeuf",
+    "DAT_RELEASE": "2010-11-20",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.0,
+    "IMDB_VOTES": 988,
+    "POSTER_PATH": "/fZF5MFxbieqLvPhkBCnKvbtcz4U.jpg",
+    "RUNTIME": 12
+   }
+  },
+  {
+   "index": 26,
+   "data": {
+    "ID_MOVIE": 222661,
+    "MOVIE_TITLE": "Le jour où j'ai acheté une étoile",
+    "DAT_RELEASE": "2006-01-03",
+    "IMDB_RATING": 8.1,
+    "IMDB_RATING_WEIGHTED": 6.99,
+    "IMDB_VOTES": 404,
+    "POSTER_PATH": "/lAZ9WRAQQHMdUjkGc1KuxBPZl9I.jpg",
+    "RUNTIME": 16
+   }
+  },
+  {
+   "index": 27,
+   "data": {
+    "ID_MOVIE": 222664,
+    "MOVIE_TITLE": "Monmon l'argyronète",
+    "DAT_RELEASE": "2006-01-03",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 492,
+    "POSTER_PATH": "/iVliWPZgWL7ScQ0KnThgSNcVI21.jpg",
+    "RUNTIME": 15
+   }
+  },
+  {
+   "index": 28,
+   "data": {
+    "ID_MOVIE": 508884,
+    "MOVIE_TITLE": "Boro la chenille",
+    "DAT_RELEASE": "2018-03-21",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 322,
+    "POSTER_PATH": "/1hSkWvzTKxEyDPqQCoi6fbVsOFW.jpg",
+    "RUNTIME": 14
+   }
+  },
+  {
+   "index": 29,
+   "data": {
+    "ID_MOVIE": 89821,
+    "MOVIE_TITLE": "À la recherche d'un logis",
+    "DAT_RELEASE": "2006-01-03",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 253,
+    "POSTER_PATH": "/sPFHgUxYUNMXQwxAEBgSjACO6ju.jpg",
+    "RUNTIME": 12
+   }
+  },
+  {
+   "index": 30,
+   "data": {
+    "ID_MOVIE": 332406,
+    "MOVIE_TITLE": "高畑勲、『かぐや姫の物語』をつくる。〜ジブリ第7スタジオ、933日の伝説〜",
+    "DAT_RELEASE": "2014-11-27",
+    "IMDB_RATING": 7.6,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 216,
+    "POSTER_PATH": "/wPH4sOVnPK2uwOqwQFaeJPNu1mi.jpg",
+    "RUNTIME": 86
+   }
+  },
+  {
+   "index": 31,
+   "data": {
+    "ID_MOVIE": 141897,
+    "MOVIE_TITLE": "L'histoire des canaux de Yanagawa",
+    "DAT_RELEASE": "1987-08-15",
+    "IMDB_RATING": 7.4,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 240,
+    "POSTER_PATH": "/9JPpBBfo9sAdDMZjJCv5elD0XUX.jpg",
+    "RUNTIME": 167
+   }
+  },
+  {
+   "index": 32,
+   "data": {
+    "ID_MOVIE": 222462,
+    "MOVIE_TITLE": "La Chasse à la baleine",
+    "DAT_RELEASE": "2001-10-01",
+    "IMDB_RATING": 7.4,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 233,
+    "POSTER_PATH": "/ygmxjyem83hSk4J6ya9cCED7RtG.jpg",
+    "RUNTIME": 16
+   }
+  },
+  {
+   "index": 33,
+   "data": {
+    "ID_MOVIE": 1012823,
+    "MOVIE_TITLE": "「もののけ姫」はこうして生まれた 第1章",
+    "DAT_RELEASE": "2001-11-21",
+    "IMDB_RATING": 8.5,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 59,
+    "POSTER_PATH": "/4wVK1ldzkVOR9yLJFJNH1Ru9au5.jpg",
+    "RUNTIME": 132
+   }
+  },
+  {
+   "index": 34,
+   "data": {
+    "ID_MOVIE": 222475,
+    "MOVIE_TITLE": "La grande balade de Koro",
+    "DAT_RELEASE": "2002-01-03",
+    "IMDB_RATING": 7.4,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 212,
+    "POSTER_PATH": "/o487mJmUukdkW6JvwJnYdW4AIko.jpg",
+    "RUNTIME": 14
+   }
+  },
+  {
+   "index": 35,
+   "data": {
+    "ID_MOVIE": 222668,
+    "MOVIE_TITLE": "Le sumo coui-coui",
+    "DAT_RELEASE": "2010-01-03",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 71,
+    "POSTER_PATH": "/fuJ4cQhHIm7xJ9ZqtDCUqFhOkj1.jpg",
+    "RUNTIME": 13
+   }
+  },
+  {
+   "index": 36,
+   "data": {
+    "ID_MOVIE": 125142,
+    "MOVIE_TITLE": "Un artisan Ghibli : exposition Kazuo Oga, celui qui à dessiné la forêt de Totoro",
+    "DAT_RELEASE": "2007-12-19",
+    "IMDB_RATING": 8.0,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 57,
+    "POSTER_PATH": "/xi8z6MjzTovVDg8Rho6atJCcKjL.jpg",
+    "RUNTIME": 72
+   }
+  },
+  {
+   "index": 37,
+   "data": {
+    "ID_MOVIE": 222673,
+    "MOVIE_TITLE": "La Chasse au trésor",
+    "DAT_RELEASE": "2011-06-04",
+    "IMDB_RATING": 7.6,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 62,
+    "POSTER_PATH": "/fVDbS6AHKA2aPtb2dOnmz6OcoJv.jpg",
+    "RUNTIME": 9
+   }
+  },
+  {
+   "index": 38,
+   "data": {
+    "ID_MOVIE": 222480,
+    "MOVIE_TITLE": "Les machines volantes imaginaires",
+    "DAT_RELEASE": "2002-10-02",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 82,
+    "POSTER_PATH": "/A2VBbRtIuZKh9Rtpv1OcYzsVk9z.jpg",
+    "RUNTIME": 6
+   }
+  },
+  {
+   "index": 39,
+   "data": {
+    "ID_MOVIE": 40576,
+    "MOVIE_TITLE": "Les Ghiblies, épisode 2",
+    "DAT_RELEASE": "2002-07-19",
+    "IMDB_RATING": 7.0,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 325,
+    "POSTER_PATH": "/dpfjRWsLTafJR4PXsnSqQqghZXJ.jpg",
+    "RUNTIME": 24
+   }
+  },
+  {
+   "index": 40,
+   "data": {
+    "ID_MOVIE": 701351,
+    "MOVIE_TITLE": "L'invention des machines de destruction imaginaires",
+    "DAT_RELEASE": "2002-10-02",
+    "IMDB_RATING": 6.8,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 33,
+    "POSTER_PATH": "/6xqBQgRZCf2rGCJeWAO4whiVKPn.jpg",
+    "RUNTIME": 6
+   }
+  },
+  {
+   "index": 41,
+   "data": {
+    "ID_MOVIE": 698296,
+    "MOVIE_TITLE": "The Art of 'Spirited Away'",
+    "DAT_RELEASE": "2003-04-15",
+    "IMDB_RATING": 6.9,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 103,
+    "POSTER_PATH": "/x1iaVnI4mTaETwAKTLyIAKFwQSJ.jpg",
+    "RUNTIME": 15
+   }
+  },
+  {
+   "index": 42,
+   "data": {
+    "ID_MOVIE": 605863,
+    "MOVIE_TITLE": "もののけ姫 in U.S.A.",
+    "DAT_RELEASE": "2001-11-21",
+    "IMDB_RATING": 6.2,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 12,
+    "POSTER_PATH": "/s5KCFgPW13loHnzOTCh7GrLI5Zu.jpg",
+    "RUNTIME": 20
+   }
+  },
+  {
+   "index": 43,
+   "data": {
+    "ID_MOVIE": 54058,
+    "MOVIE_TITLE": "Une nuit sur le Taneyamagahara",
+    "DAT_RELEASE": "2006-07-07",
+    "IMDB_RATING": 5.9,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 163,
+    "POSTER_PATH": "/fHVeh0kWUvA9CbkppgD1a98C0Xn.jpg",
+    "RUNTIME": 27
+   }
+  },
+  {
+   "index": 44,
+   "data": {
+    "ID_MOVIE": 21534,
+    "MOVIE_TITLE": "Le moment Iblard",
+    "DAT_RELEASE": "2007-07-04",
+    "IMDB_RATING": 6.7,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 766,
+    "POSTER_PATH": "/za9WHMsAD1NsUrpG275cARVxQxV.jpg",
+    "RUNTIME": 30
+   }
+  },
+  {
+   "index": 45,
+   "data": {
+    "ID_MOVIE": 222471,
+    "MOVIE_TITLE": "Les Ghiblies",
+    "DAT_RELEASE": "2000-04-08",
+    "IMDB_RATING": 6.0,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 227,
+    "POSTER_PATH": "/81GgoQrVMrqdq3wvJcNad0YC21s.jpg",
+    "RUNTIME": 12
+   }
+  },
+  {
+   "index": 46,
+   "data": {
+    "ID_MOVIE": 188541,
+    "MOVIE_TITLE": "Et voilà dans Tokyo le dieu-soldat géant",
+    "DAT_RELEASE": "2012-07-10",
+    "IMDB_RATING": 6.6,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 734,
+    "POSTER_PATH": "/oObJQ17AL0cD1KijlbX63K7Tm3u.jpg",
+    "RUNTIME": 10
+   }
+  },
+  {
+   "index": 47,
+   "data": {
+    "ID_MOVIE": 1044343,
+    "MOVIE_TITLE": "Zen : Grogu et les Susuwatari",
+    "DAT_RELEASE": "2022-11-11",
+    "IMDB_RATING": 5.5,
+    "IMDB_RATING_WEIGHTED": 6.83,
+    "IMDB_VOTES": 2189,
+    "POSTER_PATH": "/2zfgIJiNkDQ6DW3CciRjT9U6gQ5.jpg",
+    "RUNTIME": 3
+   }
+  },
+  {
+   "index": 48,
+   "data": {
+    "ID_MOVIE": 21057,
+    "MOVIE_TITLE": "Je peux entendre l'océan",
+    "DAT_RELEASE": "1993-10-09",
+    "IMDB_RATING": 6.6,
+    "IMDB_RATING_WEIGHTED": 6.77,
+    "IMDB_VOTES": 24109,
+    "POSTER_PATH": "/hRUFM9p02zetUARQnZqargGRSjd.jpg",
+    "RUNTIME": 72
+   }
+  },
+  {
+   "index": 49,
+   "data": {
+    "ID_MOVIE": 37933,
+    "MOVIE_TITLE": "Les Contes de Terremer",
+    "DAT_RELEASE": "2006-07-29",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.5,
+    "IMDB_VOTES": 49564,
+    "POSTER_PATH": "/odkqZPwoH3xWMHsu3PM1IuR1t9e.jpg",
+    "RUNTIME": 116
+   }
+  }
+ ]
+}

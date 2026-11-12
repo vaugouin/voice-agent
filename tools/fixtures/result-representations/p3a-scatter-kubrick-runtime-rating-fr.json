@@ -1,0 +1,500 @@
+{
+ "question": "Y a-t-il un lien entre la durée et la note IMDb des films de Stanley Kubrick ?",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici les films de Stanley Kubrick, avec leur durée et leur note IMDb pour vous aider à voir s’il existe un lien entre les deux.",
+ "representation": "scatter",
+ "representation_options": [
+  "scatter",
+  "card-grid",
+  "value-cards",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null,
+   "focus": true
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null,
+   "ordered": "desc",
+   "focus": true
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes",
+   "focus": true
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 18,
+  "total": null,
+  "value_column": "IMDB_RATING",
+  "unit": null,
+  "order": "IMDB_RATING_WEIGHTED",
+  "order_direction": "desc",
+  "top": {
+   "label": "Shining",
+   "id": 694,
+   "index": 0,
+   "value": 8.4,
+   "extreme": "max"
+  },
+  "scatter": {
+   "x": {
+    "column": "RUNTIME",
+    "quantity": "runtime",
+    "unit": "minutes",
+    "scale": "linear",
+    "min": 9,
+    "max": 197
+   },
+   "y": {
+    "column": "IMDB_RATING",
+    "quantity": "rating",
+    "unit": "rating",
+    "scale": "linear",
+    "min": 5,
+    "max": 8.4
+   },
+   "points": [
+    {
+     "index": 0,
+     "label": "Shining",
+     "id": 694,
+     "x": 144,
+     "y": 8.4
+    },
+    {
+     "index": 1,
+     "label": "Les Sentiers de la gloire",
+     "id": 975,
+     "x": 88,
+     "y": 8.4
+    },
+    {
+     "index": 2,
+     "label": "2001 : L'Odyssée de l'espace",
+     "id": 62,
+     "x": 149,
+     "y": 8.3
+    },
+    {
+     "index": 3,
+     "label": "Docteur Folamour",
+     "id": 935,
+     "x": 95,
+     "y": 8.3
+    },
+    {
+     "index": 4,
+     "label": "Orange mécanique",
+     "id": 185,
+     "x": 137,
+     "y": 8.2
+    },
+    {
+     "index": 5,
+     "label": "Full Metal Jacket",
+     "id": 600,
+     "x": 117,
+     "y": 8.2
+    },
+    {
+     "index": 6,
+     "label": "Barry Lyndon",
+     "id": 3175,
+     "x": 188,
+     "y": 8.1
+    },
+    {
+     "index": 7,
+     "label": "Spartacus",
+     "id": 967,
+     "x": 197,
+     "y": 7.9
+    },
+    {
+     "index": 8,
+     "label": "L'Ultime Razzia",
+     "id": 247,
+     "x": 85,
+     "y": 7.9
+    },
+    {
+     "index": 9,
+     "label": "Eyes Wide Shut",
+     "id": 345,
+     "x": 159,
+     "y": 7.5
+    },
+    {
+     "index": 10,
+     "label": "Lolita",
+     "id": 802,
+     "x": 154,
+     "y": 7.5
+    },
+    {
+     "index": 11,
+     "label": "A.I. Intelligence artificielle",
+     "id": 644,
+     "x": 146,
+     "y": 7.2
+    },
+    {
+     "index": 12,
+     "label": "National Theatre Live: Dr. Strangelove",
+     "id": 1401957,
+     "x": 125,
+     "y": 7.2
+    },
+    {
+     "index": 13,
+     "label": "Day of the Fight",
+     "id": 45966,
+     "x": 13,
+     "y": 6.2
+    },
+    {
+     "index": 14,
+     "label": "Le Baiser du tueur",
+     "id": 10056,
+     "x": 68,
+     "y": 6.5
+    },
+    {
+     "index": 15,
+     "label": "The Seafarers",
+     "id": 45314,
+     "x": 29,
+     "y": 5
+    },
+    {
+     "index": 16,
+     "label": "Flying Padre",
+     "id": 45970,
+     "x": 9,
+     "y": 5.5
+    },
+    {
+     "index": 17,
+     "label": "Fear and Desire",
+     "id": 10165,
+     "x": 62,
+     "y": 5.3
+    }
+   ],
+   "count": 18,
+   "plotted": 18,
+   "left_out": 0,
+   "missing": {
+    "x": 0,
+    "y": 0
+   },
+   "extremes": {
+    "x_min": 16,
+    "x_max": 7,
+    "y_min": 15,
+    "y_max": 0
+   }
+  }
+ },
+ "intent": {
+  "task": "relate",
+  "focus": [
+   "runtime",
+   "rating"
+  ],
+  "focus_columns": [
+   "IMDB_RATING",
+   "IMDB_RATING_WEIGHTED",
+   "RUNTIME"
+  ],
+  "requested_view": "scatter",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 694,
+    "MOVIE_TITLE": "Shining",
+    "DAT_RELEASE": "1980-05-23",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.38,
+    "IMDB_VOTES": 1253541,
+    "POSTER_PATH": "/cnniZQGtjK8kh2tsjih4GtkX6bl.jpg",
+    "RUNTIME": 144
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 975,
+    "MOVIE_TITLE": "Les Sentiers de la gloire",
+    "DAT_RELEASE": "1957-10-25",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.29,
+    "IMDB_VOTES": 244006,
+    "POSTER_PATH": "/nLGw5N5VLmQR8bPbRMt772FWzCz.jpg",
+    "RUNTIME": 88
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 62,
+    "MOVIE_TITLE": "2001 : L'Odyssée de l'espace",
+    "DAT_RELEASE": "1968-04-02",
+    "IMDB_RATING": 8.3,
+    "IMDB_RATING_WEIGHTED": 8.27,
+    "IMDB_VOTES": 796955,
+    "POSTER_PATH": "/uwd79G32FPIL5B9UkRgSZvS0gbe.jpg",
+    "RUNTIME": 149
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_MOVIE": 935,
+    "MOVIE_TITLE": "Docteur Folamour",
+    "DAT_RELEASE": "1964-01-29",
+    "IMDB_RATING": 8.3,
+    "IMDB_RATING_WEIGHTED": 8.25,
+    "IMDB_VOTES": 556937,
+    "POSTER_PATH": "/3g1CRHeMVLFVM2dcXasu3kBw4qV.jpg",
+    "RUNTIME": 95
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_MOVIE": 185,
+    "MOVIE_TITLE": "Orange mécanique",
+    "DAT_RELEASE": "1971-10-28",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 8.17,
+    "IMDB_VOTES": 949475,
+    "POSTER_PATH": "/n2oKNiEq9DZljqs6xsxs8hnsW9p.jpg",
+    "RUNTIME": 137
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_MOVIE": 600,
+    "MOVIE_TITLE": "Full Metal Jacket",
+    "DAT_RELEASE": "1987-06-26",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 8.17,
+    "IMDB_VOTES": 864125,
+    "POSTER_PATH": "/cShwwkz4gBBIRj8yFy8TP2tEWZ4.jpg",
+    "RUNTIME": 117
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_MOVIE": 3175,
+    "MOVIE_TITLE": "Barry Lyndon",
+    "DAT_RELEASE": "1975-12-16",
+    "IMDB_RATING": 8.1,
+    "IMDB_RATING_WEIGHTED": 8.0,
+    "IMDB_VOTES": 210136,
+    "POSTER_PATH": "/prwtTDfRbwdNOzjURTabW3UYW0O.jpg",
+    "RUNTIME": 188
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_MOVIE": 967,
+    "MOVIE_TITLE": "Spartacus",
+    "DAT_RELEASE": "1960-10-13",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.79,
+    "IMDB_VOTES": 153005,
+    "POSTER_PATH": "/7jIkNQenhZdiGRcwMk8w9KhwFi6.jpg",
+    "RUNTIME": 197
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_MOVIE": 247,
+    "MOVIE_TITLE": "L'Ultime Razzia",
+    "DAT_RELEASE": "1956-06-06",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.75,
+    "IMDB_VOTES": 108130,
+    "POSTER_PATH": "/wV8u4JEUEcqXVlqUuzuJL9BPUT4.jpg",
+    "RUNTIME": 85
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_MOVIE": 345,
+    "MOVIE_TITLE": "Eyes Wide Shut",
+    "DAT_RELEASE": "1999-07-16",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.48,
+    "IMDB_VOTES": 444780,
+    "POSTER_PATH": "/zrkNeLqUBm6bE2cqY5SBiM6LIf8.jpg",
+    "RUNTIME": 159
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_MOVIE": 802,
+    "MOVIE_TITLE": "Lolita",
+    "DAT_RELEASE": "1962-06-13",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.42,
+    "IMDB_VOTES": 117814,
+    "POSTER_PATH": "/oNTBCmVYgPNsGZXb3zMB8X5tp03.jpg",
+    "RUNTIME": 154
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_MOVIE": 644,
+    "MOVIE_TITLE": "A.I. Intelligence artificielle",
+    "DAT_RELEASE": "2001-06-29",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 7.19,
+    "IMDB_VOTES": 344649,
+    "POSTER_PATH": "/lBNahxCHDZ8yCVgmxpuzPytXp4e.jpg",
+    "RUNTIME": 146
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_MOVIE": 1401957,
+    "MOVIE_TITLE": "National Theatre Live: Dr. Strangelove",
+    "DAT_RELEASE": "2025-03-27",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 349,
+    "POSTER_PATH": "/8ByhKl8Foe5jtqyqyZqa3EbeNGZ.jpg",
+    "RUNTIME": 125
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "ID_MOVIE": 45966,
+    "MOVIE_TITLE": "Day of the Fight",
+    "DAT_RELEASE": "1951-04-26",
+    "IMDB_RATING": 6.2,
+    "IMDB_RATING_WEIGHTED": 6.8,
+    "IMDB_VOTES": 5919,
+    "POSTER_PATH": "/dr1MeZHJAa8rHlmUWj4UQT0YorS.jpg",
+    "RUNTIME": 13
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "ID_MOVIE": 10056,
+    "MOVIE_TITLE": "Le Baiser du tueur",
+    "DAT_RELEASE": "1955-10-01",
+    "IMDB_RATING": 6.5,
+    "IMDB_RATING_WEIGHTED": 6.7,
+    "IMDB_VOTES": 28886,
+    "POSTER_PATH": "/wv6NthVN03Fi6uWBRTnVzGK6Tu2.jpg",
+    "RUNTIME": 68
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "ID_MOVIE": 45314,
+    "MOVIE_TITLE": "The Seafarers",
+    "DAT_RELEASE": "1953-10-15",
+    "IMDB_RATING": 5.0,
+    "IMDB_RATING_WEIGHTED": 6.67,
+    "IMDB_VOTES": 3744,
+    "POSTER_PATH": "/nSucFIAQ5CowEE1WZ87mz3OsbQ1.jpg",
+    "RUNTIME": 29
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "ID_MOVIE": 45970,
+    "MOVIE_TITLE": "Flying Padre",
+    "DAT_RELEASE": "1951-03-23",
+    "IMDB_RATING": 5.5,
+    "IMDB_RATING_WEIGHTED": 6.66,
+    "IMDB_VOTES": 5586,
+    "POSTER_PATH": "/5aog5qVlMFakpogT1Nar9Z7gqq4.jpg",
+    "RUNTIME": 9
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "ID_MOVIE": 10165,
+    "MOVIE_TITLE": "Fear and Desire",
+    "DAT_RELEASE": "1953-03-31",
+    "IMDB_RATING": 5.3,
+    "IMDB_RATING_WEIGHTED": 6.25,
+    "IMDB_VOTES": 15859,
+    "POSTER_PATH": "/mj7CDh6d5nJDDmEhd0ft6s3L8CM.jpg",
+    "RUNTIME": 62
+   }
+  }
+ ]
+}

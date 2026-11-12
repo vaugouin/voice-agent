@@ -1,0 +1,1156 @@
+{
+ "question": "Budget versus box-office revenue of the Marvel Cinematic Universe films",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the Univers cinématographique Marvel films, with their budgets and box-office revenue side by side.",
+ "representation": "scatter",
+ "representation_options": [
+  "scatter",
+  "value-cards",
+  "card-grid",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "BUDGET",
+   "role": "metric",
+   "unit": "usd",
+   "focus": true
+  },
+  {
+   "name": "REVENUE",
+   "role": "metric",
+   "unit": "usd",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 50,
+  "total": null,
+  "value_column": "BUDGET",
+  "unit": "usd",
+  "order": "collection",
+  "order_direction": null,
+  "top": {
+   "label": "Deadpool & Wolverine",
+   "id": 533535,
+   "index": 46,
+   "value": 556800000,
+   "extreme": "max"
+  },
+  "scatter": {
+   "x": {
+    "column": "BUDGET",
+    "quantity": "budget",
+    "unit": "usd",
+    "scale": "linear",
+    "min": 130000000,
+    "max": 556800000
+   },
+   "y": {
+    "column": "REVENUE",
+    "quantity": "revenue",
+    "unit": "usd",
+    "scale": "linear",
+    "min": 206136825,
+    "max": 2942186933
+   },
+   "points": [
+    {
+     "index": 0,
+     "label": "Iron Man",
+     "id": 1726,
+     "x": 140000000,
+     "y": 585174222
+    },
+    {
+     "index": 1,
+     "label": "The Incredible Hulk",
+     "id": 1724,
+     "x": 150000000,
+     "y": 264770996
+    },
+    {
+     "index": 2,
+     "label": "Iron Man 2",
+     "id": 10138,
+     "x": 200000000,
+     "y": 623933331
+    },
+    {
+     "index": 3,
+     "label": "Thor",
+     "id": 10195,
+     "x": 150000000,
+     "y": 449326618
+    },
+    {
+     "index": 4,
+     "label": "Captain America: The First Avenger",
+     "id": 1771,
+     "x": 140000000,
+     "y": 370569774
+    },
+    {
+     "index": 7,
+     "label": "The Avengers",
+     "id": 24428,
+     "x": 220000000,
+     "y": 1518815515
+    },
+    {
+     "index": 9,
+     "label": "Iron Man 3",
+     "id": 68721,
+     "x": 200000000,
+     "y": 1215577205
+    },
+    {
+     "index": 11,
+     "label": "Thor: The Dark World",
+     "id": 76338,
+     "x": 170000000,
+     "y": 644783140
+    },
+    {
+     "index": 14,
+     "label": "Captain America: The Winter Soldier",
+     "id": 100402,
+     "x": 170000000,
+     "y": 714766572
+    },
+    {
+     "index": 15,
+     "label": "Guardians of the Galaxy",
+     "id": 118340,
+     "x": 170000000,
+     "y": 772776600
+    },
+    {
+     "index": 17,
+     "label": "Avengers: Age of Ultron",
+     "id": 99861,
+     "x": 235000000,
+     "y": 1405403694
+    },
+    {
+     "index": 18,
+     "label": "Ant-Man",
+     "id": 102899,
+     "x": 130000000,
+     "y": 519311965
+    },
+    {
+     "index": 19,
+     "label": "Captain America: Civil War",
+     "id": 271110,
+     "x": 250000000,
+     "y": 1155046416
+    },
+    {
+     "index": 21,
+     "label": "Doctor Strange",
+     "id": 284052,
+     "x": 180000000,
+     "y": 676343174
+    },
+    {
+     "index": 23,
+     "label": "Guardians of the Galaxy Vol. 2",
+     "id": 283995,
+     "x": 200000000,
+     "y": 863756051
+    },
+    {
+     "index": 24,
+     "label": "Spider-Man: Homecoming",
+     "id": 315635,
+     "x": 175000000,
+     "y": 880978185
+    },
+    {
+     "index": 25,
+     "label": "Thor: Ragnarok",
+     "id": 284053,
+     "x": 180000000,
+     "y": 855301806
+    },
+    {
+     "index": 26,
+     "label": "Black Panther",
+     "id": 284054,
+     "x": 200000000,
+     "y": 1349926083
+    },
+    {
+     "index": 28,
+     "label": "Avengers: Infinity War",
+     "id": 299536,
+     "x": 300000000,
+     "y": 2052415039
+    },
+    {
+     "index": 29,
+     "label": "Ant-Man and the Wasp",
+     "id": 363088,
+     "x": 140000000,
+     "y": 622674139
+    },
+    {
+     "index": 30,
+     "label": "Captain Marvel",
+     "id": 299537,
+     "x": 152000000,
+     "y": 1131416446
+    },
+    {
+     "index": 31,
+     "label": "Avengers: Endgame",
+     "id": 299534,
+     "x": 356000000,
+     "y": 2942186933
+    },
+    {
+     "index": 32,
+     "label": "Spider-Man: Far From Home",
+     "id": 429617,
+     "x": 160000000,
+     "y": 1132723226
+    },
+    {
+     "index": 34,
+     "label": "Black Widow",
+     "id": 497698,
+     "x": 200000000,
+     "y": 379751131
+    },
+    {
+     "index": 35,
+     "label": "Shang-Chi and the Legend of the Ten Rings",
+     "id": 566525,
+     "x": 150000000,
+     "y": 432243292
+    },
+    {
+     "index": 36,
+     "label": "Eternals",
+     "id": 524434,
+     "x": 200000000,
+     "y": 402064899
+    },
+    {
+     "index": 37,
+     "label": "Spider-Man: No Way Home",
+     "id": 634649,
+     "x": 200000000,
+     "y": 1921426073
+    },
+    {
+     "index": 38,
+     "label": "Doctor Strange in the Multiverse of Madness",
+     "id": 453395,
+     "x": 295400000,
+     "y": 955775804
+    },
+    {
+     "index": 39,
+     "label": "Thor: Love and Thunder",
+     "id": 616037,
+     "x": 250000000,
+     "y": 760928081
+    },
+    {
+     "index": 41,
+     "label": "Black Panther: Wakanda Forever",
+     "id": 505642,
+     "x": 250000000,
+     "y": 859102154
+    },
+    {
+     "index": 43,
+     "label": "Ant-Man and the Wasp: Quantumania",
+     "id": 640146,
+     "x": 200000000,
+     "y": 476071180
+    },
+    {
+     "index": 44,
+     "label": "Guardians of the Galaxy Vol. 3",
+     "id": 447365,
+     "x": 250000000,
+     "y": 845550000
+    },
+    {
+     "index": 45,
+     "label": "The Marvels",
+     "id": 609681,
+     "x": 274800000,
+     "y": 206136825
+    },
+    {
+     "index": 46,
+     "label": "Deadpool & Wolverine",
+     "id": 533535,
+     "x": 556800000,
+     "y": 1338073645
+    },
+    {
+     "index": 47,
+     "label": "Captain America: Brave New World",
+     "id": 822119,
+     "x": 180000000,
+     "y": 415101577
+    },
+    {
+     "index": 48,
+     "label": "Thunderbolts*",
+     "id": 986056,
+     "x": 180000000,
+     "y": 382436917
+    },
+    {
+     "index": 49,
+     "label": "The Fantastic 4: First Steps",
+     "id": 617126,
+     "x": 200000000,
+     "y": 521858728
+    }
+   ],
+   "count": 50,
+   "plotted": 37,
+   "left_out": 13,
+   "missing": {
+    "x": 11,
+    "y": 13
+   },
+   "extremes": {
+    "x_min": 11,
+    "x_max": 33,
+    "y_min": 32,
+    "y_max": 21
+   }
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "budget",
+   "revenue"
+  ],
+  "focus_columns": [
+   "BUDGET",
+   "REVENUE"
+  ],
+  "requested_view": "scatter",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 1726,
+    "MOVIE_TITLE": "Iron Man",
+    "DAT_RELEASE": "2008-04-30",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.88,
+    "IMDB_VOTES": 1258366,
+    "POSTER_PATH": "/78lPtwv72eTNqFW9COBYI0dWDJa.jpg",
+    "RUNTIME": 126,
+    "BUDGET": 140000000,
+    "REVENUE": 585174222
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 1724,
+    "MOVIE_TITLE": "The Incredible Hulk",
+    "DAT_RELEASE": "2008-06-12",
+    "IMDB_RATING": 6.6,
+    "IMDB_RATING_WEIGHTED": 6.61,
+    "IMDB_VOTES": 581737,
+    "POSTER_PATH": "/gKzYx79y0AQTL4UAk1cBQJ3nvrm.jpg",
+    "RUNTIME": 114,
+    "BUDGET": 150000000,
+    "REVENUE": 264770996
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 10138,
+    "MOVIE_TITLE": "Iron Man 2",
+    "DAT_RELEASE": "2010-04-28",
+    "IMDB_RATING": 6.9,
+    "IMDB_RATING_WEIGHTED": 6.9,
+    "IMDB_VOTES": 964142,
+    "POSTER_PATH": "/6WBeq4fCfn7AN0o21W9qNcRF2l9.jpg",
+    "RUNTIME": 124,
+    "BUDGET": 200000000,
+    "REVENUE": 623933331
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_MOVIE": 10195,
+    "MOVIE_TITLE": "Thor",
+    "DAT_RELEASE": "2011-04-27",
+    "IMDB_RATING": 7.0,
+    "IMDB_RATING_WEIGHTED": 7.0,
+    "IMDB_VOTES": 990219,
+    "POSTER_PATH": "/prSfAi1xGrhLQNxVSUFh61xQ4Qy.jpg",
+    "RUNTIME": 115,
+    "BUDGET": 150000000,
+    "REVENUE": 449326618
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_MOVIE": 1771,
+    "MOVIE_TITLE": "Captain America: The First Avenger",
+    "DAT_RELEASE": "2011-07-22",
+    "IMDB_RATING": 6.9,
+    "IMDB_RATING_WEIGHTED": 6.9,
+    "IMDB_VOTES": 994205,
+    "POSTER_PATH": "/vSNxAJTlD0r02V9sPYpOjqDZXUK.jpg",
+    "RUNTIME": 124,
+    "BUDGET": 140000000,
+    "REVENUE": 370569774
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_MOVIE": 76122,
+    "MOVIE_TITLE": "Marvel One-Shot: The Consultant",
+    "DAT_RELEASE": "2011-09-13",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.71,
+    "IMDB_VOTES": 12938,
+    "POSTER_PATH": "/xqNLXUUvBnfVk6m3QFGGU0Grgs7.jpg",
+    "RUNTIME": 4,
+    "BUDGET": 500000,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_MOVIE": 76535,
+    "MOVIE_TITLE": "Marvel One-Shot: A Funny Thing Happened on the Way to Thor's Hammer",
+    "DAT_RELEASE": "2011-10-25",
+    "IMDB_RATING": 7.0,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 13955,
+    "POSTER_PATH": "/njrOqsmFH4pxBrhcoslqLfw2OGk.jpg",
+    "RUNTIME": 4,
+    "BUDGET": 500000,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_MOVIE": 24428,
+    "MOVIE_TITLE": "The Avengers",
+    "DAT_RELEASE": "2012-04-25",
+    "IMDB_RATING": 8.0,
+    "IMDB_RATING_WEIGHTED": 7.99,
+    "IMDB_VOTES": 1591666,
+    "POSTER_PATH": "/RYMX2wcKCBAr24UyPD7xwmjaTn.jpg",
+    "RUNTIME": 143,
+    "BUDGET": 220000000,
+    "REVENUE": 1518815515
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_MOVIE": 119569,
+    "MOVIE_TITLE": "Marvel One-Shot: Item 47",
+    "DAT_RELEASE": "2012-08-29",
+    "IMDB_RATING": 6.6,
+    "IMDB_RATING_WEIGHTED": 6.82,
+    "IMDB_VOTES": 14879,
+    "POSTER_PATH": "/hnSxG8clwLuAXEkp9emc8HCUcHD.jpg",
+    "RUNTIME": 12,
+    "BUDGET": 0,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_MOVIE": 68721,
+    "MOVIE_TITLE": "Iron Man 3",
+    "DAT_RELEASE": "2013-04-18",
+    "IMDB_RATING": 7.1,
+    "IMDB_RATING_WEIGHTED": 7.1,
+    "IMDB_VOTES": 990285,
+    "POSTER_PATH": "/qhPtAc1TKbMPqNvcdXSOn9Bn7hZ.jpg",
+    "RUNTIME": 130,
+    "BUDGET": 200000000,
+    "REVENUE": 1215577205
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_MOVIE": 211387,
+    "MOVIE_TITLE": "Marvel One-Shot: Agent Carter",
+    "DAT_RELEASE": "2013-10-04",
+    "IMDB_RATING": 7.3,
+    "IMDB_RATING_WEIGHTED": 7.12,
+    "IMDB_VOTES": 17767,
+    "POSTER_PATH": "/4vFKKWPvCVDJTOWiwReBfpAMScP.jpg",
+    "RUNTIME": 15,
+    "BUDGET": 0,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_MOVIE": 76338,
+    "MOVIE_TITLE": "Thor: The Dark World",
+    "DAT_RELEASE": "2013-10-30",
+    "IMDB_RATING": 6.7,
+    "IMDB_RATING_WEIGHTED": 6.71,
+    "IMDB_VOTES": 797546,
+    "POSTER_PATH": "/wp6OxE4poJ4G7c0U2ZIXasTSMR7.jpg",
+    "RUNTIME": 112,
+    "BUDGET": 170000000,
+    "REVENUE": 644783140
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_MOVIE": 253980,
+    "MOVIE_TITLE": "Marvel One-Shot: All Hail the King",
+    "DAT_RELEASE": "2014-02-04",
+    "IMDB_RATING": 7.1,
+    "IMDB_RATING_WEIGHTED": 7.03,
+    "IMDB_VOTES": 15803,
+    "POSTER_PATH": "/y0QYZPWgeGKOvyrzi6Oz3aJPxJa.jpg",
+    "RUNTIME": 14,
+    "BUDGET": 0,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "ID_MOVIE": 259910,
+    "MOVIE_TITLE": "Marvel Studios: Assembling a Universe",
+    "DAT_RELEASE": "2014-03-18",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 6.99,
+    "IMDB_VOTES": 1948,
+    "POSTER_PATH": "/41Ke02UzYoPsiTc3YbomPGiQKMl.jpg",
+    "RUNTIME": 43,
+    "BUDGET": 0,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "ID_MOVIE": 100402,
+    "MOVIE_TITLE": "Captain America: The Winter Soldier",
+    "DAT_RELEASE": "2014-03-20",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.69,
+    "IMDB_VOTES": 996203,
+    "POSTER_PATH": "/tVFRpFw3xTedgPGqxW0AOI8Qhh0.jpg",
+    "RUNTIME": 136,
+    "BUDGET": 170000000,
+    "REVENUE": 714766572
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "ID_MOVIE": 118340,
+    "MOVIE_TITLE": "Guardians of the Galaxy",
+    "DAT_RELEASE": "2014-07-30",
+    "IMDB_RATING": 8.0,
+    "IMDB_RATING_WEIGHTED": 7.98,
+    "IMDB_VOTES": 1392353,
+    "POSTER_PATH": "/r7vmZjiyZw9rpJMQJdXpjgiCOk9.jpg",
+    "RUNTIME": 121,
+    "BUDGET": 170000000,
+    "REVENUE": 772776600
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "ID_MOVIE": 299969,
+    "MOVIE_TITLE": "Marvel: 75 Years, from Pulp to Pop!",
+    "DAT_RELEASE": "2014-11-04",
+    "IMDB_RATING": 6.9,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 1370,
+    "POSTER_PATH": "/biud0bsRfQryGBfcTXN2ep6ODwM.jpg",
+    "RUNTIME": 42,
+    "BUDGET": 0,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "ID_MOVIE": 99861,
+    "MOVIE_TITLE": "Avengers: Age of Ultron",
+    "DAT_RELEASE": "2015-04-22",
+    "IMDB_RATING": 7.3,
+    "IMDB_RATING_WEIGHTED": 7.29,
+    "IMDB_VOTES": 1030095,
+    "POSTER_PATH": "/4ssDuvEDkSArWEdyBl2X5EHvYKU.jpg",
+    "RUNTIME": 141,
+    "BUDGET": 235000000,
+    "REVENUE": 1405403694
+   }
+  },
+  {
+   "index": 18,
+   "data": {
+    "ID_MOVIE": 102899,
+    "MOVIE_TITLE": "Ant-Man",
+    "DAT_RELEASE": "2015-07-14",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 7.19,
+    "IMDB_VOTES": 800252,
+    "POSTER_PATH": "/rQRnQfUl3kfp78nCWq8Ks04vnq1.jpg",
+    "RUNTIME": 117,
+    "BUDGET": 130000000,
+    "REVENUE": 519311965
+   }
+  },
+  {
+   "index": 19,
+   "data": {
+    "ID_MOVIE": 271110,
+    "MOVIE_TITLE": "Captain America: Civil War",
+    "DAT_RELEASE": "2016-04-27",
+    "IMDB_RATING": 7.8,
+    "IMDB_RATING_WEIGHTED": 7.78,
+    "IMDB_VOTES": 956751,
+    "POSTER_PATH": "/rAGiXaUfPzY7CDEyNKUofk3Kw2e.jpg",
+    "RUNTIME": 147,
+    "BUDGET": 250000000,
+    "REVENUE": 1155046416
+   }
+  },
+  {
+   "index": 20,
+   "data": {
+    "ID_MOVIE": 413279,
+    "MOVIE_TITLE": "Team Thor",
+    "DAT_RELEASE": "2016-08-28",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 7.24,
+    "IMDB_VOTES": 12271,
+    "POSTER_PATH": "/hpHvGuMc46pppwpcW0Xk7eys3L4.jpg",
+    "RUNTIME": 3,
+    "BUDGET": 0,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 21,
+   "data": {
+    "ID_MOVIE": 284052,
+    "MOVIE_TITLE": "Doctor Strange",
+    "DAT_RELEASE": "2016-10-25",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.49,
+    "IMDB_VOTES": 904042,
+    "POSTER_PATH": "/uGBVj3bEbCoZbDjjl9wTxcygko1.jpg",
+    "RUNTIME": 115,
+    "BUDGET": 180000000,
+    "REVENUE": 676343174
+   }
+  },
+  {
+   "index": 22,
+   "data": {
+    "ID_MOVIE": 441829,
+    "MOVIE_TITLE": "Team Thor: Part 2",
+    "DAT_RELEASE": "2017-02-14",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 7.03,
+    "IMDB_VOTES": 7884,
+    "POSTER_PATH": "/2jmP71A5Un0jDNqBesDPQSN8hjJ.jpg",
+    "RUNTIME": 5,
+    "BUDGET": 0,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 23,
+   "data": {
+    "ID_MOVIE": 283995,
+    "MOVIE_TITLE": "Guardians of the Galaxy Vol. 2",
+    "DAT_RELEASE": "2017-04-25",
+    "IMDB_RATING": 7.6,
+    "IMDB_RATING_WEIGHTED": 7.58,
+    "IMDB_VOTES": 853036,
+    "POSTER_PATH": "/y4MBh0EjBlMuOzv9axM4qJlmhzz.jpg",
+    "RUNTIME": 137,
+    "BUDGET": 200000000,
+    "REVENUE": 863756051
+   }
+  },
+  {
+   "index": 24,
+   "data": {
+    "ID_MOVIE": 315635,
+    "MOVIE_TITLE": "Spider-Man: Homecoming",
+    "DAT_RELEASE": "2017-07-05",
+    "IMDB_RATING": 7.4,
+    "IMDB_RATING_WEIGHTED": 7.39,
+    "IMDB_VOTES": 846446,
+    "POSTER_PATH": "/c24sv2weTHPsmDa7jEMN0m2P3RT.jpg",
+    "RUNTIME": 133,
+    "BUDGET": 175000000,
+    "REVENUE": 880978185
+   }
+  },
+  {
+   "index": 25,
+   "data": {
+    "ID_MOVIE": 284053,
+    "MOVIE_TITLE": "Thor: Ragnarok",
+    "DAT_RELEASE": "2017-10-24",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.88,
+    "IMDB_VOTES": 920117,
+    "POSTER_PATH": "/rzRwTcFvttcN1ZpX2xv4j3tSdJu.jpg",
+    "RUNTIME": 131,
+    "BUDGET": 180000000,
+    "REVENUE": 855301806
+   }
+  },
+  {
+   "index": 26,
+   "data": {
+    "ID_MOVIE": 284054,
+    "MOVIE_TITLE": "Black Panther",
+    "DAT_RELEASE": "2018-02-13",
+    "IMDB_RATING": 7.3,
+    "IMDB_RATING_WEIGHTED": 7.29,
+    "IMDB_VOTES": 932483,
+    "POSTER_PATH": "/uxzzxijgPIY7slzFvMotPv8wjKA.jpg",
+    "RUNTIME": 135,
+    "BUDGET": 200000000,
+    "REVENUE": 1349926083
+   }
+  },
+  {
+   "index": 27,
+   "data": {
+    "ID_MOVIE": 505945,
+    "MOVIE_TITLE": "Team Darryl",
+    "DAT_RELEASE": "2018-02-20",
+    "IMDB_RATING": 6.5,
+    "IMDB_RATING_WEIGHTED": 6.88,
+    "IMDB_VOTES": 5209,
+    "POSTER_PATH": "/edroTAeTEM9ILyAnumA0ALxRSne.jpg",
+    "RUNTIME": 6,
+    "BUDGET": 0,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 28,
+   "data": {
+    "ID_MOVIE": 299536,
+    "MOVIE_TITLE": "Avengers: Infinity War",
+    "DAT_RELEASE": "2018-04-25",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.38,
+    "IMDB_VOTES": 1423348,
+    "POSTER_PATH": "/7WsyChQLEftFiDOVTGkv3hFpyyt.jpg",
+    "RUNTIME": 149,
+    "BUDGET": 300000000,
+    "REVENUE": 2052415039
+   }
+  },
+  {
+   "index": 29,
+   "data": {
+    "ID_MOVIE": 363088,
+    "MOVIE_TITLE": "Ant-Man and the Wasp",
+    "DAT_RELEASE": "2018-07-04",
+    "IMDB_RATING": 7.0,
+    "IMDB_RATING_WEIGHTED": 7.0,
+    "IMDB_VOTES": 511169,
+    "POSTER_PATH": "/cFQEO687n1K6umXbInzocxcnAQz.jpg",
+    "RUNTIME": 119,
+    "BUDGET": 140000000,
+    "REVENUE": 622674139
+   }
+  },
+  {
+   "index": 30,
+   "data": {
+    "ID_MOVIE": 299537,
+    "MOVIE_TITLE": "Captain Marvel",
+    "DAT_RELEASE": "2019-03-06",
+    "IMDB_RATING": 6.7,
+    "IMDB_RATING_WEIGHTED": 6.71,
+    "IMDB_VOTES": 678009,
+    "POSTER_PATH": "/AtsgWhDnHTq68L0lLsUrCnM7TjG.jpg",
+    "RUNTIME": 124,
+    "BUDGET": 152000000,
+    "REVENUE": 1131416446
+   }
+  },
+  {
+   "index": 31,
+   "data": {
+    "ID_MOVIE": 299534,
+    "MOVIE_TITLE": "Avengers: Endgame",
+    "DAT_RELEASE": "2019-04-24",
+    "IMDB_RATING": 8.4,
+    "IMDB_RATING_WEIGHTED": 8.38,
+    "IMDB_VOTES": 1506946,
+    "POSTER_PATH": "/jtDv3lCnST0fZRvdYFwR5CVwK2x.jpg",
+    "RUNTIME": 181,
+    "BUDGET": 356000000,
+    "REVENUE": 2942186933
+   }
+  },
+  {
+   "index": 32,
+   "data": {
+    "ID_MOVIE": 429617,
+    "MOVIE_TITLE": "Spider-Man: Far From Home",
+    "DAT_RELEASE": "2019-06-28",
+    "IMDB_RATING": 7.3,
+    "IMDB_RATING_WEIGHTED": 7.29,
+    "IMDB_VOTES": 683998,
+    "POSTER_PATH": "/4q2NNj4S5dG2RLF9CpXsej7yXl.jpg",
+    "RUNTIME": 129,
+    "BUDGET": 160000000,
+    "REVENUE": 1132723226
+   }
+  },
+  {
+   "index": 33,
+   "data": {
+    "ID_MOVIE": 647375,
+    "MOVIE_TITLE": "Marvel Studios: Expanding the Universe",
+    "DAT_RELEASE": "2019-11-12",
+    "IMDB_RATING": 6.5,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 642,
+    "POSTER_PATH": "/dU7qXzttvOUvSlwwpEFQDsLnThK.jpg",
+    "RUNTIME": 12,
+    "BUDGET": 0,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 34,
+   "data": {
+    "ID_MOVIE": 497698,
+    "MOVIE_TITLE": "Black Widow",
+    "DAT_RELEASE": "2021-07-07",
+    "IMDB_RATING": 6.6,
+    "IMDB_RATING_WEIGHTED": 6.62,
+    "IMDB_VOTES": 494290,
+    "POSTER_PATH": "/qAZ0pzat24kLdO3o8ejmbLxyOac.jpg",
+    "RUNTIME": 134,
+    "BUDGET": 200000000,
+    "REVENUE": 379751131
+   }
+  },
+  {
+   "index": 35,
+   "data": {
+    "ID_MOVIE": 566525,
+    "MOVIE_TITLE": "Shang-Chi and the Legend of the Ten Rings",
+    "DAT_RELEASE": "2021-09-01",
+    "IMDB_RATING": 7.3,
+    "IMDB_RATING_WEIGHTED": 7.29,
+    "IMDB_VOTES": 507982,
+    "POSTER_PATH": "/9f2Q0U3IOsLgrI2HkvldwSABZy5.jpg",
+    "RUNTIME": 132,
+    "BUDGET": 150000000,
+    "REVENUE": 432243292
+   }
+  },
+  {
+   "index": 36,
+   "data": {
+    "ID_MOVIE": 524434,
+    "MOVIE_TITLE": "Eternals",
+    "DAT_RELEASE": "2021-11-03",
+    "IMDB_RATING": 6.2,
+    "IMDB_RATING_WEIGHTED": 6.23,
+    "IMDB_VOTES": 440634,
+    "POSTER_PATH": "/lFByFSLV5WDJEv3KabbdAF959F2.jpg",
+    "RUNTIME": 156,
+    "BUDGET": 200000000,
+    "REVENUE": 402064899
+   }
+  },
+  {
+   "index": 37,
+   "data": {
+    "ID_MOVIE": 634649,
+    "MOVIE_TITLE": "Spider-Man: No Way Home",
+    "DAT_RELEASE": "2021-12-15",
+    "IMDB_RATING": 8.1,
+    "IMDB_RATING_WEIGHTED": 8.08,
+    "IMDB_VOTES": 1087603,
+    "POSTER_PATH": "/1g0dhYtq4irTY1GPXvft6k4YLjm.jpg",
+    "RUNTIME": 148,
+    "BUDGET": 200000000,
+    "REVENUE": 1921426073
+   }
+  },
+  {
+   "index": 38,
+   "data": {
+    "ID_MOVIE": 453395,
+    "MOVIE_TITLE": "Doctor Strange in the Multiverse of Madness",
+    "DAT_RELEASE": "2022-05-04",
+    "IMDB_RATING": 6.8,
+    "IMDB_RATING_WEIGHTED": 6.81,
+    "IMDB_VOTES": 566516,
+    "POSTER_PATH": "/ddJcSKbcp4rKZTmuyWaMhuwcfMz.jpg",
+    "RUNTIME": 126,
+    "BUDGET": 295400000,
+    "REVENUE": 955775804
+   }
+  },
+  {
+   "index": 39,
+   "data": {
+    "ID_MOVIE": 616037,
+    "MOVIE_TITLE": "Thor: Love and Thunder",
+    "DAT_RELEASE": "2022-07-06",
+    "IMDB_RATING": 6.1,
+    "IMDB_RATING_WEIGHTED": 6.14,
+    "IMDB_VOTES": 479574,
+    "POSTER_PATH": "/pIkRyD18kl4FhoCNQuWxWu5cBLM.jpg",
+    "RUNTIME": 119,
+    "BUDGET": 250000000,
+    "REVENUE": 760928081
+   }
+  },
+  {
+   "index": 40,
+   "data": {
+    "ID_MOVIE": 894205,
+    "MOVIE_TITLE": "Werewolf by Night",
+    "DAT_RELEASE": "2022-09-25",
+    "IMDB_RATING": 7.1,
+    "IMDB_RATING_WEIGHTED": 7.07,
+    "IMDB_VOTES": 82481,
+    "POSTER_PATH": "/mvIvNKRIJPPS7WSFarFhOAGIVnU.jpg",
+    "RUNTIME": 55,
+    "BUDGET": 0,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 41,
+   "data": {
+    "ID_MOVIE": 505642,
+    "MOVIE_TITLE": "Black Panther: Wakanda Forever",
+    "DAT_RELEASE": "2022-11-09",
+    "IMDB_RATING": 6.6,
+    "IMDB_RATING_WEIGHTED": 6.62,
+    "IMDB_VOTES": 406222,
+    "POSTER_PATH": "/sv1xJUazXeYqALzczSZ3O6nkH75.jpg",
+    "RUNTIME": 162,
+    "BUDGET": 250000000,
+    "REVENUE": 859102154
+   }
+  },
+  {
+   "index": 42,
+   "data": {
+    "ID_MOVIE": 774752,
+    "MOVIE_TITLE": "The Guardians of the Galaxy Holiday Special",
+    "DAT_RELEASE": "2022-11-24",
+    "IMDB_RATING": 6.9,
+    "IMDB_RATING_WEIGHTED": 6.91,
+    "IMDB_VOTES": 112688,
+    "POSTER_PATH": "/8dqXyslZ2hv49Oiob9UjlGSHSTR.jpg",
+    "RUNTIME": 45,
+    "BUDGET": 0,
+    "REVENUE": 0
+   }
+  },
+  {
+   "index": 43,
+   "data": {
+    "ID_MOVIE": 640146,
+    "MOVIE_TITLE": "Ant-Man and the Wasp: Quantumania",
+    "DAT_RELEASE": "2023-02-15",
+    "IMDB_RATING": 6.0,
+    "IMDB_RATING_WEIGHTED": 6.07,
+    "IMDB_VOTES": 282774,
+    "POSTER_PATH": "/qnqGbB22YJ7dSs4o6M7exTpNxPz.jpg",
+    "RUNTIME": 125,
+    "BUDGET": 200000000,
+    "REVENUE": 476071180
+   }
+  },
+  {
+   "index": 44,
+   "data": {
+    "ID_MOVIE": 447365,
+    "MOVIE_TITLE": "Guardians of the Galaxy Vol. 3",
+    "DAT_RELEASE": "2023-05-03",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.86,
+    "IMDB_VOTES": 493678,
+    "POSTER_PATH": "/r2J02Z2OpNTctfOSN1Ydgii51I3.jpg",
+    "RUNTIME": 150,
+    "BUDGET": 250000000,
+    "REVENUE": 845550000
+   }
+  },
+  {
+   "index": 45,
+   "data": {
+    "ID_MOVIE": 609681,
+    "MOVIE_TITLE": "The Marvels",
+    "DAT_RELEASE": "2023-11-08",
+    "IMDB_RATING": 5.4,
+    "IMDB_RATING_WEIGHTED": 5.57,
+    "IMDB_VOTES": 173752,
+    "POSTER_PATH": "/9GBhzXMFjgcZ3FdR9w3bUMMTps5.jpg",
+    "RUNTIME": 105,
+    "BUDGET": 274800000,
+    "REVENUE": 206136825
+   }
+  },
+  {
+   "index": 46,
+   "data": {
+    "ID_MOVIE": 533535,
+    "MOVIE_TITLE": "Deadpool & Wolverine",
+    "DAT_RELEASE": "2024-07-24",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.48,
+    "IMDB_VOTES": 602090,
+    "POSTER_PATH": "/8cdWjvZQUExUUTzyp4t6EDMubfO.jpg",
+    "RUNTIME": 128,
+    "BUDGET": 556800000,
+    "REVENUE": 1338073645
+   }
+  },
+  {
+   "index": 47,
+   "data": {
+    "ID_MOVIE": 822119,
+    "MOVIE_TITLE": "Captain America: Brave New World",
+    "DAT_RELEASE": "2025-02-12",
+    "IMDB_RATING": 5.6,
+    "IMDB_RATING_WEIGHTED": 5.73,
+    "IMDB_VOTES": 197257,
+    "POSTER_PATH": "/pzIddUEMWhWzfvLI3TwxUG2wGoi.jpg",
+    "RUNTIME": 119,
+    "BUDGET": 180000000,
+    "REVENUE": 415101577
+   }
+  },
+  {
+   "index": 48,
+   "data": {
+    "ID_MOVIE": 986056,
+    "MOVIE_TITLE": "Thunderbolts*",
+    "DAT_RELEASE": "2025-04-30",
+    "IMDB_RATING": 7.1,
+    "IMDB_RATING_WEIGHTED": 7.09,
+    "IMDB_VOTES": 312882,
+    "POSTER_PATH": "/hqcexYHbiTBfDIdDWxrxPtVndBX.jpg",
+    "RUNTIME": 127,
+    "BUDGET": 180000000,
+    "REVENUE": 382436917
+   }
+  },
+  {
+   "index": 49,
+   "data": {
+    "ID_MOVIE": 617126,
+    "MOVIE_TITLE": "The Fantastic 4: First Steps",
+    "DAT_RELEASE": "2025-07-23",
+    "IMDB_RATING": 6.8,
+    "IMDB_RATING_WEIGHTED": 6.81,
+    "IMDB_VOTES": 299134,
+    "POSTER_PATH": "/nf5qaSEvyYSNeFH0YhSs5EsBLX9.jpg",
+    "RUNTIME": 115,
+    "BUDGET": 200000000,
+    "REVENUE": 521858728
+   }
+  }
+ ]
+}

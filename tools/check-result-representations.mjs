@@ -72,7 +72,8 @@ function extractRegion(startMarker, endMarker) {
 // "as a table" matcher, which reads its word lists from app/lexicons.json like the page does
 // (window.__LEXICONS__), and the table links, which need detailRequestFromRecord(). Phase 2 lot B
 // (fixtures lotb-*) added the compare-card, fact-card and verdict models and sentences, phase 2
-// lot C (fixtures lotc-*) the histogram, share-bar and flag-list models and sentences.
+// lot C (fixtures lotc-*) the histogram, share-bar and flag-list models and sentences, phase 3
+// lot A (fixtures p3a-*) the scatter model, ticks and sentences.
 const lexicons = readFileSync(join(root, "app", "lexicons.json"), "utf8");
 const code = [
   ...["normalizeUiLanguage", "uiText", "prettyLabel", "formatDate", "formatMoney", "formatMinutes",
@@ -91,6 +92,8 @@ const code = [
   "  text2SqlHistogramModel, text2SqlHistogramSummary, text2SqlHistogramAxisName, text2SqlBinRangeText,",
   "  text2SqlShareModel, text2SqlShareSummary, text2SqlPercentText, text2SqlFlagEmoji, text2SqlFlagModel,",
   "  text2SqlFlagSummary, text2SqlCountryName, text2SqlChipOptionsLotC: text2SqlChipOptions,",
+  "  text2SqlScatterModel, text2SqlScatterSummary, text2SqlScatterTicks, text2SqlScatterTickText,",
+  "  text2SqlScatterValueText, text2SqlScatterAxisTitle, text2SqlScatterWords,",
   "  setLang: (l) => { activeUiLanguage = l; } };",
 ].join("\n\n");
 const sandbox = { Intl, console };
@@ -639,6 +642,80 @@ check("links: older API, from the keys", linkSummary([], ["ID_PERSON", "PERSON_N
   check("reply share fr", api.text2SqlRequestedViewReply({ ok: true, representation: "share-bar", view: "share" }, "fr"), "Voici les parts.");
   check("lotc labels", ["histogram", "share-bar", "flag-list"].map((rep) => [api.text2SqlRepresentationLabel(rep, "en"), api.text2SqlRepresentationLabel(rep, "fr")]),
     [["Histogram", "Histogramme"], ["Shares", "Parts"], ["Flags", "Drapeaux"]]);
+}
+
+// Phase 3 lot A (fixtures p3a-*: the 1.1.20 baseline answers of evaluations 2900 to 2909, English
+// and French, re-classified with the phase 3 lot A module of fastapi-text2sql). The sentences
+// and ticks are the ones t2s-front writes.
+{
+  check("p3a caption all plotted en", caption("p3a-scatter-kubrick-runtime-rating-en", "en"),
+    "18 films, runtime against IMDb rating; highest IMDb rating: Paths of Glory, 8.4.");
+  check("p3a caption all plotted fr", caption("p3a-scatter-kubrick-runtime-rating-fr", "fr"),
+    "18 films, note IMDb en fonction de la durée ; maximum de la note IMDb : Shining, 8.4.");
+  check("p3a caption left out en", caption("p3a-scatter-nolan-budget-revenue-en", "en"),
+    "18 of 31 films, budget against box-office revenue (13 without a budget or box-office revenue); highest box-office revenue: The Odyssey, $1.8B.");
+  check("p3a caption left out fr", caption("p3a-scatter-nolan-budget-revenue-fr", "fr"),
+    "18 films sur 31, recettes en fonction du budget (13 sans budget ou sans recettes) ; maximum des recettes : L'Odyssée, $1.8B.");
+  check("p3a caption one value missing", caption("p3a-scatter-pixar-budget-rating-en", "en"),
+    "34 of 50 films, budget against IMDb rating (16 without a budget); highest IMDb rating: WALL·E, 8.4.");
+  check("p3a caption year axis fr", caption("p3a-scatter-hitchcock-year-rating-fr", "fr"),
+    "49 films sur 50, note IMDb en fonction de l'année de sortie (1 sans note IMDb) ; maximum de la note IMDb : Rebecca, 8.0.");
+  check("p3a caption series", caption("p3a-scatter-hbo-seasons-rating-en", "en"),
+    "50 series, number of seasons against IMDb rating; highest IMDb rating: Band of Brothers, 9.4.");
+  check("p3a caption more pages en", caption("p3a-scatter-ghibli-runtime-rating-en", "en", { hasMore: true }),
+    "The first 50 films, runtime against IMDb rating; highest IMDb rating: Spirited Away, 8.6.");
+  check("p3a caption more pages fr, left out", caption("p3a-scatter-hbo-seasons-rating-fr", "fr", { hasMore: true }),
+    "49 des 50 premières séries, note IMDb en fonction du nombre de saisons (1 sans nombre de saisons) ; maximum de la note IMDb : The Franchise, 6.5.");
+  check("p3a spoken money en", spoken("p3a-scatter-potter-runtime-revenue-en", "en"),
+    "8 films, runtime against box-office revenue; highest box-office revenue: Harry Potter and the Deathly Hallows: Part 2, 1.3 billion dollars.");
+  check("p3a spoken money fr", spoken("p3a-scatter-bond-budget-revenue-fr", "fr"),
+    "26 films sur 27, recettes en fonction du budget (1 sans budget ou sans recettes) ; maximum des recettes : Skyfall, 1,1 milliard de dollars.");
+
+  // Axes: titles in the UI language, round ticks in the unit's short form, log decades for votes.
+  const axes = (name, lang) => {
+    const m = api.text2SqlScatterModel(fx(name), lang);
+    return [m.x.title, m.x.ticks.map((t) => t.text), m.y.title, m.y.ticks.map((t) => t.text)];
+  };
+  check("p3a axes money", axes("p3a-scatter-nolan-budget-revenue-en", "en"),
+    ["Budget ($)", ["$0", "$100M", "$200M", "$300M"], "Box-office revenue ($)", ["$0", "$500M", "$1B", "$1.5B", "$2B"]]);
+  check("p3a axes money fr", axes("p3a-scatter-mcu-budget-revenue-fr", "fr").slice(0, 3),
+    ["Budget ($)", ["$100M", "$150M", "$200M", "$250M", "$300M"], "Recettes ($)"]);
+  check("p3a axes log votes", axes("p3a-scatter-tarantino-votes-rating-en", "en"),
+    ["IMDb votes (log scale)", ["10", "100", "1K", "10K", "100K", "1M", "10M"], "IMDb rating", ["4", "6", "8", "10"]]);
+  check("p3a axes log votes fr", axes("p3a-scatter-tarantino-votes-rating-fr", "fr")[0], "Votes IMDb (échelle log)");
+  check("p3a axes year, padded where a point sits on the edge", axes("p3a-scatter-hitchcock-year-rating-en", "en"),
+    ["Release year", ["1910", "1920", "1930", "1940", "1950"], "IMDb rating", ["4", "5", "6", "7", "8"]]);
+  check("p3a axes minutes", axes("p3a-scatter-potter-runtime-revenue-en", "en"),
+    ["Runtime (min)", ["120", "130", "140", "150", "160", "170"], "Box-office revenue ($)", ["$600M", "$800M", "$1B", "$1.2B", "$1.4B"]]);
+  check("p3a axes seasons fr", axes("p3a-scatter-hbo-seasons-rating-fr", "fr")[0], "Nombre de saisons");
+
+  // Points: placed by percent, the highest ringed and shown first, titled with both values.
+  const nolan = api.text2SqlScatterModel(fx("p3a-scatter-nolan-budget-revenue-en"), "en");
+  check("p3a points kept", nolan.points.length, 18);
+  check("p3a highest point", nolan.points[nolan.highlight],
+    { index: 6, label: "The Odyssey", left: 83.33, top: 10.19, xText: "$250M", yText: "$1.8B",
+      values: "Budget $250M · Box-office revenue $1.8B", aria: "The Odyssey: budget $250M, box-office revenue $1.8B", highest: true });
+  check("p3a only one ringed", nolan.points.filter((p) => p.highest).length, 1);
+  check("p3a points inside the plot", ["nolan-budget-revenue", "mcu-budget-revenue", "kubrick-runtime-rating", "hitchcock-year-rating",
+    "pixar-budget-rating", "ghibli-runtime-rating", "bond-budget-revenue", "tarantino-votes-rating", "potter-runtime-revenue", "hbo-seasons-rating"]
+    .every((n) => ["en", "fr"].every((l) => api.text2SqlScatterModel(fx(`p3a-scatter-${n}-${l}`), l).points
+      .every((p) => p.left >= 0 && p.left <= 100 && p.top >= 0 && p.top <= 100))), true);
+  check("p3a values fr", api.text2SqlScatterModel(fx("p3a-scatter-kubrick-runtime-rating-fr"), "fr").points[0].aria, "Shining : durée 144 min, note IMDb 8.4");
+  check("p3a votes value", api.text2SqlScatterValueText(2482559, { unit: "votes" }, "en"), "2,482,559");
+  check("p3a tick texts", [api.text2SqlScatterTickText(1250000000, { unit: "usd" }), api.text2SqlScatterTickText(2500, { unit: "count" }),
+    api.text2SqlScatterTickText(7.5, { unit: "rating" }), api.text2SqlScatterTickText(1958, { unit: "year" }), api.text2SqlScatterTickText(0, { unit: "usd" })],
+  ["$1.25B", "2.5K", "7.5", "1958", "$0"]);
+  check("p3a no scatter facts, no model", api.text2SqlScatterModel(fx("lotc-share-hbo-type-en"), "en"), null);
+
+  // Chips, labels and the view asked for in words.
+  check("p3a chips", api.text2SqlChipOptionsLotC(fx("p3a-scatter-nolan-budget-revenue-en")), ["scatter", "value-cards", "card-grid", "ranked-bars", "table"]);
+  check("p3a labels", [api.text2SqlRepresentationLabel("scatter", "en"), api.text2SqlRepresentationLabel("scatter", "fr")], ["Scatter", "Nuage de points"]);
+  check("view: as a scatter plot", view("show it as a scatter plot"), "scatter");
+  check("view: en nuage de points", view("Mets-le en nuage de points"), "scatter");
+  check("view to rep: scatter", api.text2SqlRepresentationForView("scatter", fx("p3a-scatter-kubrick-runtime-rating-en").representation_options), "scatter");
+  check("view to rep: scatter not offered", api.text2SqlRepresentationForView("scatter", fx("lotc-share-hbo-type-en").representation_options), "");
+  check("view to rep: chart on a scatter stays the bars", api.text2SqlRepresentationForView("chart", fx("p3a-scatter-kubrick-runtime-rating-en").representation_options), "ranked-bars");
+  check("reply scatter fr", api.text2SqlRequestedViewReply({ ok: true, representation: "scatter", view: "scatter" }, "fr"), "Voici le nuage de points.");
 }
 
 console.log(`${passes} passed, ${failures} failed`);

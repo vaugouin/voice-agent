@@ -1,0 +1,1140 @@
+{
+ "question": "Trace le nombre de votes IMDb en fonction de la note IMDb des films de Quentin Tarantino",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici les films de Quentin Tarantino, avec leur note et leur nombre de votes IMDb, prêts à être représentés sur un graphique.",
+ "representation": "scatter",
+ "representation_options": [
+  "scatter",
+  "value-cards",
+  "card-grid",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_MOVIE",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_TITLE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "DAT_RELEASE",
+   "role": "date",
+   "unit": null
+  },
+  {
+   "name": "ID_IMDB",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null,
+   "ordered": "asc",
+   "focus": true
+  },
+  {
+   "name": "IMDB_RATING_WEIGHTED",
+   "role": "metric",
+   "unit": null,
+   "focus": true
+  },
+  {
+   "name": "IMDB_VOTES",
+   "role": "metric",
+   "unit": null,
+   "focus": true
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "RUNTIME",
+   "role": "metric",
+   "unit": "minutes"
+  },
+  {
+   "name": "TAGLINE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "ID_CRITERION_SPINE",
+   "role": "other",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 50,
+  "total": null,
+  "value_column": "IMDB_RATING",
+  "unit": null,
+  "order": "IMDB_RATING",
+  "order_direction": "asc",
+  "top": {
+   "label": "Une Nuit en enfer 2 : Le Prix du sang",
+   "id": 12095,
+   "index": 0,
+   "value": 4.2,
+   "extreme": "min"
+  },
+  "scatter": {
+   "x": {
+    "column": "IMDB_VOTES",
+    "quantity": "votes",
+    "unit": "votes",
+    "scale": "log",
+    "min": 26,
+    "max": 1332210
+   },
+   "y": {
+    "column": "IMDB_RATING",
+    "quantity": "rating",
+    "unit": "rating",
+    "scale": "linear",
+    "min": 4.2,
+    "max": 8.2
+   },
+   "points": [
+    {
+     "index": 0,
+     "label": "Une Nuit en enfer 2 : Le Prix du sang",
+     "id": 12095,
+     "x": 18996,
+     "y": 4.2
+    },
+    {
+     "index": 1,
+     "label": "My Name Is Modesty: A Modesty Blaise Adventure",
+     "id": 20013,
+     "x": 2762,
+     "y": 4.6
+    },
+    {
+     "index": 2,
+     "label": "Une nuit en enfer 3 : La Fille du bourreau",
+     "id": 10213,
+     "x": 13719,
+     "y": 4.8
+    },
+    {
+     "index": 3,
+     "label": "Hell Ride",
+     "id": 13300,
+     "x": 16964,
+     "y": 5
+    },
+    {
+     "index": 4,
+     "label": "Daltry Calhoun",
+     "id": 20668,
+     "x": 2514,
+     "y": 5.1
+    },
+    {
+     "index": 5,
+     "label": "Chapitre perdu : La vengeance de Yuki",
+     "id": 1588237,
+     "x": 2494,
+     "y": 5.1
+    },
+    {
+     "index": 6,
+     "label": "Dance Me to the End of Love",
+     "id": 1418478,
+     "x": 737,
+     "y": 5.3
+    },
+    {
+     "index": 7,
+     "label": "One Spoon of Chocolate",
+     "id": 1290792,
+     "x": 1558,
+     "y": 5.3
+    },
+    {
+     "index": 8,
+     "label": "L'Homme aux poings de fer",
+     "id": 97430,
+     "x": 65989,
+     "y": 5.4
+    },
+    {
+     "index": 9,
+     "label": "Hostel, chapitre II",
+     "id": 1691,
+     "x": 103732,
+     "y": 5.5
+    },
+    {
+     "index": 10,
+     "label": "Diary of the Dead : Chroniques des morts-vivants",
+     "id": 13025,
+     "x": 51607,
+     "y": 5.5
+    },
+    {
+     "index": 11,
+     "label": "Coupable",
+     "id": 66566,
+     "x": 1749,
+     "y": 5.6
+    },
+    {
+     "index": 12,
+     "label": "Hostel",
+     "id": 1690,
+     "x": 207670,
+     "y": 5.9
+    },
+    {
+     "index": 13,
+     "label": "Sang-froid",
+     "id": 12241,
+     "x": 5855,
+     "y": 5.9
+    },
+    {
+     "index": 14,
+     "label": "Sukiyaki Western Django",
+     "id": 13637,
+     "x": 16424,
+     "y": 6.1
+    },
+    {
+     "index": 15,
+     "label": "The Projectionist",
+     "id": 1598142,
+     "x": 26,
+     "y": 6.1
+    },
+    {
+     "index": 16,
+     "label": "Thanksgiving : La Semaine de l'horreur",
+     "id": 1071215,
+     "x": 83975,
+     "y": 6.2
+    },
+    {
+     "index": 17,
+     "label": "Reservoir Dogs",
+     "id": 443129,
+     "x": 1318,
+     "y": 6.3
+    },
+    {
+     "index": 18,
+     "label": "Killing Zoe",
+     "id": 507,
+     "x": 22584,
+     "y": 6.4
+    },
+    {
+     "index": 19,
+     "label": "Dolph Lundgren: Maximum Potential",
+     "id": 413422,
+     "x": 198,
+     "y": 6.5
+    },
+    {
+     "index": 20,
+     "label": "21 Years: Richard Linklater",
+     "id": 290304,
+     "x": 822,
+     "y": 6.5
+    },
+    {
+     "index": 21,
+     "label": "Thriller—A Cruel Documentary",
+     "id": 986277,
+     "x": 59,
+     "y": 6.5
+    },
+    {
+     "index": 22,
+     "label": "The Legend Still Lives: 30 Years of Madman",
+     "id": 224562,
+     "x": 61,
+     "y": 6.5
+    },
+    {
+     "index": 23,
+     "label": "कांटे",
+     "id": 35907,
+     "x": 5863,
+     "y": 6.6
+    },
+    {
+     "index": 24,
+     "label": "Groom Service",
+     "id": 5,
+     "x": 118026,
+     "y": 6.7
+    },
+    {
+     "index": 25,
+     "label": "Red Princess Blues Animated: The Book of Violence",
+     "id": 1654995,
+     "x": 39,
+     "y": 6.7
+    },
+    {
+     "index": 26,
+     "label": "Jackie Chan: My Story",
+     "id": 46122,
+     "x": 867,
+     "y": 6.8
+    },
+    {
+     "index": 27,
+     "label": "Strutter",
+     "id": 281702,
+     "x": 119,
+     "y": 6.9
+    },
+    {
+     "index": 28,
+     "label": "Boulevard de la mort",
+     "id": 1991,
+     "x": 338206,
+     "y": 7
+    },
+    {
+     "index": 29,
+     "label": "Planète terreur",
+     "id": 1992,
+     "x": 235457,
+     "y": 7
+    },
+    {
+     "index": 30,
+     "label": "L'Honneur du Dragon",
+     "id": 8982,
+     "x": 40705,
+     "y": 7
+    },
+    {
+     "index": 31,
+     "label": "La Fierté de la nation",
+     "id": 28447,
+     "x": 1492,
+     "y": 7.1
+    },
+    {
+     "index": 32,
+     "label": "Tueurs nés",
+     "id": 241,
+     "x": 271067,
+     "y": 7.2
+    },
+    {
+     "index": 33,
+     "label": "Une Nuit en enfer",
+     "id": 755,
+     "x": 377769,
+     "y": 7.2
+    },
+    {
+     "index": 34,
+     "label": "God Said, 'Ha!'",
+     "id": 82865,
+     "x": 1073,
+     "y": 7.2
+    },
+    {
+     "index": 35,
+     "label": "Grindhouse",
+     "id": 285923,
+     "x": 198269,
+     "y": 7.5
+    },
+    {
+     "index": 36,
+     "label": "Freedom's Fury",
+     "id": 171168,
+     "x": 777,
+     "y": 7.5
+    },
+    {
+     "index": 37,
+     "label": "Jackie Brown",
+     "id": 184,
+     "x": 409928,
+     "y": 7.5
+    },
+    {
+     "index": 38,
+     "label": "Scott Pilgrim",
+     "id": 22538,
+     "x": 502864,
+     "y": 7.5
+    },
+    {
+     "index": 39,
+     "label": "Baby Driver",
+     "id": 339403,
+     "x": 699501,
+     "y": 7.5
+    },
+    {
+     "index": 40,
+     "label": "Once Upon a Time in… Hollywood",
+     "id": 466272,
+     "x": 986074,
+     "y": 7.6
+    },
+    {
+     "index": 41,
+     "label": "Malária",
+     "id": 185896,
+     "x": 438,
+     "y": 7.7
+    },
+    {
+     "index": 42,
+     "label": "Les Huit Salopards",
+     "id": 273248,
+     "x": 735048,
+     "y": 7.8
+    },
+    {
+     "index": 43,
+     "label": "True Romance",
+     "id": 319,
+     "x": 265915,
+     "y": 7.9
+    },
+    {
+     "index": 44,
+     "label": "Hero",
+     "id": 79,
+     "x": 195908,
+     "y": 7.9
+    },
+    {
+     "index": 45,
+     "label": "Kill Bill : Volume 2",
+     "id": 393,
+     "x": 884641,
+     "y": 8
+    },
+    {
+     "index": 46,
+     "label": "Sin City",
+     "id": 187,
+     "x": 825646,
+     "y": 8
+    },
+    {
+     "index": 47,
+     "label": "Iconoclasts: Quentin Tarantino & Fiona Apple",
+     "id": 1699255,
+     "x": 67,
+     "y": 8
+    },
+    {
+     "index": 48,
+     "label": "Kill Bill : Volume 1",
+     "id": 24,
+     "x": 1332210,
+     "y": 8.2
+    },
+    {
+     "index": 49,
+     "label": "Reservoir Dogs",
+     "id": 500,
+     "x": 1187079,
+     "y": 8.2
+    }
+   ],
+   "count": 50,
+   "plotted": 50,
+   "left_out": 0,
+   "missing": {
+    "x": 0,
+    "y": 0
+   },
+   "extremes": {
+    "x_min": 15,
+    "x_max": 48,
+    "y_min": 0,
+    "y_max": 48
+   }
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "votes",
+   "rating"
+  ],
+  "focus_columns": [
+   "IMDB_RATING",
+   "IMDB_RATING_WEIGHTED",
+   "IMDB_VOTES"
+  ],
+  "requested_view": "scatter",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_MOVIE": 12095,
+    "MOVIE_TITLE": "Une Nuit en enfer 2 : Le Prix du sang",
+    "DAT_RELEASE": "1999-03-16",
+    "IMDB_RATING": 4.2,
+    "IMDB_RATING_WEIGHTED": 5.65,
+    "IMDB_VOTES": 18996,
+    "POSTER_PATH": "/iJ7DhYeQ2uS2w3TS8E0lJiCp8nM.jpg",
+    "RUNTIME": 88
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_MOVIE": 20013,
+    "MOVIE_TITLE": "My Name Is Modesty: A Modesty Blaise Adventure",
+    "DAT_RELEASE": "2004-09-28",
+    "IMDB_RATING": 4.6,
+    "IMDB_RATING_WEIGHTED": 6.69,
+    "IMDB_VOTES": 2762,
+    "POSTER_PATH": "/ilxam9YScUhgDQz5RNFwUHNioz9.jpg",
+    "RUNTIME": 78
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_MOVIE": 10213,
+    "MOVIE_TITLE": "Une nuit en enfer 3 : La Fille du bourreau",
+    "DAT_RELEASE": "2000-01-18",
+    "IMDB_RATING": 4.8,
+    "IMDB_RATING_WEIGHTED": 6.11,
+    "IMDB_VOTES": 13719,
+    "POSTER_PATH": "/pxSxmQ8JW4XENm2UZPClRRqWVxb.jpg",
+    "RUNTIME": 94
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_MOVIE": 13300,
+    "MOVIE_TITLE": "Hell Ride",
+    "DAT_RELEASE": "2008-08-08",
+    "IMDB_RATING": 5.0,
+    "IMDB_RATING_WEIGHTED": 6.09,
+    "IMDB_VOTES": 16964,
+    "POSTER_PATH": "/rZcKg8Zai9J4vFq1fAbbtGOOqix.jpg",
+    "RUNTIME": 84
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_MOVIE": 20668,
+    "MOVIE_TITLE": "Daltry Calhoun",
+    "DAT_RELEASE": "2005-09-25",
+    "IMDB_RATING": 5.1,
+    "IMDB_RATING_WEIGHTED": 6.77,
+    "IMDB_VOTES": 2514,
+    "POSTER_PATH": "/rXJStu8CAPpgPD3waTdCDlXDqlR.jpg",
+    "RUNTIME": 100
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_MOVIE": 1588237,
+    "MOVIE_TITLE": "Chapitre perdu : La vengeance de Yuki",
+    "DAT_RELEASE": "2025-12-05",
+    "IMDB_RATING": 5.1,
+    "IMDB_RATING_WEIGHTED": 6.77,
+    "IMDB_VOTES": 2494,
+    "POSTER_PATH": "/x14YpgJ9Z77vufopLaPGDFSftcM.jpg",
+    "RUNTIME": 10
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_MOVIE": 1418478,
+    "MOVIE_TITLE": "Dance Me to the End of Love",
+    "DAT_RELEASE": "1995-10-07",
+    "IMDB_RATING": 5.3,
+    "IMDB_RATING_WEIGHTED": 6.91,
+    "IMDB_VOTES": 737,
+    "POSTER_PATH": null,
+    "RUNTIME": 6
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_MOVIE": 1290792,
+    "MOVIE_TITLE": "One Spoon of Chocolate",
+    "DAT_RELEASE": "2026-05-01",
+    "IMDB_RATING": 5.3,
+    "IMDB_RATING_WEIGHTED": 6.86,
+    "IMDB_VOTES": 1558,
+    "POSTER_PATH": "/ybO8oLgpXRhaPmHI6C2FUpxSRrK.jpg",
+    "RUNTIME": 114
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_MOVIE": 97430,
+    "MOVIE_TITLE": "L'Homme aux poings de fer",
+    "DAT_RELEASE": "2012-11-02",
+    "IMDB_RATING": 5.4,
+    "IMDB_RATING_WEIGHTED": 5.78,
+    "IMDB_VOTES": 65989,
+    "POSTER_PATH": "/i2WMvVXNcUtaHuQRN4ZtIROSOv9.jpg",
+    "RUNTIME": 96
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_MOVIE": 1691,
+    "MOVIE_TITLE": "Hostel, chapitre II",
+    "DAT_RELEASE": "2007-06-07",
+    "IMDB_RATING": 5.5,
+    "IMDB_RATING_WEIGHTED": 5.75,
+    "IMDB_VOTES": 103732,
+    "POSTER_PATH": "/yGdrOQug5zWQw7aqTp0yXcqgrGG.jpg",
+    "RUNTIME": 93
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_MOVIE": 13025,
+    "MOVIE_TITLE": "Diary of the Dead : Chroniques des morts-vivants",
+    "DAT_RELEASE": "2007-05-26",
+    "IMDB_RATING": 5.5,
+    "IMDB_RATING_WEIGHTED": 5.92,
+    "IMDB_VOTES": 51607,
+    "POSTER_PATH": "/rH0ngoSEr0XAItBk3A8NKNjiMFW.jpg",
+    "RUNTIME": 96
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_MOVIE": 66566,
+    "MOVIE_TITLE": "Coupable",
+    "DAT_RELEASE": "1992-05-03",
+    "IMDB_RATING": 5.6,
+    "IMDB_RATING_WEIGHTED": 6.87,
+    "IMDB_VOTES": 1749,
+    "POSTER_PATH": "/8sMb6VIWs253IZ0X56vC6v7FjnB.jpg",
+    "RUNTIME": 100
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_MOVIE": 1690,
+    "MOVIE_TITLE": "Hostel",
+    "DAT_RELEASE": "2006-01-06",
+    "IMDB_RATING": 5.9,
+    "IMDB_RATING_WEIGHTED": 6.0,
+    "IMDB_VOTES": 207670,
+    "POSTER_PATH": "/pbQac6oD2RtHVNrVD9QaY1QgRQk.jpg",
+    "RUNTIME": 94
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "ID_MOVIE": 12241,
+    "MOVIE_TITLE": "Sang-froid",
+    "DAT_RELEASE": "1996-09-06",
+    "IMDB_RATING": 5.9,
+    "IMDB_RATING_WEIGHTED": 6.74,
+    "IMDB_VOTES": 5855,
+    "POSTER_PATH": "/6MrD1ufb3mim2Lhpj7VcEZHPCeI.jpg",
+    "RUNTIME": 88
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "ID_MOVIE": 13637,
+    "MOVIE_TITLE": "Sukiyaki Western Django",
+    "DAT_RELEASE": "2007-09-15",
+    "IMDB_RATING": 6.1,
+    "IMDB_RATING_WEIGHTED": 6.59,
+    "IMDB_VOTES": 16424,
+    "POSTER_PATH": "/gtljev4ebVOkESUoze0b14IFg1Q.jpg",
+    "RUNTIME": 121
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "ID_MOVIE": 1598142,
+    "MOVIE_TITLE": "The Projectionist",
+    "DAT_RELEASE": "2026-02-19",
+    "IMDB_RATING": 6.1,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 26,
+    "POSTER_PATH": "/hbqKnBBRWa5hYfi42Ma2uMDWeJp.jpg",
+    "RUNTIME": 94
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "ID_MOVIE": 1071215,
+    "MOVIE_TITLE": "Thanksgiving : La Semaine de l'horreur",
+    "DAT_RELEASE": "2023-11-16",
+    "IMDB_RATING": 6.2,
+    "IMDB_RATING_WEIGHTED": 6.35,
+    "IMDB_VOTES": 83975,
+    "POSTER_PATH": "/rH9uuXHAHsm6NdVzZPlhSReguLa.jpg",
+    "RUNTIME": 106
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "ID_MOVIE": 443129,
+    "MOVIE_TITLE": "Reservoir Dogs",
+    "DAT_RELEASE": "1991-06-01",
+    "IMDB_RATING": 6.3,
+    "IMDB_RATING_WEIGHTED": 6.93,
+    "IMDB_VOTES": 1318,
+    "POSTER_PATH": "/oiPx0edR4IoT97KOHDJx4n1dk5U.jpg",
+    "RUNTIME": 12
+   }
+  },
+  {
+   "index": 18,
+   "data": {
+    "ID_MOVIE": 507,
+    "MOVIE_TITLE": "Killing Zoe",
+    "DAT_RELEASE": "1993-10-01",
+    "IMDB_RATING": 6.4,
+    "IMDB_RATING_WEIGHTED": 6.67,
+    "IMDB_VOTES": 22584,
+    "POSTER_PATH": "/zPmQiUU1OnqX06OTVYEsXgeEzgE.jpg",
+    "RUNTIME": 96
+   }
+  },
+  {
+   "index": 19,
+   "data": {
+    "ID_MOVIE": 413422,
+    "MOVIE_TITLE": "Dolph Lundgren: Maximum Potential",
+    "DAT_RELEASE": "1987-10-08",
+    "IMDB_RATING": 6.5,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 198,
+    "POSTER_PATH": "/5X9LnXguGS0HEhqSqnnbjTxdz53.jpg",
+    "RUNTIME": 52
+   }
+  },
+  {
+   "index": 20,
+   "data": {
+    "ID_MOVIE": 290304,
+    "MOVIE_TITLE": "21 Years: Richard Linklater",
+    "DAT_RELEASE": "2014-11-07",
+    "IMDB_RATING": 6.5,
+    "IMDB_RATING_WEIGHTED": 6.95,
+    "IMDB_VOTES": 822,
+    "POSTER_PATH": "/hlgWdZlnQcA6cpYwdGvFdIHsCaV.jpg",
+    "RUNTIME": 79
+   }
+  },
+  {
+   "index": 21,
+   "data": {
+    "ID_MOVIE": 986277,
+    "MOVIE_TITLE": "Thriller—A Cruel Documentary",
+    "DAT_RELEASE": "2022-05-31",
+    "IMDB_RATING": 6.5,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 59,
+    "POSTER_PATH": "/3sgdyXICFFFxYweG8L20sUhg78v.jpg",
+    "RUNTIME": 43
+   }
+  },
+  {
+   "index": 22,
+   "data": {
+    "ID_MOVIE": 224562,
+    "MOVIE_TITLE": "The Legend Still Lives: 30 Years of Madman",
+    "DAT_RELEASE": "2010-09-28",
+    "IMDB_RATING": 6.5,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 61,
+    "POSTER_PATH": "/eVl7NR2okxw6N9bpL16qFrHW2OG.jpg",
+    "RUNTIME": 90
+   }
+  },
+  {
+   "index": 23,
+   "data": {
+    "ID_MOVIE": 35907,
+    "MOVIE_TITLE": "कांटे",
+    "DAT_RELEASE": "2002-12-20",
+    "IMDB_RATING": 6.6,
+    "IMDB_RATING_WEIGHTED": 6.89,
+    "IMDB_VOTES": 5863,
+    "POSTER_PATH": "/ekNwKxMMXy5pWauS9FqnuzhXAE9.jpg",
+    "RUNTIME": 152
+   }
+  },
+  {
+   "index": 24,
+   "data": {
+    "ID_MOVIE": 5,
+    "MOVIE_TITLE": "Groom Service",
+    "DAT_RELEASE": "1995-12-09",
+    "IMDB_RATING": 6.7,
+    "IMDB_RATING_WEIGHTED": 6.74,
+    "IMDB_VOTES": 118026,
+    "POSTER_PATH": "/7bVVy3fmB4FtyV0z47DGrX5hp3L.jpg",
+    "RUNTIME": 98
+   }
+  },
+  {
+   "index": 25,
+   "data": {
+    "ID_MOVIE": 1654995,
+    "MOVIE_TITLE": "Red Princess Blues Animated: The Book of Violence",
+    "DAT_RELEASE": "2007-11-30",
+    "IMDB_RATING": 6.7,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 39,
+    "POSTER_PATH": "/7G3dOMh81YPh1tZq8nFcP363VDt.jpg",
+    "RUNTIME": 7
+   }
+  },
+  {
+   "index": 26,
+   "data": {
+    "ID_MOVIE": 46122,
+    "MOVIE_TITLE": "Jackie Chan: My Story",
+    "DAT_RELEASE": "1998-07-17",
+    "IMDB_RATING": 6.8,
+    "IMDB_RATING_WEIGHTED": 6.96,
+    "IMDB_VOTES": 867,
+    "POSTER_PATH": "/kd9r96mqiZCAHQ96EyzFiS20Zux.jpg",
+    "RUNTIME": 75
+   }
+  },
+  {
+   "index": 27,
+   "data": {
+    "ID_MOVIE": 281702,
+    "MOVIE_TITLE": "Strutter",
+    "DAT_RELEASE": "2013-04-15",
+    "IMDB_RATING": 6.9,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 119,
+    "POSTER_PATH": "/99mX9L1dYI18Wr5nFQZd7UMXsTx.jpg",
+    "RUNTIME": 87
+   }
+  },
+  {
+   "index": 28,
+   "data": {
+    "ID_MOVIE": 1991,
+    "MOVIE_TITLE": "Boulevard de la mort",
+    "DAT_RELEASE": "2007-05-22",
+    "IMDB_RATING": 7.0,
+    "IMDB_RATING_WEIGHTED": 7.0,
+    "IMDB_VOTES": 338206,
+    "POSTER_PATH": "/1cajesADv9jGJAMqC2peAnxh5ar.jpg",
+    "RUNTIME": 113
+   }
+  },
+  {
+   "index": 29,
+   "data": {
+    "ID_MOVIE": 1992,
+    "MOVIE_TITLE": "Planète terreur",
+    "DAT_RELEASE": "2007-04-06",
+    "IMDB_RATING": 7.0,
+    "IMDB_RATING_WEIGHTED": 7.0,
+    "IMDB_VOTES": 235457,
+    "POSTER_PATH": "/rz1vDIbiCrsf3nIy4T8fYWl9xLm.jpg",
+    "RUNTIME": 105
+   }
+  },
+  {
+   "index": 30,
+   "data": {
+    "ID_MOVIE": 8982,
+    "MOVIE_TITLE": "L'Honneur du Dragon",
+    "DAT_RELEASE": "2005-08-11",
+    "IMDB_RATING": 7.0,
+    "IMDB_RATING_WEIGHTED": 6.99,
+    "IMDB_VOTES": 40705,
+    "POSTER_PATH": "/fcVFC02Q0mQ31Dq0LZVAm9yflWP.jpg",
+    "RUNTIME": 105
+   }
+  },
+  {
+   "index": 31,
+   "data": {
+    "ID_MOVIE": 28447,
+    "MOVIE_TITLE": "La Fierté de la nation",
+    "DAT_RELEASE": "2009-08-21",
+    "IMDB_RATING": 7.1,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 1492,
+    "POSTER_PATH": "/iPatk3OM3bZk69jvTEB9JoC10b1.jpg",
+    "RUNTIME": 7
+   }
+  },
+  {
+   "index": 32,
+   "data": {
+    "ID_MOVIE": 241,
+    "MOVIE_TITLE": "Tueurs nés",
+    "DAT_RELEASE": "1994-08-26",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 7.18,
+    "IMDB_VOTES": 271067,
+    "POSTER_PATH": "/bOghi9waIRWv2NZNI3wzbaiN2M4.jpg",
+    "RUNTIME": 119
+   }
+  },
+  {
+   "index": 33,
+   "data": {
+    "ID_MOVIE": 755,
+    "MOVIE_TITLE": "Une Nuit en enfer",
+    "DAT_RELEASE": "1996-01-19",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 7.19,
+    "IMDB_VOTES": 377769,
+    "POSTER_PATH": "/1Yr1gZHvrijIM7cNhI0QFA3VkRZ.jpg",
+    "RUNTIME": 108
+   }
+  },
+  {
+   "index": 34,
+   "data": {
+    "ID_MOVIE": 82865,
+    "MOVIE_TITLE": "God Said, 'Ha!'",
+    "DAT_RELEASE": "1998-05-14",
+    "IMDB_RATING": 7.2,
+    "IMDB_RATING_WEIGHTED": 6.98,
+    "IMDB_VOTES": 1073,
+    "POSTER_PATH": "/urlVr0D7fCEVK4RU0BiMs7PB5eF.jpg",
+    "RUNTIME": 85
+   }
+  },
+  {
+   "index": 35,
+   "data": {
+    "ID_MOVIE": 285923,
+    "MOVIE_TITLE": "Grindhouse",
+    "DAT_RELEASE": "2007-04-06",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.45,
+    "IMDB_VOTES": 198269,
+    "POSTER_PATH": "/27VqpSq8Go7j2uYp9wqAF3VPhQ9.jpg",
+    "RUNTIME": 191
+   }
+  },
+  {
+   "index": 36,
+   "data": {
+    "ID_MOVIE": 171168,
+    "MOVIE_TITLE": "Freedom's Fury",
+    "DAT_RELEASE": "2006-09-07",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 6.99,
+    "IMDB_VOTES": 777,
+    "POSTER_PATH": "/25yAGdXD6z4WQeGJbHD8OJ7pLGJ.jpg",
+    "RUNTIME": 90
+   }
+  },
+  {
+   "index": 37,
+   "data": {
+    "ID_MOVIE": 184,
+    "MOVIE_TITLE": "Jackie Brown",
+    "DAT_RELEASE": "1997-12-25",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.47,
+    "IMDB_VOTES": 409928,
+    "POSTER_PATH": "/mc8lNVgDYMG2IQus5RmdcgvwOKx.jpg",
+    "RUNTIME": 154
+   }
+  },
+  {
+   "index": 38,
+   "data": {
+    "ID_MOVIE": 22538,
+    "MOVIE_TITLE": "Scott Pilgrim",
+    "DAT_RELEASE": "2010-08-12",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.48,
+    "IMDB_VOTES": 502864,
+    "POSTER_PATH": "/vl468tJnNgWOmgvsmips784iPKb.jpg",
+    "RUNTIME": 113
+   }
+  },
+  {
+   "index": 39,
+   "data": {
+    "ID_MOVIE": 339403,
+    "MOVIE_TITLE": "Baby Driver",
+    "DAT_RELEASE": "2017-06-28",
+    "IMDB_RATING": 7.5,
+    "IMDB_RATING_WEIGHTED": 7.48,
+    "IMDB_VOTES": 699501,
+    "POSTER_PATH": "/b4tSty4svWbqH1tGM1WR1eIsz6s.jpg",
+    "RUNTIME": 113
+   }
+  },
+  {
+   "index": 40,
+   "data": {
+    "ID_MOVIE": 466272,
+    "MOVIE_TITLE": "Once Upon a Time in… Hollywood",
+    "DAT_RELEASE": "2019-07-24",
+    "IMDB_RATING": 7.6,
+    "IMDB_RATING_WEIGHTED": 7.59,
+    "IMDB_VOTES": 986074,
+    "POSTER_PATH": "/gG5J1KW2Gzj0Sz7al1mGkhXLSoB.jpg",
+    "RUNTIME": 162
+   }
+  },
+  {
+   "index": 41,
+   "data": {
+    "ID_MOVIE": 185896,
+    "MOVIE_TITLE": "Malária",
+    "DAT_RELEASE": "2013-01-10",
+    "IMDB_RATING": 7.7,
+    "IMDB_RATING_WEIGHTED": 6.99,
+    "IMDB_VOTES": 438,
+    "POSTER_PATH": "/5O8XNk89gTnLz6NRwJVontpc3va.jpg",
+    "RUNTIME": 6
+   }
+  },
+  {
+   "index": 42,
+   "data": {
+    "ID_MOVIE": 273248,
+    "MOVIE_TITLE": "Les Huit Salopards",
+    "DAT_RELEASE": "2015-12-25",
+    "IMDB_RATING": 7.8,
+    "IMDB_RATING_WEIGHTED": 7.78,
+    "IMDB_VOTES": 735048,
+    "POSTER_PATH": "/kV6ogsiIYzV2qZ43bLuDKuEAIR.jpg",
+    "RUNTIME": 188
+   }
+  },
+  {
+   "index": 43,
+   "data": {
+    "ID_MOVIE": 319,
+    "MOVIE_TITLE": "True Romance",
+    "DAT_RELEASE": "1993-09-09",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.83,
+    "IMDB_VOTES": 265915,
+    "POSTER_PATH": "/e5B8YvuUrFTtaBOcPbFGBqTgWsx.jpg",
+    "RUNTIME": 119
+   }
+  },
+  {
+   "index": 44,
+   "data": {
+    "ID_MOVIE": 79,
+    "MOVIE_TITLE": "Hero",
+    "DAT_RELEASE": "2002-12-19",
+    "IMDB_RATING": 7.9,
+    "IMDB_RATING_WEIGHTED": 7.81,
+    "IMDB_VOTES": 195908,
+    "POSTER_PATH": "/rFwyoTYDXRnTRVcmujjqXNkZatt.jpg",
+    "RUNTIME": 99
+   }
+  },
+  {
+   "index": 45,
+   "data": {
+    "ID_MOVIE": 393,
+    "MOVIE_TITLE": "Kill Bill : Volume 2",
+    "DAT_RELEASE": "2004-04-16",
+    "IMDB_RATING": 8.0,
+    "IMDB_RATING_WEIGHTED": 7.98,
+    "IMDB_VOTES": 884641,
+    "POSTER_PATH": "/eM4QI7TVtl4Vc0CtVttmBR9UbLB.jpg",
+    "RUNTIME": 136
+   }
+  },
+  {
+   "index": 46,
+   "data": {
+    "ID_MOVIE": 187,
+    "MOVIE_TITLE": "Sin City",
+    "DAT_RELEASE": "2005-04-01",
+    "IMDB_RATING": 8.0,
+    "IMDB_RATING_WEIGHTED": 7.97,
+    "IMDB_VOTES": 825646,
+    "POSTER_PATH": "/rrS6R9Reqiev2BbyYWpGiZUpslk.jpg",
+    "RUNTIME": 124
+   }
+  },
+  {
+   "index": 47,
+   "data": {
+    "ID_MOVIE": 1699255,
+    "MOVIE_TITLE": "Iconoclasts: Quentin Tarantino & Fiona Apple",
+    "DAT_RELEASE": null,
+    "IMDB_RATING": 8.0,
+    "IMDB_RATING_WEIGHTED": 6.97,
+    "IMDB_VOTES": 67,
+    "POSTER_PATH": "/5BPzaXw9X27yYyCPNMqjdlzFc1q.jpg",
+    "RUNTIME": 0
+   }
+  },
+  {
+   "index": 48,
+   "data": {
+    "ID_MOVIE": 24,
+    "MOVIE_TITLE": "Kill Bill : Volume 1",
+    "DAT_RELEASE": "2003-10-10",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 8.18,
+    "IMDB_VOTES": 1332210,
+    "POSTER_PATH": "/mt4e0L5prfCzHhpxmxt5pvfHI0p.jpg",
+    "RUNTIME": 111
+   }
+  },
+  {
+   "index": 49,
+   "data": {
+    "ID_MOVIE": 500,
+    "MOVIE_TITLE": "Reservoir Dogs",
+    "DAT_RELEASE": "1992-09-02",
+    "IMDB_RATING": 8.2,
+    "IMDB_RATING_WEIGHTED": 8.18,
+    "IMDB_VOTES": 1187079,
+    "POSTER_PATH": "/b62t5xsAMGZ2LOLbD0l85xQE3tr.jpg",
+    "RUNTIME": 99
+   }
+  }
+ ]
+}
