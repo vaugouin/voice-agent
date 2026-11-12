@@ -1955,6 +1955,9 @@ RECOVERY_INSTRUCTIONS = (
     "reporting an empty result or asking the user a clarifying question. Recovery is "
     "always grounded — re-query the database; never answer from your own knowledge and "
     "never fabricate a result. "
+    "Exception: if reason is verdict, the user asked a yes/no question and the result IS the "
+    "answer, even with zero rows: answer with diagnostic.verdict (an empty result means No), "
+    "and never re-query, reformulate, or turn it into a list question. "
     "If reason is empty_result, the query was probably over-constrained or matched the "
     "wrong entity: re-query with the offending condition relaxed (for example drop a "
     "filter the user did not explicitly ask for) OR with a corrected, broader reading of "
@@ -3179,7 +3182,14 @@ def _text2sql_diagnostic(upstream_body: Any) -> dict[str, Any]:
     the signal so the model can pick a recovery strategy instead of guessing.
 
     ``reason`` is one of: ``ok`` | ``transient`` | ``no_sql`` | ``sql_error`` |
-    ``entity_unresolved`` | ``ambiguous`` | ``empty_result`` | ``unknown``.
+    ``entity_unresolved`` | ``verdict`` | ``ambiguous`` | ``empty_result`` | ``unknown``.
+
+    ``verdict``: the API answered a yes/no question (representation ``verdict``, with
+    ``summary_facts.verdict`` yes or no). An empty result is then the answer "no", not a
+    failure, and ``diagnostic.verdict`` carries it so the model never treats it as one to
+    recover from. 2026-11-12: "Did Steven Spielberg direct Poltergeist?" got verdict No from
+    the API, then the recovery rule re-asked "Who directed Poltergeist?" twice and the screen
+    showed a director list where the text client showed No.
     """
     if not isinstance(upstream_body, dict):
         return {"reason": "unknown", "retryable": False, "unresolved_entities": []}
@@ -3189,11 +3199,19 @@ def _text2sql_diagnostic(upstream_body: Any) -> dict[str, Any]:
     sql_query = str(upstream_body.get("sql_query") or "")
     unresolved = _text2sql_unresolved_entities(sql_query, upstream_body.get("entity_extraction"))
     result_count = len(upstream_body.get("result") or [])
+    summary_facts = upstream_body.get("summary_facts")
+    verdict = ""
+    if upstream_body.get("representation") == "verdict" and isinstance(summary_facts, dict):
+        verdict = str(summary_facts.get("verdict") or "").lower()
+        if verdict not in ("yes", "no"):
+            verdict = ""
 
     if error_text:
         reason = "transient" if retryable else ("sql_error" if sql_query else "no_sql")
     elif unresolved:
         reason = "entity_unresolved"
+    elif verdict:
+        reason = "verdict"
     elif upstream_body.get("ambiguous_question_for_text2sql"):
         reason = "ambiguous"
     elif result_count == 0:
@@ -3206,6 +3224,8 @@ def _text2sql_diagnostic(upstream_body: Any) -> dict[str, Any]:
         "retryable": retryable,
         "unresolved_entities": unresolved,
     }
+    if reason == "verdict":
+        diagnostic["verdict"] = verdict
     error_code = upstream_body.get("error_code")
     if error_code:
         diagnostic["error_code"] = str(error_code)
