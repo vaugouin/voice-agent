@@ -3194,6 +3194,10 @@ function renderText2SqlRepresentation(rep, container, rows, upstream) {
   if (rep === "scatter") {
     return renderScatter(container, rows, columns, upstream);
   }
+  // Phase 3 lot B (FASTAPI-TEXT2SQL, 2026-11-12): the map of countries.
+  if (rep === "map") {
+    return renderMap(container, rows, columns, upstream);
+  }
   // number-card | stat-strip: the scalar family, one card per metric column.
   return renderScalarCards(container, rows, columns);
 }
@@ -4014,6 +4018,181 @@ function renderFlagList(container, rows, columns, upstream) {
   container.append(list);
 }
 
+// Phase 3 lot B, `map`: the countries of summary_facts.countries shaded on a world outline, no
+// map library, no tile and no third-party request. The outline is static/world-110m.json
+// (Natural Earth 1:110m from world-atlas 2.0.2, projected once in Equal Earth by
+// tools/build-world-map.py; the same file as t2s-front), loaded on the first map and kept. The
+// model (text2SqlMapModel(), pure, pinned by the check) says which country takes which shade;
+// the drawing here is one SVG for the land and the shaded countries, the small countries as HTML
+// dots laid over it by percentage (so a dot keeps its size at any width), a line under the map
+// for the country under the finger or the pointer, the legend, the countries the map has no
+// place for, and a visually hidden table. Without the outline (a failed load) the flag list.
+let t2sWorldMap = null;
+let t2sWorldMapPromise = null;
+function loadText2SqlWorldMap() {
+  if (t2sWorldMap) {
+    return Promise.resolve(t2sWorldMap);
+  }
+  if (!t2sWorldMapPromise) {
+    // The URL of app.js carries the cache key (?v=VERSION): the outline takes the same one.
+    const script = document.querySelector('script[src*="app.js"]');
+    const base = script ? script.src : window.location.href;
+    const url = new URL("world-110m.json", base);
+    url.search = new URL(base).search;
+    t2sWorldMapPromise = fetch(url.toString())
+      .then((response) => (response.ok ? response.json() : Promise.reject(new Error(`HTTP ${response.status}`))))
+      .then((world) => {
+        t2sWorldMap = world;
+        return world;
+      })
+      .catch((error) => {
+        t2sWorldMapPromise = null;
+        throw error;
+      });
+  }
+  return t2sWorldMapPromise;
+}
+
+const T2S_SVG_NS = "http://www.w3.org/2000/svg";
+
+function renderMap(container, rows, columns, upstream) {
+  const root = document.createElement("div");
+  root.className = "t2sMap";
+  container.append(root);
+  const fr = t2sLang(activeUiLanguage) === "fr";
+  const draw = (world) => {
+    root.replaceChildren();
+    const model = world ? text2SqlMapModel(upstream, activeUiLanguage, world) : null;
+    if (!model) {
+      renderFlagList(root, rows, columns, upstream);
+      return;
+    }
+    const frame = document.createElement("div");
+    frame.className = "t2sMapFrame";
+    const svg = document.createElementNS(T2S_SVG_NS, "svg");
+    svg.setAttribute("viewBox", `0 0 ${model.width} ${model.height}`);
+    svg.setAttribute("class", "t2sMapSvg");
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", fr ? "Carte du monde" : "World map");
+    const land = document.createElementNS(T2S_SVG_NS, "path");
+    land.setAttribute("class", "t2sMapLand");
+    land.setAttribute("d", model.land);
+    svg.append(land);
+    const tip = document.createElement("p");
+    tip.className = "t2sMapTip";
+    tip.setAttribute("aria-live", "polite");
+    tip.textContent = model.hint;
+    let selected = null;
+    const show = (country, marks) => {
+      tip.textContent = country.label;
+      if (selected) {
+        selected.forEach((mark) => mark.classList.remove("isSelected"));
+      }
+      selected = marks;
+      marks.forEach((mark) => mark.classList.add("isSelected"));
+    };
+    const dots = [];
+    model.countries.forEach((country) => {
+      const marks = [];
+      const tone = country.tone === null ? "t2sMapOn" : `t2sMapTone${country.tone}`;
+      if (country.shape) {
+        const path = document.createElementNS(T2S_SVG_NS, "path");
+        path.setAttribute("class", `t2sMapCountry ${tone}`);
+        path.setAttribute("d", country.shape);
+        path.setAttribute("tabindex", "0");
+        path.setAttribute("aria-label", country.label);
+        const title = document.createElementNS(T2S_SVG_NS, "title");
+        title.textContent = country.label;
+        path.append(title);
+        svg.append(path);
+        marks.push(path);
+      }
+      if (country.dot) {
+        const dot = document.createElement("button");
+        dot.type = "button";
+        dot.className = `t2sMapDot ${tone}`;
+        dot.style.left = `${country.dot.left}%`;
+        dot.style.top = `${country.dot.top}%`;
+        dot.title = country.label;
+        dot.setAttribute("aria-label", country.label);
+        dots.push(dot);
+        marks.push(dot);
+      }
+      marks.forEach((mark) => {
+        mark.addEventListener("pointerenter", () => show(country, marks));
+        mark.addEventListener("focus", () => show(country, marks));
+        mark.addEventListener("click", () => show(country, marks));
+      });
+    });
+    frame.append(svg, ...dots);
+    root.append(frame, tip);
+    if (model.legend.length) {
+      const legend = document.createElement("div");
+      legend.className = "t2sMapLegend";
+      const name = document.createElement("span");
+      name.className = "t2sMapLegendTitle";
+      name.textContent = model.legendTitle;
+      legend.append(name);
+      model.legend.forEach((step) => {
+        const item = document.createElement("span");
+        item.className = "t2sMapLegendItem";
+        const swatch = document.createElement("span");
+        swatch.className = `t2sMapSwatch t2sMapTone${step.tone}`;
+        swatch.setAttribute("aria-hidden", "true");
+        const text = document.createElement("span");
+        text.textContent = step.text;
+        item.append(swatch, text);
+        legend.append(item);
+      });
+      root.append(legend);
+    }
+    if (model.offText) {
+      const off = document.createElement("p");
+      off.className = "t2sMapOff";
+      off.textContent = model.offText;
+      root.append(off);
+    }
+    // A table ignores the 1 px box of .srOnly, so it is wrapped in one.
+    const hidden = document.createElement("div");
+    hidden.className = "srOnly";
+    const table = document.createElement("table");
+    const head = document.createElement("tr");
+    [fr ? "Pays" : "Country", model.legendTitle || (fr ? "Sur la carte" : "On the map")].forEach((text) => {
+      const th = document.createElement("th");
+      th.scope = "col";
+      th.textContent = text;
+      head.append(th);
+    });
+    const thead = document.createElement("thead");
+    thead.append(head);
+    const tbody = document.createElement("tbody");
+    model.rows.forEach((row) => {
+      const tr = document.createElement("tr");
+      [row.name, row.valueText || (row.onMap ? (fr ? "oui" : "yes") : (fr ? "hors carte" : "not on the map"))].forEach((text) => {
+        const td = document.createElement("td");
+        td.textContent = text;
+        tr.append(td);
+      });
+      tbody.append(tr);
+    });
+    table.append(thead, tbody);
+    hidden.append(table);
+    root.append(hidden);
+  };
+  if (t2sWorldMap) {
+    draw(t2sWorldMap);
+  } else {
+    const wait = document.createElement("p");
+    wait.className = "t2sMapTip";
+    wait.textContent = fr ? "Chargement de la carte..." : "Loading the map...";
+    root.append(wait);
+    loadText2SqlWorldMap().then(draw, (error) => {
+      log("map outline load error", error?.message || String(error));
+      draw(null);
+    });
+  }
+}
+
 // Phase 3 lot A, `scatter`: one dot per point of summary_facts.scatter, x across and y up, no
 // chart library. The grid is a small SVG stretched over the plot (its lines keep one pixel at any
 // size); the dots and the tick labels are HTML laid over it by percentage, so the text keeps its
@@ -4255,11 +4434,12 @@ function renderRawTable(container, rows, columns) {
 // VOICE-AGENT-249: `timeline`, `sequence-strip` and `trend-columns` (FASTAPI-TEXT2SQL phase 2
 // lot A) joined the list; before that an API sending them fell back to the front's own chooser.
 // Phase 2 lot B: `compare-cards`, `fact-card` and `verdict` joined them on 2026-11-11, and phase 2
-// lot C `histogram`, `share-bar` and `flag-list` the same day; phase 3 lot A `scatter` on 2026-11-12.
+// lot C `histogram`, `share-bar` and `flag-list` the same day; phase 3 lot A `scatter` on 2026-11-12,
+// lot B `map` the same day.
 const T2S_KNOWN_REPRESENTATIONS = [
   "entity-page", "card-grid", "value-cards", "number-card", "stat-strip", "ranked-bars", "table",
   "timeline", "sequence-strip", "trend-columns", "compare-cards", "fact-card", "verdict",
-  "histogram", "share-bar", "flag-list", "scatter",
+  "histogram", "share-bar", "flag-list", "scatter", "map",
 ];
 // Chips only where switching means something: several entity rows, or a table of them. An
 // entity page and a one-row number keep their single form (VOICE-AGENT-247), even though the
@@ -4270,7 +4450,7 @@ const T2S_KNOWN_REPRESENTATIONS = [
 // One share alone (phase 2 lot C) stands on a one-row shape too: its chips are the bar and the table.
 const T2S_SWITCHABLE_REPRESENTATIONS = [
   "card-grid", "value-cards", "ranked-bars", "table", "timeline", "sequence-strip", "trend-columns",
-  "compare-cards", "fact-card", "verdict", "histogram", "share-bar", "flag-list", "scatter",
+  "compare-cards", "fact-card", "verdict", "histogram", "share-bar", "flag-list", "scatter", "map",
 ];
 // The two forms that ARE the answer to the question (a yes or no, the one value asked for): a
 // remembered chip choice from an earlier list never replaces them; a chip on this result still does.
@@ -4291,6 +4471,7 @@ const T2S_REPRESENTATION_LABELS = {
   "share-bar": ["Shares", "Parts"],
   "flag-list": ["Flags", "Drapeaux"],
   scatter: ["Scatter", "Nuage de points"],
+  map: ["Map", "Carte"],
 };
 // Column names the summary line and the value cards name in words. Anything else falls back to
 // prettyLabel() of the column name, in lower case.
@@ -4624,6 +4805,10 @@ function text2SqlSummaryLine(upstream, { rep = "", lang = "", spoken = false, ha
   // Phase 3 lot A.
   if (shown === "scatter") {
     return text2SqlScatterSummary(upstream, { lang, spoken, hasMore });
+  }
+  // Phase 3 lot B: the flag-list sentence, placed on the map.
+  if (shown === "map") {
+    return text2SqlFlagSummary(upstream, { lang, spoken, hasMore, onMap: true });
   }
   if (["entity-page", "number-card", "stat-strip"].includes(shown)) {
     return "";
@@ -5265,6 +5450,7 @@ const T2S_REQUESTED_VIEW_TARGETS = {
   share: ["share-bar"],
   flags: ["flag-list"],
   scatter: ["scatter"],
+  map: ["map"],
 };
 const T2S_REQUESTED_VIEW_NOUNS = {
   table: ["a table", "en tableau"],
@@ -5281,6 +5467,7 @@ const T2S_REQUESTED_VIEW_NOUNS = {
   share: ["shares of a whole", "en parts"],
   flags: ["flags", "avec les drapeaux"],
   scatter: ["a scatter plot", "en nuage de points"],
+  map: ["a map", "sur une carte"],
 };
 const T2S_REQUESTED_VIEW_DONE = {
   table: ["Here it is as a table.", "Voici le résultat en tableau."],
@@ -5297,6 +5484,7 @@ const T2S_REQUESTED_VIEW_DONE = {
   "share-bar": ["Here are the shares.", "Voici les parts."],
   "flag-list": ["Here are the countries with their flags.", "Voici les pays et leurs drapeaux."],
   scatter: ["Here it is as a scatter plot.", "Voici le nuage de points."],
+  map: ["Here it is on a map.", "Voici la carte."],
 };
 
 function text2SqlRequestedView(text) {
@@ -5752,7 +5940,10 @@ function text2SqlFlagModel(upstream, lang) {
 
 // With a count: "The first 13 countries by number of films; Japan leads with 93 films."
 // Without: "Four countries: Angola, Australia, Namibia and South Africa."
-function text2SqlFlagSummary(upstream, { lang = "", spoken = false, hasMore = false } = {}) {
+// On the map (phase 3 lot B, onMap): the same sentence with "on the map" / "sur la carte" after
+// its lead: "The first 50 countries by number of films on the map; United States leads with
+// 3,957 films."
+function text2SqlFlagSummary(upstream, { lang = "", spoken = false, hasMore = false, onMap = false } = {}) {
   const language = t2sLang(lang);
   const fr = language === "fr";
   const model = text2SqlFlagModel(upstream, language);
@@ -5765,6 +5956,7 @@ function text2SqlFlagSummary(upstream, { lang = "", spoken = false, hasMore = fa
   const nText = n <= 12 && n > 1 ? text2SqlCountWord(n, "m", language) : String(n);
   const countries = fr ? "pays" : n === 1 ? "country" : "countries";
   const withValues = model.items.some((item) => item.value !== null);
+  const where = onMap ? (fr ? " sur la carte" : " on the map") : "";
   if (withValues) {
     const ranking = Boolean(order) && order !== "collection" && order !== "date";
     let lead;
@@ -5779,7 +5971,7 @@ function text2SqlFlagSummary(upstream, { lang = "", spoken = false, hasMore = fa
     const top = model.items.reduce((best, item) => (item.value !== null && (best === null || item.value > best.value) ? item : best), null);
     const count = `${top.valueText} ${text2SqlCountedNoun(model.valueColumn, top.value, language)}`;
     const tail = fr ? `${top.name} arrive en tête avec ${count}` : `${top.name} leads with ${count}`;
-    return `${capitalizeFirst(lead)}${fr ? " ; " : "; "}${tail}.`;
+    return `${capitalizeFirst(lead)}${where}${fr ? " ; " : "; "}${tail}.`;
   }
   const names = model.items.map((item) => item.name).filter(Boolean);
   const shown = names.slice(0, 5);
@@ -5792,7 +5984,111 @@ function text2SqlFlagSummary(upstream, { lang = "", spoken = false, hasMore = fa
     list = shown.join("");
   }
   const lead = hasMore ? (fr ? `les ${nText} premiers pays` : `the first ${nText} countries`) : `${text2SqlCountWord(n, "m", language)} ${countries}`;
-  return `${capitalizeFirst(lead)}${fr ? " : " : ": "}${list}.`;
+  return `${capitalizeFirst(lead)}${where}${fr ? " : " : ": "}${list}.`;
+}
+
+// Phase 3 lot B (contract table `map`). Pure functions, no DOM, pinned by
+// tools/check-result-representations.mjs with the p3b-* fixtures and the outline itself; the
+// same shades, legend and notes as t2s-front (f_t2srep_map_model). The shading steps are the
+// API's (summary_facts.map.steps), never recomputed, so both fronts shade a country alike.
+// Five tones, dim to bright on the dark theme (the light-to-dark ramp of a choropleth, its anchor
+// flipped for a dark surface): k steps use tones spread over the five, one step the brightest.
+function text2SqlMapTone(step, steps) {
+  if (steps <= 1) {
+    return 4;
+  }
+  return Math.round((step * 4) / (steps - 1));
+}
+
+function text2SqlMapStepText(step) {
+  const lo = text2SqlPlainNumber(step.min);
+  return Number(step.min) === Number(step.max) ? lo : `${lo}-${text2SqlPlainNumber(step.max)}`;
+}
+
+// {width, height, land, countries, rows, legend, legendTitle, hint, offText}, or null without the
+// facts or the outline. A country is drawn when the outline has its ISO numeric code as a shape or
+// a dot (several rows of one country, England and Scotland, are one country with both names and
+// the sum of their counts); the others are listed in offText, under the map.
+function text2SqlMapModel(upstream, lang, world) {
+  const flags = text2SqlFlagModel(upstream, lang);
+  const facts = upstream?.summary_facts?.map;
+  const list = upstream?.summary_facts?.countries?.countries;
+  if (!flags || !facts || !Array.isArray(list) || !world || typeof world.shapes !== "object") {
+    return null;
+  }
+  const fr = t2sLang(lang) === "fr";
+  const shapes = world.shapes || {};
+  const dotsAt = world.dots || {};
+  const width = Number(world.width) || 1;
+  const height = Number(world.height) || 1;
+  const steps = (Array.isArray(facts.steps) ? facts.steps : [])
+    .filter((st) => Number.isFinite(Number(st?.min)) && Number.isFinite(Number(st?.max)));
+  const groups = new Map();
+  const off = [];
+  const rowsOut = [];
+  flags.items.forEach((item, i) => {
+    const numeric = String(list[i]?.numeric || "");
+    const placed = numeric && (shapes[numeric] || dotsAt[numeric]) ? numeric : "";
+    rowsOut.push({ name: item.name, valueText: item.valueText, onMap: Boolean(placed) });
+    if (!placed) {
+      off.push(item);
+      return;
+    }
+    let group = groups.get(placed);
+    if (!group) {
+      group = { numeric: placed, names: [], value: null };
+      groups.set(placed, group);
+    }
+    if (item.name && !group.names.includes(item.name)) {
+      group.names.push(item.name);
+    }
+    if (item.value !== null) {
+      group.value = (group.value ?? 0) + item.value;
+    }
+  });
+  const valueColumn = flags.valueColumn;
+  const countries = [...groups.values()].map((group) => {
+    let tone = null;
+    if (steps.length && group.value !== null) {
+      let step = steps.findIndex((st) => group.value <= Number(st.max));
+      if (step < 0) {
+        step = steps.length - 1;
+      }
+      tone = text2SqlMapTone(step, steps.length);
+    }
+    const name = group.names.join(", ");
+    const valueText = group.value === null ? "" : text2SqlPlainNumber(group.value);
+    const label = valueText ? `${name}${fr ? " : " : ": "}${valueText} ${text2SqlCountedNoun(valueColumn, group.value, lang)}` : name;
+    const at = dotsAt[group.numeric];
+    return {
+      numeric: group.numeric,
+      name,
+      value: group.value,
+      valueText,
+      label,
+      tone,
+      shape: shapes[group.numeric] || "",
+      dot: Array.isArray(at) ? { left: Math.round((at[0] / width) * 10000) / 100, top: Math.round((at[1] / height) * 10000) / 100 } : null,
+    };
+  });
+  const land = Object.keys(shapes).filter((key) => !groups.has(key)).sort().map((key) => shapes[key]).join("") + (world.other || "");
+  const withValues = countries.some((c) => c.valueText);
+  const offText = off.length
+    ? `${fr ? "Hors carte : " : "Not on the map: "}${off.map((item) => (item.valueText ? `${item.name} (${item.valueText})` : item.name)).join(", ")}.`
+    : "";
+  return {
+    width,
+    height,
+    land,
+    countries,
+    rows: rowsOut,
+    legend: steps.map((st, i) => ({ text: text2SqlMapStepText(st), tone: text2SqlMapTone(i, steps.length) })),
+    legendTitle: steps.length ? capitalizeFirst(text2SqlMetricLabel(valueColumn, lang)) : "",
+    hint: withValues
+      ? (fr ? "Touchez ou survolez un pays pour voir son nombre." : "Tap or hover over a country to see its count.")
+      : (fr ? "Touchez ou survolez un pays pour voir son nom." : "Tap or hover over a country to see its name."),
+    offText,
+  };
 }
 
 // Phase 3 lot A (contract table `scatter`). Pure functions, no DOM, pinned by

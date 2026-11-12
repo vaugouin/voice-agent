@@ -511,7 +511,8 @@
     "histogram": ["histogram", "histogramme", "distribution"],
     "share": ["pie", "pie chart", "donut", "camembert", "shares", "share bar", "proportions", "percentages", "parts", "pourcentages", "repartition"],
     "flags": ["flags", "with flags", "drapeaux", "avec les drapeaux", "avec drapeaux"],
-    "scatter": ["scatter", "scatter plot", "scatterplot", "scatter chart", "scatter graph", "point cloud", "nuage de points", "nuage", "en nuage", "diagramme de dispersion"]
+    "scatter": ["scatter", "scatter plot", "scatterplot", "scatter chart", "scatter graph", "point cloud", "nuage de points", "nuage", "en nuage", "diagramme de dispersion"],
+    "map": ["map", "on a map", "on the map", "as a map", "world map", "on a world map", "carte", "sur une carte", "sur la carte", "en carte", "carte du monde", "sur une carte du monde"]
   },
   "representation_request_fillers": [
     "show", "display", "put", "make", "switch", "change", "turn", "view", "see", "it", "them", "this", "that", "these", "those", "the", "a", "an", "as", "in", "into", "to", "with", "on", "me", "us", "please", "can", "could", "would", "will", "you", "instead", "rather", "again", "back", "form", "format", "mode", "layout", "style", "now", "let", "lets", "s", "d", "m", "i", "want", "like", "prefer", "and", "ok", "okay", "then", "give", "draw", "go", "use", "one", "all", "list", "data", "results", "result", "film", "films", "movie", "movies", "series", "thanks",

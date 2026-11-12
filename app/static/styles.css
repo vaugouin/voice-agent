@@ -5062,3 +5062,124 @@ body:not(.cinemaRender) .cinemaControls {
   font-size: 0.82rem;
   font-variant-numeric: tabular-nums;
 }
+
+/* Phase 3 lot B, `map` (renderMap): the countries of the answer shaded on a world outline (one SVG,
+   the land in one path, borders in the page background); the small countries as HTML dots laid
+   over it by percentage, so a dot keeps its size at any width. Five tones of the accent hue, dim
+   to bright (a choropleth's light-to-dark ramp, its anchor flipped for the dark surface), checked
+   for monotone lightness and contrast; nothing reads from colour alone (the tip line, the legend
+   numbers, the hidden table, the Flags chip). The global button rule is reset on the dots. */
+.t2sMap {
+  margin: 4px 0 8px;
+  --t2s-map-tone0: #1a6b63;
+  --t2s-map-tone1: #1f8d82;
+  --t2s-map-tone2: #2fb0a3;
+  --t2s-map-tone3: #64d1c4;
+  --t2s-map-tone4: #b0f0e8;
+}
+.t2sMapFrame {
+  position: relative;
+  width: 100%;
+  max-width: 960px;
+}
+.t2sMapSvg {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+.t2sMapLand {
+  fill: #3a3d42;
+  fill-rule: evenodd;
+  stroke: var(--bg-primary);
+  stroke-width: 0.5px;
+  vector-effect: non-scaling-stroke;
+}
+.t2sMapCountry {
+  fill: var(--t2s-map-tone);
+  fill-rule: evenodd;
+  stroke: var(--bg-primary);
+  stroke-width: 0.5px;
+  vector-effect: non-scaling-stroke;
+  cursor: pointer;
+  outline: none;
+}
+.t2sMapCountry:hover,
+.t2sMapCountry:focus-visible,
+.t2sMapCountry.isSelected {
+  stroke: var(--text-primary);
+  stroke-width: 1.5px;
+}
+.t2sMapTone0 { --t2s-map-tone: var(--t2s-map-tone0); }
+.t2sMapTone1 { --t2s-map-tone: var(--t2s-map-tone1); }
+.t2sMapTone2 { --t2s-map-tone: var(--t2s-map-tone2); }
+.t2sMapTone3 { --t2s-map-tone: var(--t2s-map-tone3); }
+.t2sMapTone4 { --t2s-map-tone: var(--t2s-map-tone4); }
+.t2sMapOn { --t2s-map-tone: var(--t2s-map-tone2); }
+.t2sMapDot {
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+}
+.t2sMapDot::before {
+  content: "";
+  position: absolute;
+  left: 6px;
+  top: 6px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--t2s-map-tone);
+  box-shadow: 0 0 0 1.5px var(--bg-primary);
+}
+.t2sMapDot:hover::before,
+.t2sMapDot:focus-visible::before,
+.t2sMapDot.isSelected::before {
+  box-shadow: 0 0 0 2px var(--text-primary);
+}
+.t2sMapTip {
+  min-height: 1.4em;
+  margin: 6px 0 0;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+  overflow-wrap: anywhere;
+}
+.t2sMapLegend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px 12px;
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  font-variant-numeric: tabular-nums;
+}
+.t2sMapLegendTitle {
+  color: var(--text-primary);
+}
+.t2sMapLegendItem {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+}
+.t2sMapSwatch {
+  display: inline-block;
+  width: 16px;
+  height: 10px;
+  border-radius: 2px;
+  background: var(--t2s-map-tone);
+}
+.t2sMapOff {
+  margin: 8px 0 0;
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+  overflow-wrap: anywhere;
+}

@@ -1,0 +1,1041 @@
+{
+ "question": "Montre sur une carte du monde les pays qui ont produit le plus de films en 2020",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici les pays classés selon le nombre de films qu’ils ont produits en 2020. La carte du monde n’est pas disponible ici.",
+ "representation": "map",
+ "representation_options": [
+  "map",
+  "flag-list",
+  "ranked-bars",
+  "table"
+ ],
+ "result_kind": "unknown",
+ "result_columns": [
+  {
+   "name": "COUNTRY_CODE",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "FILM_COUNT",
+   "role": "metric",
+   "unit": "count",
+   "ordered": "desc",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 50,
+  "total": null,
+  "value_column": "FILM_COUNT",
+  "unit": "count",
+  "order": "FILM_COUNT",
+  "order_direction": "desc",
+  "top": {
+   "label": "US",
+   "id": null,
+   "index": 0,
+   "value": 3957,
+   "extreme": "max"
+  },
+  "countries": {
+   "source": "codes",
+   "column": "COUNTRY_CODE",
+   "value_column": "FILM_COUNT",
+   "countries": [
+    {
+     "index": 0,
+     "code": "US",
+     "label": null,
+     "value": 3957,
+     "name": {
+      "en": "United States",
+      "fr": "États-Unis"
+     },
+     "flag": true,
+     "numeric": "840"
+    },
+    {
+     "index": 1,
+     "code": "GB",
+     "label": null,
+     "value": 1127,
+     "name": {
+      "en": "United Kingdom",
+      "fr": "Royaume-Uni"
+     },
+     "flag": true,
+     "numeric": "826"
+    },
+    {
+     "index": 2,
+     "code": "FR",
+     "label": null,
+     "value": 928,
+     "name": {
+      "en": "France",
+      "fr": "France"
+     },
+     "flag": true,
+     "numeric": "250"
+    },
+    {
+     "index": 3,
+     "code": "DE",
+     "label": null,
+     "value": 710,
+     "name": {
+      "en": "Germany",
+      "fr": "Allemagne"
+     },
+     "flag": true,
+     "numeric": "276"
+    },
+    {
+     "index": 4,
+     "code": "CA",
+     "label": null,
+     "value": 706,
+     "name": {
+      "en": "Canada",
+      "fr": "Canada"
+     },
+     "flag": true,
+     "numeric": "124"
+    },
+    {
+     "index": 5,
+     "code": "IN",
+     "label": null,
+     "value": 559,
+     "name": {
+      "en": "India",
+      "fr": "Inde"
+     },
+     "flag": true,
+     "numeric": "356"
+    },
+    {
+     "index": 6,
+     "code": "BR",
+     "label": null,
+     "value": 463,
+     "name": {
+      "en": "Brazil",
+      "fr": "Brésil"
+     },
+     "flag": true,
+     "numeric": "076"
+    },
+    {
+     "index": 7,
+     "code": "JP",
+     "label": null,
+     "value": 418,
+     "name": {
+      "en": "Japan",
+      "fr": "Japon"
+     },
+     "flag": true,
+     "numeric": "392"
+    },
+    {
+     "index": 8,
+     "code": "ES",
+     "label": null,
+     "value": 418,
+     "name": {
+      "en": "Spain",
+      "fr": "Espagne"
+     },
+     "flag": true,
+     "numeric": "724"
+    },
+    {
+     "index": 9,
+     "code": "IT",
+     "label": null,
+     "value": 401,
+     "name": {
+      "en": "Italy",
+      "fr": "Italie"
+     },
+     "flag": true,
+     "numeric": "380"
+    },
+    {
+     "index": 10,
+     "code": "MX",
+     "label": null,
+     "value": 316,
+     "name": {
+      "en": "Mexico",
+      "fr": "Mexique"
+     },
+     "flag": true,
+     "numeric": "484"
+    },
+    {
+     "index": 11,
+     "code": "CN",
+     "label": null,
+     "value": 295,
+     "name": {
+      "en": "China",
+      "fr": "Chine"
+     },
+     "flag": true,
+     "numeric": "156"
+    },
+    {
+     "index": 12,
+     "code": "RU",
+     "label": null,
+     "value": 262,
+     "name": {
+      "en": "Russia",
+      "fr": "Russie"
+     },
+     "flag": true,
+     "numeric": "643"
+    },
+    {
+     "index": 13,
+     "code": "AU",
+     "label": null,
+     "value": 256,
+     "name": {
+      "en": "Australia",
+      "fr": "Australie"
+     },
+     "flag": true,
+     "numeric": "036"
+    },
+    {
+     "index": 14,
+     "code": "AR",
+     "label": null,
+     "value": 217,
+     "name": {
+      "en": "Argentina",
+      "fr": "Argentine"
+     },
+     "flag": true,
+     "numeric": "032"
+    },
+    {
+     "index": 15,
+     "code": "UA",
+     "label": null,
+     "value": 215,
+     "name": {
+      "en": "Ukraine",
+      "fr": "Ukraine"
+     },
+     "flag": true,
+     "numeric": "804"
+    },
+    {
+     "index": 16,
+     "code": "NL",
+     "label": null,
+     "value": 201,
+     "name": {
+      "en": "Netherlands",
+      "fr": "Pays-Bas"
+     },
+     "flag": true,
+     "numeric": "528"
+    },
+    {
+     "index": 17,
+     "code": "BE",
+     "label": null,
+     "value": 191,
+     "name": {
+      "en": "Belgium",
+      "fr": "Belgique"
+     },
+     "flag": true,
+     "numeric": "056"
+    },
+    {
+     "index": 18,
+     "code": "KR",
+     "label": null,
+     "value": 189,
+     "name": {
+      "en": "South Korea",
+      "fr": "Corée du Sud"
+     },
+     "flag": true,
+     "numeric": "410"
+    },
+    {
+     "index": 19,
+     "code": "SE",
+     "label": null,
+     "value": 177,
+     "name": {
+      "en": "Sweden",
+      "fr": "Suède"
+     },
+     "flag": true,
+     "numeric": "752"
+    },
+    {
+     "index": 20,
+     "code": "PL",
+     "label": null,
+     "value": 134,
+     "name": {
+      "en": "Poland",
+      "fr": "Pologne"
+     },
+     "flag": true,
+     "numeric": "616"
+    },
+    {
+     "index": 21,
+     "code": "GR",
+     "label": null,
+     "value": 134,
+     "name": {
+      "en": "Greece",
+      "fr": "Grèce"
+     },
+     "flag": true,
+     "numeric": "300"
+    },
+    {
+     "index": 22,
+     "code": "NO",
+     "label": null,
+     "value": 132,
+     "name": {
+      "en": "Norway",
+      "fr": "Norvège"
+     },
+     "flag": true,
+     "numeric": "578"
+    },
+    {
+     "index": 23,
+     "code": "TR",
+     "label": null,
+     "value": 129,
+     "name": {
+      "en": "Türkiye",
+      "fr": "Turquie"
+     },
+     "flag": true,
+     "numeric": "792"
+    },
+    {
+     "index": 24,
+     "code": "CH",
+     "label": null,
+     "value": 126,
+     "name": {
+      "en": "Switzerland",
+      "fr": "Suisse"
+     },
+     "flag": true,
+     "numeric": "756"
+    },
+    {
+     "index": 25,
+     "code": "PT",
+     "label": null,
+     "value": 124,
+     "name": {
+      "en": "Portugal",
+      "fr": "Portugal"
+     },
+     "flag": true,
+     "numeric": "620"
+    },
+    {
+     "index": 26,
+     "code": "AT",
+     "label": null,
+     "value": 108,
+     "name": {
+      "en": "Austria",
+      "fr": "Autriche"
+     },
+     "flag": true,
+     "numeric": "040"
+    },
+    {
+     "index": 27,
+     "code": "CZ",
+     "label": null,
+     "value": 101,
+     "name": {
+      "en": "Czechia",
+      "fr": "Tchéquie"
+     },
+     "flag": true,
+     "numeric": "203"
+    },
+    {
+     "index": 28,
+     "code": "FI",
+     "label": null,
+     "value": 100,
+     "name": {
+      "en": "Finland",
+      "fr": "Finlande"
+     },
+     "flag": true,
+     "numeric": "246"
+    },
+    {
+     "index": 29,
+     "code": "DK",
+     "label": null,
+     "value": 99,
+     "name": {
+      "en": "Denmark",
+      "fr": "Danemark"
+     },
+     "flag": true,
+     "numeric": "208"
+    },
+    {
+     "index": 30,
+     "code": "IR",
+     "label": null,
+     "value": 98,
+     "name": {
+      "en": "Iran",
+      "fr": "Iran"
+     },
+     "flag": true,
+     "numeric": "364"
+    },
+    {
+     "index": 31,
+     "code": "TW",
+     "label": null,
+     "value": 85,
+     "name": {
+      "en": "Taiwan",
+      "fr": "Taïwan"
+     },
+     "flag": true,
+     "numeric": "158"
+    },
+    {
+     "index": 32,
+     "code": "IE",
+     "label": null,
+     "value": 84,
+     "name": {
+      "en": "Ireland",
+      "fr": "Irlande"
+     },
+     "flag": true,
+     "numeric": "372"
+    },
+    {
+     "index": 33,
+     "code": "ID",
+     "label": null,
+     "value": 83,
+     "name": {
+      "en": "Indonesia",
+      "fr": "Indonésie"
+     },
+     "flag": true,
+     "numeric": "360"
+    },
+    {
+     "index": 34,
+     "code": "PH",
+     "label": null,
+     "value": 81,
+     "name": {
+      "en": "Philippines",
+      "fr": "Philippines"
+     },
+     "flag": true,
+     "numeric": "608"
+    },
+    {
+     "index": 35,
+     "code": "IL",
+     "label": null,
+     "value": 76,
+     "name": {
+      "en": "Israel",
+      "fr": "Israël"
+     },
+     "flag": true,
+     "numeric": "376"
+    },
+    {
+     "index": 36,
+     "code": "RS",
+     "label": null,
+     "value": 74,
+     "name": {
+      "en": "Serbia",
+      "fr": "Serbie"
+     },
+     "flag": true,
+     "numeric": "688"
+    },
+    {
+     "index": 37,
+     "code": "HK",
+     "label": null,
+     "value": 69,
+     "name": {
+      "en": "Hong Kong",
+      "fr": "Hong Kong"
+     },
+     "flag": true,
+     "numeric": "344"
+    },
+    {
+     "index": 38,
+     "code": "ZA",
+     "label": null,
+     "value": 57,
+     "name": {
+      "en": "South Africa",
+      "fr": "Afrique du Sud"
+     },
+     "flag": true,
+     "numeric": "710"
+    },
+    {
+     "index": 39,
+     "code": "RO",
+     "label": null,
+     "value": 57,
+     "name": {
+      "en": "Romania",
+      "fr": "Roumanie"
+     },
+     "flag": true,
+     "numeric": "642"
+    },
+    {
+     "index": 40,
+     "code": "HU",
+     "label": null,
+     "value": 55,
+     "name": {
+      "en": "Hungary",
+      "fr": "Hongrie"
+     },
+     "flag": true,
+     "numeric": "348"
+    },
+    {
+     "index": 41,
+     "code": "CL",
+     "label": null,
+     "value": 54,
+     "name": {
+      "en": "Chile",
+      "fr": "Chili"
+     },
+     "flag": true,
+     "numeric": "152"
+    },
+    {
+     "index": 42,
+     "code": "HR",
+     "label": null,
+     "value": 54,
+     "name": {
+      "en": "Croatia",
+      "fr": "Croatie"
+     },
+     "flag": true,
+     "numeric": "191"
+    },
+    {
+     "index": 43,
+     "code": "CO",
+     "label": null,
+     "value": 54,
+     "name": {
+      "en": "Colombia",
+      "fr": "Colombie"
+     },
+     "flag": true,
+     "numeric": "170"
+    },
+    {
+     "index": 44,
+     "code": "NZ",
+     "label": null,
+     "value": 49,
+     "name": {
+      "en": "New Zealand",
+      "fr": "Nouvelle-Zélande"
+     },
+     "flag": true,
+     "numeric": "554"
+    },
+    {
+     "index": 45,
+     "code": "TH",
+     "label": null,
+     "value": 48,
+     "name": {
+      "en": "Thailand",
+      "fr": "Thaïlande"
+     },
+     "flag": true,
+     "numeric": "764"
+    },
+    {
+     "index": 46,
+     "code": "MY",
+     "label": null,
+     "value": 47,
+     "name": {
+      "en": "Malaysia",
+      "fr": "Malaisie"
+     },
+     "flag": true,
+     "numeric": "458"
+    },
+    {
+     "index": 47,
+     "code": "EE",
+     "label": null,
+     "value": 40,
+     "name": {
+      "en": "Estonia",
+      "fr": "Estonie"
+     },
+     "flag": true,
+     "numeric": "233"
+    },
+    {
+     "index": 48,
+     "code": "EG",
+     "label": null,
+     "value": 40,
+     "name": {
+      "en": "Egypt",
+      "fr": "Égypte"
+     },
+     "flag": true,
+     "numeric": "818"
+    },
+    {
+     "index": 49,
+     "code": "SG",
+     "label": null,
+     "value": 39,
+     "name": {
+      "en": "Singapore",
+      "fr": "Singapour"
+     },
+     "flag": true,
+     "numeric": "702"
+    }
+   ]
+  },
+  "map": {
+   "count": 50,
+   "located": 50,
+   "unlocated": [],
+   "value_column": "FILM_COUNT",
+   "steps": [
+    {
+     "min": 39,
+     "max": 55
+    },
+    {
+     "min": 57,
+     "max": 98
+    },
+    {
+     "min": 99,
+     "max": 134
+    },
+    {
+     "min": 177,
+     "max": 316
+    },
+    {
+     "min": 401,
+     "max": 3957
+    }
+   ]
+  }
+ },
+ "intent": {
+  "task": "rank",
+  "focus": [
+   "count"
+  ],
+  "focus_columns": [
+   "FILM_COUNT"
+  ],
+  "requested_view": "map",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "COUNTRY_CODE": "US",
+    "FILM_COUNT": 3957
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "COUNTRY_CODE": "GB",
+    "FILM_COUNT": 1127
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "COUNTRY_CODE": "FR",
+    "FILM_COUNT": 928
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "COUNTRY_CODE": "DE",
+    "FILM_COUNT": 710
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "COUNTRY_CODE": "CA",
+    "FILM_COUNT": 706
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "COUNTRY_CODE": "IN",
+    "FILM_COUNT": 559
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "COUNTRY_CODE": "BR",
+    "FILM_COUNT": 463
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "COUNTRY_CODE": "JP",
+    "FILM_COUNT": 418
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "COUNTRY_CODE": "ES",
+    "FILM_COUNT": 418
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "COUNTRY_CODE": "IT",
+    "FILM_COUNT": 401
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "COUNTRY_CODE": "MX",
+    "FILM_COUNT": 316
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "COUNTRY_CODE": "CN",
+    "FILM_COUNT": 295
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "COUNTRY_CODE": "RU",
+    "FILM_COUNT": 262
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "COUNTRY_CODE": "AU",
+    "FILM_COUNT": 256
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "COUNTRY_CODE": "AR",
+    "FILM_COUNT": 217
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "COUNTRY_CODE": "UA",
+    "FILM_COUNT": 215
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "COUNTRY_CODE": "NL",
+    "FILM_COUNT": 201
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "COUNTRY_CODE": "BE",
+    "FILM_COUNT": 191
+   }
+  },
+  {
+   "index": 18,
+   "data": {
+    "COUNTRY_CODE": "KR",
+    "FILM_COUNT": 189
+   }
+  },
+  {
+   "index": 19,
+   "data": {
+    "COUNTRY_CODE": "SE",
+    "FILM_COUNT": 177
+   }
+  },
+  {
+   "index": 20,
+   "data": {
+    "COUNTRY_CODE": "PL",
+    "FILM_COUNT": 134
+   }
+  },
+  {
+   "index": 21,
+   "data": {
+    "COUNTRY_CODE": "GR",
+    "FILM_COUNT": 134
+   }
+  },
+  {
+   "index": 22,
+   "data": {
+    "COUNTRY_CODE": "NO",
+    "FILM_COUNT": 132
+   }
+  },
+  {
+   "index": 23,
+   "data": {
+    "COUNTRY_CODE": "TR",
+    "FILM_COUNT": 129
+   }
+  },
+  {
+   "index": 24,
+   "data": {
+    "COUNTRY_CODE": "CH",
+    "FILM_COUNT": 126
+   }
+  },
+  {
+   "index": 25,
+   "data": {
+    "COUNTRY_CODE": "PT",
+    "FILM_COUNT": 124
+   }
+  },
+  {
+   "index": 26,
+   "data": {
+    "COUNTRY_CODE": "AT",
+    "FILM_COUNT": 108
+   }
+  },
+  {
+   "index": 27,
+   "data": {
+    "COUNTRY_CODE": "CZ",
+    "FILM_COUNT": 101
+   }
+  },
+  {
+   "index": 28,
+   "data": {
+    "COUNTRY_CODE": "FI",
+    "FILM_COUNT": 100
+   }
+  },
+  {
+   "index": 29,
+   "data": {
+    "COUNTRY_CODE": "DK",
+    "FILM_COUNT": 99
+   }
+  },
+  {
+   "index": 30,
+   "data": {
+    "COUNTRY_CODE": "IR",
+    "FILM_COUNT": 98
+   }
+  },
+  {
+   "index": 31,
+   "data": {
+    "COUNTRY_CODE": "TW",
+    "FILM_COUNT": 85
+   }
+  },
+  {
+   "index": 32,
+   "data": {
+    "COUNTRY_CODE": "IE",
+    "FILM_COUNT": 84
+   }
+  },
+  {
+   "index": 33,
+   "data": {
+    "COUNTRY_CODE": "ID",
+    "FILM_COUNT": 83
+   }
+  },
+  {
+   "index": 34,
+   "data": {
+    "COUNTRY_CODE": "PH",
+    "FILM_COUNT": 81
+   }
+  },
+  {
+   "index": 35,
+   "data": {
+    "COUNTRY_CODE": "IL",
+    "FILM_COUNT": 76
+   }
+  },
+  {
+   "index": 36,
+   "data": {
+    "COUNTRY_CODE": "RS",
+    "FILM_COUNT": 74
+   }
+  },
+  {
+   "index": 37,
+   "data": {
+    "COUNTRY_CODE": "HK",
+    "FILM_COUNT": 69
+   }
+  },
+  {
+   "index": 38,
+   "data": {
+    "COUNTRY_CODE": "ZA",
+    "FILM_COUNT": 57
+   }
+  },
+  {
+   "index": 39,
+   "data": {
+    "COUNTRY_CODE": "RO",
+    "FILM_COUNT": 57
+   }
+  },
+  {
+   "index": 40,
+   "data": {
+    "COUNTRY_CODE": "HU",
+    "FILM_COUNT": 55
+   }
+  },
+  {
+   "index": 41,
+   "data": {
+    "COUNTRY_CODE": "CL",
+    "FILM_COUNT": 54
+   }
+  },
+  {
+   "index": 42,
+   "data": {
+    "COUNTRY_CODE": "HR",
+    "FILM_COUNT": 54
+   }
+  },
+  {
+   "index": 43,
+   "data": {
+    "COUNTRY_CODE": "CO",
+    "FILM_COUNT": 54
+   }
+  },
+  {
+   "index": 44,
+   "data": {
+    "COUNTRY_CODE": "NZ",
+    "FILM_COUNT": 49
+   }
+  },
+  {
+   "index": 45,
+   "data": {
+    "COUNTRY_CODE": "TH",
+    "FILM_COUNT": 48
+   }
+  },
+  {
+   "index": 46,
+   "data": {
+    "COUNTRY_CODE": "MY",
+    "FILM_COUNT": 47
+   }
+  },
+  {
+   "index": 47,
+   "data": {
+    "COUNTRY_CODE": "EE",
+    "FILM_COUNT": 40
+   }
+  },
+  {
+   "index": 48,
+   "data": {
+    "COUNTRY_CODE": "EG",
+    "FILM_COUNT": 40
+   }
+  },
+  {
+   "index": 49,
+   "data": {
+    "COUNTRY_CODE": "SG",
+    "FILM_COUNT": 39
+   }
+  }
+ ]
+}

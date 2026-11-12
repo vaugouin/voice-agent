@@ -1,0 +1,1241 @@
+{
+ "question": "Show on a map the countries of birth of the directors of Palme d'Or winners",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the available countries; I can’t narrow them to the birth countries of Directing among Palme d'Or winners.",
+ "representation": "map",
+ "representation_options": [
+  "map",
+  "flag-list",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_LOCATION",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_NAME",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_TYPE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_SOURCE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "WIKIPEDIA_IMAGE_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "OVERVIEW",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_COUNT",
+   "role": "metric",
+   "unit": "count",
+   "ordered": "desc"
+  },
+  {
+   "name": "SERIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 50,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "MOVIE_COUNT",
+  "order_direction": "desc",
+  "top": null,
+  "countries": {
+   "source": "locations",
+   "column": "LOCATION_NAME",
+   "value_column": null,
+   "countries": [
+    {
+     "index": 0,
+     "code": "ID",
+     "label": "Indonesia",
+     "value": null,
+     "name": {
+      "en": "Indonesia",
+      "fr": "Indonésie"
+     },
+     "flag": true,
+     "numeric": "360"
+    },
+    {
+     "index": 1,
+     "code": "GB",
+     "label": "England",
+     "value": null,
+     "name": {
+      "en": "United Kingdom",
+      "fr": "Royaume-Uni"
+     },
+     "flag": true,
+     "numeric": "826"
+    },
+    {
+     "index": 2,
+     "code": "FR",
+     "label": "France",
+     "value": null,
+     "name": {
+      "en": "France",
+      "fr": "France"
+     },
+     "flag": true,
+     "numeric": "250"
+    },
+    {
+     "index": 3,
+     "code": "IT",
+     "label": "Italy",
+     "value": null,
+     "name": {
+      "en": "Italy",
+      "fr": "Italie"
+     },
+     "flag": true,
+     "numeric": "380"
+    },
+    {
+     "index": 4,
+     "code": "MX",
+     "label": "Mexico",
+     "value": null,
+     "name": {
+      "en": "Mexico",
+      "fr": "Mexique"
+     },
+     "flag": true,
+     "numeric": "484"
+    },
+    {
+     "index": 5,
+     "code": "ES",
+     "label": "Spain",
+     "value": null,
+     "name": {
+      "en": "Spain",
+      "fr": "Espagne"
+     },
+     "flag": true,
+     "numeric": "724"
+    },
+    {
+     "index": 6,
+     "code": "JP",
+     "label": "Japan",
+     "value": null,
+     "name": {
+      "en": "Japan",
+      "fr": "Japon"
+     },
+     "flag": true,
+     "numeric": "392"
+    },
+    {
+     "index": 7,
+     "code": "DE",
+     "label": "Germany",
+     "value": null,
+     "name": {
+      "en": "Germany",
+      "fr": "Allemagne"
+     },
+     "flag": true,
+     "numeric": "276"
+    },
+    {
+     "index": 8,
+     "code": "US",
+     "label": "United States",
+     "value": null,
+     "name": {
+      "en": "United States",
+      "fr": "États-Unis"
+     },
+     "flag": true,
+     "numeric": "840"
+    },
+    {
+     "index": 9,
+     "code": "AU",
+     "label": "Australia",
+     "value": null,
+     "name": {
+      "en": "Australia",
+      "fr": "Australie"
+     },
+     "flag": true,
+     "numeric": "036"
+    },
+    {
+     "index": 10,
+     "code": "TR",
+     "label": "Turkey",
+     "value": null,
+     "name": {
+      "en": "Türkiye",
+      "fr": "Turquie"
+     },
+     "flag": true,
+     "numeric": "792"
+    },
+    {
+     "index": 11,
+     "code": "GR",
+     "label": "Greece",
+     "value": null,
+     "name": {
+      "en": "Greece",
+      "fr": "Grèce"
+     },
+     "flag": true,
+     "numeric": "300"
+    },
+    {
+     "index": 12,
+     "code": "IN",
+     "label": "India",
+     "value": null,
+     "name": {
+      "en": "India",
+      "fr": "Inde"
+     },
+     "flag": true,
+     "numeric": "356"
+    },
+    {
+     "index": 13,
+     "code": null,
+     "label": "Milan",
+     "value": null,
+     "name": null,
+     "flag": false,
+     "numeric": null
+    },
+    {
+     "index": 14,
+     "code": "CH",
+     "label": "Switzerland",
+     "value": null,
+     "name": {
+      "en": "Switzerland",
+      "fr": "Suisse"
+     },
+     "flag": true,
+     "numeric": "756"
+    },
+    {
+     "index": 15,
+     "code": "CA",
+     "label": "Canada",
+     "value": null,
+     "name": {
+      "en": "Canada",
+      "fr": "Canada"
+     },
+     "flag": true,
+     "numeric": "124"
+    },
+    {
+     "index": 16,
+     "code": "ZA",
+     "label": "South Africa",
+     "value": null,
+     "name": {
+      "en": "South Africa",
+      "fr": "Afrique du Sud"
+     },
+     "flag": true,
+     "numeric": "710"
+    },
+    {
+     "index": 17,
+     "code": "NZ",
+     "label": "New Zealand",
+     "value": null,
+     "name": {
+      "en": "New Zealand",
+      "fr": "Nouvelle-Zélande"
+     },
+     "flag": true,
+     "numeric": "554"
+    },
+    {
+     "index": 18,
+     "code": "TH",
+     "label": "Thailand",
+     "value": null,
+     "name": {
+      "en": "Thailand",
+      "fr": "Thaïlande"
+     },
+     "flag": true,
+     "numeric": "764"
+    },
+    {
+     "index": 19,
+     "code": "RU",
+     "label": "Russia",
+     "value": null,
+     "name": {
+      "en": "Russia",
+      "fr": "Russie"
+     },
+     "flag": true,
+     "numeric": "643"
+    },
+    {
+     "index": 20,
+     "code": "GB",
+     "label": "Scotland",
+     "value": null,
+     "name": {
+      "en": "United Kingdom",
+      "fr": "Royaume-Uni"
+     },
+     "flag": true,
+     "numeric": "826"
+    },
+    {
+     "index": 21,
+     "code": "AT",
+     "label": "Austria",
+     "value": null,
+     "name": {
+      "en": "Austria",
+      "fr": "Autriche"
+     },
+     "flag": true,
+     "numeric": "040"
+    },
+    {
+     "index": 22,
+     "code": "EG",
+     "label": "Egypt",
+     "value": null,
+     "name": {
+      "en": "Egypt",
+      "fr": "Égypte"
+     },
+     "flag": true,
+     "numeric": "818"
+    },
+    {
+     "index": 23,
+     "code": "MA",
+     "label": "Morocco",
+     "value": null,
+     "name": {
+      "en": "Morocco",
+      "fr": "Maroc"
+     },
+     "flag": true,
+     "numeric": "504"
+    },
+    {
+     "index": 24,
+     "code": null,
+     "label": "Russian Empire",
+     "value": null,
+     "name": null,
+     "flag": false,
+     "numeric": null
+    },
+    {
+     "index": 25,
+     "code": "BG",
+     "label": "Bulgaria",
+     "value": null,
+     "name": {
+      "en": "Bulgaria",
+      "fr": "Bulgarie"
+     },
+     "flag": true,
+     "numeric": "100"
+    },
+    {
+     "index": 26,
+     "code": null,
+     "label": "Venice",
+     "value": null,
+     "name": null,
+     "flag": false,
+     "numeric": null
+    },
+    {
+     "index": 27,
+     "code": "PH",
+     "label": "Philippines",
+     "value": null,
+     "name": {
+      "en": "Philippines",
+      "fr": "Philippines"
+     },
+     "flag": true,
+     "numeric": "608"
+    },
+    {
+     "index": 28,
+     "code": "NO",
+     "label": "Norway",
+     "value": null,
+     "name": {
+      "en": "Norway",
+      "fr": "Norvège"
+     },
+     "flag": true,
+     "numeric": "578"
+    },
+    {
+     "index": 29,
+     "code": "SU",
+     "label": "Soviet Union",
+     "value": null,
+     "name": {
+      "en": "Soviet Union",
+      "fr": "Union soviétique"
+     },
+     "flag": false,
+     "numeric": null
+    },
+    {
+     "index": 30,
+     "code": "IE",
+     "label": "Ireland",
+     "value": null,
+     "name": {
+      "en": "Ireland",
+      "fr": "Irlande"
+     },
+     "flag": true,
+     "numeric": "372"
+    },
+    {
+     "index": 31,
+     "code": "KR",
+     "label": "South Korea",
+     "value": null,
+     "name": {
+      "en": "South Korea",
+      "fr": "Corée du Sud"
+     },
+     "flag": true,
+     "numeric": "410"
+    },
+    {
+     "index": 32,
+     "code": "BE",
+     "label": "Belgium",
+     "value": null,
+     "name": {
+      "en": "Belgium",
+      "fr": "Belgique"
+     },
+     "flag": true,
+     "numeric": "056"
+    },
+    {
+     "index": 33,
+     "code": "AR",
+     "label": "Argentina",
+     "value": null,
+     "name": {
+      "en": "Argentina",
+      "fr": "Argentine"
+     },
+     "flag": true,
+     "numeric": "032"
+    },
+    {
+     "index": 34,
+     "code": "BR",
+     "label": "Brazil",
+     "value": null,
+     "name": {
+      "en": "Brazil",
+      "fr": "Brésil"
+     },
+     "flag": true,
+     "numeric": "076"
+    },
+    {
+     "index": 35,
+     "code": "PL",
+     "label": "Poland",
+     "value": null,
+     "name": {
+      "en": "Poland",
+      "fr": "Pologne"
+     },
+     "flag": true,
+     "numeric": "616"
+    },
+    {
+     "index": 36,
+     "code": "IR",
+     "label": "Iran",
+     "value": null,
+     "name": {
+      "en": "Iran",
+      "fr": "Iran"
+     },
+     "flag": true,
+     "numeric": "364"
+    },
+    {
+     "index": 37,
+     "code": "CZ",
+     "label": "Czech Republic",
+     "value": null,
+     "name": {
+      "en": "Czechia",
+      "fr": "Tchéquie"
+     },
+     "flag": true,
+     "numeric": "203"
+    },
+    {
+     "index": 38,
+     "code": "SE",
+     "label": "Sweden",
+     "value": null,
+     "name": {
+      "en": "Sweden",
+      "fr": "Suède"
+     },
+     "flag": true,
+     "numeric": "752"
+    },
+    {
+     "index": 39,
+     "code": "NL",
+     "label": "Netherlands",
+     "value": null,
+     "name": {
+      "en": "Netherlands",
+      "fr": "Pays-Bas"
+     },
+     "flag": true,
+     "numeric": "528"
+    },
+    {
+     "index": 40,
+     "code": null,
+     "label": "Ancient Rome",
+     "value": null,
+     "name": null,
+     "flag": false,
+     "numeric": null
+    },
+    {
+     "index": 41,
+     "code": "FI",
+     "label": "Finland",
+     "value": null,
+     "name": {
+      "en": "Finland",
+      "fr": "Finlande"
+     },
+     "flag": true,
+     "numeric": "246"
+    },
+    {
+     "index": 42,
+     "code": "PT",
+     "label": "Portugal",
+     "value": null,
+     "name": {
+      "en": "Portugal",
+      "fr": "Portugal"
+     },
+     "flag": true,
+     "numeric": "620"
+    },
+    {
+     "index": 43,
+     "code": null,
+     "label": "Hamburg",
+     "value": null,
+     "name": null,
+     "flag": false,
+     "numeric": null
+    },
+    {
+     "index": 44,
+     "code": "IL",
+     "label": "Israel",
+     "value": null,
+     "name": {
+      "en": "Israel",
+      "fr": "Israël"
+     },
+     "flag": true,
+     "numeric": "376"
+    },
+    {
+     "index": 45,
+     "code": "RO",
+     "label": "Romania",
+     "value": null,
+     "name": {
+      "en": "Romania",
+      "fr": "Roumanie"
+     },
+     "flag": true,
+     "numeric": "642"
+    },
+    {
+     "index": 46,
+     "code": "RS",
+     "label": "Serbia",
+     "value": null,
+     "name": {
+      "en": "Serbia",
+      "fr": "Serbie"
+     },
+     "flag": true,
+     "numeric": "688"
+    },
+    {
+     "index": 47,
+     "code": "TW",
+     "label": "Taiwan",
+     "value": null,
+     "name": {
+      "en": "Taiwan",
+      "fr": "Taïwan"
+     },
+     "flag": true,
+     "numeric": "158"
+    },
+    {
+     "index": 48,
+     "code": "KE",
+     "label": "Kenya",
+     "value": null,
+     "name": {
+      "en": "Kenya",
+      "fr": "Kenya"
+     },
+     "flag": true,
+     "numeric": "404"
+    },
+    {
+     "index": 49,
+     "code": "CU",
+     "label": "Cuba",
+     "value": null,
+     "name": {
+      "en": "Cuba",
+      "fr": "Cuba"
+     },
+     "flag": true,
+     "numeric": "192"
+    }
+   ]
+  },
+  "map": {
+   "count": 50,
+   "located": 44,
+   "unlocated": [
+    13,
+    24,
+    26,
+    29,
+    40,
+    43
+   ],
+   "value_column": null,
+   "steps": []
+  }
+ },
+ "intent": {
+  "task": "list",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "map",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_LOCATION": 92,
+    "LOCATION_NAME": "Indonesia",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9f/Flag_of_Indonesia.svg/960px-Flag_of_Indonesia.svg.png",
+    "SERIE_COUNT": 7
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_LOCATION": 112,
+    "LOCATION_NAME": "England",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/en/thumb/b/be/Flag_of_England.svg/960px-Flag_of_England.svg.png",
+    "SERIE_COUNT": 82
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_LOCATION": 126,
+    "LOCATION_NAME": "France",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/67/Mapadefrancia.svg/langfr-3840px-Mapadefrancia.svg.png",
+    "SERIE_COUNT": 26
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_LOCATION": 45,
+    "LOCATION_NAME": "Italy",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/en/thumb/0/03/Flag_of_Italy.svg/1920px-Flag_of_Italy.svg.png",
+    "SERIE_COUNT": 35
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_LOCATION": 63,
+    "LOCATION_NAME": "Mexico",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fc/Flag_of_Mexico.svg/1280px-Flag_of_Mexico.svg.png",
+    "SERIE_COUNT": 40
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_LOCATION": 56,
+    "LOCATION_NAME": "Spain",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/24/Flag_of_the_Kingdom_of_Spain.svg/960px-Flag_of_the_Kingdom_of_Spain.svg.png",
+    "SERIE_COUNT": 23
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_LOCATION": 32,
+    "LOCATION_NAME": "Japan",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/en/thumb/9/9e/Flag_of_Japan.svg/960px-Flag_of_Japan.svg.png",
+    "SERIE_COUNT": 31
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_LOCATION": 269,
+    "LOCATION_NAME": "Germany",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/en/thumb/b/ba/Flag_of_Germany.svg/1280px-Flag_of_Germany.svg.png",
+    "SERIE_COUNT": 13
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_LOCATION": 104,
+    "LOCATION_NAME": "United States",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/96/Flag_of_the_United_States_%28DDD-F-416E_specifications%29.svg/1280px-Flag_of_the_United_States_%28DDD-F-416E_specifications%29.svg.png",
+    "SERIE_COUNT": 51
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_LOCATION": 228,
+    "LOCATION_NAME": "Australia",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f6/National_Flag_of_Australia.png/3840px-National_Flag_of_Australia.png",
+    "SERIE_COUNT": 12
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_LOCATION": 25,
+    "LOCATION_NAME": "Turkey",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b4/Flag_of_Turkey.svg/1280px-Flag_of_Turkey.svg.png",
+    "SERIE_COUNT": 26
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_LOCATION": 224,
+    "LOCATION_NAME": "Greece",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5c/Flag_of_Greece.svg/960px-Flag_of_Greece.svg.png",
+    "SERIE_COUNT": 8
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_LOCATION": 106,
+    "LOCATION_NAME": "India",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/en/thumb/4/41/Flag_of_India.svg/960px-Flag_of_India.svg.png",
+    "SERIE_COUNT": 13
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "ID_LOCATION": 122,
+    "LOCATION_NAME": "Milan",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/70/Milan_Cathedral_from_Piazza_del_Duomo.jpg/3840px-Milan_Cathedral_from_Piazza_del_Duomo.jpg",
+    "SERIE_COUNT": 9
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "ID_LOCATION": 29,
+    "LOCATION_NAME": "Switzerland",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/08/Flag_of_Switzerland_%28Pantone%29.svg/960px-Flag_of_Switzerland_%28Pantone%29.svg.png",
+    "SERIE_COUNT": 3
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "ID_LOCATION": 105,
+    "LOCATION_NAME": "Canada",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d9/Flag_of_Canada_%28Pantone%29.svg/1280px-Flag_of_Canada_%28Pantone%29.svg.png",
+    "SERIE_COUNT": 11
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "ID_LOCATION": 177,
+    "LOCATION_NAME": "South Africa",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/af/Flag_of_South_Africa.svg/960px-Flag_of_South_Africa.svg.png",
+    "SERIE_COUNT": 32
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "ID_LOCATION": 459,
+    "LOCATION_NAME": "New Zealand",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3e/Flag_of_New_Zealand.svg/1280px-Flag_of_New_Zealand.svg.png",
+    "SERIE_COUNT": 11
+   }
+  },
+  {
+   "index": 18,
+   "data": {
+    "ID_LOCATION": 323,
+    "LOCATION_NAME": "Thailand",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a9/Flag_of_Thailand.svg/960px-Flag_of_Thailand.svg.png",
+    "SERIE_COUNT": 14
+   }
+  },
+  {
+   "index": 19,
+   "data": {
+    "ID_LOCATION": 10,
+    "LOCATION_NAME": "Russia",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/en/thumb/f/f3/Flag_of_Russia.svg/960px-Flag_of_Russia.svg.png",
+    "SERIE_COUNT": 21
+   }
+  },
+  {
+   "index": 20,
+   "data": {
+    "ID_LOCATION": 22,
+    "LOCATION_NAME": "Scotland",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/10/Flag_of_Scotland.svg/1280px-Flag_of_Scotland.svg.png",
+    "SERIE_COUNT": 34
+   }
+  },
+  {
+   "index": 21,
+   "data": {
+    "ID_LOCATION": 148,
+    "LOCATION_NAME": "Austria",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/41/Flag_of_Austria.svg/960px-Flag_of_Austria.svg.png",
+    "SERIE_COUNT": 5
+   }
+  },
+  {
+   "index": 22,
+   "data": {
+    "ID_LOCATION": 58,
+    "LOCATION_NAME": "Egypt",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fe/Flag_of_Egypt.svg/960px-Flag_of_Egypt.svg.png",
+    "SERIE_COUNT": 9
+   }
+  },
+  {
+   "index": 23,
+   "data": {
+    "ID_LOCATION": 416,
+    "LOCATION_NAME": "Morocco",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2c/Flag_of_Morocco.svg/960px-Flag_of_Morocco.svg.png",
+    "SERIE_COUNT": 21
+   }
+  },
+  {
+   "index": 24,
+   "data": {
+    "ID_LOCATION": 34,
+    "LOCATION_NAME": "Russian Empire",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/en/thumb/f/f3/Flag_of_Russia.svg/960px-Flag_of_Russia.svg.png",
+    "SERIE_COUNT": 13
+   }
+  },
+  {
+   "index": 25,
+   "data": {
+    "ID_LOCATION": 467,
+    "LOCATION_NAME": "Bulgaria",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9a/Flag_of_Bulgaria.svg/1280px-Flag_of_Bulgaria.svg.png",
+    "SERIE_COUNT": 2
+   }
+  },
+  {
+   "index": 26,
+   "data": {
+    "ID_LOCATION": 7,
+    "LOCATION_NAME": "Venice",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4f/Venezia_aerial_view.jpg/3840px-Venezia_aerial_view.jpg",
+    "SERIE_COUNT": 10
+   }
+  },
+  {
+   "index": 27,
+   "data": {
+    "ID_LOCATION": 295,
+    "LOCATION_NAME": "Philippines",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/99/Flag_of_the_Philippines.svg/1280px-Flag_of_the_Philippines.svg.png",
+    "SERIE_COUNT": 16
+   }
+  },
+  {
+   "index": 28,
+   "data": {
+    "ID_LOCATION": 80,
+    "LOCATION_NAME": "Norway",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d9/Flag_of_Norway.svg/960px-Flag_of_Norway.svg.png",
+    "SERIE_COUNT": 17
+   }
+  },
+  {
+   "index": 29,
+   "data": {
+    "ID_LOCATION": 85,
+    "LOCATION_NAME": "Soviet Union",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a9/Flag_of_the_Soviet_Union.svg/1280px-Flag_of_the_Soviet_Union.svg.png",
+    "SERIE_COUNT": 7
+   }
+  },
+  {
+   "index": 30,
+   "data": {
+    "ID_LOCATION": 370,
+    "LOCATION_NAME": "Ireland",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/45/Flag_of_Ireland.svg/1280px-Flag_of_Ireland.svg.png",
+    "SERIE_COUNT": 7
+   }
+  },
+  {
+   "index": 31,
+   "data": {
+    "ID_LOCATION": 30,
+    "LOCATION_NAME": "South Korea",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/09/Flag_of_South_Korea.svg/960px-Flag_of_South_Korea.svg.png",
+    "SERIE_COUNT": 51
+   }
+  },
+  {
+   "index": 32,
+   "data": {
+    "ID_LOCATION": 327,
+    "LOCATION_NAME": "Belgium",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/65/Flag_of_Belgium.svg/960px-Flag_of_Belgium.svg.png",
+    "SERIE_COUNT": 4
+   }
+  },
+  {
+   "index": 33,
+   "data": {
+    "ID_LOCATION": 174,
+    "LOCATION_NAME": "Argentina",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1a/Flag_of_Argentina.svg/960px-Flag_of_Argentina.svg.png",
+    "SERIE_COUNT": 5
+   }
+  },
+  {
+   "index": 34,
+   "data": {
+    "ID_LOCATION": 311,
+    "LOCATION_NAME": "Brazil",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/en/thumb/0/05/Flag_of_Brazil.svg/1280px-Flag_of_Brazil.svg.png",
+    "SERIE_COUNT": 25
+   }
+  },
+  {
+   "index": 35,
+   "data": {
+    "ID_LOCATION": 123,
+    "LOCATION_NAME": "Poland",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/en/thumb/1/12/Flag_of_Poland.svg/1280px-Flag_of_Poland.svg.png",
+    "SERIE_COUNT": 13
+   }
+  },
+  {
+   "index": 36,
+   "data": {
+    "ID_LOCATION": 76,
+    "LOCATION_NAME": "Iran",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/be/Flag_of_Iran_%28official%29.svg/1280px-Flag_of_Iran_%28official%29.svg.png",
+    "SERIE_COUNT": 6
+   }
+  },
+  {
+   "index": 37,
+   "data": {
+    "ID_LOCATION": 1064,
+    "LOCATION_NAME": "Czech Republic",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cb/Flag_of_the_Czech_Republic.svg/960px-Flag_of_the_Czech_Republic.svg.png",
+    "SERIE_COUNT": 15
+   }
+  },
+  {
+   "index": 38,
+   "data": {
+    "ID_LOCATION": 404,
+    "LOCATION_NAME": "Sweden",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/en/thumb/4/4c/Flag_of_Sweden.svg/1920px-Flag_of_Sweden.svg.png",
+    "SERIE_COUNT": 9
+   }
+  },
+  {
+   "index": 39,
+   "data": {
+    "ID_LOCATION": 90,
+    "LOCATION_NAME": "Netherlands",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/20/Flag_of_the_Netherlands.svg/960px-Flag_of_the_Netherlands.svg.png",
+    "SERIE_COUNT": 7
+   }
+  },
+  {
+   "index": 40,
+   "data": {
+    "ID_LOCATION": 146,
+    "LOCATION_NAME": "Ancient Rome",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/e/ea/Roman_Republic_Empire_map.gif",
+    "SERIE_COUNT": 4
+   }
+  },
+  {
+   "index": 41,
+   "data": {
+    "ID_LOCATION": 348,
+    "LOCATION_NAME": "Finland",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bc/Flag_of_Finland.svg/1920px-Flag_of_Finland.svg.png",
+    "SERIE_COUNT": 11
+   }
+  },
+  {
+   "index": 42,
+   "data": {
+    "ID_LOCATION": 159,
+    "LOCATION_NAME": "Portugal",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a8/Flag_of_Portugal_%28official%29.svg/960px-Flag_of_Portugal_%28official%29.svg.png",
+    "SERIE_COUNT": 6
+   }
+  },
+  {
+   "index": 43,
+   "data": {
+    "ID_LOCATION": 451,
+    "LOCATION_NAME": "Hamburg",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/83/Hamburg%2C_Landungsbr%C3%BCcken_--_2016_--_3131-7.jpg/3840px-Hamburg%2C_Landungsbr%C3%BCcken_--_2016_--_3131-7.jpg",
+    "SERIE_COUNT": 7
+   }
+  },
+  {
+   "index": 44,
+   "data": {
+    "ID_LOCATION": 239,
+    "LOCATION_NAME": "Israel",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d4/Flag_of_Israel.svg/1280px-Flag_of_Israel.svg.png",
+    "SERIE_COUNT": 20
+   }
+  },
+  {
+   "index": 45,
+   "data": {
+    "ID_LOCATION": 89,
+    "LOCATION_NAME": "Romania",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/73/Flag_of_Romania.svg/960px-Flag_of_Romania.svg.png",
+    "SERIE_COUNT": 4
+   }
+  },
+  {
+   "index": 46,
+   "data": {
+    "ID_LOCATION": 532,
+    "LOCATION_NAME": "Serbia",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/ff/Flag_of_Serbia.svg/1920px-Flag_of_Serbia.svg.png",
+    "SERIE_COUNT": 0
+   }
+  },
+  {
+   "index": 47,
+   "data": {
+    "ID_LOCATION": 163,
+    "LOCATION_NAME": "Taiwan",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/72/Flag_of_the_Republic_of_China.svg/960px-Flag_of_the_Republic_of_China.svg.png",
+    "SERIE_COUNT": 7
+   }
+  },
+  {
+   "index": 48,
+   "data": {
+    "ID_LOCATION": 313,
+    "LOCATION_NAME": "Kenya",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/49/Flag_of_Kenya.svg/960px-Flag_of_Kenya.svg.png",
+    "SERIE_COUNT": 2
+   }
+  },
+  {
+   "index": 49,
+   "data": {
+    "ID_LOCATION": 211,
+    "LOCATION_NAME": "Cuba",
+    "LOCATION_TYPE": "country",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bd/Flag_of_Cuba.svg/1280px-Flag_of_Cuba.svg.png",
+    "SERIE_COUNT": 1
+   }
+  }
+ ]
+}

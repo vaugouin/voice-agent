@@ -73,7 +73,8 @@ function extractRegion(startMarker, endMarker) {
 // (window.__LEXICONS__), and the table links, which need detailRequestFromRecord(). Phase 2 lot B
 // (fixtures lotb-*) added the compare-card, fact-card and verdict models and sentences, phase 2
 // lot C (fixtures lotc-*) the histogram, share-bar and flag-list models and sentences, phase 3
-// lot A (fixtures p3a-*) the scatter model, ticks and sentences.
+// lot A (fixtures p3a-*) the scatter model, ticks and sentences, phase 3 lot B (fixtures p3b-*,
+// and the outline app/static/world-110m.json itself) the map model and its sentences.
 const lexicons = readFileSync(join(root, "app", "lexicons.json"), "utf8");
 const code = [
   ...["normalizeUiLanguage", "uiText", "prettyLabel", "formatDate", "formatMoney", "formatMinutes",
@@ -94,6 +95,7 @@ const code = [
   "  text2SqlFlagSummary, text2SqlCountryName, text2SqlChipOptionsLotC: text2SqlChipOptions,",
   "  text2SqlScatterModel, text2SqlScatterSummary, text2SqlScatterTicks, text2SqlScatterTickText,",
   "  text2SqlScatterValueText, text2SqlScatterAxisTitle, text2SqlScatterWords,",
+  "  text2SqlMapModel, text2SqlMapTone, text2SqlMapStepText,",
   "  setLang: (l) => { activeUiLanguage = l; } };",
 ].join("\n\n");
 const sandbox = { Intl, console };
@@ -716,6 +718,56 @@ check("links: older API, from the keys", linkSummary([], ["ID_PERSON", "PERSON_N
   check("view to rep: scatter not offered", api.text2SqlRepresentationForView("scatter", fx("lotc-share-hbo-type-en").representation_options), "");
   check("view to rep: chart on a scatter stays the bars", api.text2SqlRepresentationForView("chart", fx("p3a-scatter-kubrick-runtime-rating-en").representation_options), "ranked-bars");
   check("reply scatter fr", api.text2SqlRequestedViewReply({ ok: true, representation: "scatter", view: "scatter" }, "fr"), "Voici le nuage de points.");
+}
+
+// Phase 3 lot B (fixtures p3b-*: the 1.1.20 baseline answers of evaluations 2916 to 2919, the
+// countries asked on a map, re-classified with the phase 3 lot B module of fastapi-text2sql; the
+// outline is app/static/world-110m.json). The sentences, legend and notes are the ones t2s-front
+// writes.
+{
+  const world = JSON.parse(readFileSync(join(root, "app", "static", "world-110m.json"), "utf8"));
+  const map = (name, lang) => api.text2SqlMapModel(fx(name), lang, world);
+  check("p3b outline", [world.width, world.height, Object.keys(world.shapes).length, ["702", "344", "470", "492", "438", "048", "020"].every((k) => world.dots[k]),
+    world.alpha2["250"], world.alpha2["826"]], [2000, 863, 173, true, "FR", "GB"]);
+  check("p3b caption en", caption("p3b-map-films-2020-en", "en"),
+    "The first 50 countries by number of films on the map; United States leads with 3,957 films.");
+  check("p3b caption fr", caption("p3b-map-coproductions-france-fr", "fr"),
+    "Les 50 premiers pays par nombre de films sur la carte ; Italie arrive en tête avec 2,514 films.");
+  check("p3b caption series", spoken("p3b-map-netflix-series-en", "en"),
+    "The first 50 countries by number of series on the map; United States leads with 1,047 series.");
+  check("p3b caption without counts", caption("p3b-map-country-locations-en", "en"),
+    "50 countries on the map: Indonesia, England, France, Italy, Mexico and 45 more.");
+  check("p3b flag caption unchanged", api.text2SqlSummaryLine({ ...fx("p3b-map-films-2020-en"), representation: "flag-list" }, { lang: "en" }),
+    "The first 50 countries by number of films; United States leads with 3,957 films.");
+  const films = map("p3b-map-films-2020-en", "en");
+  check("p3b legend", [films.legendTitle, films.legend], ["Number of films", [{ text: "39-55", tone: 0 }, { text: "57-98", tone: 1 },
+    { text: "99-134", tone: 2 }, { text: "177-316", tone: 3 }, { text: "401-3,957", tone: 4 }]]);
+  check("p3b legend fr, one value a step", [map("p3b-map-netflix-series-en", "fr").legendTitle, map("p3b-map-netflix-series-en", "en").legend[0].text], ["Nombre de séries", "2"]);
+  check("p3b top country", (({ numeric, label, tone, dot }) => ({ numeric, label, tone, dot }))(films.countries[0]),
+    { numeric: "840", label: "United States: 3,957 films", tone: 4, dot: null });
+  check("p3b label fr", map("p3b-map-films-2020-fr", "fr").countries[0].label, "États-Unis : 3,957 films");
+  check("p3b small countries are dots", films.countries.filter((c) => c.dot).map((c) => [c.name, c.dot.left > 0 && c.dot.left < 100 && c.dot.top > 0 && c.dot.top < 100]),
+    [["Hong Kong", true], ["Singapore", true]]);
+  check("p3b every country placed", films.countries.length, 50);
+  check("p3b land keeps the others", films.land.length > 5000 && !films.land.includes(world.shapes["840"]), true);
+  const places = map("p3b-map-country-locations-en", "en");
+  check("p3b locations: one country, its places named together, no shade", (({ name, tone }) => ({ name, tone }))(places.countries.find((c) => c.numeric === "826")),
+    { name: "England, Scotland", tone: null });
+  check("p3b locations: not on the map", places.offText, "Not on the map: Milan, Russian Empire, Venice, Soviet Union, Ancient Rome, Hamburg.");
+  check("p3b locations: no legend, the name hint", [places.legend, places.legendTitle, places.hint], [[], "", "Tap or hover over a country to see its name."]);
+  check("p3b off map fr, with the count", api.text2SqlMapModel({ ...fx("p3b-map-films-2020-fr"), summary_facts: { ...fx("p3b-map-films-2020-fr").summary_facts,
+    countries: { ...fx("p3b-map-films-2020-fr").summary_facts.countries, countries: fx("p3b-map-films-2020-fr").summary_facts.countries.countries.map((c, i) => (i === 1 ? { ...c, code: "SU", numeric: null, name: { en: "Soviet Union", fr: "Union soviétique" } } : c)) } } }, "fr", world).offText,
+    "Hors carte : Union soviétique (1,127).");
+  check("p3b tones", [1, 2, 3, 4, 5].map((n) => Array.from({ length: n }, (_, i) => api.text2SqlMapTone(i, n))), [[4], [0, 4], [0, 2, 4], [0, 1, 3, 4], [0, 1, 2, 3, 4]]);
+  check("p3b no outline or no facts, no model", [api.text2SqlMapModel(fx("p3b-map-films-2020-en"), "en", null), api.text2SqlMapModel(fx("lotc-share-hbo-type-en"), "en", world)], [null, null]);
+  check("p3b chips", api.text2SqlChipOptionsLotC(fx("p3b-map-films-2020-en")), ["map", "flag-list", "ranked-bars", "table"]);
+  check("p3b labels", [api.text2SqlRepresentationLabel("map", "en"), api.text2SqlRepresentationLabel("map", "fr")], ["Map", "Carte"]);
+  check("view: on a map", view("show it on a map"), "map");
+  check("view: sur une carte", view("Montre-le sur une carte"), "map");
+  check("view: en cartes stays cards", view("Montre-les en cartes"), "cards");
+  check("view to rep: map", api.text2SqlRepresentationForView("map", fx("lotc-flags-codes-netflix-en").representation_options.concat("map")), "map");
+  check("view to rep: map not offered", api.text2SqlRepresentationForView("map", fx("lotc-share-hbo-type-en").representation_options), "");
+  check("reply map fr", api.text2SqlRequestedViewReply({ ok: true, representation: "map", view: "map" }, "fr"), "Voici la carte.");
 }
 
 console.log(`${passes} passed, ${failures} failed`);
