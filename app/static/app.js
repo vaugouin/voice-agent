@@ -723,6 +723,8 @@ function userTranscriptSubtitlesEnabled() {
 const PERSONA_STORAGE_KEY = "voiceAgent.soul";
 const SOUL_SLUG_PATTERN = /^[a-z0-9][a-z0-9-]*$/;
 let sessionSoulOverride = null;
+// Actual server-resolved profile of the running connection, independent of Settings.
+let realtimeSessionSoul = "default";
 
 function storedSoulPreference() {
   try {
@@ -10786,6 +10788,13 @@ function buildReconnectResume(reason) {
   };
 }
 
+// VOICE-AGENT-258: keep the legacy recovery instruction for default/unknown profiles.
+function reconnectAnswerInstructions(soul) {
+  return ["video-store", "scholar", "chatterbox"].includes(soul)
+    ? "Continue the interrupted spoken answer in this session's usual style and level of detail."
+    : "Continue the interrupted spoken answer concisely.";
+}
+
 function resumeDroppedAnswer() {
   if (!pendingReconnectResume || !dc || dc.readyState !== "open") {
     return;
@@ -10803,7 +10812,7 @@ function resumeDroppedAnswer() {
     : "";
   const requestText = [
     "The WebRTC connection dropped while you were answering.",
-    "Continue the interrupted spoken answer concisely.",
+    reconnectAnswerInstructions(realtimeSessionSoul),
     retainedContextText("connection drop"),
     resume.userTranscript ? `User request: ${resume.userTranscript}` : "",
     resume.toolArgs?.query ? `Tool query: ${resume.toolArgs.query}` : "",
@@ -14773,6 +14782,7 @@ async function start({ reconnecting = false } = {}) {
     setSessionRunning(false);
     return;
   }
+  realtimeSessionSoul = sdpResponse.headers.get("X-Agent-Soul") || "default";
   await nextPc.setRemoteDescription({ type: "answer", sdp: answerSdp });
   setSessionRunning(true);
 }

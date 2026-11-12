@@ -148,6 +148,31 @@ RECONNECT_ATTEMPTS = 5
 RECONNECT_BACKOFF = 3.0        # seconds; grows per attempt (attempt * backoff)
 RECONNECT_BACKOFF_MAX = 30.0   # cap on the per-attempt sleep
 
+# Windows refuses these characters in a file name, which Linux accepts (Drupal
+# keeps uploads such as "Mobile – 8*.png" or "fête ?_mobile.png"). They are mapped
+# one to one to their full-width look-alikes, so two remote names never collide
+# locally ("8*.png" and "8**.png" stay distinct). Control characters go to the
+# private-use range U+F000, as Cygwin and WSL do.
+_WIN_FORBIDDEN = {c: chr(0xFF00 + ord(c) - 0x20) for c in '<>:"/\\|?*'}
+_WIN_FORBIDDEN.update({chr(i): chr(0xF000 + i) for i in range(1, 32)})
+_WIN_TRANS = str.maketrans(_WIN_FORBIDDEN)
+
+
+def local_name(name: str) -> str:
+    """Return the local file name for remote *name*, safe on Windows.
+
+    Unchanged on other systems and for names Windows already accepts. A trailing
+    dot or space, which Windows silently strips, is mapped too.
+    """
+    if os.name != "nt":
+        return name
+    mapped = name.translate(_WIN_TRANS)
+    if mapped.endswith("."):
+        mapped = mapped[:-1] + "．"
+    elif mapped.endswith(" "):
+        mapped = mapped[:-1] + ""
+    return mapped
+
 
 class Stats:
     def __init__(self) -> None:
@@ -699,7 +724,7 @@ def sync_dir(session, remote_dir: str, local_dir: str, stats: Stats,
     for attr in sorted(entries, key=lambda a: a.filename):
         name = attr.filename
         remote_path = posixpath.join(remote_dir, name)
-        local_path = os.path.join(local_dir, name)
+        local_path = os.path.join(local_dir, local_name(name))
         mode = attr.st_mode or 0
 
         if remote_path.rstrip("/") in other_roots:
@@ -762,7 +787,7 @@ def sync_dir(session, remote_dir: str, local_dir: str, stats: Stats,
     if delete:
         # Every name the VPS listed counts as present, whatever happened to it
         # above (copied, excluded, skipped symlink, special file, own root).
-        remote_names = {os.path.normcase(a.filename) for a in entries}
+        remote_names = {os.path.normcase(local_name(a.filename)) for a in entries}
         delete_extraneous(remote_dir, local_dir, remote_names, stats, excludes,
                           other_roots, dry_run, log)
 
@@ -900,6 +925,13 @@ class SftpSession:
 
 
 def main() -> int:
+    # Output redirected to a file falls back to cp1252 on Windows: escape what it
+    # cannot encode (local names mapped by local_name) instead of crashing.
+    for stream in (sys.stdout, sys.stderr):
+        try:
+            stream.reconfigure(errors="backslashreplace")
+        except (AttributeError, ValueError):
+            pass
     # Pre-parse --env-file so the .env is loaded BEFORE argparse defaults below
     # are resolved from os.environ. Real environment variables still take priority.
     pre = argparse.ArgumentParser(add_help=False)

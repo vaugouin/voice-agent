@@ -1254,6 +1254,21 @@ Voice-mode enablement:
 - `/session` returns `X-User-Transcript-Subtitles`; the browser stores the value in `userTranscriptSubtitlesActive`.
 - New conversation and subtitle cleanup hide the lane and clear its active timer.
 
+## Persona Response And Recovery
+
+The four persona choices retain the same selection timing: typed requests use the current
+Settings choice, while an open voice connection keeps the profile it was created with.
+Open explanations differ in stance and length: `video-store` gives and defends a viewing
+judgment; `scholar` explains a mechanism; `chatterbox` develops several connected angles.
+Narrow facts and explicit requests for brevity stay short. The default keeps its existing
+behavior. A displayed list is still summarized rather than read row by row.
+
+After a dropped connection, the server reports the actual new connection's profile in
+`X-Agent-Soul`. The browser uses that session profile for the continuation instruction,
+independently of a newer picker selection. Default/unknown profiles retain the existing
+concise recovery instruction; the three alternatives resume at their usual level of detail.
+This does not change which profile a reconnect selects.
+
 ## Persona Badge
 
 Elements: `#personaBadge`, `#personaBadgeImage`

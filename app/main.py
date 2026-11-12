@@ -246,6 +246,80 @@ def soul_instructions(soul: Soul) -> str:
     the character above it.
     """
     return " ".join(part for part in (soul.prose, AGENT_SOUL_CORE) if part)
+
+# VOICE-AGENT-258. Only the three audited alternatives opt in. The default (and
+# unrecognised/custom slugs) retains the historical prompt strings byte for byte.
+# Character stays in the soul files; operational length and rendering live here.
+PERSONA_RESPONSE_LENGTHS = {
+    "video-store": {"answer": "three to five", "brief": "three to five", "deep": "six to nine"},
+    "scholar": {"answer": "four to seven", "brief": "four to seven", "deep": "eight to twelve"},
+    "chatterbox": {"answer": "twelve to eighteen", "brief": "eight to twelve", "deep": "sixteen to twenty-four"},
+}
+
+
+def persona_length_instructions(soul: Soul, *, spoken: bool) -> str:
+    policy = PERSONA_RESPONSE_LENGTHS.get(soul.slug)
+    if policy is None:
+        return (SPOKEN_LENGTH_DIRECTIVES if spoken else TEXT_LENGTH_DIRECTIVES)[soul.brevity]
+    medium = "spoken prose" if spoken else "plain text"
+    return (
+        f"Reply in {medium}. On an open-ended question, usually develop {policy['answer']} "
+        "sentences when there is enough useful material. A narrow factual question or "
+        "confirmation needs only a direct answer. An explicit request for brevity takes "
+        "precedence over the usual length; an explicit request for detail may go further. "
+        "These are targets, not quotas: stop earlier when the material is thin."
+    )
+
+
+def persona_verbose_instructions(soul: Soul) -> str:
+    if soul.slug not in PERSONA_RESPONSE_LENGTHS:
+        return VERBOSE_DETAIL_INSTRUCTIONS
+    return VERBOSE_DETAIL_INSTRUCTIONS.replace(
+        "Default to concise answers.", "Use the selected persona's usual answer length."
+    ).replace("return to concise answers", "return to the selected persona's usual answer length")
+
+
+def persona_screen_result_instructions(soul: Soul) -> str:
+    if soul.slug not in PERSONA_RESPONSE_LENGTHS:
+        return TEXT_RESULT_ON_SCREEN_INSTRUCTIONS
+    return (
+        "The screen already shows every result row (cards, a ranking or a table) with its values. "
+        "Never repeat the rows as a list or a table and never write markdown (no table, no bullet "
+        "list, no heading, no asterisks). For a request to display a list, orient the user with "
+        "the count shown, the order, and the useful extreme value; add a relevant observation "
+        "in your own style only when it helps. Do not pad a list summary to meet a length target. "
+        "This list-orientation rule does not limit an explanatory question about a record: "
+        "develop that answer in the selected persona's usual style and length."
+    )
+
+
+def persona_summary_line_instructions(soul: Soul) -> str:
+    if soul.slug not in PERSONA_RESPONSE_LENGTHS:
+        return SUMMARY_LINE_INSTRUCTIONS
+    return SUMMARY_LINE_INSTRUCTIONS.replace(
+        "You may join it to a short sentence of your own.",
+        "You may follow it with a relevant observation in your own style when the returned "
+        "facts support one. A simple list needs only orientation; do not pad it to meet an "
+        "answer-length target. For an explanatory follow-up, use your normal response length.",
+    )
+
+
+def persona_composer_instructions(soul: Soul, surface: str, ui_language: str) -> str:
+    template = BRIEF_INSTRUCTIONS if surface == "brief" else DEEP_ANSWER_INSTRUCTIONS
+    policy = PERSONA_RESPONSE_LENGTHS.get(soul.slug)
+    if policy is not None:
+        historical = "four to six" if surface == "brief" else "six to ten"
+        template = template.replace(historical, policy[surface], 1)
+    instructions = template.format(language="French" if ui_language == "fr" else "English")
+    if policy is not None:
+        instructions += (
+            " An explicit request for brevity takes precedence over the usual length. "
+            "A narrow factual question needs only a direct answer; do not add commentary "
+            "just to meet the sentence target."
+        )
+    return instructions
+
+
 # Startup banner so `docker logs -f voice-agent` shows the running version.
 print(f"[voice-agent] version {APP_VERSION}", flush=True)
 REALTIME_VOICES = {
@@ -2456,7 +2530,7 @@ def realtime_session_config(
     active_soul = soul or resolve_soul()
     instructions = (
         soul_instructions(active_soul)
-        + " " + SPOKEN_LENGTH_DIRECTIVES[active_soul.brevity]
+        + " " + persona_length_instructions(active_soul, spoken=True)
         + " When the user asks a "
         "cinema, movie, TV, actor, director, production company, award, "
         "location, ranking, database, reporting, analytics, or text-to-SQL "
@@ -2470,7 +2544,10 @@ def realtime_session_config(
         "for a movie plot, call get_movie_detail with ID_MOVIE. Pass "
         "ui_language to search and detail tools, using fr for French "
         "questions and en otherwise. Use returned detail fields to "
-        "respond in a short spoken summary by default. When wikipedia_content is "
+        + ("respond in a short spoken summary by default. "
+           if active_soul.slug not in PERSONA_RESPONSE_LENGTHS
+           else "respond in the selected persona's usual style and length. ")
+        + "When wikipedia_content is "
         "returned for an entity, use it as grounding for questions asking "
         "for background, history, biography, plot context, or explanatory "
         "details. IDs are internal tool arguments only: never mention IMDb, "
@@ -2481,7 +2558,7 @@ def realtime_session_config(
         "for numbered output."
     )
     instructions += (
-        " " + VERBOSE_DETAIL_INSTRUCTIONS
+        " " + persona_verbose_instructions(active_soul)
         # VOICE-AGENT-197: right after the verbose rule, because in voice mode a verbose detail
         # request now comes back as a deep answer.
         + " " + DEEP_ANSWER_VOICE_INSTRUCTIONS
@@ -2494,7 +2571,7 @@ def realtime_session_config(
         + " " + GROUP_WORKS_INSTRUCTIONS  # VOICE-AGENT-225
         + " " + RECOVERY_INSTRUCTIONS
         + " " + RESULT_COUNT_INSTRUCTIONS
-        + " " + SUMMARY_LINE_INSTRUCTIONS  # VOICE-AGENT-248, voice only
+        + " " + persona_summary_line_instructions(active_soul)  # VOICE-AGENT-248, voice only
         + " " + DISAMBIGUATION_INSTRUCTIONS
         + " " + GROUNDED_ABSENCE_INSTRUCTIONS
         # VOICE-AGENT-185: after GROUNDED_ABSENCE, which sends the model to the detail tool
@@ -2822,6 +2899,7 @@ async def create_realtime_session(request: Request) -> PlainTextResponse:
         raise HTTPException(status_code=response.status_code, detail=answer_sdp)
 
     headers = {
+        "X-Agent-Soul": active_soul.slug,
         "X-Structured-Card-Focus": "1" if use_structured_card_focus else "0",
         "X-Spoken-Subtitles": "1" if use_spoken_subtitles else "0",
         "X-User-Transcript-Subtitles": "1" if use_user_transcript_subtitles else "0",
@@ -3425,7 +3503,7 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
     # operational instructions below stay inline.
     instructions = (
         soul_instructions(active_soul)
-        + " " + TEXT_LENGTH_DIRECTIVES[active_soul.brevity] + " "
+        + " " + persona_length_instructions(active_soul, spoken=False) + " "
         "The server has already executed query_text2sql for the user's typed "
         "message and provided the result in the input. Base your answer on "
         "that tool result, not on pretraining. If the user asks for details "
@@ -3440,7 +3518,7 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         "entity, use it as grounding for questions asking for background, "
         "history, biography, plot context, or explanatory details. Do not "
         "produce audio. "
-        + ("" if active_soul.brevity == "expansive" else TEXT_SUBTITLE_BREVITY)
+        + ("" if active_soul.slug in PERSONA_RESPONSE_LENGTHS or active_soul.brevity == "expansive" else TEXT_SUBTITLE_BREVITY)
         + "IDs are "
         "internal tool arguments only: never mention IMDb, Wikidata, TMDb, "
         "TVDB, ID_* fields, or any other database identifiers in user-facing "
@@ -3448,10 +3526,10 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         "or subtitle when it distinguishes duplicate titles. Do not enumerate "
         "cards with result numbers unless the user explicitly asks for "
         "numbered output. "
-        + TEXT_RESULT_ON_SCREEN_INSTRUCTIONS
+        + persona_screen_result_instructions(active_soul)
     )
     instructions += (
-        " " + VERBOSE_DETAIL_INSTRUCTIONS
+        " " + persona_verbose_instructions(active_soul)
         + " " + RECOVERY_INSTRUCTIONS
         + " " + RESULT_COUNT_INSTRUCTIONS
         + " " + DISAMBIGUATION_INSTRUCTIONS
@@ -3745,7 +3823,7 @@ async def brief(payload: BriefRequest) -> dict[str, Any]:
     instructions = (
         soul_instructions(active_soul)
         + " "
-        + BRIEF_INSTRUCTIONS.format(language="French" if ui_language == "fr" else "English")
+        + persona_composer_instructions(active_soul, "brief", ui_language)
         + " " + current_date_instructions()
     )
     input_text = (
@@ -4029,7 +4107,7 @@ async def deep_answer(payload: DeepAnswerRequest) -> dict[str, Any]:
     instructions = (
         soul_instructions(active_soul)
         + " "
-        + DEEP_ANSWER_INSTRUCTIONS.format(language="French" if ui_language == "fr" else "English")
+        + persona_composer_instructions(active_soul, "deep", ui_language)
         + " " + current_date_instructions()
     )
     material = deep_answer_material(detail_output, question)
