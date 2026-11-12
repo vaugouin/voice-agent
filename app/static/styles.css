@@ -4904,6 +4904,106 @@ body:not(.cinemaRender) .cinemaControls {
 .t2sShareSeg[data-hue="rest"] {
   color: var(--text-primary);
 }
+/* Drill-down: a histogram bin, a trend column or a share part that holds rows asks its follow-up
+   question (the twin rules are in t2s-front, a.t2sDrill). The button fills its column, so the
+   column keeps its layout; the global button rule (min-width 96px, min-height 42px, padding,
+   colours) is reset here, as on the scatter dots. */
+button.t2sDrill {
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  font-weight: inherit;
+  text-align: inherit;
+  cursor: pointer;
+}
+.t2sHistoCol > button.t2sDrill,
+.t2sTrendCol > button.t2sDrill {
+  flex: 1 1 auto;
+  min-height: 0;
+  width: 100%;
+  display: flex;
+  flex-direction: column;
+}
+button.t2sDrill:focus-visible {
+  outline: 2px solid var(--accent-secondary);
+  outline-offset: 2px;
+}
+.t2sHistoCol > button.t2sDrill:focus-visible .t2sHistoFill,
+.t2sTrendCol > button.t2sDrill:focus-visible .t2sTrendFill {
+  background: var(--accent-primary);
+}
+.t2sShareName button.t2sDrill,
+.t2sShareNumbers button.t2sDrill {
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.t2sShareName button.t2sDrill:hover,
+.t2sShareNumbers button.t2sDrill:hover,
+.t2sShareName button.t2sDrill:focus-visible,
+.t2sShareNumbers button.t2sDrill:focus-visible {
+  text-decoration: underline;
+}
+.t2sShareSeg.t2sDrill {
+  cursor: pointer;
+}
+.t2sShareSeg.t2sDrill:hover {
+  filter: brightness(1.15);
+}
+/* The share bar asked as a pie (summary_facts.share.shape "pie"): an SVG ring, the arcs in the
+   hues of the bar, beside the legend on a wide screen and above it on a phone. */
+.t2sSharePie {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 16px;
+}
+.t2sSharePie .t2sShareLegend {
+  flex: 1 1 220px;
+  min-width: 0;
+  margin-top: 0;
+}
+.t2sPie {
+  flex: 0 0 auto;
+  width: 200px;
+  max-width: 100%;
+  height: auto;
+  margin: 0 auto;
+}
+.t2sPie circle {
+  fill: none;
+  stroke-width: 8;
+}
+.t2sPie .t2sPieHole {
+  stroke: var(--border);
+}
+.t2sPie .t2sPieLink {
+  cursor: pointer;
+}
+.t2sPie .t2sPieLink:hover {
+  filter: brightness(1.15);
+}
+.t2sPie [data-hue="0"] { stroke: #03dac6; }
+.t2sPie [data-hue="1"] { stroke: #bb86fc; }
+.t2sPie [data-hue="2"] { stroke: #ffb74d; }
+.t2sPie [data-hue="3"] { stroke: #64b5f6; }
+.t2sPie [data-hue="4"] { stroke: #f06292; }
+.t2sPie [data-hue="5"] { stroke: #aed581; }
+.t2sPie [data-hue="6"] { stroke: #fff176; }
+.t2sPie [data-hue="7"] { stroke: #90a4ae; }
+.t2sPie [data-hue="rest"] { stroke: rgba(160, 160, 160, 0.45); }
+@media (min-width: 600px) {
+  .t2sPie {
+    margin: 0;
+  }
+}
 .t2sFlags {
   list-style: none;
   margin: 12px 0;

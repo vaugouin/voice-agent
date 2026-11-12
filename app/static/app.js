@@ -3754,13 +3754,14 @@ function renderTrendColumns(container, rows, columns, upstream) {
   plot.setAttribute("role", "list");
   plot.setAttribute("aria-label", capitalizeFirst(text2SqlMetricLabel(model.metric.name)));
   plot.style.minWidth = `${model.bars.length * (showAllValues ? 44 : 30)}px`;
-  model.bars.forEach((bar) => {
+  model.bars.forEach((bar, i) => {
     const col = document.createElement("div");
     col.className = "t2sTrendCol";
     col.setAttribute("role", "listitem");
     const description = bar.valueText ? `${bar.label}${t2sLang() === "fr" ? " : " : ": "}${bar.valueText}` : bar.label;
     col.title = description;
     col.setAttribute("aria-label", description);
+    const followUp = text2SqlDrillTrendQuestion(upstream, model, rows, i, activeUiLanguage);
     const area = document.createElement("div");
     area.className = "t2sTrendArea";
     area.setAttribute("aria-hidden", "true");
@@ -3780,7 +3781,7 @@ function renderTrendColumns(container, rows, columns, upstream) {
     label.className = "t2sTrendLabel";
     label.setAttribute("aria-hidden", "true");
     label.textContent = bar.label;
-    col.append(area, label);
+    appendText2SqlDrillContent(col, [area, label], followUp, description);
     plot.append(col);
   });
   root.append(plot);
@@ -4019,6 +4020,63 @@ function renderVerdict(container, rows, columns, upstream) {
 // filled in is drawn as a gap on the axis, labelled like the others. Each column carries its
 // range and its count as an aria label and a title; the counts are printed over the columns when
 // there are twelve bins or fewer, the peak's always. A long axis scrolls inside its box.
+// Drill-down: a bucket's follow-up goes the way a typed question goes (sendTextMessage()): a typed
+// Realtime turn while the voice session runs, else /text-chat; never a silent API call, so the
+// conversation shows the question and the agent answers it. Same branch as a typed question with
+// words; an armed photo is not spent (the follow-up is about the result on screen).
+function askText2SqlFollowUp(text) {
+  const question = String(text || "").trim();
+  if (!question) {
+    return;
+  }
+  clientLog("drill_down_follow_up", { length: question.length });
+  if (canSendTypedRealtimeTurn()) {
+    lastUserTranscript = question;
+    activeUiLanguage = detectUiLanguageFromText(question);
+    if (dc?.readyState === "open") {
+      addRetainedContext({ type: "user", text: question });
+      sendTypedRealtimeTurn(question);
+    } else {
+      pendingRealtimeTextTurns.push(question);
+      setStatus("Connecting for voice reply", "live");
+    }
+    return;
+  }
+  sendTextChatMessage(question, { source: "drill-down" }).catch((error) =>
+    clientLog("drill_down_error", { error: error.message }, "error"));
+}
+
+// A button that asks a follow-up, named for a screen reader by what the bucket shows and the
+// question it asks (the same label as the links of t2s-front). The global button rule is reset on
+// .t2sDrill in styles.css.
+function text2SqlDrillButton(followUp, description) {
+  const button = document.createElement("button");
+  button.type = "button";
+  button.className = "t2sDrill";
+  const label = `${description}. ${followUp}`;
+  button.setAttribute("aria-label", label);
+  button.title = label;
+  button.addEventListener("click", (event) => {
+    event.stopPropagation();
+    askText2SqlFollowUp(followUp);
+  });
+  button.addEventListener("keydown", (event) => event.stopPropagation());
+  return button;
+}
+
+// The column of a histogram or a trend: its parts in a button that asks the follow-up when the
+// bucket has one (the button then carries the name), else as they were.
+function appendText2SqlDrillContent(col, parts, followUp, description) {
+  if (!followUp) {
+    col.append(...parts);
+    return;
+  }
+  const button = text2SqlDrillButton(followUp, description);
+  button.append(...parts);
+  col.removeAttribute("aria-label");
+  col.append(button);
+}
+
 function renderHistogram(container, rows, columns, upstream) {
   const model = text2SqlHistogramModel(upstream?.summary_facts, activeUiLanguage);
   if (!model) {
@@ -4038,6 +4096,7 @@ function renderHistogram(container, rows, columns, upstream) {
   plot.setAttribute("aria-label", axisName.textContent);
   plot.style.minWidth = `${model.bars.length * (few ? 40 : 14)}px`;
   model.bars.forEach((bar, i) => {
+    const followUp = text2SqlDrillHistogramQuestion(upstream, model, i, activeUiLanguage);
     const col = document.createElement("div");
     col.className = "t2sHistoCol";
     col.setAttribute("role", "listitem");
@@ -4066,7 +4125,7 @@ function renderHistogram(container, rows, columns, upstream) {
     label.className = "t2sHistoLabel";
     label.setAttribute("aria-hidden", "true");
     label.textContent = i % labelEvery === 0 || bar.peak ? bar.axis : "";
-    col.append(area, label);
+    appendText2SqlDrillContent(col, [area, label], followUp, description);
     plot.append(col);
   });
   const scroller = document.createElement("div");
@@ -4085,21 +4144,30 @@ function renderHistogram(container, rows, columns, upstream) {
 // Phase 2 lot C, `share-bar`: one 100% bar, a segment per part of summary_facts.share in the
 // API's order, the percentage written on every segment wide enough to hold it; below, the legend
 // lists every part with its swatch, its label, its number and its percentage, so nothing is read
-// from the colour alone. One share alone is the part and the rest, the rest striped.
+// from the colour alone. One share alone is the part and the rest, the rest striped. A part asks
+// its follow-up (drill-down): a click on its segment, or the button of its legend name (of its
+// numbers when the row opens an entity sheet); never one share alone nor its rest.
+// summary_facts.share.shape "pie" draws the parts as a ring (renderSharePie()) beside the same
+// legend; any other shape, or none, the bar. Mirrors f_t2srep_render_share_bar() of t2s-front.
 function renderShareBar(container, rows, columns, upstream) {
   const model = text2SqlShareModel(upstream, activeUiLanguage);
   if (!model) {
     return renderRawTable(container, rows, columns);
   }
+  const fr = t2sLang() === "fr";
+  const pie = upstream?.summary_facts?.share?.shape === "pie";
   const root = document.createElement("div");
-  root.className = "t2sShare";
+  root.className = pie ? "t2sShare t2sSharePie" : "t2sShare";
   const bar = document.createElement("div");
   bar.className = "t2sShareBar";
   bar.setAttribute("aria-hidden", "true");
   const legend = document.createElement("ul");
   legend.className = "t2sShareLegend";
+  const followUps = [];
   model.segments.forEach((segment, i) => {
     const hue = segment.rest ? "rest" : String(i % 8);
+    const followUp = text2SqlDrillShareQuestion(upstream, segment, activeUiLanguage);
+    followUps.push(followUp);
     const part = document.createElement("div");
     part.className = "t2sShareSeg";
     part.dataset.hue = hue;
@@ -4107,6 +4175,10 @@ function renderShareBar(container, rows, columns, upstream) {
     part.title = `${capitalizeFirst(segment.label)} ${segment.pctText}`;
     if (segment.share >= 0.12) {
       part.textContent = segment.pctText;
+    }
+    if (followUp) {
+      part.classList.add("t2sDrill");
+      part.addEventListener("click", () => askText2SqlFollowUp(followUp));
     }
     bar.append(part);
     const item = document.createElement("li");
@@ -4117,19 +4189,79 @@ function renderShareBar(container, rows, columns, upstream) {
     swatch.setAttribute("aria-hidden", "true");
     const name = document.createElement("span");
     name.className = "t2sShareName";
-    name.textContent = capitalizeFirst(segment.label);
     const numbers = document.createElement("span");
     numbers.className = "t2sShareNumbers";
-    numbers.textContent = segment.valueText ? `${segment.valueText} · ${segment.pctText}` : segment.pctText;
-    item.append(swatch, name, numbers);
+    const nameText = capitalizeFirst(segment.label);
+    const numbersText = segment.valueText ? `${segment.valueText} · ${segment.pctText}` : segment.pctText;
+    const description = `${nameText}${fr ? " : " : ": "}${numbersText}`;
     const record = Number.isInteger(segment.index) ? (rows[segment.index]?.data || rows[segment.index]) : null;
+    const opensEntity = Boolean(record && typeof record === "object" && detailRequestFromRecord(record));
+    if (followUp && !opensEntity) {
+      const button = text2SqlDrillButton(followUp, description);
+      button.textContent = nameText;
+      name.append(button);
+    } else {
+      name.textContent = nameText;
+    }
+    if (followUp && opensEntity) {
+      const button = text2SqlDrillButton(followUp, description);
+      button.textContent = numbersText;
+      numbers.append(button);
+    } else {
+      numbers.textContent = numbersText;
+    }
+    item.append(swatch, name, numbers);
     if (record && typeof record === "object") {
       makeText2SqlRowOpenable(item, record);
     }
     legend.append(item);
   });
-  root.append(bar, legend);
+  root.append(pie ? renderSharePie(model, followUps) : bar, legend);
   container.append(root);
+}
+
+// The pie of a share bar asked as a pie: an SVG ring, one arc per part in the order and hues of
+// the bar, from the top, clockwise. The ring is a circle of circumference 100, so an arc of share
+// s is a dash of s*100. Hidden from screen readers: the legend says it all, and holds the
+// focusable button of each follow-up; a click on an arc asks it too. Mirrors f_t2srep_pie_svg().
+function renderSharePie(model, followUps) {
+  const ns = "http://www.w3.org/2000/svg";
+  const svg = document.createElementNS(ns, "svg");
+  svg.setAttribute("class", "t2sPie");
+  svg.setAttribute("viewBox", "0 0 42 42");
+  svg.setAttribute("aria-hidden", "true");
+  svg.setAttribute("focusable", "false");
+  const ring = (cls) => {
+    const circle = document.createElementNS(ns, "circle");
+    circle.setAttribute("class", cls);
+    circle.setAttribute("cx", "21");
+    circle.setAttribute("cy", "21");
+    circle.setAttribute("r", "15.91549");
+    return circle;
+  };
+  svg.append(ring("t2sPieHole"));
+  const count = model.segments.length;
+  const round3 = (n) => Math.round(n * 1000) / 1000;
+  let start = 0;
+  model.segments.forEach((segment, i) => {
+    const length = Math.max(0, Number(segment.share) || 0) * 100;
+    const dash = count > 1 ? Math.max(length - 0.6, Math.min(length, 0.4)) : length;
+    const arc = ring("t2sPieSeg");
+    arc.dataset.hue = segment.rest ? "rest" : String(i % 8);
+    arc.setAttribute("stroke-dasharray", `${round3(dash)} ${round3(100 - dash)}`);
+    arc.setAttribute("stroke-dashoffset", String(round3(25 - start)));
+    const title = document.createElementNS(ns, "title");
+    title.textContent = `${capitalizeFirst(segment.label)} ${segment.pctText}`;
+    arc.append(title);
+    const followUp = followUps[i];
+    if (followUp) {
+      arc.classList.add("t2sPieLink");
+      arc.addEventListener("click", () => askText2SqlFollowUp(followUp));
+    }
+    svg.append(arc);
+    start += length;
+  });
+  return svg;
 }
 
 // Phase 2 lot C, `flag-list`: one row per country of summary_facts.countries, in row order: the
@@ -6295,6 +6427,159 @@ function text2SqlShareSummary(upstream, { lang = "", spoken = false } = {}) {
     list += fr ? ` et ${k - 3} ${k - 3 === 1 ? "autre" : "autres"}` : ` and ${k - 3} more`;
   }
   return `${capitalizeFirst(lead)}${fr ? " : " : ": "}${list}.`;
+}
+
+// Drill-down on the bucketed views: a histogram bin, a trend column or a share part asks a
+// follow-up question built from the original question and the bucket, in the UI language, with no
+// model call: 'Among the items counted in "<question>", list those whose number of seasons is 3.'
+// The click sends it as a typed question (askText2SqlFollowUp()). Mirrors t2s-front
+// (f_t2srep_drill_word(), f_t2srep_drill_question(), f_t2srep_drill_bin_value(),
+// f_t2srep_drill_period_value(), f_t2srep_drill_share_question()): the same words and the same
+// rules, change both. The wording was chosen on the live API among three: "counted in" keeps the
+// conditions of the original question (the films announced, not every film of the year), and
+// "list" asks for the rows, not another distribution.
+const T2S_DRILL_WORDS = {
+  RUNTIME: ["runtime", "durée", "f"],
+  BUDGET: ["budget", "budget", "m"],
+  REVENUE: ["revenue", "box-office", "m"],
+  IMDB_RATING: ["IMDb rating", "note IMDb", "f"],
+  IMDB_RATING_WEIGHTED: ["IMDb rating", "note IMDb", "f"],
+  IMDB_RATING_ADJUSTED: ["IMDb rating", "note IMDb", "f"],
+  RATING: ["rating", "note", "f"],
+  IMDB_VOTES: ["number of IMDb votes", "nombre de votes IMDb", "m"],
+  VOTE_AVERAGE: ["TMDb rating", "note TMDb", "f"],
+  VOTE_COUNT: ["number of TMDb votes", "nombre de votes TMDb", "m"],
+  POPULARITY: ["popularity", "popularité", "f"],
+  NUMBER_OF_SEASONS: ["number of seasons", "nombre de saisons", "m"],
+  NUMBER_OF_EPISODES: ["number of episodes", "nombre d'épisodes", "m"],
+  AGE: ["age", "âge", "m"],
+  BIRTH_YEAR: ["birth year", "année de naissance", "f"],
+  DEATH_YEAR: ["death year", "année de décès", "f"],
+  RELEASE_YEAR: ["release year", "année de sortie", "f"],
+  FIRST_AIR_YEAR: ["first air year", "année de première diffusion", "f"],
+  YEAR: ["year", "année", "f"],
+  ANNEE: ["year", "année", "f"],
+  DECADE: ["decade", "décennie", "f"],
+  DECENNIE: ["decade", "décennie", "f"],
+  DAT_RELEASE: ["release date", "date de sortie", "f"],
+  DAT_FIRST_AIR: ["first air date", "date de première diffusion", "f"],
+  STATUS: ["status", "statut", "m"],
+  SERIE_TYPE: ["type", "type", "m"],
+  TYPE: ["type", "type", "m"],
+  GENDER: ["gender", "genre", "m"],
+  GENRE_NAME: ["genre", "genre", "m"],
+  ORIGINAL_LANGUAGE: ["original language", "langue originale", "f"],
+};
+
+// How a follow-up names the quantity or the category of a bucket: the column without its bin
+// suffix (RUNTIME_BUCKET is RUNTIME), from a table of its own so both fronts word it the same
+// (their axis titles differ: "seasons" here, "number of seasons" there), else the column name in
+// plain words. The gender picks the French article.
+function text2SqlDrillWord(column, lang) {
+  let name = String(column || "").replace(/_(?:BUCKET|BAND|BIN|RANGE|START|MIN|LOW|FROM|DEBUT)(?:_MINUTES)?$/i, "").replace(/_(?:BUCKET|BAND|BIN|RANGE)$/i, "");
+  if (!name) {
+    name = String(column || "");
+  }
+  if (/^(duree|duration|runtime)/i.test(name)) {
+    name = "RUNTIME";
+  }
+  const entry = T2S_DRILL_WORDS[name.toUpperCase()];
+  if (entry) {
+    return { label: t2sLang(lang) === "fr" ? entry[1] : entry[0], gender: entry[2] };
+  }
+  return { label: prettyLabel(name).toLowerCase(), gender: "m" };
+}
+
+// 'Among the items counted in "<question>", list those whose <word> is <value>.' /
+// 'Parmi les éléments comptés dans « <question> », liste ceux dont <le|la|l'><word> est <value>.';
+// "" with no question or no value.
+function text2SqlDrillQuestion(question, word, value, lang) {
+  const q = String(question || "").replace(/\s+/g, " ").trim();
+  const v = String(value ?? "").trim();
+  if (!q || !v || !word?.label) {
+    return "";
+  }
+  if (t2sLang(lang) === "fr") {
+    const article = /^[aeiouyhâàéèêîïôû]/i.test(word.label) ? "l'" : word.gender === "f" ? "la " : "le ";
+    return `Parmi les éléments comptés dans « ${q} », liste ceux dont ${article}${word.label} est ${v}.`;
+  }
+  return `Among the items counted in "${q}", list those whose ${word.label} is ${v}.`;
+}
+
+// The bucket of a histogram bin in a follow-up: its exact value for a step of 1 (or a bin whose
+// end is its start), "between <low> and <high>" / "entre <low> et <high>" otherwise (the end: the
+// bin's own, else start + width - 1 for whole numbers, else start + width), a text bin its label;
+// "<n> minutes" on a runtime. "" for an empty bin.
+function text2SqlDrillBinValue(bin, histogram, lang) {
+  const count = Number(bin?.value);
+  if (!bin || bin.empty || !Number.isFinite(count) || count <= 0) {
+    return "";
+  }
+  if (bin.label !== null && bin.label !== undefined && String(bin.label).trim() !== "") {
+    return String(bin.label).trim();
+  }
+  if (bin.low === null || bin.low === undefined || !Number.isFinite(Number(bin.low))) {
+    return "";
+  }
+  const low = Number(bin.low);
+  const unit = histogram?.unit || null;
+  let high = bin.high === null || bin.high === undefined || !Number.isFinite(Number(bin.high)) ? null : Number(bin.high);
+  const width = histogram?.width === null || histogram?.width === undefined ? null : Number(histogram.width);
+  if (high === null && Number.isFinite(width) && width > 0 && width !== 1) {
+    high = Number.isInteger(low) && Number.isInteger(width) ? low + width - 1 : low + width;
+  }
+  const suffix = unit === "minutes" ? " minutes" : "";
+  const lowText = text2SqlBinValueText(low, unit);
+  if (high === null || high === low) {
+    return `${lowText}${suffix}`;
+  }
+  const highText = text2SqlBinValueText(high, unit);
+  return t2sLang(lang) === "fr" ? `entre ${lowText} et ${highText}${suffix}` : `between ${lowText} and ${highText}${suffix}`;
+}
+
+// The bucket of a trend column in a follow-up: the year, "the 1980s" / "les années 1980" for a
+// decade, the cell as is when it holds no year.
+function text2SqlDrillPeriodValue(year, decade, raw, lang) {
+  if (year === null || year === undefined) {
+    return String(raw ?? "").trim();
+  }
+  if (decade) {
+    return t2sLang(lang) === "fr" ? `les années ${year}` : `the ${year}s`;
+  }
+  return String(year);
+}
+
+// The follow-up of a share part, "" when the part asks none: one share alone, the rest of a share,
+// no question or no label column.
+function text2SqlDrillShareQuestion(upstream, segment, lang) {
+  const share = upstream?.summary_facts?.share;
+  if (!share || share.kind === "single" || segment?.rest || !share.label_column) {
+    return "";
+  }
+  return text2SqlDrillQuestion(upstream?.question, text2SqlDrillWord(share.label_column, lang), segment?.label, lang);
+}
+
+// The follow-up of a histogram bin (by its position in model.bars), "" for an empty bin.
+function text2SqlDrillHistogramQuestion(upstream, model, i, lang) {
+  const bar = model?.bars?.[i];
+  if (!bar || bar.empty) {
+    return "";
+  }
+  const histogram = upstream?.summary_facts?.histogram;
+  const bin = Array.isArray(histogram?.bins) ? histogram.bins[i] : null;
+  return text2SqlDrillQuestion(upstream?.question, text2SqlDrillWord(model.column, lang), text2SqlDrillBinValue(bin, histogram, lang), lang);
+}
+
+// The follow-up of a trend column (by its position in model.bars).
+function text2SqlDrillTrendQuestion(upstream, model, rows, i, lang) {
+  const bar = model?.bars?.[i];
+  if (!bar) {
+    return "";
+  }
+  const records = (Array.isArray(rows) ? rows : []).map((item) => item?.data || item).filter((r) => r && typeof r === "object");
+  const raw = records[bar.index]?.[model.period.name];
+  return text2SqlDrillQuestion(upstream?.question, text2SqlDrillWord(model.period.name, lang),
+    text2SqlDrillPeriodValue(bar.year, model.decade, raw, lang), lang);
 }
 
 function text2SqlFlagEmoji(code) {

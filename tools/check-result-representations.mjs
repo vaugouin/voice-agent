@@ -100,6 +100,8 @@ const code = [
   "  text2SqlMapModel, text2SqlMapTone, text2SqlMapStepText,",
   "  text2SqlHierarchyModel, text2SqlHierarchySummary, text2SqlHierarchyLeafNoun, text2SqlHierarchyKind,",
   "  text2SqlChainModel, text2SqlChainSummary, text2SqlFrDe, text2SqlFrA,",
+  "  text2SqlDrillWord, text2SqlDrillQuestion, text2SqlDrillBinValue, text2SqlDrillPeriodValue,",
+  "  text2SqlDrillShareQuestion, text2SqlDrillHistogramQuestion, text2SqlDrillTrendQuestion,",
   "  setLang: (l) => { activeUiLanguage = l; } };",
 ].join("\n\n");
 const sandbox = { Intl, console };
@@ -616,6 +618,52 @@ check("links: older API, from the keys", linkSummary([], ["ID_PERSON", "PERSON_N
   check("lotc percent below one", [api.text2SqlPercentText(0.004, "en"), api.text2SqlPercentText(0.004, "fr"), api.text2SqlPercentText(0, "en")], ["<1%", "<1 %", "0%"]);
   check("lotc share chips one row", api.text2SqlChipOptionsLotC(fx("lotc-share-single-en")), ["share-bar", "table"]);
   check("lotc share chips parts", api.text2SqlChipOptionsLotC(fx("lotc-share-hbo-type-en")), ["share-bar", "ranked-bars", "table"]);
+
+  // Drill-down: the follow-up a bucket asks, word for word the one of t2s-front
+  // (test/t2s-representation-test.php, group "Drill-down"). Chosen on the live API (1.1.20,
+  // 2026-11-12): each returned the entities of the bucket as a card grid.
+  const seasons = fx("lotc-histogram-seasons-en");
+  const seasonsModel = api.text2SqlHistogramModel(seasons.summary_facts, "en");
+  check("drill histogram exact value", api.text2SqlDrillHistogramQuestion(seasons, seasonsModel, 3, "en"),
+    "Among the items counted in \"How are HBO series distributed by number of seasons?\", list those whose number of seasons is 3.");
+  const bond = fx("lotc-histogram-bond-runtime-en");
+  const bondModel = api.text2SqlHistogramModel(bond.summary_facts, "en");
+  check("drill histogram empty bins ask nothing", bondModel.bars.map((b, i) => [b.empty, api.text2SqlDrillHistogramQuestion(bond, bondModel, i, "en") === ""]).slice(0, 3),
+    [[false, false], [true, true], [true, true]]);
+  const kubrick = fx("lotc-histogram-runtime-range-fr");
+  check("drill histogram range fr", api.text2SqlDrillHistogramQuestion(kubrick, api.text2SqlHistogramModel(kubrick.summary_facts, "fr"), 2, "fr"),
+    "Parmi les éléments comptés dans « Combien de films de Stanley Kubrick y a-t-il dans chaque tranche de durée de 30 minutes ? », liste ceux dont la durée est entre 60 et 89 minutes.");
+  check("drill bin values", [
+    api.text2SqlDrillBinValue({ low: 0, high: null, value: 1 }, { unit: "minutes", width: 10 }, "en"),
+    api.text2SqlDrillBinValue({ low: 50000000, high: 99999999, value: 1 }, { unit: "usd", width: 50000000 }, "en"),
+    api.text2SqlDrillBinValue({ low: 3.8, high: null, value: 1 }, { unit: null, width: 0.1 }, "fr"),
+    api.text2SqlDrillBinValue({ low: 3, high: null, value: 4 }, { unit: "count", width: 1 }, "en"),
+    api.text2SqlDrillBinValue({ low: null, label: "under 90", value: 2 }, { unit: "minutes" }, "en"),
+    api.text2SqlDrillBinValue({ low: 30, high: null, value: 0, empty: true }, { unit: "minutes", width: 30 }, "en"),
+  ], ["between 0 and 9 minutes", "between $50M and $100M", "entre 3.8 et 3.9", "3", "under 90", ""]);
+  const pieEn = fx("lotc-share-pie-status-en");
+  const pieEnModel = api.text2SqlShareModel(pieEn, "en");
+  check("drill share part en", api.text2SqlDrillShareQuestion(pieEn, pieEnModel.segments[1], "en"),
+    "Among the items counted in \"Show the split of the HBO series by status as a pie\", list those whose status is Canceled.");
+  const pieFr = fx("lotc-share-pie-status-fr");
+  check("drill share part fr", api.text2SqlDrillShareQuestion(pieFr, api.text2SqlShareModel(pieFr, "fr").segments[1], "fr"),
+    "Parmi les éléments comptés dans « Montre la répartition des séries HBO par statut en camembert », liste ceux dont le statut est Canceled.");
+  const single = fx("lotc-share-single-en");
+  check("drill one share and its rest ask nothing", api.text2SqlShareModel(single, "en").segments.map((s) => api.text2SqlDrillShareQuestion(single, s, "en")), ["", ""]);
+  const perYear = fx("lota-trend-films-per-year-fr");
+  const perYearModel = api.text2SqlTrendModel(perYear.result, perYear.result_columns, perYear.summary_facts, "fr");
+  check("drill trend year fr", api.text2SqlDrillTrendQuestion(perYear, perYearModel, perYear.result, 0, "fr"),
+    "Parmi les éléments comptés dans « Combien de films sont sortis chaque année depuis 2000 ? », liste ceux dont l'année de sortie est 2000.");
+  const decades = fx("lota-trend-woody-allen-decades-en");
+  const decadesModel = api.text2SqlTrendModel(decades.result, decades.result_columns, decades.summary_facts, "en");
+  check("drill trend decade en", api.text2SqlDrillTrendQuestion(decades, decadesModel, decades.result, 2, "en"),
+    "Among the items counted in \"How many films did Woody Allen direct per decade?\", list those whose decade is the 1980s.");
+  const decadesFr = fx("lota-trend-woody-allen-decades-fr");
+  check("drill trend decade fr", api.text2SqlDrillTrendQuestion(decadesFr, api.text2SqlTrendModel(decadesFr.result, decadesFr.result_columns, decadesFr.summary_facts, "fr"), decadesFr.result, 2, "fr"),
+    "Parmi les éléments comptés dans « Combien de films Woody Allen a-t-il réalisés par décennie ? », liste ceux dont la décennie est les années 1980.");
+  check("drill no question asks nothing", api.text2SqlDrillQuestion("  ", { label: "status", gender: "m" }, "Ended", "en"), "");
+  check("drill words", [api.text2SqlDrillWord("RUNTIME_BUCKET", "fr"), api.text2SqlDrillWord("NUMBER_OF_EPISODES", "fr"), api.text2SqlDrillWord("ORIGIN_COUNTRY", "en")],
+    [{ label: "durée", gender: "f" }, { label: "nombre d'épisodes", gender: "m" }, { label: "origin country", gender: "m" }]);
 
   // Flag list: the emoji from the code, no flag for a withdrawn code, the names, the sentences.
   check("lotc flag emoji", [api.text2SqlFlagEmoji("FR"), api.text2SqlFlagEmoji("jp"), api.text2SqlFlagEmoji("1A"), api.text2SqlFlagEmoji("")],
