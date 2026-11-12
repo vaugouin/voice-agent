@@ -2019,8 +2019,15 @@ TEXT_RESULT_ON_SCREEN_INSTRUCTIONS = (
     "The screen already shows every result row (cards, a ranking or a table) with its values. "
     "Never repeat the rows as a list or a table and never write markdown (no table, no bullet "
     "list, no heading, no asterisks): answer in one or two plain sentences that say how many "
-    "results there are, in what order, and the one extreme value, then stop."
+    "results there are, in what order, and the one extreme value, then stop. Never draw a bar, "
+    "a chart or a gauge with characters (blocks, squares, dashes): the screen draws it."
 )
+
+# 2026-11-12: "répartition des interprètes de Barbie par sexe" came back as "femmes ████ 33 ·
+# hommes ████", a bar chart drawn in block characters, which the subtitles showed as white boxes.
+# Box drawing, block elements and geometric squares (U+2500 to U+25FF) carry no words: dropped.
+# Twin of TEXT_CHART_GLYPHS in app.js, which guards the Realtime subtitles the same way.
+TEXT_CHART_GLYPHS = re.compile("[─-◿⬛⬜\U0001f7e5-\U0001f7eb]+")
 
 
 def plain_subtitle_text(text: str) -> str:
@@ -2031,8 +2038,8 @@ def plain_subtitle_text(text: str) -> str:
     words, a trailing colon left by a removed table becomes a full stop.
     """
     lines = []
-    for line in str(text or "").splitlines():
-        stripped = line.strip()
+    for line in TEXT_CHART_GLYPHS.sub(" ", str(text or "")).splitlines():
+        stripped = re.sub(r"[ 	]{2,}", " ", line.strip())
         if stripped.startswith("|") or re.fullmatch(r"[|:\- ]{3,}", stripped or "x"):
             continue
         stripped = re.sub(r"^#{1,6}\s+", "", stripped)

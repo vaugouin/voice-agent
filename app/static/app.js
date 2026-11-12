@@ -11127,8 +11127,14 @@ function sanitizeAssistantFeedbackText(text) {
     .trim();
 }
 
+// 2026-11-12: a model drew a bar chart in block characters ("femmes ████ 33 · hommes ████") and
+// the subtitles showed white boxes. Box drawing, block elements and geometric squares carry no
+// words: dropped. Twin of TEXT_CHART_GLYPHS in app/main.py (text path).
+const TEXT_CHART_GLYPHS = /[─-◿⬛⬜\u{1f7e5}-\u{1f7eb}]/gu;
+
 function normalizeSubtitleText(text) {
   const clean = String(text || "")
+    .replace(TEXT_CHART_GLYPHS, " ")
     .replace(/\r\n?/g, "\n")
     .replace(/\u00a0/g, " ")
     .replace(/[ \t]+/g, " ")
