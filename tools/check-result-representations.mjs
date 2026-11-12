@@ -81,7 +81,7 @@ const lexicons = readFileSync(join(root, "app", "lexicons.json"), "utf8");
 const code = [
   ...["normalizeUiLanguage", "uiText", "prettyLabel", "formatDate", "formatMoney", "formatMinutes",
     "formatMetric", "text2SqlResultColumns", "pickBarMetric", "foldedWords", "isSourceWorkRecord",
-    "detailRequestFromRecord"].map(extractFunction),
+    "detailRequestFromRecord", "text2SqlLabelForRow"].map(extractFunction),
   extractRegion("// VOICE-AGENT-246 / -247 / -248 (FASTAPI-TEXT2SQL-354)", "// One result row as a poster card"),
   "globalThis.api = { text2SqlRepresentationOptions, text2SqlChipOptions, resolveText2SqlRepresentation,",
   "  text2SqlValueColumns, formatCardValue, spokenMetricValue, text2SqlSummaryLine, text2SqlSpokenSummary, text2SqlViewSummaryLine,",
@@ -102,6 +102,7 @@ const code = [
   "  text2SqlChainModel, text2SqlChainSummary, text2SqlFrDe, text2SqlFrA,",
   "  text2SqlDrillWord, text2SqlDrillQuestion, text2SqlDrillBinValue, text2SqlDrillPeriodValue,",
   "  text2SqlDrillShareQuestion, text2SqlDrillHistogramQuestion, text2SqlDrillTrendQuestion,",
+  "  text2SqlDrillCountWord, text2SqlGenderWord, text2SqlGenderColumn, text2SqlPercentValueText, text2SqlLabelForRow, formatMetric,",
   "  setLang: (l) => { activeUiLanguage = l; } };",
 ].join("\n\n");
 const sandbox = { Intl, console };
@@ -939,6 +940,71 @@ check("links: older API, from the keys", linkSummary([], ["ID_PERSON", "PERSON_N
   check("view to rep: lineage", api.text2SqlRepresentationForView("lineage", fx(P + "red-harvest-en").representation_options), "chain");
   check("view to rep: lineage not offered", api.text2SqlRepresentationForView("lineage", fx("lotc-share-hbo-type-en").representation_options), "");
   check("reply lineage fr", api.text2SqlRequestedViewReply({ ok: true, representation: "chain", view: "lineage" }, "fr"), "Voici la filiation.");
+}
+
+// The percent unit (PERCENT*, POURCENT*, PCT columns; the value is already a percentage), the
+// GENDER codes named outside the share bar, and the count aliases of the drill-down words. The
+// Barbie fixtures are the answers of 2026-11-12 that read "1" and "2" and "×49.3"; the PERCENTAGE
+// column of the table one is typed "percent", as the API now sends it. The same checks as
+// t2s-front (test/t2s-representation-test.php, group "Percent, gender codes, count aliases").
+{
+  check("percent metric", [api.formatMetric(49.25, "percent", "en"), api.formatMetric(50, "percent", "en"), api.formatMetric(49.25, "percent", "fr"),
+    api.formatMetric(0, "percent", "en"), api.formatMetric(100, "percent", "fr")],
+    ["49.3%", "50%", "49.3 %", "0%", "100 %"]);
+  check("percent never money nor ratio", [api.formatCardValue(49.25, { unit: "percent", role: "metric" }, "en"), api.formatCardValue(0, { unit: "percent", role: "metric" }, "en")],
+    ["49.3%", "0%"]);
+  check("percent spoken", [api.spokenMetricValue(49.25, "percent", "en"), api.spokenMetricValue(49.25, "percent", "fr"), api.spokenMetricValue(50, "percent", "fr")],
+    ["49.3 percent", "49,3 pour cent", "50 pour cent"]);
+  check("ratio unchanged", api.formatMetric(49.3, "ratio", "en"), "×49.3");
+  const pctTable = fx("lotc-table-gender-percent-barbie-en");
+  const pctColumn = pctTable.result_columns.find((c) => c.name === "PERCENTAGE");
+  check("percent column of the Barbie table", pctTable.result.map((r) => api.formatMetric(r.data.PERCENTAGE, pctColumn.unit, "en")), ["49.3%", "50.8%"]);
+
+  check("gender word", [api.text2SqlGenderWord("GENDER", 2, "en"), api.text2SqlGenderWord("GENDER", "1", "fr"), api.text2SqlGenderWord("SEXE", 3, "fr"),
+    api.text2SqlGenderWord("GENRE", 1, "fr"), api.text2SqlGenderWord("GENDER", "Femmes", "fr"), api.text2SqlGenderWord("GENDER", null, "en")],
+    ["men", "femmes", "non binaire", null, null, null]);
+  const barbieRanked = fx("lotc-share-gender-barbie-ranked-fr");
+  const rankedRows = barbieRanked.result.map((r) => r.data);
+  check("gender bar labels fr", rankedRows.map((r) => api.text2SqlLabelForRow(r, barbieRanked.result_columns, "fr")), ["Femmes", "Hommes"]);
+  check("gender bar labels en", rankedRows.map((r) => api.text2SqlLabelForRow(r, barbieRanked.result_columns, "en")), ["Women", "Men"]);
+  check("spelled-out labels kept", fx("lotc-share-gender-labels-fr").result.map((r) => api.text2SqlLabelForRow(r.data, fx("lotc-share-gender-labels-fr").result_columns, "fr")), ["Femmes", "Hommes"]);
+  check("gender caption ranked fr", caption("lotc-share-gender-barbie-ranked-fr", "fr"), "Deux résultats ; les hommes arrivent en tête avec 34.");
+  check("gender caption ranked en", api.text2SqlSummaryLine(fx("lotc-share-gender-barbie-ranked-fr"), { lang: "en" }), "Two results; men lead with 34.");
+  check("gender spoken ranked fr", spoken("lotc-share-gender-barbie-ranked-fr", "fr"), "Deux résultats ; les hommes arrivent en tête avec 34.");
+  check("gender caption as bars en", caption("lotc-share-gender-barbie-en", "en", { rep: "ranked-bars" }), "Two results; men lead with 34.");
+  check("gender caption share en", caption("lotc-share-gender-barbie-en", "en"), "67 people counted in two parts: women 49%, men 51%.");
+  check("gender caption share fr", caption("lotc-share-gender-barbie-fr", "fr"), "67 résultats comptés en deux parts : femmes 49 %, hommes 51 %.");
+  check("gender caption table, three columns", caption("lotc-table-gender-percent-barbie-en", "en"), "Two results; men lead with 34.");
+  const lowest = { ...barbieRanked, summary_facts: { ...barbieRanked.summary_facts, top: { label: 1, id: null, index: 0, value: 33, extreme: "min" } } };
+  check("gender lowest fr", api.text2SqlSummaryLine(lowest, { lang: "fr" }), "Deux résultats ; la valeur la plus basse est celle des femmes, 33.");
+  check("gender lowest en", api.text2SqlSummaryLine(lowest, { lang: "en" }), "Two results; the lowest is women, 33.");
+  const nonBinary = { ...barbieRanked, summary_facts: { ...barbieRanked.summary_facts, top: { label: 3, id: null, index: 0, value: 5, extreme: "max" } } };
+  check("gender plural fr", api.text2SqlSummaryLine(nonBinary, { lang: "fr" }), "Deux résultats ; les non binaires arrivent en tête avec 5.");
+
+  // The API types GENDER "other" (a category): the rows are named all the same, never on entity rows.
+  const otherCols = barbieRanked.result_columns.map((c) => (c.name === "GENDER" ? { ...c, role: "other" } : c));
+  check("gender column typed other", [api.text2SqlGenderColumn(otherCols), api.text2SqlLabelForRow(rankedRows[1], otherCols, "en")], ["GENDER", "Men"]);
+  check("no gender column on entity rows", api.text2SqlGenderColumn([{ name: "ID_PERSON", role: "entity_id" }, { name: "GENDER", role: "other" }]), "");
+  check("no gender column for a metric", api.text2SqlGenderColumn([{ name: "GENDER_COUNT", role: "metric" }]), "");
+  const otherFacts = { ...barbieRanked, result_columns: otherCols, summary_facts: { ...barbieRanked.summary_facts, share: undefined } };
+  check("gender caption, column typed other", api.text2SqlSummaryLine(otherFacts, { lang: "en" }), "Two results; men lead with 34.");
+
+  check("drill count aliases", [
+    api.text2SqlDrillWord("SEASON_COUNT", "en"), api.text2SqlDrillWord("SEASON_COUNT", "fr"), api.text2SqlDrillWord("NB_SEASONS", "fr"),
+    api.text2SqlDrillWord("EPISODE_COUNT", "fr"), api.text2SqlDrillWord("NB_EPISODES", "en"), api.text2SqlDrillWord("SERIES_COUNT", "fr"),
+    api.text2SqlDrillWord("NUMBER_OF_FILMS", "fr"), api.text2SqlDrillWord("PERSON_COUNT", "en"), api.text2SqlDrillWord("ROLE_COUNT", "fr"),
+    api.text2SqlDrillWord("SEASONS", "en"), api.text2SqlDrillWord("VOTE_COUNT", "fr")],
+    [{ label: "number of seasons", gender: "m" }, { label: "nombre de saisons", gender: "m" }, { label: "nombre de saisons", gender: "m" },
+      { label: "nombre d'épisodes", gender: "m" }, { label: "number of episodes", gender: "m" }, { label: "nombre de séries", gender: "m" },
+      { label: "nombre de films", gender: "m" }, { label: "number of people", gender: "m" }, { label: "role count", gender: "m" },
+      { label: "seasons", gender: "m" }, { label: "nombre de votes TMDb", gender: "m" }]);
+  const sc = fx("lotc-histogram-season-count-en");
+  const scModel = api.text2SqlHistogramModel(sc.summary_facts, "en");
+  check("drill SEASON_COUNT en", api.text2SqlDrillHistogramQuestion(sc, scModel, 2, "en"),
+    'Among the items counted in "How are HBO series distributed by number of seasons?", list those whose number of seasons is 3.');
+  const scFr = fx("lotc-histogram-season-count-hand-fr");
+  check("drill SEASON_COUNT fr", api.text2SqlDrillHistogramQuestion(scFr, api.text2SqlHistogramModel(scFr.summary_facts, "fr"), 2, "fr"),
+    "Parmi les éléments comptés dans « How are HBO series distributed by number of seasons? », liste ceux dont le nombre de saisons est 3.");
 }
 
 console.log(`${passes} passed, ${failures} failed`);

@@ -1,0 +1,74 @@
+{
+ "question": "Graph with the proportion of male/female actors in the Barbie movie",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here’s the female–male breakdown of the actors in Barbie, with counts and percentages for your graph.",
+ "representation": "table",
+ "representation_options": [
+  "table"
+ ],
+ "result_kind": "unknown",
+ "result_columns": [
+  {
+   "name": "GENDER",
+   "role": "label",
+   "unit": null,
+   "ordered": "asc"
+  },
+  {
+   "name": "ACTOR_COUNT",
+   "role": "metric",
+   "unit": "count",
+   "focus": true
+  },
+  {
+   "name": "PERCENTAGE",
+   "role": "metric",
+   "unit": "percent"
+  }
+ ],
+ "summary_facts": {
+  "count": 2,
+  "total": null,
+  "value_column": "ACTOR_COUNT",
+  "unit": "count",
+  "order": null,
+  "order_direction": null,
+  "top": {
+   "label": 2,
+   "id": null,
+   "index": 1,
+   "value": 34,
+   "extreme": "max"
+  }
+ },
+ "intent": {
+  "task": "value",
+  "focus": [
+   "count"
+  ],
+  "focus_columns": [
+   "ACTOR_COUNT"
+  ],
+  "requested_view": "share",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "GENDER": 1,
+    "ACTOR_COUNT": 33,
+    "PERCENTAGE": 49.25
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "GENDER": 2,
+    "ACTOR_COUNT": 34,
+    "PERCENTAGE": 50.75
+   }
+  }
+ ]
+}

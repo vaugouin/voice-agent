@@ -3291,7 +3291,7 @@ function formatMinutes(value) {
   return `${minutes} min · ${hm}`;
 }
 
-function formatMetric(value, unit) {
+function formatMetric(value, unit, lang = "") {
   if (value === null || value === undefined || String(value).trim() === "") {
     return "";
   }
@@ -3314,6 +3314,10 @@ function formatMetric(value, unit) {
       return new Intl.NumberFormat("en-US").format(Math.round(number));
     case "ratio":
       return `×${number.toFixed(number % 1 === 0 ? 0 : 1)}`;
+    case "percent":
+      // The value is already a percentage (49.3 is 49.3%): one decimal at most, the French space
+      // before the sign as in text2SqlPercentText(). Mirrors f_t2srep_format_metric().
+      return text2SqlPercentValueText(number, lang);
     default:
       // No/unknown unit: a neutral number, NEVER currency (that was the bug).
       return Number.isInteger(number)
@@ -3449,10 +3453,17 @@ function renderScalarCards(container, rows, columns) {
   container.append(section);
 }
 
-function text2SqlLabelForRow(record, columns) {
+function text2SqlLabelForRow(record, columns, lang = "") {
   const labelCol = columns.find((c) => c.role === "label");
   if (labelCol && record[labelCol.name] != null && String(record[labelCol.name]).trim() !== "") {
-    return String(record[labelCol.name]);
+    // A GENDER code is named, as on the share bar: "Men", not "2".
+    return capitalizeFirst(text2SqlGenderWord(labelCol.name, record[labelCol.name], lang)) || String(record[labelCol.name]);
+  }
+  // A result grouped by gender whose GENDER column is typed "other" names its rows the same way.
+  const genderColumn = text2SqlGenderColumn(columns);
+  const genderWord = genderColumn ? text2SqlGenderWord(genderColumn, record[genderColumn], lang) : null;
+  if (genderWord) {
+    return capitalizeFirst(genderWord);
   }
   const title = titleForRecord(record);
   if (title && title !== "Result") {
@@ -4896,6 +4907,8 @@ function renderRawTable(container, rows, columns) {
   const links = text2SqlTableLinks(columns, keys);
   const linkByLabel = new Map(links.map((link) => [link.label, link]));
   const metricNames = new Set(columns.filter((c) => c.role === "metric").map((c) => c.name));
+  // The gender column of a split by gender shows the word of each code, as the bars do.
+  const genderColumn = text2SqlGenderColumn(columns);
   const unitByName = {};
   columns.forEach((c) => {
     // A date column (BIRTH_YEAR, DEATH_YEAR) is shown as is: the API typed a calendar year
@@ -4922,7 +4935,9 @@ function renderRawTable(container, rows, columns) {
       const unit = unitByName[k];
       // A metric without a unit (IMDB_VOTES) gets the neutral number format (1,234,567), as the
       // contract says; ids, years and codes stay as they are (2026-11-08).
-      const text = unit || metricNames.has(k) ? formatMetric(r[k], unit) : r[k] == null ? "" : String(r[k]);
+      const text = unit || metricNames.has(k)
+        ? formatMetric(r[k], unit)
+        : r[k] == null ? "" : (k === genderColumn && capitalizeFirst(text2SqlGenderWord(k, r[k]))) || String(r[k]);
       const target = linkByLabel.has(k) ? text2SqlTableLinkRecord(r, linkByLabel.get(k)) : null;
       if (target) {
         const button = document.createElement("button");
@@ -5147,9 +5162,10 @@ function formatHoursMinutes(value) {
 
 // A value under a poster: short, so "2 h 18" rather than the number card's "138 min · 2 h 18",
 // and "$150M" rather than "$150,000,000". A missing value shows nothing, and so does a zero that
-// can only mean "unknown" (a runtime, a budget, a rating); a count or a ratio of zero is real.
-// A date column carries a year (BIRTH_YEAR) or a date, never a duration, whatever its unit says.
-function formatCardValue(value, column) {
+// can only mean "unknown" (a runtime, a budget, a rating); a count, a ratio or a percentage of zero
+// is real. A date column carries a year (BIRTH_YEAR) or a date, never a duration, whatever its unit
+// says.
+function formatCardValue(value, column, lang = "") {
   if (value === null || value === undefined || String(value).trim() === "") {
     return "";
   }
@@ -5164,7 +5180,7 @@ function formatCardValue(value, column) {
   if (!Number.isFinite(number)) {
     return String(value);
   }
-  if (number === 0 && unit !== "count" && unit !== "ratio" && unit !== "years") {
+  if (number === 0 && unit !== "count" && unit !== "ratio" && unit !== "percent" && unit !== "years") {
     return "";
   }
   if (unit === "minutes") {
@@ -5173,7 +5189,7 @@ function formatCardValue(value, column) {
   if (unit === "usd" && number > 0) {
     return formatMoney(number);
   }
-  return formatMetric(number, unit);
+  return formatMetric(number, unit, lang);
 }
 
 // The same value, said aloud: units spelled out, never "min", "h" or "$150M" (VOICE-AGENT-248).
@@ -5215,6 +5231,9 @@ function spokenMetricValue(value, unit, lang) {
   if (unit === "years") {
     const n = decimal(number, 1);
     return fr ? `${n} ${Math.abs(number) < 2 ? "an" : "ans"}` : `${n} ${number === 1 ? "year" : "years"}`;
+  }
+  if (unit === "percent") {
+    return text2SqlPercentValueText(number, lang, true);
   }
   return decimal(number, Number.isInteger(number) ? 0 : 2);
 }
@@ -5387,13 +5406,24 @@ function text2SqlSummaryLine(upstream, { rep = "", lang = "", spoken = false, ha
   if (top && typeof top === "object" && String(top.label || "").trim() && top.value !== null && top.value !== undefined && String(top.value).trim() !== "") {
     const unit = facts.unit || null;
     const label = String(top.label).trim();
+    // top.label is the raw cell: on a split by gender it is the code (2), named here as on the
+    // bars, and the sentence takes the plural ("men lead", "les hommes arrivent en tête").
+    const labelColumn = facts.share?.label_column || columns.find((c) => c && c.role === "label")?.name || text2SqlGenderColumn(columns);
+    const genderWord = text2SqlGenderWord(labelColumn, top.label, language);
+    const genderPlural = genderWord && fr && !/s$/.test(genderWord) ? `${genderWord}s` : genderWord;
     const valueText = spoken
       ? spokenMetricValue(top.value, unit, language)
-      : formatCardValue(top.value, { unit, role: "metric" });
+      : formatCardValue(top.value, { unit, role: "metric" }, language);
     if (valueText) {
       const isMax = String(top.extreme || "max") !== "min";
       const adjective = text2SqlSuperlative(facts.value_column, unit, isMax, gender, language);
-      if (adjective) {
+      if (genderWord) {
+        if (isMax) {
+          tail = fr ? `les ${genderPlural} arrivent en tête avec ${valueText}` : `${genderWord} lead with ${valueText}`;
+        } else {
+          tail = fr ? `la valeur la plus basse est celle des ${genderPlural}, ${valueText}` : `the lowest is ${genderWord}, ${valueText}`;
+        }
+      } else if (adjective) {
         tail = fr ? `${adjective} est ${label}, ${valueText}` : `${adjective} is ${label}, ${valueText}`;
       } else if (isMax) {
         tail = fr ? `${label} arrive en tête avec ${valueText}` : `${label} leads with ${valueText}`;
@@ -5548,7 +5578,7 @@ function text2SqlTrendModel(rows, columns, facts, lang) {
     const value = values[index];
     const year = text2SqlYearOf(r[period.name]);
     const label = year === null ? String(r[period.name] ?? "") : text2SqlPeriodLabel(year, decade, lang);
-    const valueText = Number.isFinite(value) ? formatCardValue(value, { unit, role: "metric" }) || formatMetric(value, unit) : "";
+    const valueText = Number.isFinite(value) ? formatCardValue(value, { unit, role: "metric" }, lang) || formatMetric(value, unit, lang) : "";
     const pct = Number.isFinite(value) && max > 0 ? Math.max(value > 0 ? 1 : 0, Math.round((value / max) * 1000) / 10) : 0;
     return { index, year, label, value: Number.isFinite(value) ? value : null, valueText, pct };
   });
@@ -5559,7 +5589,7 @@ function text2SqlTrendModel(rows, columns, facts, lang) {
 // any other unit as the value card or the voice would say it.
 function text2SqlTrendValueText(value, metric, unit, lang, spoken) {
   const fr = t2sLang(lang) === "fr";
-  const text = spoken ? spokenMetricValue(value, unit, lang) : formatCardValue(value, { unit, role: "metric" });
+  const text = spoken ? spokenMetricValue(value, unit, lang) : formatCardValue(value, { unit, role: "metric" }, lang);
   if (!text) {
     return "";
   }
@@ -5711,7 +5741,7 @@ function text2SqlQuantityText(value, column, lang, spoken = false) {
     return text2SqlLongDate(value, lang);
   }
   const unit = column?.unit || null;
-  const display = formatCardValue(value, { unit, role: "metric" });
+  const display = formatCardValue(value, { unit, role: "metric" }, lang);
   if (!display || !spoken) {
     return display;
   }
@@ -5913,7 +5943,7 @@ function text2SqlVerdictSummary(upstream, { lang = "", spoken = false, hasMore =
     const { value, unit } = text2SqlVerdictCount(upstream);
     const text = value === null || value === undefined || String(value).trim() === ""
       ? ""
-      : spoken ? spokenMetricValue(value, unit, language) : formatMetric(value, unit);
+      : spoken ? spokenMetricValue(value, unit, language) : formatMetric(value, unit, language);
     return text ? `${word}${sep}${text}.` : `${word}.`;
   }
   const n = hasMore ? (fr ? `au moins ${count}` : `at least ${count}`) : String(count);
@@ -6186,6 +6216,31 @@ const T2S_GENDER_LABELS = {
   3: ["non-binary", "non binaire"],
 };
 
+// The word of a TMDb GENDER code read from a column named GENDER (or SEXE), else null: the share
+// bar, the ranked-bar labels, the table cells and the summary sentence all name the code through
+// this one table (a cast split by gender read "1" and "2", 2026-11-12). A label the SQL already
+// spelled out ("Femmes") is no code and stays as it is. Mirrors f_t2srep_gender_label().
+function text2SqlGenderWord(column, value, lang) {
+  if (!/GENDER|SEXE/i.test(String(column || "")) || value === null || value === undefined || typeof value === "boolean") {
+    return null;
+  }
+  const entry = T2S_GENDER_LABELS[String(value).trim()];
+  return entry ? entry[t2sLang(lang) === "fr" ? 1 : 0] : null;
+}
+
+// The column that holds the gender codes of a result grouped by gender, or "": a label or an
+// "other" column named GENDER (or SEXE; the API types GENDER "other", a category), never a metric
+// (GENDER_COUNT), and never on entity rows, where a person's own GENDER is no group of people.
+// Mirrors f_t2srep_gender_column().
+function text2SqlGenderColumn(columns) {
+  const list = Array.isArray(columns) ? columns : [];
+  if (list.some((c) => c && c.role === "entity_id")) {
+    return "";
+  }
+  const column = list.find((c) => c && (c.role === "label" || c.role === "other") && /GENDER|SEXE/i.test(String(c.name || "")));
+  return column ? String(column.name) : "";
+}
+
 function text2SqlPlainNumber(value) {
   const n = Number(value);
   if (!Number.isFinite(n)) {
@@ -6356,6 +6411,23 @@ function text2SqlPercentText(share, lang, spoken = false) {
   return fr ? `${n} %` : `${n}%`;
 }
 
+// A value that is already a percentage (unit "percent": PERCENTAGE 49.25 is 49.25%), at most one
+// decimal and no trailing ".0": "49.3%" / "49.3 %", spoken "49.3 percent" / "49,3 pour cent". The
+// sign and its French space are text2SqlPercentText()'s. Mirrors f_t2srep_percent_value().
+function text2SqlPercentValueText(value, lang, spoken = false) {
+  const n = Number(value);
+  if (!Number.isFinite(n)) {
+    return String(value ?? "");
+  }
+  const fr = t2sLang(lang) === "fr";
+  if (spoken) {
+    const said = new Intl.NumberFormat(fr ? "fr-FR" : "en-US", { maximumFractionDigits: 1 }).format(n);
+    return fr ? `${said} pour cent` : `${said} percent`;
+  }
+  const text = new Intl.NumberFormat("en-US", { maximumFractionDigits: 1 }).format(n);
+  return fr ? `${text} %` : `${text}%`;
+}
+
 // The parts of summary_facts.share, labelled: a GENDER code by its word, the rest of one share as
 // "the rest", one share alone by its column's name.
 function text2SqlShareModel(upstream, lang) {
@@ -6365,7 +6437,6 @@ function text2SqlShareModel(upstream, lang) {
     return null;
   }
   const fr = t2sLang(lang) === "fr";
-  const gender = /GENDER|SEXE/i.test(String(share.label_column || ""));
   // One share and its rest always add up to 100 once rounded: 38% and 62%, never 38% and 63%.
   const restOf = (part) => {
     const shown = parts.find((p) => !p?.rest);
@@ -6377,8 +6448,8 @@ function text2SqlShareModel(upstream, lang) {
       label = fr ? "le reste" : "the rest";
     } else if (share.kind === "single") {
       label = text2SqlMetricLabel(share.value_column, lang);
-    } else if (gender && T2S_GENDER_LABELS[String(part?.label)]) {
-      label = T2S_GENDER_LABELS[String(part.label)][fr ? 1 : 0];
+    } else if (text2SqlGenderWord(share.label_column, part?.label, lang)) {
+      label = text2SqlGenderWord(share.label_column, part.label, lang);
     } else {
       label = String(part?.label ?? "").trim() || (fr ? "sans valeur" : "no value");
     }
@@ -6452,6 +6523,10 @@ const T2S_DRILL_WORDS = {
   POPULARITY: ["popularity", "popularité", "f"],
   NUMBER_OF_SEASONS: ["number of seasons", "nombre de saisons", "m"],
   NUMBER_OF_EPISODES: ["number of episodes", "nombre d'épisodes", "m"],
+  SEASON_COUNT: ["number of seasons", "nombre de saisons", "m"],
+  NB_SEASONS: ["number of seasons", "nombre de saisons", "m"],
+  EPISODE_COUNT: ["number of episodes", "nombre d'épisodes", "m"],
+  NB_EPISODES: ["number of episodes", "nombre d'épisodes", "m"],
   AGE: ["age", "âge", "m"],
   BIRTH_YEAR: ["birth year", "année de naissance", "f"],
   DEATH_YEAR: ["death year", "année de décès", "f"],
@@ -6471,10 +6546,38 @@ const T2S_DRILL_WORDS = {
   ORIGINAL_LANGUAGE: ["original language", "langue originale", "f"],
 };
 
+// What a count alias counts, for the columns the table above does not list: a column named
+// <NOUN>_COUNT, NB_<NOUN>S or NUMBER_OF_<NOUN>S (SERIES_COUNT, NB_FILMS, PERSON_COUNT) is "the
+// number of <plural>" / "le nombre de <pluriel>". Only these nouns, whose French plural is known;
+// any other count keeps the plain words. Mirrors f_t2srep_drill_count_word().
+const T2S_DRILL_COUNTED = {
+  SEASON: ["seasons", "saisons"],
+  EPISODE: ["episodes", "épisodes"],
+  FILM: ["films", "films"],
+  MOVIE: ["films", "films"],
+  SERIE: ["series", "séries"],
+  PERSON: ["people", "personnes"],
+  PEOPLE: ["people", "personnes"],
+  VOTE: ["votes", "votes"],
+};
+
+function text2SqlDrillCountWord(name, lang) {
+  const match = String(name || "").toUpperCase().match(/^(NB_|NUMBER_OF_)?([A-Z]+?)S?(_COUNT)?$/);
+  if (!match || (!match[1] && !match[3]) || !T2S_DRILL_COUNTED[match[2]]) {
+    return null;
+  }
+  const [en, fr] = T2S_DRILL_COUNTED[match[2]];
+  if (t2sLang(lang) === "fr") {
+    return { label: /^[aeiouyhâàéèêîïôû]/i.test(fr) ? `nombre d'${fr}` : `nombre de ${fr}`, gender: "m" };
+  }
+  return { label: `number of ${en}`, gender: "m" };
+}
+
 // How a follow-up names the quantity or the category of a bucket: the column without its bin
 // suffix (RUNTIME_BUCKET is RUNTIME), from a table of its own so both fronts word it the same
-// (their axis titles differ: "seasons" here, "number of seasons" there), else the column name in
-// plain words. The gender picks the French article.
+// (their axis titles differ: "seasons" here, "number of seasons" there), else a count alias
+// (text2SqlDrillCountWord()), else the column name in plain words. The gender picks the French
+// article.
 function text2SqlDrillWord(column, lang) {
   let name = String(column || "").replace(/_(?:BUCKET|BAND|BIN|RANGE|START|MIN|LOW|FROM|DEBUT)(?:_MINUTES)?$/i, "").replace(/_(?:BUCKET|BAND|BIN|RANGE)$/i, "");
   if (!name) {
@@ -6487,7 +6590,7 @@ function text2SqlDrillWord(column, lang) {
   if (entry) {
     return { label: t2sLang(lang) === "fr" ? entry[1] : entry[0], gender: entry[2] };
   }
-  return { label: prettyLabel(name).toLowerCase(), gender: "m" };
+  return text2SqlDrillCountWord(name, lang) || { label: prettyLabel(name).toLowerCase(), gender: "m" };
 }
 
 // 'Among the items counted in "<question>", list those whose <word> is <value>.' /

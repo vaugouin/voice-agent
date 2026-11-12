@@ -1,0 +1,93 @@
+{
+ "question": "Graphique des rôles du film Barbie répartis par sexe",
+ "api_version": "1.1.20",
+ "ui_language": "fr",
+ "answer": "Voici la répartition des interprètes du film Barbie par sexe.",
+ "representation": "ranked-bars",
+ "representation_options": [
+  "ranked-bars",
+  "share-bar",
+  "table"
+ ],
+ "result_kind": "unknown",
+ "result_columns": [
+  {
+   "name": "GENDER",
+   "role": "label",
+   "unit": null,
+   "ordered": "asc"
+  },
+  {
+   "name": "ROLE_COUNT",
+   "role": "metric",
+   "unit": "count",
+   "focus": true
+  }
+ ],
+ "summary_facts": {
+  "count": 2,
+  "total": null,
+  "value_column": "ROLE_COUNT",
+  "unit": "count",
+  "order": null,
+  "order_direction": null,
+  "top": {
+   "label": 2,
+   "id": null,
+   "index": 1,
+   "value": 34,
+   "extreme": "max"
+  },
+  "share": {
+   "kind": "parts",
+   "value_column": "ROLE_COUNT",
+   "label_column": "GENDER",
+   "scale": 1,
+   "total": 67,
+   "parts": [
+    {
+     "index": 0,
+     "label": 1,
+     "value": 33,
+     "share": 0.49,
+     "rest": false
+    },
+    {
+     "index": 1,
+     "label": 2,
+     "value": 34,
+     "share": 0.51,
+     "rest": false
+    }
+   ],
+   "shape": "bar"
+  }
+ },
+ "intent": {
+  "task": "count",
+  "focus": [
+   "count"
+  ],
+  "focus_columns": [
+   "ROLE_COUNT"
+  ],
+  "requested_view": "chart",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "GENDER": 1,
+    "ROLE_COUNT": 33
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "GENDER": 2,
+    "ROLE_COUNT": 34
+   }
+  }
+ ]
+}
