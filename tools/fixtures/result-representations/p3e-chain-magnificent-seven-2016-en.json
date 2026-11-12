@@ -1,0 +1,245 @@
+{
+  "question": "Trace The Magnificent Seven (2016) back to its origin, remake by remake",
+  "api_version": "1.1.20",
+  "ui_language": "en",
+  "answer": "Here are the earlier films behind The Magnificent Seven (2016), traced back remake by remake.",
+  "representation": "chain",
+  "representation_options": [
+    "chain",
+    "ranked-bars",
+    "card-grid",
+    "value-cards",
+    "table"
+  ],
+  "result_kind": "entity_rows",
+  "result_columns": [
+    {
+      "name": "ID_MOVIE",
+      "role": "entity_id",
+      "unit": null
+    },
+    {
+      "name": "MOVIE_TITLE",
+      "role": "label",
+      "unit": null
+    },
+    {
+      "name": "DAT_RELEASE",
+      "role": "date",
+      "unit": null
+    },
+    {
+      "name": "ID_IMDB",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "IMDB_RATING",
+      "role": "metric",
+      "unit": null
+    },
+    {
+      "name": "IMDB_RATING_WEIGHTED",
+      "role": "metric",
+      "unit": null
+    },
+    {
+      "name": "IMDB_VOTES",
+      "role": "metric",
+      "unit": null
+    },
+    {
+      "name": "POSTER_PATH",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "RUNTIME",
+      "role": "metric",
+      "unit": "minutes"
+    },
+    {
+      "name": "TAGLINE",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "ID_CRITERION_SPINE",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "REMAKE_STEP",
+      "role": "metric",
+      "unit": null,
+      "ordered": "asc",
+      "focus": true
+    }
+  ],
+  "summary_facts": {
+    "count": 3,
+    "total": null,
+    "value_column": "REMAKE_STEP",
+    "unit": null,
+    "order": "REMAKE_STEP",
+    "order_direction": "asc",
+    "top": {
+      "label": "Seven Samurai",
+      "id": 346,
+      "index": 0,
+      "value": 1,
+      "extreme": "min"
+    },
+    "chain": {
+      "anchor": [
+        2
+      ],
+      "direction": "up",
+      "nodes": [
+        {
+          "type": "movie",
+          "id": 346,
+          "title": "Seven Samurai",
+          "year": 1954,
+          "layer": 0,
+          "anchor": false,
+          "poster_path": "/lOMGc8bnSwQhS4XyE1S99uH8NXf.jpg",
+          "image": true
+        },
+        {
+          "type": "movie",
+          "id": 966,
+          "title": "The Magnificent Seven",
+          "year": 1960,
+          "layer": 1,
+          "anchor": false,
+          "poster_path": "/e5ToxOyJwuZD4VOfI0qEn5uIjeJ.jpg",
+          "image": true
+        },
+        {
+          "type": "movie",
+          "id": 333484,
+          "title": "The Magnificent Seven",
+          "year": 2016,
+          "layer": 2,
+          "anchor": true,
+          "poster_path": "/ezcS78TIjgr85pVdaPDd2rSPVNs.jpg",
+          "image": true
+        }
+      ],
+      "edges": [
+        {
+          "from": 0,
+          "to": 1,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 0,
+          "to": 2,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 1,
+          "to": 2,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        }
+      ],
+      "layers": [
+        [
+          0
+        ],
+        [
+          1
+        ],
+        [
+          2
+        ]
+      ],
+      "count": 3,
+      "generations": 3,
+      "depth": {
+        "up": 1,
+        "down": 0
+      },
+      "kinds": [
+        "remake"
+      ],
+      "types": [
+        "movie"
+      ],
+      "earliest": 0,
+      "latest": 2,
+      "cycles": 0,
+      "truncated": false,
+      "truncated_by": null,
+      "max_depth": 4,
+      "max_nodes": 30
+    }
+  },
+  "intent": {
+    "task": "sequence",
+    "focus": [],
+    "focus_columns": [],
+    "requested_view": "chain",
+    "source": "llm"
+  },
+  "result": [
+    {
+      "index": 0,
+      "data": {
+        "ID_MOVIE": 346,
+        "MOVIE_TITLE": "Seven Samurai",
+        "DAT_RELEASE": "1954-04-26",
+        "ID_IMDB": "tt0047478",
+        "IMDB_RATING": 8.6,
+        "IMDB_RATING_WEIGHTED": 8.52,
+        "IMDB_VOTES": 407777,
+        "POSTER_PATH": "/lOMGc8bnSwQhS4XyE1S99uH8NXf.jpg",
+        "RUNTIME": 207,
+        "TAGLINE": "Unmatched for suspense and spectacle!",
+        "ID_CRITERION_SPINE": 2,
+        "REMAKE_STEP": 1
+      }
+    },
+    {
+      "index": 1,
+      "data": {
+        "ID_MOVIE": 966,
+        "MOVIE_TITLE": "The Magnificent Seven",
+        "DAT_RELEASE": "1960-10-12",
+        "ID_IMDB": "tt0054047",
+        "IMDB_RATING": 7.7,
+        "IMDB_RATING_WEIGHTED": 7.59,
+        "IMDB_VOTES": 112254,
+        "POSTER_PATH": "/e5ToxOyJwuZD4VOfI0qEn5uIjeJ.jpg",
+        "RUNTIME": 128,
+        "TAGLINE": "They were seven…and they fought like seven hundred!",
+        "ID_CRITERION_SPINE": null,
+        "REMAKE_STEP": 1
+      }
+    },
+    {
+      "index": 2,
+      "data": {
+        "ID_MOVIE": 346,
+        "MOVIE_TITLE": "Seven Samurai",
+        "DAT_RELEASE": "1954-04-26",
+        "ID_IMDB": "tt0047478",
+        "IMDB_RATING": 8.6,
+        "IMDB_RATING_WEIGHTED": 8.52,
+        "IMDB_VOTES": 407777,
+        "POSTER_PATH": "/lOMGc8bnSwQhS4XyE1S99uH8NXf.jpg",
+        "RUNTIME": 207,
+        "TAGLINE": "Unmatched for suspense and spectacle!",
+        "ID_CRITERION_SPINE": 2,
+        "REMAKE_STEP": 2
+      }
+    }
+  ]
+}

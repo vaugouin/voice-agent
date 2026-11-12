@@ -1,0 +1,266 @@
+{
+  "question": "Trace Nosferatu (2024) back to its source, adaptation by adaptation",
+  "api_version": "1.1.20",
+  "ui_language": "en",
+  "answer": "Here’s the source trail for Nosferatu (2024), step by step through its recorded adaptations.",
+  "representation": "chain",
+  "representation_options": [
+    "chain",
+    "ranked-bars",
+    "card-grid",
+    "value-cards",
+    "table"
+  ],
+  "result_kind": "entity_rows",
+  "result_columns": [
+    {
+      "name": "ID_SOURCE_WORK",
+      "role": "entity_id",
+      "unit": null
+    },
+    {
+      "name": "SOURCE_WORK_NAME",
+      "role": "label",
+      "unit": null
+    },
+    {
+      "name": "SOURCE_WORK_TYPE",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "SOURCE_WORK_FORM",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "SOURCE_WORK_YEAR",
+      "role": "date",
+      "unit": null
+    },
+    {
+      "name": "ID_MOVIE",
+      "role": "entity_id",
+      "unit": null
+    },
+    {
+      "name": "ID_SERIE",
+      "role": "entity_id",
+      "unit": null
+    },
+    {
+      "name": "POSTER_PATH",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "WIKIPEDIA_IMAGE_PATH",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "OVERVIEW",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "MOVIE_COUNT",
+      "role": "metric",
+      "unit": "count"
+    },
+    {
+      "name": "SERIE_COUNT",
+      "role": "metric",
+      "unit": "count"
+    },
+    {
+      "name": "IMDB_RATING",
+      "role": "metric",
+      "unit": null
+    },
+    {
+      "name": "ADAPTATION_STEP",
+      "role": "metric",
+      "unit": null,
+      "ordered": "asc",
+      "focus": true
+    }
+  ],
+  "summary_facts": {
+    "count": 3,
+    "total": null,
+    "value_column": "ADAPTATION_STEP",
+    "unit": null,
+    "order": "ADAPTATION_STEP",
+    "order_direction": "asc",
+    "top": {
+      "label": "Nosferatu",
+      "id": 5212,
+      "index": 0,
+      "value": 1,
+      "extreme": "min"
+    },
+    "chain": {
+      "anchor": [
+        2
+      ],
+      "direction": "up",
+      "nodes": [
+        {
+          "type": "source_work",
+          "id": 11237,
+          "title": "Dracula",
+          "year": 1897,
+          "layer": 0,
+          "anchor": false,
+          "poster_path": null,
+          "image": true,
+          "source_type": "literary",
+          "source_form": null,
+          "wikipedia_image_path": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e0/Dracula-First-Edition-1897.jpg/3840px-Dracula-First-Edition-1897.jpg"
+        },
+        {
+          "type": "movie",
+          "id": 653,
+          "title": "Nosferatu",
+          "year": 1922,
+          "layer": 1,
+          "anchor": false,
+          "poster_path": "/zv7J85D8CC9qYagAEhPM63CIG6j.jpg",
+          "image": true
+        },
+        {
+          "type": "movie",
+          "id": 426063,
+          "title": "Nosferatu",
+          "year": 2024,
+          "layer": 2,
+          "anchor": true,
+          "poster_path": "/d0B8xDdqBZlzlPEzES8lu5LlNQn.jpg",
+          "image": true
+        }
+      ],
+      "edges": [
+        {
+          "from": 0,
+          "to": 1,
+          "kind": "adaptation",
+          "source_type": "literary",
+          "cycle": false
+        },
+        {
+          "from": 0,
+          "to": 2,
+          "kind": "adaptation",
+          "source_type": "literary",
+          "cycle": false
+        },
+        {
+          "from": 1,
+          "to": 2,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        }
+      ],
+      "layers": [
+        [
+          0
+        ],
+        [
+          1
+        ],
+        [
+          2
+        ]
+      ],
+      "count": 3,
+      "generations": 3,
+      "depth": {
+        "up": 1,
+        "down": 0
+      },
+      "kinds": [
+        "adaptation",
+        "remake"
+      ],
+      "types": [
+        "movie",
+        "source_work"
+      ],
+      "earliest": 0,
+      "latest": 2,
+      "cycles": 0,
+      "truncated": false,
+      "truncated_by": null,
+      "max_depth": 4,
+      "max_nodes": 30
+    }
+  },
+  "intent": {
+    "task": "sequence",
+    "focus": [],
+    "focus_columns": [],
+    "requested_view": "chain",
+    "source": "llm"
+  },
+  "result": [
+    {
+      "index": 0,
+      "data": {
+        "ID_SOURCE_WORK": 5212,
+        "SOURCE_WORK_NAME": "Nosferatu",
+        "SOURCE_WORK_TYPE": "screen",
+        "SOURCE_WORK_FORM": null,
+        "SOURCE_WORK_YEAR": 1922,
+        "ID_MOVIE": 653,
+        "ID_SERIE": null,
+        "POSTER_PATH": null,
+        "WIKIPEDIA_IMAGE_PATH": null,
+        "OVERVIEW": "1922 film directed by F. W. Murnau",
+        "MOVIE_COUNT": 5,
+        "SERIE_COUNT": 0,
+        "IMDB_RATING": 7.8,
+        "ADAPTATION_STEP": 1
+      }
+    },
+    {
+      "index": 1,
+      "data": {
+        "ID_SOURCE_WORK": 11237,
+        "SOURCE_WORK_NAME": "Dracula",
+        "SOURCE_WORK_TYPE": "literary",
+        "SOURCE_WORK_FORM": null,
+        "SOURCE_WORK_YEAR": 1897,
+        "ID_MOVIE": null,
+        "ID_SERIE": null,
+        "POSTER_PATH": null,
+        "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e0/Dracula-First-Edition-1897.jpg/3840px-Dracula-First-Edition-1897.jpg",
+        "OVERVIEW": "1897 novel by Bram Stoker",
+        "MOVIE_COUNT": 31,
+        "SERIE_COUNT": 3,
+        "IMDB_RATING": 6.04,
+        "ADAPTATION_STEP": 1
+      }
+    },
+    {
+      "index": 2,
+      "data": {
+        "ID_SOURCE_WORK": 11237,
+        "SOURCE_WORK_NAME": "Dracula",
+        "SOURCE_WORK_TYPE": "literary",
+        "SOURCE_WORK_FORM": null,
+        "SOURCE_WORK_YEAR": 1897,
+        "ID_MOVIE": null,
+        "ID_SERIE": null,
+        "POSTER_PATH": null,
+        "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/e0/Dracula-First-Edition-1897.jpg/3840px-Dracula-First-Edition-1897.jpg",
+        "OVERVIEW": "1897 novel by Bram Stoker",
+        "MOVIE_COUNT": 31,
+        "SERIE_COUNT": 3,
+        "IMDB_RATING": 6.04,
+        "ADAPTATION_STEP": 2
+      }
+    }
+  ]
+}

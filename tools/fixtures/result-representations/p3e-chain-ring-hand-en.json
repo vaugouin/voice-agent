@@ -1,0 +1,148 @@
+{
+  "question": "Show the remake lineage of Dog Day Afternoon (hand-written: three films citing each other in a ring)",
+  "api_version": "1.1.20",
+  "ui_language": "en",
+  "answer": "",
+  "representation": "chain",
+  "representation_options": [
+    "chain",
+    "card-grid",
+    "table"
+  ],
+  "result_kind": "entity_rows",
+  "result_columns": [
+    {
+      "name": "ID_MOVIE",
+      "role": "entity_id",
+      "unit": null
+    },
+    {
+      "name": "MOVIE_TITLE",
+      "role": "label",
+      "unit": null
+    }
+  ],
+  "summary_facts": {
+    "count": 2,
+    "total": null,
+    "value_column": null,
+    "unit": null,
+    "order": null,
+    "order_direction": null,
+    "top": null,
+    "chain": {
+      "anchor": [
+        0
+      ],
+      "direction": "both",
+      "nodes": [
+        {
+          "type": "movie",
+          "id": 968,
+          "title": "Dog Day Afternoon",
+          "year": 1975,
+          "layer": 0,
+          "anchor": true,
+          "poster_path": null,
+          "image": false
+        },
+        {
+          "type": "movie",
+          "id": 63729,
+          "title": "Terrorism and Kebab",
+          "year": 1992,
+          "layer": 1,
+          "anchor": false,
+          "poster_path": null,
+          "image": false
+        },
+        {
+          "type": "movie",
+          "id": 212849,
+          "title": "The Dog",
+          "year": 2013,
+          "layer": 2,
+          "anchor": false,
+          "poster_path": null,
+          "image": false
+        }
+      ],
+      "edges": [
+        {
+          "from": 2,
+          "to": 0,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": true
+        },
+        {
+          "from": 0,
+          "to": 1,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 1,
+          "to": 2,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        }
+      ],
+      "layers": [
+        [
+          0
+        ],
+        [
+          1
+        ],
+        [
+          2
+        ]
+      ],
+      "count": 3,
+      "generations": 3,
+      "depth": {
+        "up": 2,
+        "down": 0
+      },
+      "kinds": [
+        "remake"
+      ],
+      "types": [
+        "movie"
+      ],
+      "earliest": 0,
+      "latest": 2,
+      "cycles": 1,
+      "truncated": false,
+      "truncated_by": null,
+      "max_depth": 4,
+      "max_nodes": 30
+    }
+  },
+  "intent": {
+    "task": "list",
+    "focus": [],
+    "focus_columns": [],
+    "requested_view": "chain",
+    "source": "rules"
+  },
+  "result": [
+    {
+      "index": 0,
+      "data": {
+        "ID_MOVIE": 63729,
+        "MOVIE_TITLE": "Terrorism and Kebab"
+      }
+    },
+    {
+      "index": 1,
+      "data": {
+        "ID_MOVIE": 212849,
+        "MOVIE_TITLE": "The Dog"
+      }
+    }
+  ]
+}

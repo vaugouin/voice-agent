@@ -1,0 +1,259 @@
+{
+  "question": "The Magnificent Seven (1960): what is it a remake of, and what was remade from it?",
+  "api_version": "1.1.20",
+  "ui_language": "en",
+  "answer": "Here are the films that The Magnificent Seven (1960) is recorded as drawing from, alongside films recorded as drawing from it.",
+  "representation": "chain",
+  "representation_options": [
+    "chain",
+    "card-grid",
+    "table"
+  ],
+  "result_kind": "entity_rows",
+  "result_columns": [
+    {
+      "name": "ID_MOVIE",
+      "role": "entity_id",
+      "unit": null
+    },
+    {
+      "name": "MOVIE_TITLE",
+      "role": "label",
+      "unit": null
+    },
+    {
+      "name": "DAT_RELEASE",
+      "role": "date",
+      "unit": null
+    },
+    {
+      "name": "ID_IMDB",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "IMDB_RATING",
+      "role": "metric",
+      "unit": null
+    },
+    {
+      "name": "IMDB_RATING_WEIGHTED",
+      "role": "metric",
+      "unit": null,
+      "ordered": "desc"
+    },
+    {
+      "name": "IMDB_VOTES",
+      "role": "metric",
+      "unit": null
+    },
+    {
+      "name": "POSTER_PATH",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "RUNTIME",
+      "role": "metric",
+      "unit": "minutes"
+    },
+    {
+      "name": "TAGLINE",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "ID_CRITERION_SPINE",
+      "role": "other",
+      "unit": null
+    }
+  ],
+  "summary_facts": {
+    "count": 3,
+    "total": null,
+    "value_column": null,
+    "unit": null,
+    "order": "IMDB_RATING_WEIGHTED",
+    "order_direction": "desc",
+    "top": null,
+    "chain": {
+      "anchor": [
+        1
+      ],
+      "direction": "both",
+      "nodes": [
+        {
+          "type": "movie",
+          "id": 346,
+          "title": "Seven Samurai",
+          "year": 1954,
+          "layer": 0,
+          "anchor": false,
+          "poster_path": "/lOMGc8bnSwQhS4XyE1S99uH8NXf.jpg",
+          "image": true
+        },
+        {
+          "type": "movie",
+          "id": 966,
+          "title": "The Magnificent Seven",
+          "year": 1960,
+          "layer": 1,
+          "anchor": true,
+          "poster_path": "/e5ToxOyJwuZD4VOfI0qEn5uIjeJ.jpg",
+          "image": true
+        },
+        {
+          "type": "movie",
+          "id": 330639,
+          "title": "Shams El Zanaty",
+          "year": 1991,
+          "layer": 2,
+          "anchor": false,
+          "poster_path": "/rNO4VHxjcgi8wLn3LavhNu0hl6v.jpg",
+          "image": true
+        },
+        {
+          "type": "serie",
+          "id": 10706,
+          "title": "The Magnificent Seven",
+          "year": 1998,
+          "layer": 2,
+          "anchor": false,
+          "poster_path": "/1fFkXghgxKAS4qI8S72O75yUq4j.jpg",
+          "image": true
+        },
+        {
+          "type": "movie",
+          "id": 333484,
+          "title": "The Magnificent Seven",
+          "year": 2016,
+          "layer": 2,
+          "anchor": false,
+          "poster_path": "/ezcS78TIjgr85pVdaPDd2rSPVNs.jpg",
+          "image": true
+        }
+      ],
+      "edges": [
+        {
+          "from": 0,
+          "to": 1,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 1,
+          "to": 2,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 1,
+          "to": 3,
+          "kind": "adaptation",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 1,
+          "to": 4,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        }
+      ],
+      "layers": [
+        [
+          0
+        ],
+        [
+          1
+        ],
+        [
+          2,
+          3,
+          4
+        ]
+      ],
+      "count": 5,
+      "generations": 3,
+      "depth": {
+        "up": 1,
+        "down": 1
+      },
+      "kinds": [
+        "adaptation",
+        "remake"
+      ],
+      "types": [
+        "movie",
+        "serie"
+      ],
+      "earliest": 0,
+      "latest": 4,
+      "cycles": 0,
+      "truncated": false,
+      "truncated_by": null,
+      "max_depth": 4,
+      "max_nodes": 30
+    }
+  },
+  "intent": {
+    "task": "relate",
+    "focus": [],
+    "focus_columns": [],
+    "requested_view": "chain",
+    "source": "llm"
+  },
+  "result": [
+    {
+      "index": 0,
+      "data": {
+        "ID_MOVIE": 346,
+        "MOVIE_TITLE": "Seven Samurai",
+        "DAT_RELEASE": "1954-04-26",
+        "ID_IMDB": "tt0047478",
+        "IMDB_RATING": 8.6,
+        "IMDB_RATING_WEIGHTED": 8.52,
+        "IMDB_VOTES": 407777,
+        "POSTER_PATH": "/lOMGc8bnSwQhS4XyE1S99uH8NXf.jpg",
+        "RUNTIME": 207,
+        "TAGLINE": "Unmatched for suspense and spectacle!",
+        "ID_CRITERION_SPINE": 2
+      }
+    },
+    {
+      "index": 1,
+      "data": {
+        "ID_MOVIE": 330639,
+        "MOVIE_TITLE": "Shams El Zanaty",
+        "DAT_RELEASE": "1991-10-21",
+        "ID_IMDB": "tt1527202",
+        "IMDB_RATING": 6.6,
+        "IMDB_RATING_WEIGHTED": 6.95,
+        "IMDB_VOTES": 1514,
+        "POSTER_PATH": "/rNO4VHxjcgi8wLn3LavhNu0hl6v.jpg",
+        "RUNTIME": 130,
+        "TAGLINE": "",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 2,
+      "data": {
+        "ID_MOVIE": 333484,
+        "MOVIE_TITLE": "The Magnificent Seven",
+        "DAT_RELEASE": "2016-09-14",
+        "ID_IMDB": "tt2404435",
+        "IMDB_RATING": 6.9,
+        "IMDB_RATING_WEIGHTED": 6.91,
+        "IMDB_VOTES": 250547,
+        "POSTER_PATH": "/ezcS78TIjgr85pVdaPDd2rSPVNs.jpg",
+        "RUNTIME": 132,
+        "TAGLINE": "Justice has a number.",
+        "ID_CRITERION_SPINE": null
+      }
+    }
+  ]
+}

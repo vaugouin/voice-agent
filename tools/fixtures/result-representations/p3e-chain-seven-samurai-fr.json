@@ -1,0 +1,284 @@
+{
+  "question": "Quels films descendent des Sept Samouraïs, remakes de remakes compris ?",
+  "api_version": "1.1.20",
+  "ui_language": "fr",
+  "answer": "Voici les films qui descendent de Les Sept Samouraïs, y compris les remakes de remakes.",
+  "representation": "chain",
+  "representation_options": [
+    "chain",
+    "card-grid",
+    "table"
+  ],
+  "result_kind": "entity_rows",
+  "result_columns": [
+    {
+      "name": "ID_MOVIE",
+      "role": "entity_id",
+      "unit": null
+    },
+    {
+      "name": "MOVIE_TITLE",
+      "role": "label",
+      "unit": null
+    },
+    {
+      "name": "DAT_RELEASE",
+      "role": "date",
+      "unit": null
+    },
+    {
+      "name": "ID_IMDB",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "IMDB_RATING",
+      "role": "metric",
+      "unit": null
+    },
+    {
+      "name": "IMDB_RATING_WEIGHTED",
+      "role": "metric",
+      "unit": null,
+      "ordered": "desc"
+    },
+    {
+      "name": "IMDB_VOTES",
+      "role": "metric",
+      "unit": null
+    },
+    {
+      "name": "POSTER_PATH",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "RUNTIME",
+      "role": "metric",
+      "unit": "minutes"
+    },
+    {
+      "name": "TAGLINE",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "ID_CRITERION_SPINE",
+      "role": "other",
+      "unit": null
+    }
+  ],
+  "summary_facts": {
+    "count": 3,
+    "total": null,
+    "value_column": null,
+    "unit": null,
+    "order": "IMDB_RATING_WEIGHTED",
+    "order_direction": "desc",
+    "top": null,
+    "chain": {
+      "anchor": [
+        0
+      ],
+      "direction": "down",
+      "nodes": [
+        {
+          "type": "movie",
+          "id": 346,
+          "title": "Les Sept Samouraïs",
+          "year": 1954,
+          "layer": 0,
+          "anchor": true,
+          "poster_path": "/lOMGc8bnSwQhS4XyE1S99uH8NXf.jpg",
+          "image": true
+        },
+        {
+          "type": "movie",
+          "id": 966,
+          "title": "Les Sept Mercenaires",
+          "year": 1960,
+          "layer": 1,
+          "anchor": false,
+          "poster_path": "/e5ToxOyJwuZD4VOfI0qEn5uIjeJ.jpg",
+          "image": true
+        },
+        {
+          "type": "serie",
+          "id": 5863,
+          "title": "SAMURAI 7",
+          "year": 2004,
+          "layer": 1,
+          "anchor": false,
+          "poster_path": "/klSXeepcjr89ltqfwcth8xXHiwC.jpg",
+          "image": true
+        },
+        {
+          "type": "movie",
+          "id": 330639,
+          "title": "شمس الزناتي",
+          "year": 1991,
+          "layer": 2,
+          "anchor": false,
+          "poster_path": "/rNO4VHxjcgi8wLn3LavhNu0hl6v.jpg",
+          "image": true
+        },
+        {
+          "type": "serie",
+          "id": 10706,
+          "title": "Les Sept mercenaires",
+          "year": 1998,
+          "layer": 2,
+          "anchor": false,
+          "poster_path": "/1fFkXghgxKAS4qI8S72O75yUq4j.jpg",
+          "image": true
+        },
+        {
+          "type": "movie",
+          "id": 333484,
+          "title": "Les Sept Mercenaires",
+          "year": 2016,
+          "layer": 2,
+          "anchor": false,
+          "poster_path": "/ezcS78TIjgr85pVdaPDd2rSPVNs.jpg",
+          "image": true
+        }
+      ],
+      "edges": [
+        {
+          "from": 0,
+          "to": 1,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 0,
+          "to": 2,
+          "kind": "adaptation",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 1,
+          "to": 3,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 1,
+          "to": 4,
+          "kind": "adaptation",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 0,
+          "to": 5,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 1,
+          "to": 5,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        }
+      ],
+      "layers": [
+        [
+          0
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          3,
+          4,
+          5
+        ]
+      ],
+      "count": 6,
+      "generations": 3,
+      "depth": {
+        "up": 0,
+        "down": 2
+      },
+      "kinds": [
+        "adaptation",
+        "remake"
+      ],
+      "types": [
+        "movie",
+        "serie"
+      ],
+      "earliest": 0,
+      "latest": 5,
+      "cycles": 0,
+      "truncated": false,
+      "truncated_by": null,
+      "max_depth": 4,
+      "max_nodes": 30
+    }
+  },
+  "intent": {
+    "task": "list",
+    "focus": [],
+    "focus_columns": [],
+    "requested_view": "chain",
+    "source": "llm"
+  },
+  "result": [
+    {
+      "index": 0,
+      "data": {
+        "ID_MOVIE": 966,
+        "MOVIE_TITLE": "Les Sept Mercenaires",
+        "DAT_RELEASE": "1960-10-12",
+        "ID_IMDB": "tt0054047",
+        "IMDB_RATING": 7.7,
+        "IMDB_RATING_WEIGHTED": 7.59,
+        "IMDB_VOTES": 112254,
+        "POSTER_PATH": "/o7bHQmEkZeddfbLl4p1iKBLkUTw.jpg",
+        "RUNTIME": 128,
+        "TAGLINE": "7 hommes contre une horde sauvage !",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 1,
+      "data": {
+        "ID_MOVIE": 330639,
+        "MOVIE_TITLE": "شمس الزناتي",
+        "DAT_RELEASE": "1991-10-21",
+        "ID_IMDB": "tt1527202",
+        "IMDB_RATING": 6.6,
+        "IMDB_RATING_WEIGHTED": 6.95,
+        "IMDB_VOTES": 1514,
+        "POSTER_PATH": "/rNO4VHxjcgi8wLn3LavhNu0hl6v.jpg",
+        "RUNTIME": 130,
+        "TAGLINE": "",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 2,
+      "data": {
+        "ID_MOVIE": 333484,
+        "MOVIE_TITLE": "Les Sept Mercenaires",
+        "DAT_RELEASE": "2016-09-14",
+        "ID_IMDB": "tt2404435",
+        "IMDB_RATING": 6.9,
+        "IMDB_RATING_WEIGHTED": 6.91,
+        "IMDB_VOTES": 250547,
+        "POSTER_PATH": "/sAZUy1rKscwYCyGTp16errPxji6.jpg",
+        "RUNTIME": 132,
+        "TAGLINE": "La justice a un numéro.",
+        "ID_CRITERION_SPINE": null
+      }
+    }
+  ]
+}

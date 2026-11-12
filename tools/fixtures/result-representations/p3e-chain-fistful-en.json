@@ -1,0 +1,230 @@
+{
+  "question": "What is A Fistful of Dollars based on, and what is that based on?",
+  "api_version": "1.1.20",
+  "ui_language": "en",
+  "answer": "Here are the works A Fistful of Dollars is based on, along with the works those sources are based on.",
+  "representation": "chain",
+  "representation_options": [
+    "chain",
+    "card-grid",
+    "table"
+  ],
+  "result_kind": "entity_rows",
+  "result_columns": [
+    {
+      "name": "ID_SOURCE_WORK",
+      "role": "entity_id",
+      "unit": null
+    },
+    {
+      "name": "SOURCE_WORK_NAME",
+      "role": "label",
+      "unit": null
+    },
+    {
+      "name": "SOURCE_WORK_TYPE",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "SOURCE_WORK_FORM",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "SOURCE_WORK_YEAR",
+      "role": "date",
+      "unit": null
+    },
+    {
+      "name": "ID_MOVIE",
+      "role": "entity_id",
+      "unit": null
+    },
+    {
+      "name": "ID_SERIE",
+      "role": "entity_id",
+      "unit": null
+    },
+    {
+      "name": "POSTER_PATH",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "WIKIPEDIA_IMAGE_PATH",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "OVERVIEW",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "MOVIE_COUNT",
+      "role": "metric",
+      "unit": "count"
+    },
+    {
+      "name": "SERIE_COUNT",
+      "role": "metric",
+      "unit": "count"
+    },
+    {
+      "name": "IMDB_RATING",
+      "role": "metric",
+      "unit": null
+    }
+  ],
+  "summary_facts": {
+    "count": 2,
+    "total": null,
+    "value_column": null,
+    "unit": null,
+    "order": null,
+    "order_direction": null,
+    "top": null,
+    "chain": {
+      "anchor": [
+        2
+      ],
+      "direction": "up",
+      "nodes": [
+        {
+          "type": "source_work",
+          "id": 6848,
+          "title": "Red Harvest",
+          "year": 1927,
+          "layer": 0,
+          "anchor": false,
+          "poster_path": null,
+          "image": true,
+          "source_type": "literary",
+          "source_form": null,
+          "wikipedia_image_path": "https://upload.wikimedia.org/wikipedia/commons/f/f4/Black_Mask_November_1927_-_Poisonville.jpg"
+        },
+        {
+          "type": "movie",
+          "id": 11878,
+          "title": "Yojimbo",
+          "year": 1961,
+          "layer": 1,
+          "anchor": false,
+          "poster_path": "/tN7kYPjRhDolpui9sc9Eq9n5b2O.jpg",
+          "image": true
+        },
+        {
+          "type": "movie",
+          "id": 391,
+          "title": "A Fistful of Dollars",
+          "year": 1964,
+          "layer": 2,
+          "anchor": true,
+          "poster_path": "/lBwOEpwVeUAmrmglcstnaGcJq3Y.jpg",
+          "image": true
+        }
+      ],
+      "edges": [
+        {
+          "from": 0,
+          "to": 1,
+          "kind": "adaptation",
+          "source_type": "literary",
+          "cycle": false
+        },
+        {
+          "from": 0,
+          "to": 2,
+          "kind": "adaptation",
+          "source_type": "literary",
+          "cycle": false
+        },
+        {
+          "from": 1,
+          "to": 2,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        }
+      ],
+      "layers": [
+        [
+          0
+        ],
+        [
+          1
+        ],
+        [
+          2
+        ]
+      ],
+      "count": 3,
+      "generations": 3,
+      "depth": {
+        "up": 1,
+        "down": 0
+      },
+      "kinds": [
+        "adaptation",
+        "remake"
+      ],
+      "types": [
+        "movie",
+        "source_work"
+      ],
+      "earliest": 0,
+      "latest": 2,
+      "cycles": 0,
+      "truncated": false,
+      "truncated_by": null,
+      "max_depth": 4,
+      "max_nodes": 30
+    }
+  },
+  "intent": {
+    "task": "relate",
+    "focus": [],
+    "focus_columns": [],
+    "requested_view": "",
+    "source": "llm"
+  },
+  "result": [
+    {
+      "index": 0,
+      "data": {
+        "ID_SOURCE_WORK": 7219,
+        "SOURCE_WORK_NAME": "Yojimbo",
+        "SOURCE_WORK_TYPE": "screen",
+        "SOURCE_WORK_FORM": null,
+        "SOURCE_WORK_YEAR": 1961,
+        "ID_MOVIE": 11878,
+        "ID_SERIE": null,
+        "POSTER_PATH": null,
+        "WIKIPEDIA_IMAGE_PATH": null,
+        "OVERVIEW": "1961 film directed by Akira Kurosawa",
+        "MOVIE_COUNT": 5,
+        "SERIE_COUNT": 0,
+        "IMDB_RATING": 8.2
+      }
+    },
+    {
+      "index": 1,
+      "data": {
+        "ID_SOURCE_WORK": 6848,
+        "SOURCE_WORK_NAME": "Red Harvest",
+        "SOURCE_WORK_TYPE": "literary",
+        "SOURCE_WORK_FORM": null,
+        "SOURCE_WORK_YEAR": 1927,
+        "ID_MOVIE": null,
+        "ID_SERIE": null,
+        "POSTER_PATH": null,
+        "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/f/f4/Black_Mask_November_1927_-_Poisonville.jpg",
+        "OVERVIEW": "novel by Dashiell Hammett",
+        "MOVIE_COUNT": 3,
+        "SERIE_COUNT": 0,
+        "IMDB_RATING": 7.2
+      }
+    }
+  ]
+}

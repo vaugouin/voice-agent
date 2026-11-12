@@ -3202,6 +3202,10 @@ function renderText2SqlRepresentation(rep, container, rows, upstream) {
   if (rep === "hierarchy") {
     return renderHierarchy(container, rows, columns, upstream);
   }
+  // Phase 3 lot E (FASTAPI-TEXT2SQL, 2026-11-12): the lineage of adaptations and remakes.
+  if (rep === "chain") {
+    return renderChain(container, rows, columns, upstream);
+  }
   // number-card | stat-strip: the scalar family, one card per metric column.
   return renderScalarCards(container, rows, columns);
 }
@@ -4451,6 +4455,97 @@ function renderHierarchy(container, rows, columns, upstream) {
   container.append(root);
 }
 
+// Phase 3 lot E, `chain`: works joined by remake and adaptation links, read from
+// summary_facts.chain (the API's lineage walk; the front never rebuilds the graph from the rows).
+// An ordered list of generations, oldest first, each a list of cards stacked as siblings (a fork:
+// one source, several works); left to right on a desktop, top to bottom on a phone, an arrow
+// between generations. Each card names its links ("Remake of ...", "Adapted from ...") and opens
+// its sheet like a card; the work asked about is outlined and badged. The model
+// (text2SqlChainModel(), pure, pinned by the check) and the markup are t2s-front's.
+function renderChain(container, rows, columns, upstream) {
+  const model = text2SqlChainModel(upstream, activeUiLanguage);
+  if (!model) {
+    return renderRawTable(container, rows, columns);
+  }
+  const fr = t2sLang(activeUiLanguage) === "fr";
+  const root = document.createElement("ol");
+  root.className = "t2sChain";
+  model.generations.forEach((generation, depth) => {
+    const gen = document.createElement("li");
+    gen.className = "t2sChainGen";
+    if (depth > 0) {
+      const arrow = document.createElement("span");
+      arrow.className = "t2sChainArrow";
+      arrow.setAttribute("aria-hidden", "true");
+      gen.append(arrow);
+    }
+    const works = document.createElement("ul");
+    works.className = "t2sChainWorks";
+    generation.forEach((card) => {
+      const item = document.createElement("li");
+      item.className = card.anchor ? "t2sChainWork isAnchor" : "t2sChainWork";
+      const spec = cardSpecFromRecord(card.record);
+      if (spec?.imageUrl) {
+        const img = document.createElement("img");
+        img.className = "t2sChainThumb";
+        img.src = spec.imageUrl;
+        img.alt = "";
+        img.loading = "lazy";
+        item.append(img);
+      } else {
+        const empty = document.createElement("span");
+        empty.className = "t2sChainThumb isEmpty";
+        empty.setAttribute("aria-hidden", "true");
+        item.append(empty);
+      }
+      const text = document.createElement("span");
+      text.className = "t2sChainText";
+      const badges = document.createElement("span");
+      badges.className = "t2sChainBadges";
+      const badge = document.createElement("span");
+      badge.className = "t2sChainBadge";
+      badge.textContent = card.badge;
+      badges.append(badge);
+      if (card.anchor) {
+        const start = document.createElement("span");
+        start.className = "t2sChainBadge isAnchor";
+        start.textContent = fr ? "Point de départ" : "Starting point";
+        badges.append(start);
+      }
+      const title = document.createElement("span");
+      title.className = "t2sChainTitle";
+      title.textContent = card.title;
+      text.append(badges, title);
+      if (card.year) {
+        const year = document.createElement("span");
+        year.className = "t2sChainYear";
+        year.textContent = card.year;
+        text.append(year);
+      }
+      if (card.links.length) {
+        const links = document.createElement("ul");
+        links.className = "t2sChainLinks";
+        card.links.forEach((link) => {
+          const line = document.createElement("li");
+          line.className = link.cycle ? "t2sChainLink isCycle" : "t2sChainLink";
+          line.textContent = link.text;
+          links.append(line);
+        });
+        text.append(links);
+      }
+      item.append(text);
+      makeText2SqlRowOpenable(item, card.record);
+      if (item.getAttribute("role") === "button") {
+        item.setAttribute("aria-label", card.year ? `${card.title}, ${card.year}` : card.title);
+      }
+      works.append(item);
+    });
+    gen.append(works);
+    root.append(gen);
+  });
+  container.append(root);
+}
+
 function renderRawTable(container, rows, columns) {
   const records = rows.map((item) => item?.data || item).filter((r) => r && typeof r === "object");
   if (!records.length) {
@@ -4527,11 +4622,11 @@ function renderRawTable(container, rows, columns) {
 // lot A) joined the list; before that an API sending them fell back to the front's own chooser.
 // Phase 2 lot B: `compare-cards`, `fact-card` and `verdict` joined them on 2026-11-11, and phase 2
 // lot C `histogram`, `share-bar` and `flag-list` the same day; phase 3 lot A `scatter` on 2026-11-12,
-// lot B `map` and lot C `hierarchy` the same day.
+// lot B `map` and lot C `hierarchy` the same day, lot E `chain` too.
 const T2S_KNOWN_REPRESENTATIONS = [
   "entity-page", "card-grid", "value-cards", "number-card", "stat-strip", "ranked-bars", "table",
   "timeline", "sequence-strip", "trend-columns", "compare-cards", "fact-card", "verdict",
-  "histogram", "share-bar", "flag-list", "scatter", "map", "hierarchy",
+  "histogram", "share-bar", "flag-list", "scatter", "map", "hierarchy", "chain",
 ];
 // Chips only where switching means something: several entity rows, or a table of them. An
 // entity page and a one-row number keep their single form (VOICE-AGENT-247), even though the
@@ -4543,6 +4638,7 @@ const T2S_KNOWN_REPRESENTATIONS = [
 const T2S_SWITCHABLE_REPRESENTATIONS = [
   "card-grid", "value-cards", "ranked-bars", "table", "timeline", "sequence-strip", "trend-columns",
   "compare-cards", "fact-card", "verdict", "histogram", "share-bar", "flag-list", "scatter", "map", "hierarchy",
+  "chain",
 ];
 // The two forms that ARE the answer to the question (a yes or no, the one value asked for): a
 // remembered chip choice from an earlier list never replaces them; a chip on this result still does.
@@ -4565,6 +4661,7 @@ const T2S_REPRESENTATION_LABELS = {
   scatter: ["Scatter", "Nuage de points"],
   map: ["Map", "Carte"],
   hierarchy: ["Groups", "Groupes"],
+  chain: ["Lineage", "Filiation"],
 };
 // Column names the summary line and the value cards name in words. Anything else falls back to
 // prettyLabel() of the column name, in lower case.
@@ -4906,6 +5003,10 @@ function text2SqlSummaryLine(upstream, { rep = "", lang = "", spoken = false, ha
   // Phase 3 lot C.
   if (shown === "hierarchy") {
     return text2SqlHierarchySummary(upstream, { lang, spoken, hasMore });
+  }
+  // Phase 3 lot E.
+  if (shown === "chain") {
+    return text2SqlChainSummary(upstream, { lang });
   }
   if (["entity-page", "number-card", "stat-strip"].includes(shown)) {
     return "";
@@ -5549,6 +5650,7 @@ const T2S_REQUESTED_VIEW_TARGETS = {
   scatter: ["scatter"],
   map: ["map"],
   groups: ["hierarchy"],
+  lineage: ["chain"],
 };
 const T2S_REQUESTED_VIEW_NOUNS = {
   table: ["a table", "en tableau"],
@@ -5567,6 +5669,7 @@ const T2S_REQUESTED_VIEW_NOUNS = {
   scatter: ["a scatter plot", "en nuage de points"],
   map: ["a map", "sur une carte"],
   groups: ["groups", "par groupe"],
+  lineage: ["a lineage", "en filiation"],
 };
 const T2S_REQUESTED_VIEW_DONE = {
   table: ["Here it is as a table.", "Voici le résultat en tableau."],
@@ -5585,6 +5688,7 @@ const T2S_REQUESTED_VIEW_DONE = {
   scatter: ["Here it is as a scatter plot.", "Voici le nuage de points."],
   map: ["Here it is on a map.", "Voici la carte."],
   hierarchy: ["Here it is, grouped.", "Voici le résultat par groupe."],
+  chain: ["Here is the lineage.", "Voici la filiation."],
 };
 
 function text2SqlRequestedView(text) {
@@ -6600,6 +6704,199 @@ function text2SqlHierarchySummary(upstream, { lang = "", spoken = false, hasMore
       : `; the largest, ${name}, has ${word(top.count, gender)}`;
   }
   return `${capitalizeFirst(lead)}${tail}.`;
+}
+
+// Phase 3 lot E (contract table `chain`). Pure functions, no DOM, pinned by
+// tools/check-result-representations.mjs with the p3e-* fixtures; the same cards, links and
+// sentence as t2s-front (f_t2srep_chain_model(), f_t2srep_caption_chain()). The nodes, edges,
+// generations and anchor are the API's (summary_facts.chain), never recomputed from the rows.
+const T2S_CHAIN_BADGES = {
+  movie: ["Film", "Film"], serie: ["Series", "Série"], literary: ["Book", "Livre"], comic: ["Comic", "BD"],
+  stage: ["Play", "Pièce"], game: ["Game", "Jeu"], folklore: ["Tale", "Conte"], screen: ["Film", "Film"],
+  other: ["Work", "Œuvre"],
+};
+const T2S_CHAIN_VERBS = {
+  en: { remake: "remakes", adaptation: "is adapted from", based_on: "is based on" },
+  fr: { remake: "est un remake", adaptation: "est une adaptation", based_on: "s'inspire" },
+};
+
+// French "de" and "à" before a title: elided before a vowel, contracted before Le and Les.
+function text2SqlFrDe(title) {
+  const t = String(title || "");
+  if (t.startsWith("Le ")) {
+    return `du ${t.slice(3)}`;
+  }
+  if (t.startsWith("Les ")) {
+    return `des ${t.slice(4)}`;
+  }
+  return /^[aeiouyàâäéèêëîïôöùûüœæ]/i.test(t) ? `d'${t}` : `de ${t}`;
+}
+
+function text2SqlFrA(title) {
+  const t = String(title || "");
+  if (t.startsWith("Le ")) {
+    return `au ${t.slice(3)}`;
+  }
+  if (t.startsWith("Les ")) {
+    return `aux ${t.slice(4)}`;
+  }
+  return `à ${t}`;
+}
+
+// The chain facts, or null without two links. {chain, nodes, label(i), labelYear(i)}: a title
+// shared by two works of the chain carries its year.
+function text2SqlChainFacts(upstream) {
+  const chain = upstream?.summary_facts?.chain;
+  if (!chain || !Array.isArray(chain.nodes) || !Array.isArray(chain.edges) || chain.edges.length < 2 || !Array.isArray(chain.layers)) {
+    return null;
+  }
+  const nodes = chain.nodes;
+  const seen = {};
+  nodes.forEach((n) => {
+    const key = String(n?.title || "").toLowerCase();
+    seen[key] = (seen[key] || 0) + 1;
+  });
+  const label = (i) => {
+    const n = nodes[i] || {};
+    const t = String(n.title || "");
+    return seen[t.toLowerCase()] > 1 && n.year ? `${t} (${n.year})` : t;
+  };
+  const labelYear = (i) => {
+    const n = nodes[i] || {};
+    const t = String(n.title || "");
+    return n.year ? `${t} (${n.year})` : t;
+  };
+  return { chain, nodes, label, labelYear };
+}
+
+// {generations: [[card...]...]} or null. A card: {index, type, id, title, year, label, anchor,
+// badge, record, links: [{text, cycle}]}; `record` the work's own id, name and picture, so the
+// card opens the work's sheet and shows its poster (or a source work's Wikipedia image).
+function text2SqlChainModel(upstream, lang) {
+  const facts = text2SqlChainFacts(upstream);
+  if (!facts) {
+    return null;
+  }
+  const fr = t2sLang(lang) === "fr";
+  const { chain, nodes, label } = facts;
+  const pick = (entries) => Object.fromEntries(entries.filter(([, v]) => v !== null && v !== undefined && v !== ""));
+  const card = (index) => {
+    const n = nodes[index] || {};
+    const type = String(n.type || "");
+    const badgeKey = type === "source_work" ? (T2S_CHAIN_BADGES[n.source_type] ? n.source_type : "other") : type;
+    const badge = (T2S_CHAIN_BADGES[badgeKey] || T2S_CHAIN_BADGES.other)[fr ? 1 : 0];
+    let record;
+    if (type === "movie") {
+      record = pick([["ID_MOVIE", n.id], ["MOVIE_TITLE", n.title], ["POSTER_PATH", n.poster_path]]);
+    } else if (type === "serie") {
+      record = pick([["ID_SERIE", n.id], ["SERIE_TITLE", n.title], ["POSTER_PATH", n.poster_path]]);
+    } else {
+      record = pick([["ID_SOURCE_WORK", n.id], ["SOURCE_WORK_NAME", n.title], ["POSTER_PATH", n.poster_path],
+        ["WIKIPEDIA_IMAGE_PATH", n.wikipedia_image_path]]);
+    }
+    const links = chain.edges.filter((e) => e.to === index).map((e) => {
+      const from = label(e.from);
+      let text;
+      if (fr) {
+        text = e.kind === "remake" ? `Remake ${text2SqlFrDe(from)}`
+          : e.kind === "adaptation" ? `Adaptation ${text2SqlFrDe(from)}` : `D'après ${from}`;
+      } else {
+        text = e.kind === "remake" ? `Remake of ${from}`
+          : e.kind === "adaptation" ? `Adapted from ${from}` : `Based on ${from}`;
+      }
+      if (e.cycle) {
+        text += fr ? " (une boucle dans les données)" : " (a loop in the data)";
+      }
+      return { text, cycle: Boolean(e.cycle) };
+    });
+    return {
+      index, type, id: n.id, title: String(n.title || ""), year: n.year ? String(n.year) : "",
+      label: label(index), anchor: Boolean(n.anchor), badge, record, links,
+    };
+  };
+  return { generations: chain.layers.map((layer) => (Array.isArray(layer) ? layer : []).map(card)) };
+}
+
+// "Three works from Red Harvest (1927) to Last Man Standing (1996); Last Man Standing remakes
+// Yojimbo." / "Trois œuvres, de La Moisson rouge (1927) à Dernier recours (1996) ; Dernier recours
+// est un remake du Garde du corps."; several sources: "...; A Star Is Born (2018) draws on three
+// of them." / "... en reprend trois."; walking down: "...; Seven Samurai directly inspired three
+// of them." / "... en a inspiré directement trois."; cut: "(the lineage goes on beyond five
+// works)". The noun is films (all movies), series, else works / œuvres; counts up to twelve in
+// words. The chain is not paged, so no "the first N".
+function text2SqlChainSummary(upstream, { lang = "" } = {}) {
+  const facts = text2SqlChainFacts(upstream);
+  if (!facts) {
+    return "";
+  }
+  const language = t2sLang(lang);
+  const fr = language === "fr";
+  const { chain, nodes, label, labelYear } = facts;
+  const types = new Set(nodes.map((n) => n?.type));
+  let noun = fr ? "œuvres" : "works";
+  let gender = "f";
+  if (types.size === 1 && types.has("movie")) {
+    noun = "films";
+    gender = "m";
+  } else if (types.size === 1 && types.has("serie")) {
+    noun = fr ? "séries" : "series";
+  }
+  const word = (n, g = gender) => text2SqlCountWord(Number(n) || 0, g, language);
+  const count = capitalizeFirst(word(chain.count ?? nodes.length));
+  const anchor = Array.isArray(chain.anchor) && chain.anchor.length ? chain.anchor[0] : null;
+  const e = chain.earliest;
+  const l = chain.latest;
+  let s1;
+  if (e !== null && e !== undefined && l !== null && l !== undefined && e !== l) {
+    s1 = fr
+      ? `${count} ${noun}, ${text2SqlFrDe(labelYear(e))} ${text2SqlFrA(labelYear(l))}`
+      : `${count} ${noun} from ${labelYear(e)} to ${labelYear(l)}`;
+  } else {
+    s1 = fr
+      ? `${count} ${noun} dans la filiation ${text2SqlFrDe(label(anchor))}`
+      : `${count} ${noun} in the lineage of ${label(anchor)}`;
+  }
+  if (chain.truncated) {
+    if (chain.truncated_by === "nodes") {
+      s1 += fr
+        ? ` (la filiation continue au-delà de ${word(chain.max_nodes, "f")} œuvres)`
+        : ` (the lineage goes on beyond ${word(chain.max_nodes)} works)`;
+    } else if (chain.truncated_by === "depth") {
+      s1 += fr
+        ? ` (la filiation continue au-delà de ${word(chain.max_depth, "f")} générations)`
+        : ` (the lineage goes on beyond ${word(chain.max_depth)} generations)`;
+    } else {
+      s1 += fr ? " (le parcours s'est arrêté avant la fin)" : " (the walk stopped early)";
+    }
+  }
+  let s2 = "";
+  if (anchor !== null) {
+    const parents = chain.edges.filter((x) => x.to === anchor && !x.cycle);
+    const children = chain.edges.filter((x) => x.from === anchor && !x.cycle);
+    const verbs = T2S_CHAIN_VERBS[fr ? "fr" : "en"];
+    const rel = (child, parent, kind) => (fr
+      ? `${label(child)} ${verbs[kind] || verbs.based_on} ${text2SqlFrDe(label(parent))}`
+      : `${label(child)} ${verbs[kind] || verbs.based_on} ${label(parent)}`);
+    if (chain.direction !== "down" && parents.length) {
+      if (parents.length === 1) {
+        s2 = rel(anchor, parents[0].from, parents[0].kind);
+      } else {
+        s2 = fr ? `${label(anchor)} en reprend ${word(parents.length)}` : `${label(anchor)} draws on ${word(parents.length)} of them`;
+      }
+    } else if (children.length) {
+      if (children.length === 1) {
+        s2 = rel(children[0].to, anchor, children[0].kind);
+      } else {
+        s2 = fr
+          ? `${label(anchor)} en a inspiré directement ${word(children.length)}`
+          : `${label(anchor)} directly inspired ${word(children.length)} of them`;
+      }
+    }
+  }
+  if (!s2) {
+    return `${s1}.`;
+  }
+  return fr ? `${s1} ; ${s2}.` : `${s1}; ${s2}.`;
 }
 
 // One result row as a poster card, with the value(s) under it when value cards are being drawn.

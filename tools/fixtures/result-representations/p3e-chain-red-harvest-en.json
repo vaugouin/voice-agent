@@ -1,0 +1,376 @@
+{
+  "question": "How did Red Harvest reach the screen, remakes included?",
+  "api_version": "1.1.20",
+  "ui_language": "en",
+  "answer": "Here are the films and series based on Red Harvest, including remakes.",
+  "representation": "chain",
+  "representation_options": [
+    "chain",
+    "card-grid",
+    "table"
+  ],
+  "result_kind": "entity_rows",
+  "result_columns": [
+    {
+      "name": "ID_CONTENT",
+      "role": "entity_id",
+      "unit": null
+    },
+    {
+      "name": "CONTENT_TYPE",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "CONTENT_TITLE",
+      "role": "label",
+      "unit": null
+    },
+    {
+      "name": "DAT_FIRST_AIR",
+      "role": "date",
+      "unit": null
+    },
+    {
+      "name": "DAT_LAST_AIR",
+      "role": "date",
+      "unit": null
+    },
+    {
+      "name": "ID_IMDB",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "IMDB_RATING",
+      "role": "metric",
+      "unit": null
+    },
+    {
+      "name": "IMDB_RATING_WEIGHTED",
+      "role": "metric",
+      "unit": null,
+      "ordered": "desc"
+    },
+    {
+      "name": "IMDB_VOTES",
+      "role": "metric",
+      "unit": null
+    },
+    {
+      "name": "POSTER_PATH",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "RUNTIME",
+      "role": "metric",
+      "unit": "minutes"
+    },
+    {
+      "name": "TAGLINE",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "NUMBER_OF_SEASONS",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "NUMBER_OF_EPISODES",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "ID_CRITERION_SPINE",
+      "role": "other",
+      "unit": null
+    }
+  ],
+  "summary_facts": {
+    "count": 3,
+    "total": null,
+    "value_column": null,
+    "unit": null,
+    "order": "IMDB_RATING_WEIGHTED",
+    "order_direction": "desc",
+    "top": null,
+    "chain": {
+      "anchor": [
+        0
+      ],
+      "direction": "down",
+      "nodes": [
+        {
+          "type": "source_work",
+          "id": 6848,
+          "title": "Red Harvest",
+          "year": 1927,
+          "layer": 0,
+          "anchor": true,
+          "poster_path": null,
+          "image": true,
+          "source_type": "literary",
+          "source_form": null,
+          "wikipedia_image_path": "https://upload.wikimedia.org/wikipedia/commons/f/f4/Black_Mask_November_1927_-_Poisonville.jpg"
+        },
+        {
+          "type": "movie",
+          "id": 80895,
+          "title": "Roadhouse Nights",
+          "year": 1930,
+          "layer": 1,
+          "anchor": false,
+          "poster_path": "/9GxU4Er9E0nm8TVbRHvnrsdlKsR.jpg",
+          "image": true
+        },
+        {
+          "type": "movie",
+          "id": 11878,
+          "title": "Yojimbo",
+          "year": 1961,
+          "layer": 1,
+          "anchor": false,
+          "poster_path": "/tN7kYPjRhDolpui9sc9Eq9n5b2O.jpg",
+          "image": true
+        },
+        {
+          "type": "movie",
+          "id": 391,
+          "title": "A Fistful of Dollars",
+          "year": 1964,
+          "layer": 2,
+          "anchor": false,
+          "poster_path": "/lBwOEpwVeUAmrmglcstnaGcJq3Y.jpg",
+          "image": true
+        },
+        {
+          "type": "movie",
+          "id": 10772,
+          "title": "Django",
+          "year": 1966,
+          "layer": 2,
+          "anchor": false,
+          "poster_path": "/XO7MrV0nsDlBWLjfM5ekiGgjyt.jpg",
+          "image": true
+        },
+        {
+          "type": "movie",
+          "id": 46500,
+          "title": "The Warrior and the Sorceress",
+          "year": 1984,
+          "layer": 2,
+          "anchor": false,
+          "poster_path": "/8jSoWzOuuNQgeAXWGK3cB64H18I.jpg",
+          "image": true
+        },
+        {
+          "type": "movie",
+          "id": 9333,
+          "title": "Last Man Standing",
+          "year": 1996,
+          "layer": 2,
+          "anchor": false,
+          "poster_path": "/2cWqlkXaKKdl32Waep4FwCQnyH0.jpg",
+          "image": true
+        },
+        {
+          "type": "movie",
+          "id": 17135,
+          "title": "Omega Doom",
+          "year": 1996,
+          "layer": 2,
+          "anchor": false,
+          "poster_path": "/yLXlIJIGmlDZMPbGaQ1l55vhCap.jpg",
+          "image": true
+        },
+        {
+          "type": "serie",
+          "id": 125359,
+          "title": "Django",
+          "year": 2023,
+          "layer": 3,
+          "anchor": false,
+          "poster_path": "/eQ4GRmP0EEkxjwlPbZlVn7HLoZp.jpg",
+          "image": true
+        }
+      ],
+      "edges": [
+        {
+          "from": 0,
+          "to": 1,
+          "kind": "adaptation",
+          "source_type": "literary",
+          "cycle": false
+        },
+        {
+          "from": 0,
+          "to": 2,
+          "kind": "adaptation",
+          "source_type": "literary",
+          "cycle": false
+        },
+        {
+          "from": 0,
+          "to": 3,
+          "kind": "adaptation",
+          "source_type": "literary",
+          "cycle": false
+        },
+        {
+          "from": 2,
+          "to": 3,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 2,
+          "to": 4,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 2,
+          "to": 5,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 2,
+          "to": 6,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 2,
+          "to": 7,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 4,
+          "to": 8,
+          "kind": "adaptation",
+          "source_type": "screen",
+          "cycle": false
+        }
+      ],
+      "layers": [
+        [
+          0
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          3,
+          4,
+          5,
+          6,
+          7
+        ],
+        [
+          8
+        ]
+      ],
+      "count": 9,
+      "generations": 4,
+      "depth": {
+        "up": 0,
+        "down": 3
+      },
+      "kinds": [
+        "adaptation",
+        "remake"
+      ],
+      "types": [
+        "movie",
+        "serie",
+        "source_work"
+      ],
+      "earliest": 0,
+      "latest": 8,
+      "cycles": 0,
+      "truncated": false,
+      "truncated_by": null,
+      "max_depth": 4,
+      "max_nodes": 30
+    }
+  },
+  "intent": {
+    "task": "list",
+    "focus": [],
+    "focus_columns": [],
+    "requested_view": "chain",
+    "source": "llm"
+  },
+  "result": [
+    {
+      "index": 0,
+      "data": {
+        "ID_CONTENT": 11878,
+        "CONTENT_TYPE": "movie",
+        "CONTENT_TITLE": "Yojimbo",
+        "DAT_FIRST_AIR": "1961-04-25",
+        "DAT_LAST_AIR": "1961-04-25",
+        "ID_IMDB": "tt0055630",
+        "IMDB_RATING": 8.2,
+        "IMDB_RATING_WEIGHTED": 8.05,
+        "IMDB_VOTES": 145431,
+        "POSTER_PATH": "/tN7kYPjRhDolpui9sc9Eq9n5b2O.jpg",
+        "RUNTIME": 110,
+        "TAGLINE": "Kill one or a hundred... you only hang once",
+        "NUMBER_OF_SEASONS": null,
+        "NUMBER_OF_EPISODES": null,
+        "ID_CRITERION_SPINE": 52
+      }
+    },
+    {
+      "index": 1,
+      "data": {
+        "ID_CONTENT": 391,
+        "CONTENT_TYPE": "movie",
+        "CONTENT_TITLE": "A Fistful of Dollars",
+        "DAT_FIRST_AIR": "1964-09-12",
+        "DAT_LAST_AIR": "1964-09-12",
+        "ID_IMDB": "tt0058461",
+        "IMDB_RATING": 7.9,
+        "IMDB_RATING_WEIGHTED": 7.83,
+        "IMDB_VOTES": 257984,
+        "POSTER_PATH": "/lBwOEpwVeUAmrmglcstnaGcJq3Y.jpg",
+        "RUNTIME": 99,
+        "TAGLINE": "In his own way he is, perhaps, the most dangerous man who...",
+        "NUMBER_OF_SEASONS": null,
+        "NUMBER_OF_EPISODES": null,
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 2,
+      "data": {
+        "ID_CONTENT": 80895,
+        "CONTENT_TYPE": "movie",
+        "CONTENT_TITLE": "Roadhouse Nights",
+        "DAT_FIRST_AIR": "1930-02-15",
+        "DAT_LAST_AIR": "1930-02-15",
+        "ID_IMDB": "tt0021305",
+        "IMDB_RATING": 5.5,
+        "IMDB_RATING_WEIGHTED": 6.96,
+        "IMDB_VOTES": 146,
+        "POSTER_PATH": "/9GxU4Er9E0nm8TVbRHvnrsdlKsR.jpg",
+        "RUNTIME": 68,
+        "TAGLINE": "",
+        "NUMBER_OF_SEASONS": null,
+        "NUMBER_OF_EPISODES": null,
+        "ID_CRITERION_SPINE": null
+      }
+    }
+  ]
+}

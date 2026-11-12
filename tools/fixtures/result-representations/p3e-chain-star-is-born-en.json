@@ -1,0 +1,287 @@
+{
+  "question": "Trace the chain of remakes behind A Star Is Born (2018)",
+  "api_version": "1.1.20",
+  "ui_language": "en",
+  "answer": "Here’s the recorded chain of earlier films behind A Star Is Born (2018), starting with its immediate source.",
+  "representation": "chain",
+  "representation_options": [
+    "chain",
+    "ranked-bars",
+    "card-grid",
+    "value-cards",
+    "table"
+  ],
+  "result_kind": "entity_rows",
+  "result_columns": [
+    {
+      "name": "ID_MOVIE",
+      "role": "entity_id",
+      "unit": null
+    },
+    {
+      "name": "MOVIE_TITLE",
+      "role": "label",
+      "unit": null
+    },
+    {
+      "name": "DAT_RELEASE",
+      "role": "date",
+      "unit": null
+    },
+    {
+      "name": "ID_IMDB",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "IMDB_RATING",
+      "role": "metric",
+      "unit": null
+    },
+    {
+      "name": "IMDB_RATING_WEIGHTED",
+      "role": "metric",
+      "unit": null
+    },
+    {
+      "name": "IMDB_VOTES",
+      "role": "metric",
+      "unit": null
+    },
+    {
+      "name": "POSTER_PATH",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "RUNTIME",
+      "role": "metric",
+      "unit": "minutes"
+    },
+    {
+      "name": "TAGLINE",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "ID_CRITERION_SPINE",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "REMAKE_DEPTH",
+      "role": "metric",
+      "unit": null,
+      "ordered": "asc",
+      "focus": true
+    }
+  ],
+  "summary_facts": {
+    "count": 4,
+    "total": null,
+    "value_column": "REMAKE_DEPTH",
+    "unit": null,
+    "order": "REMAKE_DEPTH",
+    "order_direction": "asc",
+    "top": {
+      "label": "A Star Is Born",
+      "id": 3111,
+      "index": 0,
+      "value": 1,
+      "extreme": "min"
+    },
+    "chain": {
+      "anchor": [
+        3
+      ],
+      "direction": "up",
+      "nodes": [
+        {
+          "type": "movie",
+          "id": 22692,
+          "title": "A Star Is Born",
+          "year": 1937,
+          "layer": 0,
+          "anchor": false,
+          "poster_path": "/90EfCmXXWOs5dy7rHTNvGT9T8Kz.jpg",
+          "image": true
+        },
+        {
+          "type": "movie",
+          "id": 3111,
+          "title": "A Star Is Born",
+          "year": 1954,
+          "layer": 1,
+          "anchor": false,
+          "poster_path": "/zpg2SzpYhZk1D1seDfIIlwaqAxT.jpg",
+          "image": true
+        },
+        {
+          "type": "movie",
+          "id": 19610,
+          "title": "A Star Is Born",
+          "year": 1976,
+          "layer": 1,
+          "anchor": false,
+          "poster_path": "/3Hr63lBDhvYGpSd8HxDpWvowZpY.jpg",
+          "image": true
+        },
+        {
+          "type": "movie",
+          "id": 332562,
+          "title": "A Star Is Born",
+          "year": 2018,
+          "layer": 2,
+          "anchor": true,
+          "poster_path": "/wrFpXMNBRj2PBiN4Z5kix51XaIZ.jpg",
+          "image": true
+        }
+      ],
+      "edges": [
+        {
+          "from": 0,
+          "to": 1,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 0,
+          "to": 2,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 0,
+          "to": 3,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 1,
+          "to": 3,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 2,
+          "to": 3,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        }
+      ],
+      "layers": [
+        [
+          0
+        ],
+        [
+          1,
+          2
+        ],
+        [
+          3
+        ]
+      ],
+      "count": 4,
+      "generations": 3,
+      "depth": {
+        "up": 1,
+        "down": 0
+      },
+      "kinds": [
+        "remake"
+      ],
+      "types": [
+        "movie"
+      ],
+      "earliest": 0,
+      "latest": 3,
+      "cycles": 0,
+      "truncated": false,
+      "truncated_by": null,
+      "max_depth": 4,
+      "max_nodes": 30
+    }
+  },
+  "intent": {
+    "task": "sequence",
+    "focus": [],
+    "focus_columns": [],
+    "requested_view": "chain",
+    "source": "llm"
+  },
+  "result": [
+    {
+      "index": 0,
+      "data": {
+        "ID_MOVIE": 3111,
+        "MOVIE_TITLE": "A Star Is Born",
+        "DAT_RELEASE": "1954-10-01",
+        "ID_IMDB": "tt0047522",
+        "IMDB_RATING": 7.5,
+        "IMDB_RATING_WEIGHTED": 7.24,
+        "IMDB_VOTES": 21311,
+        "POSTER_PATH": "/zpg2SzpYhZk1D1seDfIIlwaqAxT.jpg",
+        "RUNTIME": 176,
+        "TAGLINE": "The applause of the world... and then this!",
+        "ID_CRITERION_SPINE": null,
+        "REMAKE_DEPTH": 1
+      }
+    },
+    {
+      "index": 1,
+      "data": {
+        "ID_MOVIE": 19610,
+        "MOVIE_TITLE": "A Star Is Born",
+        "DAT_RELEASE": "1976-12-17",
+        "ID_IMDB": "tt0075265",
+        "IMDB_RATING": 6.1,
+        "IMDB_RATING_WEIGHTED": 6.61,
+        "IMDB_VOTES": 14677,
+        "POSTER_PATH": "/3Hr63lBDhvYGpSd8HxDpWvowZpY.jpg",
+        "RUNTIME": 140,
+        "TAGLINE": "For anyone who has ever loved...",
+        "ID_CRITERION_SPINE": null,
+        "REMAKE_DEPTH": 1
+      }
+    },
+    {
+      "index": 2,
+      "data": {
+        "ID_MOVIE": 22692,
+        "MOVIE_TITLE": "A Star Is Born",
+        "DAT_RELEASE": "1937-04-20",
+        "ID_IMDB": "tt0029606",
+        "IMDB_RATING": 7.3,
+        "IMDB_RATING_WEIGHTED": 7.09,
+        "IMDB_VOTES": 12109,
+        "POSTER_PATH": "/90EfCmXXWOs5dy7rHTNvGT9T8Kz.jpg",
+        "RUNTIME": 111,
+        "TAGLINE": "Is the price of stardom a broken heart?",
+        "ID_CRITERION_SPINE": null,
+        "REMAKE_DEPTH": 1
+      }
+    },
+    {
+      "index": 3,
+      "data": {
+        "ID_MOVIE": 22692,
+        "MOVIE_TITLE": "A Star Is Born",
+        "DAT_RELEASE": "1937-04-20",
+        "ID_IMDB": "tt0029606",
+        "IMDB_RATING": 7.3,
+        "IMDB_RATING_WEIGHTED": 7.09,
+        "IMDB_VOTES": 12109,
+        "POSTER_PATH": "/90EfCmXXWOs5dy7rHTNvGT9T8Kz.jpg",
+        "RUNTIME": 111,
+        "TAGLINE": "Is the price of stardom a broken heart?",
+        "ID_CRITERION_SPINE": null,
+        "REMAKE_DEPTH": 2
+      }
+    }
+  ]
+}

@@ -5294,3 +5294,137 @@ body:not(.cinemaRender) .cinemaControls {
 .t2sHierLeaf.t2sRowOpenable:focus-visible .t2sHierTitle {
   text-decoration: underline;
 }
+/* Phase 3 lot E: chain. An ordered list of generations, left to right on a desktop (scrolling
+   inside .t2sChain when wider than the panel, never the page), top to bottom on a phone; siblings
+   stacked in their generation; an arrow between generations; the work asked about outlined and
+   badged. The same markup as t2s-front. */
+.t2sChain {
+  list-style: none;
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  margin: 12px 0;
+  padding: 0 0 6px;
+  min-width: 0;
+  overflow-x: auto;
+  contain: inline-size;
+}
+.t2sChainGen {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  flex: 0 0 auto;
+  min-width: 0;
+}
+.t2sChainArrow {
+  align-self: center;
+  flex: 0 0 auto;
+  color: var(--text-secondary);
+  font-size: 1.3rem;
+  line-height: 1;
+}
+.t2sChainArrow::before {
+  content: "\2192";
+}
+.t2sChainWorks {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 250px;
+  min-width: 0;
+}
+.t2sChainWork {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+  padding: 8px 10px 8px 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+}
+.t2sChainWork.isAnchor {
+  border: 2px solid var(--accent-primary);
+}
+.t2sChainThumb {
+  flex: 0 0 auto;
+  width: 48px;
+  height: 72px;
+  border-radius: 6px;
+  object-fit: cover;
+  background: var(--bg-tertiary);
+}
+.t2sChainThumb.isEmpty {
+  display: block;
+  border: 1px dashed var(--border);
+}
+.t2sChainText {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.t2sChainBadges {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.t2sChainBadge {
+  padding: 0 6px;
+  border-radius: 999px;
+  background: var(--bg-tertiary);
+  color: var(--text-secondary);
+  font-size: 0.72rem;
+  line-height: 1.5;
+}
+.t2sChainBadge.isAnchor {
+  background: var(--accent-primary);
+  color: var(--bg-primary, #000);
+  font-weight: 600;
+}
+.t2sChainTitle {
+  color: var(--text-primary);
+  font-size: 0.92rem;
+  font-weight: 600;
+  line-height: 1.25;
+  overflow-wrap: anywhere;
+}
+.t2sChainYear {
+  color: var(--text-secondary);
+  font-size: 0.8rem;
+}
+.t2sChainLinks {
+  list-style: none;
+  margin: 2px 0 0;
+  padding: 0;
+  color: var(--text-secondary);
+  font-size: 0.78rem;
+  line-height: 1.3;
+  overflow-wrap: anywhere;
+}
+.t2sChainLink.isCycle {
+  font-style: italic;
+}
+@media (max-width: 600px) {
+  .t2sChain {
+    flex-direction: column;
+    align-items: stretch;
+    overflow-x: visible;
+  }
+  .t2sChainGen {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .t2sChainArrow {
+    align-self: center;
+  }
+  .t2sChainArrow::before {
+    content: "\2193";
+  }
+  .t2sChainWorks {
+    width: auto;
+  }
+}

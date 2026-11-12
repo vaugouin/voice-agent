@@ -1,0 +1,243 @@
+{
+  "question": "Show the remake lineage of The Departed",
+  "api_version": "1.1.20",
+  "ui_language": "en",
+  "answer": "Here are the movies in the remake lineage of The Departed, from earliest to latest.",
+  "representation": "chain",
+  "representation_options": [
+    "chain",
+    "card-grid",
+    "table"
+  ],
+  "result_kind": "entity_rows",
+  "result_columns": [
+    {
+      "name": "ID_MOVIE",
+      "role": "entity_id",
+      "unit": null
+    },
+    {
+      "name": "MOVIE_TITLE",
+      "role": "label",
+      "unit": null
+    },
+    {
+      "name": "DAT_RELEASE",
+      "role": "date",
+      "unit": null,
+      "ordered": "asc"
+    },
+    {
+      "name": "ID_IMDB",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "IMDB_RATING",
+      "role": "metric",
+      "unit": null
+    },
+    {
+      "name": "IMDB_RATING_WEIGHTED",
+      "role": "metric",
+      "unit": null
+    },
+    {
+      "name": "IMDB_VOTES",
+      "role": "metric",
+      "unit": null
+    },
+    {
+      "name": "POSTER_PATH",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "RUNTIME",
+      "role": "metric",
+      "unit": "minutes"
+    },
+    {
+      "name": "TAGLINE",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "ID_CRITERION_SPINE",
+      "role": "other",
+      "unit": null
+    }
+  ],
+  "summary_facts": {
+    "count": 2,
+    "total": null,
+    "value_column": null,
+    "unit": null,
+    "order": "date",
+    "order_direction": "asc",
+    "top": null,
+    "chain": {
+      "anchor": [
+        1
+      ],
+      "direction": "both",
+      "nodes": [
+        {
+          "type": "movie",
+          "id": 10775,
+          "title": "Infernal Affairs",
+          "year": 2002,
+          "layer": 0,
+          "anchor": false,
+          "poster_path": "/gix9thDBXfjJ8M7rYbihqbQGBcP.jpg",
+          "image": true
+        },
+        {
+          "type": "movie",
+          "id": 1422,
+          "title": "The Departed",
+          "year": 2006,
+          "layer": 1,
+          "anchor": true,
+          "poster_path": "/nT97ifVT2J1yMQmeq20Qblg61T.jpg",
+          "image": true
+        },
+        {
+          "type": "movie",
+          "id": 15490,
+          "title": "Homam",
+          "year": 2008,
+          "layer": 2,
+          "anchor": false,
+          "poster_path": "/tkXTFFjsOsBAW4LONZvZizoGH69.jpg",
+          "image": true
+        },
+        {
+          "type": "movie",
+          "id": 402448,
+          "title": "Bullets, Fangs and Dinner at 8",
+          "year": 2015,
+          "layer": 2,
+          "anchor": false,
+          "poster_path": "/9CfTQlNdoKjwOEOUls3NbwdRUri.jpg",
+          "image": true
+        },
+        {
+          "type": "serie",
+          "id": 209454,
+          "title": "The Clan",
+          "year": 2022,
+          "layer": 2,
+          "anchor": false,
+          "poster_path": "/8yfUQcWRGqVlE3oBQn2kVuK4Nj3.jpg",
+          "image": true
+        }
+      ],
+      "edges": [
+        {
+          "from": 0,
+          "to": 1,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 1,
+          "to": 2,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 1,
+          "to": 3,
+          "kind": "remake",
+          "source_type": "screen",
+          "cycle": false
+        },
+        {
+          "from": 1,
+          "to": 4,
+          "kind": "adaptation",
+          "source_type": "screen",
+          "cycle": false
+        }
+      ],
+      "layers": [
+        [
+          0
+        ],
+        [
+          1
+        ],
+        [
+          2,
+          3,
+          4
+        ]
+      ],
+      "count": 5,
+      "generations": 3,
+      "depth": {
+        "up": 1,
+        "down": 1
+      },
+      "kinds": [
+        "adaptation",
+        "remake"
+      ],
+      "types": [
+        "movie",
+        "serie"
+      ],
+      "earliest": 0,
+      "latest": 4,
+      "cycles": 0,
+      "truncated": false,
+      "truncated_by": null,
+      "max_depth": 4,
+      "max_nodes": 30
+    }
+  },
+  "intent": {
+    "task": "relate",
+    "focus": [],
+    "focus_columns": [],
+    "requested_view": "chain",
+    "source": "llm"
+  },
+  "result": [
+    {
+      "index": 0,
+      "data": {
+        "ID_MOVIE": 15490,
+        "MOVIE_TITLE": "Homam",
+        "DAT_RELEASE": "2008-08-28",
+        "ID_IMDB": "tt1553000",
+        "IMDB_RATING": 5.7,
+        "IMDB_RATING_WEIGHTED": 6.97,
+        "IMDB_VOTES": 95,
+        "POSTER_PATH": "/tkXTFFjsOsBAW4LONZvZizoGH69.jpg",
+        "RUNTIME": 148,
+        "TAGLINE": "",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 1,
+      "data": {
+        "ID_MOVIE": 402448,
+        "MOVIE_TITLE": "Bullets, Fangs and Dinner at 8",
+        "DAT_RELEASE": "2015-08-22",
+        "ID_IMDB": "tt4509084",
+        "IMDB_RATING": 4.5,
+        "IMDB_RATING_WEIGHTED": 6.97,
+        "IMDB_VOTES": 53,
+        "POSTER_PATH": "/9CfTQlNdoKjwOEOUls3NbwdRUri.jpg",
+        "RUNTIME": 90,
+        "TAGLINE": "Your prayers won't save you.",
+        "ID_CRITERION_SPINE": null
+      }
+    }
+  ]
+}

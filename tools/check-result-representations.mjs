@@ -75,7 +75,8 @@ function extractRegion(startMarker, endMarker) {
 // lot C (fixtures lotc-*) the histogram, share-bar and flag-list models and sentences, phase 3
 // lot A (fixtures p3a-*) the scatter model, ticks and sentences, phase 3 lot B (fixtures p3b-*,
 // and the outline app/static/world-110m.json itself) the map model and its sentences, phase 3
-// lot C (fixtures p3c-*) the hierarchy model and its sentence.
+// lot C (fixtures p3c-*) the hierarchy model and its sentence, phase 3 lot E (fixtures p3e-*) the
+// chain model and its sentence.
 const lexicons = readFileSync(join(root, "app", "lexicons.json"), "utf8");
 const code = [
   ...["normalizeUiLanguage", "uiText", "prettyLabel", "formatDate", "formatMoney", "formatMinutes",
@@ -98,6 +99,7 @@ const code = [
   "  text2SqlScatterValueText, text2SqlScatterAxisTitle, text2SqlScatterWords,",
   "  text2SqlMapModel, text2SqlMapTone, text2SqlMapStepText,",
   "  text2SqlHierarchyModel, text2SqlHierarchySummary, text2SqlHierarchyLeafNoun, text2SqlHierarchyKind,",
+  "  text2SqlChainModel, text2SqlChainSummary, text2SqlFrDe, text2SqlFrA,",
   "  setLang: (l) => { activeUiLanguage = l; } };",
 ].join("\n\n");
 const sandbox = { Intl, console };
@@ -832,6 +834,63 @@ check("links: older API, from the keys", linkSummary([], ["ID_PERSON", "PERSON_N
   check("view to rep: groups", api.text2SqlRepresentationForView("groups", fx(P + "ford-states-en").representation_options), "hierarchy");
   check("view to rep: groups not offered", api.text2SqlRepresentationForView("groups", fx("lotc-share-hbo-type-en").representation_options), "");
   check("reply groups fr", api.text2SqlRequestedViewReply({ ok: true, representation: "hierarchy", view: "groups" }, "fr"), "Voici le résultat par groupe.");
+}
+
+// Phase 3 lot E (fixtures p3e-*: the 1.1.20 answers of evaluations 2930 to 2939 re-classified with
+// the API's lineage walk run on the live graph, plus three hand-written: Red Harvest cut at five
+// works, in English and French, and three films citing each other in a ring). The captions are
+// t2s-front's word for word (the same list in its test).
+{
+  const P = "p3e-chain-";
+  check("p3e caption p3e-chain-star-is-born-en", caption("p3e-chain-star-is-born-en", "en"), "Four films from A Star Is Born (1937) to A Star Is Born (2018); A Star Is Born (2018) draws on three of them.");
+  check("p3e caption p3e-chain-star-is-born-fr", caption("p3e-chain-star-is-born-fr", "fr"), "Quatre films, d'Une étoile est née (1937) à A Star is Born (2018) ; A Star is Born en reprend trois.");
+  check("p3e caption p3e-chain-fistful-en", caption("p3e-chain-fistful-en", "en"), "Three works from Red Harvest (1927) to A Fistful of Dollars (1964); A Fistful of Dollars draws on two of them.");
+  check("p3e caption p3e-chain-fistful-fr", caption("p3e-chain-fistful-fr", "fr"), "Trois œuvres, de La Moisson rouge (1927) à Pour une poignée de dollars (1964) ; Pour une poignée de dollars en reprend deux.");
+  check("p3e caption p3e-chain-scarface-en", caption("p3e-chain-scarface-en", "en"), "Three works from Scarface (1930) to Scarface (1983); Scarface (1983) draws on two of them.");
+  check("p3e caption p3e-chain-departed-en", caption("p3e-chain-departed-en", "en"), "Five works from Infernal Affairs (2002) to The Clan (2022); The Departed remakes Infernal Affairs.");
+  check("p3e caption p3e-chain-magnificent-seven-2016-en", caption("p3e-chain-magnificent-seven-2016-en", "en"), "Three films from Seven Samurai (1954) to The Magnificent Seven (2016); The Magnificent Seven (2016) draws on two of them.");
+  check("p3e caption p3e-chain-nosferatu-en", caption("p3e-chain-nosferatu-en", "en"), "Three works from Dracula (1897) to Nosferatu (2024); Nosferatu (2024) draws on two of them.");
+  check("p3e caption p3e-chain-nosferatu-fr", caption("p3e-chain-nosferatu-fr", "fr"), "Trois œuvres, de Dracula (1897) à Nosferatu (2024) ; Nosferatu (2024) en reprend deux.");
+  check("p3e caption p3e-chain-last-man-standing-en", caption("p3e-chain-last-man-standing-en", "en"), "Three works from Red Harvest (1927) to Last Man Standing (1996); Last Man Standing remakes Yojimbo.");
+  check("p3e caption p3e-chain-red-harvest-en", caption("p3e-chain-red-harvest-en", "en"), "Nine works from Red Harvest (1927) to Django (2023); Red Harvest directly inspired three of them.");
+  check("p3e caption p3e-chain-seven-samurai-en", caption("p3e-chain-seven-samurai-en", "en"), "Six works from Seven Samurai (1954) to The Magnificent Seven (2016); Seven Samurai directly inspired three of them.");
+  check("p3e caption p3e-chain-seven-samurai-fr", caption("p3e-chain-seven-samurai-fr", "fr"), "Six œuvres, des Sept Samouraïs (1954) aux Sept Mercenaires (2016) ; Les Sept Samouraïs en a inspiré directement trois.");
+  check("p3e caption p3e-chain-magnificent-seven-1960-en", caption("p3e-chain-magnificent-seven-1960-en", "en"), "Five works from Seven Samurai (1954) to The Magnificent Seven (2016); The Magnificent Seven (1960) remakes Seven Samurai.");
+  check("p3e caption p3e-chain-red-harvest-cut-hand-en", caption("p3e-chain-red-harvest-cut-hand-en", "en"), "Five works from Red Harvest (1927) to Last Man Standing (1996) (the lineage goes on beyond five works); Red Harvest directly inspired three of them.");
+  check("p3e caption p3e-chain-red-harvest-cut-hand-fr", caption("p3e-chain-red-harvest-cut-hand-fr", "fr"), "Cinq œuvres, de La Moisson rouge (1927) à Dernier recours (1996) (la filiation continue au-delà de cinq œuvres) ; La Moisson rouge en a inspiré directement trois.");
+  check("p3e caption p3e-chain-ring-hand-en", caption("p3e-chain-ring-hand-en", "en"), "Three films from Dog Day Afternoon (1975) to The Dog (2013); Terrorism and Kebab remakes Dog Day Afternoon.");
+  check("p3e spoken is the caption", spoken(P + "last-man-standing-en", "en"), caption(P + "last-man-standing-en", "en"));
+  const asib = api.text2SqlChainModel(fx(P + "star-is-born-en"), "en");
+  check("p3e generations by year", asib.generations.map((g) => g.map((c) => c.year)), [["1937"], ["1954", "1976"], ["2018"]]);
+  check("p3e links of the 2018 card", asib.generations[2][0].links.map((l) => l.text),
+    ["Remake of A Star Is Born (1937)", "Remake of A Star Is Born (1954)", "Remake of A Star Is Born (1976)"]);
+  check("p3e anchor and record", [asib.generations[2][0].anchor, asib.generations[2][0].record],
+    [true, { ID_MOVIE: 332562, MOVIE_TITLE: "A Star Is Born", POSTER_PATH: "/wrFpXMNBRj2PBiN4Z5kix51XaIZ.jpg" }]);
+  const lms = api.text2SqlChainModel(fx(P + "last-man-standing-en"), "en");
+  check("p3e source work card", [lms.generations[0][0].badge, lms.generations[0][0].record.ID_SOURCE_WORK, Boolean(lms.generations[0][0].record.WIKIPEDIA_IMAGE_PATH)],
+    ["Book", 6848, true]);
+  check("p3e links across forms", lms.generations.map((g) => g[0].links.map((l) => l.text)),
+    [[], ["Adapted from Red Harvest"], ["Remake of Yojimbo"]]);
+  const fistFr = api.text2SqlChainModel(fx(P + "fistful-fr"), "fr");
+  check("p3e French links and badges", [fistFr.generations[0][0].badge, fistFr.generations[2][0].links.map((l) => l.text)],
+    ["Livre", ["Adaptation de La Moisson rouge", "Remake du Garde du corps"]]);
+  const samFr = api.text2SqlChainModel(fx(P + "seven-samurai-fr"), "fr");
+  check("p3e series badge fr", samFr.generations[1].map((c) => c.badge), ["Film", "Série"]);
+  const ring = api.text2SqlChainModel(fx(P + "ring-hand-en"), "en");
+  check("p3e a loop in the data", ring.generations[0][0].links, [{ text: "Remake of The Dog (a loop in the data)", cycle: true }]);
+  check("p3e French elision and contraction", [api.text2SqlFrDe("Une étoile est née"), api.text2SqlFrDe("Le Garde du corps"),
+    api.text2SqlFrDe("Les Sept Samouraïs"), api.text2SqlFrA("Les Sept Mercenaires"), api.text2SqlFrDe("Dracula")],
+    ["d'Une étoile est née", "du Garde du corps", "des Sept Samouraïs", "aux Sept Mercenaires", "de Dracula"]);
+  check("p3e no chain facts, no model", api.text2SqlChainModel(fx("lotc-share-hbo-type-en"), "en"), null);
+  check("p3e no chain facts, no sentence", api.text2SqlChainSummary(fx("lotc-share-hbo-type-en"), { lang: "en" }), "");
+  check("p3e chips", api.text2SqlChipOptionsLotC(fx(P + "departed-en")), ["chain", "card-grid", "table"]);
+  check("p3e labels", [api.text2SqlRepresentationLabel("chain", "en"), api.text2SqlRepresentationLabel("chain", "fr")], ["Lineage", "Filiation"]);
+  check("view: as a lineage", view("show it as a lineage"), "lineage");
+  check("view: en filiation", view("Montre-la en filiation"), "lineage");
+  check("view: the remake lineage of a film is a search", view("the remake lineage of Cape Fear"), "");
+  check("view to rep: lineage", api.text2SqlRepresentationForView("lineage", fx(P + "red-harvest-en").representation_options), "chain");
+  check("view to rep: lineage not offered", api.text2SqlRepresentationForView("lineage", fx("lotc-share-hbo-type-en").representation_options), "");
+  check("reply lineage fr", api.text2SqlRequestedViewReply({ ok: true, representation: "chain", view: "lineage" }, "fr"), "Voici la filiation.");
 }
 
 console.log(`${passes} passed, ${failures} failed`);
