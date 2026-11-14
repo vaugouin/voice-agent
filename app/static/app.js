@@ -4618,26 +4618,35 @@ function renderPlaceMap(container, rows, columns, upstream) {
     const list = document.createElement("ol");
     list.className = "t2sPlaceList";
     let selected = [];
-    const show = (mark, pair) => {
-      tip.textContent = `${mark.n}. ${mark.label} · ${mark.typeText}`;
+    // One button per group (several close places share one); the list keeps one line per mark.
+    const items = new Map();
+    const groupButtons = [];
+    const show = (group, button) => {
+      tip.textContent = group.tip;
       selected.forEach((el) => el.classList.remove("isSelected"));
-      selected = pair;
-      pair.forEach((el) => el.classList.add("isSelected"));
+      selected = [button, ...group.members.map((n) => items.get(n)).filter(Boolean)];
+      selected.forEach((el) => el.classList.add("isSelected"));
     };
-    model.marks.forEach((mark) => {
-      const name = `${mark.n}. ${mark.label}, ${mark.typeText}`;
+    model.groups.forEach((group) => {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = mark.kind === "area" ? "t2sPlaceMark t2sPlaceArea" : "t2sPlaceMark t2sPlacePin";
-      button.style.left = `${mark.left}%`;
-      button.style.top = `${mark.top}%`;
-      button.title = name;
-      button.setAttribute("aria-label", name);
+      button.className = `t2sPlaceMark ${group.kind === "area" ? "t2sPlaceArea" : "t2sPlacePin"}${group.members.length > 1 ? " isGroup" : ""}`;
+      button.style.left = `${group.left}%`;
+      button.style.top = `${group.top}%`;
+      button.title = group.tip;
+      button.setAttribute("aria-label", group.tip);
       const number = document.createElement("span");
       number.className = "t2sPlaceNum";
-      number.textContent = String(mark.n);
+      number.textContent = group.text;
       button.append(number);
       frame.append(button);
+      groupButtons.push([group, button]);
+      button.addEventListener("pointerenter", () => show(group, button));
+      button.addEventListener("focus", () => show(group, button));
+      button.addEventListener("click", () => show(group, button));
+    });
+    const groupOf = (n) => groupButtons.find(([group]) => group.members.includes(n));
+    model.marks.forEach((mark) => {
       const item = document.createElement("li");
       item.className = "t2sPlaceItem";
       const badge = document.createElement("span");
@@ -4668,12 +4677,17 @@ function renderPlaceMap(container, rows, columns, upstream) {
       text.append(label, " ", type);
       item.append(badge, text);
       list.append(item);
-      const pair = [button, item];
-      button.addEventListener("pointerenter", () => show(mark, pair));
-      button.addEventListener("focus", () => show(mark, pair));
-      button.addEventListener("click", () => show(mark, pair));
-      label.addEventListener("focus", () => show(mark, pair));
-      item.addEventListener("pointerenter", () => show(mark, pair));
+      items.set(mark.n, item);
+      // A list line highlights its group's mark; the line under the map names this place.
+      const own = () => {
+        const found = groupOf(mark.n);
+        selected.forEach((el) => el.classList.remove("isSelected"));
+        selected = found ? [found[1], item] : [item];
+        selected.forEach((el) => el.classList.add("isSelected"));
+        tip.textContent = `${mark.n}. ${mark.label} · ${mark.typeText}`;
+      };
+      label.addEventListener("focus", own);
+      item.addEventListener("pointerenter", own);
     });
     root.append(frame, tip, list);
     if (model.offText) {
@@ -7219,7 +7233,39 @@ function text2SqlPlaceMapFrame(points, world) {
   return { x: x0, y: y0, width: Math.min(Math.ceil(w), W - x0), height: Math.min(Math.ceil(h), H - y0) };
 }
 
-// {viewBox, frame, marks, offText, caption}, or null without summary_facts.places, without a
+// The marks drawn on the map: marks of one kind (pin or area) closer than 5.5 percent of the
+// frame's width share one disc or ring, greedy in number order, placed at the first member (top is
+// rescaled by height / width, so the distance is the one the eye sees). A group: {kind, n,
+// members, left, top, text ("5", or "1+3" for four marks), tip}. The list keeps every mark.
+const T2S_PLACE_GROUP_DISTANCE = 5.5;
+function text2SqlPlaceMapGroups(marks, frame) {
+  const ratio = frame.height / frame.width;
+  const out = [];
+  marks.forEach((m) => {
+    const group = out.find((g) => g.kind === m.kind
+      && Math.hypot(m.left - g.left, (m.top - g.top) * ratio) < T2S_PLACE_GROUP_DISTANCE);
+    if (group) {
+      group.members.push(m.n);
+      group.labels.push(`${m.n}. ${m.label}`);
+    } else {
+      out.push({ kind: m.kind, n: m.n, members: [m.n], left: m.left, top: m.top, labels: [`${m.n}. ${m.label}`], typeText: m.typeText, label: m.label });
+    }
+  });
+  return out.map((g) => {
+    const extra = g.members.length - 1;
+    return {
+      kind: g.kind,
+      n: g.n,
+      members: g.members,
+      left: g.left,
+      top: g.top,
+      text: extra ? `${g.n}+${extra}` : String(g.n),
+      tip: extra ? g.labels.join(", ") : `${g.n}. ${g.label} · ${g.typeText}`,
+    };
+  });
+}
+
+// {viewBox, frame, marks, groups, offText, caption}, or null without summary_facts.places, without a
 // located place, or without the outline and its projection (the renderer then draws the cards).
 // A mark: {n, kind, index, id, label, typeText, left, top}, left and top in percent of the frame.
 function text2SqlPlaceMapModel(upstream, lang, world) {
@@ -7251,6 +7297,7 @@ function text2SqlPlaceMapModel(upstream, lang, world) {
     viewBox: `${frame.x} ${frame.y} ${frame.width} ${frame.height}`,
     frame,
     marks,
+    groups: text2SqlPlaceMapGroups(marks, frame),
     offText,
     caption: text2SqlPlaceMapSummary(upstream, { lang }),
   };
@@ -16492,6 +16539,9 @@ async function handleFunctionCall(item) {
         rows: output.rows || [],
         sql_query: output.sql_query || "",
         diagnostic: output.diagnostic || null,
+        // Phase 3 lot D, second pass: what the screen draws (the API's representation), so the
+        // model never says it cannot show a map (ON_SCREEN_INSTRUCTIONS in main.py).
+        on_screen: output.on_screen || "",
         // VOICE-AGENT-093: neutral same-name-cluster flag (FASTAPI-TEXT2SQL-157).
         // Present when the user named one entity but several share the name/title;
         // the prompt tells the model to ask which one (singular) or list (plural).

@@ -1,0 +1,145 @@
+{
+ "question": "Map the filming locations of Yasujiro Ozu's films",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the filming locations for Yasujirō Ozu's films.",
+ "representation": "map",
+ "representation_options": [
+  "map",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_LOCATION",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_NAME",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_TYPE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_SOURCE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "WIKIPEDIA_IMAGE_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "OVERVIEW",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_COUNT",
+   "role": "metric",
+   "unit": "count",
+   "ordered": "desc"
+  },
+  {
+   "name": "SERIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 2,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "MOVIE_COUNT",
+  "order_direction": "desc",
+  "top": null,
+  "places": {
+   "count": 2,
+   "located": 2,
+   "pins": [],
+   "areas": [
+    {
+     "index": 0,
+     "id": 32,
+     "label": "Japan",
+     "type": "country",
+     "lat": 35.0,
+     "lon": 136.0
+    },
+    {
+     "index": 1,
+     "id": 1591,
+     "label": "West Berlin",
+     "type": "region",
+     "lat": 52.5,
+     "lon": 13.28
+    }
+   ],
+   "unlocated": [],
+   "bounds": {
+    "lat_min": 35.0,
+    "lat_max": 52.5,
+    "lon_min": 13.28,
+    "lon_max": 136.0
+   }
+  }
+ },
+ "intent": {
+  "task": "list",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "map",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_LOCATION": 32,
+    "LOCATION_NAME": "Japan",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/en/thumb/9/9e/Flag_of_Japan.svg/960px-Flag_of_Japan.svg.png",
+    "OVERVIEW": "island country in East Asia",
+    "MOVIE_COUNT": 511,
+    "SERIE_COUNT": 31,
+    "IMDB_RATING": 6.56
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_LOCATION": 1591,
+    "LOCATION_NAME": "West Berlin",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ec/Flag_of_Berlin.svg/1280px-Flag_of_Berlin.svg.png",
+    "OVERVIEW": "the Western sectors of Berlin between 1945 and 1990",
+    "MOVIE_COUNT": 13,
+    "SERIE_COUNT": 2,
+    "IMDB_RATING": 6.45
+   }
+  }
+ ],
+ "result_entity": "location"
+}

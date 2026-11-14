@@ -2052,6 +2052,21 @@ def plain_subtitle_text(text: str) -> str:
     return out
 
 
+# Phase 3 lot D, second pass (2026-11-14): with the map of places on the iPad, the voice model
+# said "I can't place markers on a map here", because nothing it read said what the screen
+# draws. query_text2sql_data() now passes the API's `representation` as `on_screen` (kept by
+# compact_search_for_model(), whitelisted in app.js for the Realtime output); this says what each
+# value means. Shared by the Realtime and /text-chat prompts.
+ON_SCREEN_INSTRUCTIONS = (
+    "What the screen draws: a query_text2sql result carries on_screen, the form the screen "
+    "shows the rows in. map: the places (or countries) on a world map, with numbered markers "
+    "and the numbered list under it. scatter, ranked-bars, histogram, share-bar, "
+    "trend-columns, timeline: a chart. chain: the lineage of remakes and adaptations. "
+    "hierarchy: the rows under their groups. card-grid: poster cards. entity-page: the "
+    "record's page. table: a table. Never say the screen cannot show a map, a chart or a "
+    "picture: describe what is on screen."
+)
+
 SUMMARY_LINE_INSTRUCTIONS = (
     "Result summary: a query_text2sql result may include summary_line, one sentence that says "
     "how many results the screen shows, in what order, and the one extreme value (for example "
@@ -2748,6 +2763,7 @@ def realtime_session_config(
         + " " + RECOVERY_INSTRUCTIONS
         + " " + RESULT_COUNT_INSTRUCTIONS
         + " " + persona_summary_line_instructions(active_soul)  # VOICE-AGENT-248, voice only
+        + " " + ON_SCREEN_INSTRUCTIONS  # phase 3 lot D, second pass
         + " " + DISAMBIGUATION_INSTRUCTIONS
         + " " + GROUNDED_ABSENCE_INSTRUCTIONS
         # VOICE-AGENT-185: after GROUNDED_ABSENCE, which sends the model to the detail tool
@@ -3400,6 +3416,12 @@ async def query_text2sql_data(payload: Text2SqlRequest) -> dict[str, Any]:
             upstream_body.get("sql_query", "") if isinstance(upstream_body, dict) else ""
         ),
         "diagnostic": _text2sql_diagnostic(upstream_body),
+        # Phase 3 lot D, second pass: the form the screen draws (the API's representation hint,
+        # "" without one), so the model describes the map or the chart instead of denying it
+        # (ON_SCREEN_INSTRUCTIONS).
+        "on_screen": (
+            str(upstream_body.get("representation") or "") if isinstance(upstream_body, dict) else ""
+        ),
         # VOICE-AGENT-093: neutral same-name-cluster flag from the API
         # (FASTAPI-TEXT2SQL-157). Surfaced top-level so both the Realtime tool output
         # and the /text-chat model see it and can disambiguate homonyms/duplicate titles.
@@ -3724,6 +3746,7 @@ async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
         "cards with result numbers unless the user explicitly asks for "
         "numbered output. "
         + persona_screen_result_instructions(active_soul)
+        + " " + ON_SCREEN_INSTRUCTIONS  # phase 3 lot D, second pass
     )
     instructions += (
         " " + persona_verbose_instructions(active_soul)

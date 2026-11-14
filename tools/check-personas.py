@@ -1,7 +1,8 @@
 """Offline persona contracts and optional composer smoke comparison (no database calls).
 
 Run with the application's requirements. The default fixture was recaptured after the intentional four-persona rewrite in
-1.13.3; never regenerate it merely to make a regression pass. Six assembled
+1.13.3, and again in 1.14.1 for the intentional ON_SCREEN_INSTRUCTIONS line (what the screen
+draws); never regenerate it merely to make a regression pass. Six assembled
 instruction hashes had already drifted before that rewrite, while SOUL.md and
 _core.md still matched the earlier fixture.
 """
@@ -128,6 +129,38 @@ def contracts(module, root, baseline):
                     check("never write markdown" in prompt and "Never repeat the rows" in prompt, f"{slug}: screen rows and plain subtitles preserved")
                 if surface == "voice":
                     check("do not add a total it does not give" in prompt, f"{slug}: summary facts preserved")
+                if surface in ("voice", "text"):
+                    check(module.ON_SCREEN_INSTRUCTIONS in prompt, f"{slug}/{surface}: told what the screen draws")
+    # Phase 3 lot D, second pass: the API's representation reaches the model as on_screen, in the
+    # compacted /text-chat input and in the Realtime whitelist of app.js.
+    for surface in ("voice", "text"):
+        check(module.ON_SCREEN_INSTRUCTIONS in assembled(module, root, surface, "default"), f"default/{surface}: told what the screen draws")
+    check("map: the places (or countries) on a world map" in module.ON_SCREEN_INSTRUCTIONS
+          and "Never say the screen cannot show a map" in module.ON_SCREEN_INSTRUCTIONS, "on_screen values and rule written")
+
+    class FakeResponse:
+        status_code = 200
+        headers = {"content-type": "application/json"}
+
+        def __init__(self, body):
+            self.body = body
+
+        def json(self):
+            return self.body
+
+    async def fake_post(body):
+        async def post(*args, **kwargs):
+            return FakeResponse(body)
+        with patch.object(module, "_post_text2sql_with_retry", post):
+            output = await module.query_text2sql_data(module.Text2SqlRequest(query="Where was Amelie filmed?", ui_language="en"))
+        return module.compact_search_for_model(output)
+
+    places = {"representation": "map", "answer": "", "result": [{"index": 0, "data": {"ID_LOCATION": 1, "LOCATION_NAME": "Paris"}}]}
+    compact = asyncio.run(fake_post(places))
+    check(compact.get("on_screen") == "map" and "upstream" not in compact, "on_screen reaches the compacted model input")
+    check(asyncio.run(fake_post({"answer": "", "result": []})).get("on_screen") == "", "on_screen is empty without a representation")
+    check(bool(re.search(r'on_screen: output\.on_screen \|\| ""', (root / "app/static/app.js").read_text(encoding="utf-8"))),
+          "on_screen is in the Realtime tool output whitelist")
     prose = {s: module.resolve_soul(s).prose.lower() for s in expected_ranges}
     check("clear take" in prose["video-store"] and "concrete" in prose["video-store"], "video-store defends a concrete judgment")
     check("interpretation" in prose["scholar"] and "effect" in prose["scholar"], "scholar explains a mechanism")

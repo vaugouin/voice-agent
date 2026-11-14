@@ -1,0 +1,214 @@
+{
+ "question": "Where was Amélie filmed?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the places where Amélie was filmed.",
+ "representation": "map",
+ "representation_options": [
+  "map",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_LOCATION",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_NAME",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_TYPE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_SOURCE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "WIKIPEDIA_IMAGE_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "OVERVIEW",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_COUNT",
+   "role": "metric",
+   "unit": "count",
+   "ordered": "desc"
+  },
+  {
+   "name": "SERIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 5,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "MOVIE_COUNT",
+  "order_direction": "desc",
+  "top": null,
+  "places": {
+   "count": 5,
+   "located": 5,
+   "pins": [
+    {
+     "index": 0,
+     "id": 38,
+     "label": "Paris",
+     "type": "city",
+     "lat": 48.86,
+     "lon": 2.35
+    },
+    {
+     "index": 1,
+     "id": 739,
+     "label": "Cologne",
+     "type": "city",
+     "lat": 50.94,
+     "lon": 6.96
+    },
+    {
+     "index": 2,
+     "id": 6585,
+     "label": "Porte des Lilas - Cinéma",
+     "type": "structure",
+     "lat": 48.88,
+     "lon": 2.41
+    },
+    {
+     "index": 3,
+     "id": 3950,
+     "label": "Montmartre",
+     "type": "city",
+     "lat": 48.89,
+     "lon": 2.34
+    },
+    {
+     "index": 4,
+     "id": 9102,
+     "label": "Gare d'Ermont - Eaubonne",
+     "type": "structure",
+     "lat": 48.98,
+     "lon": 2.27
+    }
+   ],
+   "areas": [],
+   "unlocated": [],
+   "bounds": {
+    "lat_min": 48.86,
+    "lat_max": 50.94,
+    "lon_min": 2.27,
+    "lon_max": 6.96
+   }
+  }
+ },
+ "intent": {
+  "task": "list",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_LOCATION": 38,
+    "LOCATION_NAME": "Paris",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4b/La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg/3840px-La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg",
+    "OVERVIEW": "capital and most populous city in France",
+    "MOVIE_COUNT": 2342,
+    "SERIE_COUNT": 60,
+    "IMDB_RATING": 6.31
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_LOCATION": 739,
+    "LOCATION_NAME": "Cologne",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5f/Kranh%C3%A4user_Cologne%2C_April_2018_-01.jpg/3840px-Kranh%C3%A4user_Cologne%2C_April_2018_-01.jpg",
+    "OVERVIEW": "most populous city in North Rhine-Westphalia, Germany",
+    "MOVIE_COUNT": 86,
+    "SERIE_COUNT": 10,
+    "IMDB_RATING": 6.23
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_LOCATION": 6585,
+    "LOCATION_NAME": "Porte des Lilas - Cinéma",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": null,
+    "OVERVIEW": null,
+    "MOVIE_COUNT": 3,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.03
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_LOCATION": 3950,
+    "LOCATION_NAME": "Montmartre",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/10/View_from_Notre-Dame_de_Paris%2C_24_June_2014_004.jpg/3840px-View_from_Notre-Dame_de_Paris%2C_24_June_2014_004.jpg",
+    "OVERVIEW": "large hill in Paris's northern 18th arrondissement",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 1,
+    "IMDB_RATING": 6.83
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_LOCATION": 9102,
+    "LOCATION_NAME": "Gare d'Ermont - Eaubonne",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/f/f7/Gare_d_Ermont_-_Eaubonne_-_Interieur_01.jpg",
+    "OVERVIEW": "railway station in Ermont, France",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 8.2
+   }
+  }
+ ],
+ "result_entity": "location"
+}

@@ -99,7 +99,7 @@ const code = [
   "  text2SqlScatterModel, text2SqlScatterSummary, text2SqlScatterTicks, text2SqlScatterTickText,",
   "  text2SqlScatterValueText, text2SqlScatterAxisTitle, text2SqlScatterWords,",
   "  text2SqlMapModel, text2SqlMapTone, text2SqlMapStepText,",
-  "  text2SqlPlaceMapModel, text2SqlPlaceMapSummary, text2SqlPlaceMapFrame, text2SqlEqualEarth, text2SqlPlaceTypeWord, text2SqlPlaceCount,",
+  "  text2SqlPlaceMapGroups, text2SqlPlaceMapModel, text2SqlPlaceMapSummary, text2SqlPlaceMapFrame, text2SqlEqualEarth, text2SqlPlaceTypeWord, text2SqlPlaceCount,",
   "  text2SqlHierarchyModel, text2SqlHierarchySummary, text2SqlHierarchyLeafNoun, text2SqlHierarchyKind,",
   "  text2SqlChainModel, text2SqlChainSummary, text2SqlFrDe, text2SqlFrA,",
   "  text2SqlDrillWord, text2SqlDrillQuestion, text2SqlDrillBinValue, text2SqlDrillPeriodValue,",
@@ -846,6 +846,8 @@ check("links: older API, from the keys", linkSummary([], ["ID_PERSON", "PERSON_N
     "italy-regions-fr": "42 lieux sur la carte : Brindisi, Lecce, Cirella et 39 autres.",
     "john-ford-states-en": "Twelve places on the map: Arizona, Alabama Hills, California and nine more.",
     "lawrence-en": "Five places on the map: London, Spain, Morocco and two more.",
+    "live-amelie-en": "Five places on the map: Paris, Cologne, Porte des Lilas - Cinéma and two more.",
+    "live-ozu-en": "Two places on the map: Japan and West Berlin.",
     "lawrence-fr": "Cinq lieux sur la carte : Londres, Espagne, Maroc et deux autres.",
     "lost-in-translation-en": "Four places on the map: Japan, Tokyo, Kyoto and Heian Jingū.",
     "lost-in-translation-fr": "Quatre lieux sur la carte : Japon, Kyoto, Tokyo et sanctuaire Heian.",
@@ -855,7 +857,7 @@ check("links: older API, from the keys", linkSummary([], ["ID_PERSON", "PERSON_N
     "tokyo-single-hand-fr": "Tokyo sur la carte.",
     "woody-allen-france-en": "Five places on the map: Giverny, Paris, Saint-Étienne-du-Mont and two more.",
   };
-  check("p3d nineteen fixtures", Object.keys(captions).length, 19);
+  check("p3d twenty-one fixtures", Object.keys(captions).length, 21);
   // The caption under the map (tokyo-single comes as posters, its map sentence is the map chip's).
   Object.entries(captions).forEach(([name, text]) => {
     const f = fx(P + name);
@@ -871,6 +873,17 @@ check("links: older API, from the keys", linkSummary([], ["ID_PERSON", "PERSON_N
     const f = fx(P + name);
     check(`p3d model ${name}`, pin(api.text2SqlPlaceMapModel(f, f.ui_language, world)), pin(expected[P + name]));
   });
+  // Close marks of one kind share one disc or ring (second pass: Amélie's Paris places fell on one spot).
+  ["live-amelie-en", "nolan-en", "lawrence-en", "third-man-en", "live-ozu-en"].forEach((name) => {
+    const f = fx(P + name);
+    check(`p3d groups ${name}`, api.text2SqlPlaceMapModel(f, f.ui_language, world).groups, expected[P + name].groups);
+  });
+  check("p3d amelie: Paris holds four", api.text2SqlPlaceMapModel(fx(P + "live-amelie-en"), "en", world).groups.map((g) => [g.text, g.members]),
+    [["1+3", [1, 3, 4, 5]], ["2", [2]]]);
+  check("p3d every group pinned", Object.keys(captions).every((name) => {
+    const f = fx(P + name);
+    return JSON.stringify(api.text2SqlPlaceMapModel(f, f.ui_language, world).groups) === JSON.stringify(expected[P + name].groups);
+  }), true);
   const nolan = api.text2SqlPlaceMapModel(fx(P + "nolan-en"), "en", world);
   check("p3d nolan: whole width, the line off the map", [nolan.viewBox, nolan.marks.length, nolan.offText],
     ["178 0 1744 793", 49, "Not on the map: Shepperton Studios (no coordinates)."]);
