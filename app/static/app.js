@@ -8101,6 +8101,34 @@ function appendCardValues(card, record, valueColumns) {
   (card.querySelector(".search-poster-card-text") || card).append(box);
 }
 
+// Compact feedback bar (2026-11-14): the chips row scrolls sideways inside itself on a narrow
+// screen. The active chip is brought into view by moving the row's own scrollLeft (never
+// scrollIntoView, which would also scroll the page), and `hasMoreRight` draws the fade while
+// chips are hidden past the right edge.
+function updateText2SqlChipsFade(bar) {
+  if (!bar) {
+    return;
+  }
+  bar.classList.toggle("hasMoreRight", bar.scrollLeft + bar.clientWidth < bar.scrollWidth - 1);
+}
+
+function revealActiveText2SqlChip(bar) {
+  if (!bar || !bar.isConnected) {
+    return;
+  }
+  const active = bar.querySelector('.t2sViewChip[aria-pressed="true"]');
+  if (active && bar.scrollWidth > bar.clientWidth) {
+    const left = active.getBoundingClientRect().left - bar.getBoundingClientRect().left + bar.scrollLeft;
+    const right = left + active.getBoundingClientRect().width;
+    if (left < bar.scrollLeft) {
+      bar.scrollLeft = Math.max(0, left - 8);
+    } else if (right > bar.scrollLeft + bar.clientWidth) {
+      bar.scrollLeft = right - bar.clientWidth + 8;
+    }
+  }
+  updateText2SqlChipsFade(bar);
+}
+
 function buildText2SqlChips(chips, active) {
   const bar = document.createElement("div");
   bar.className = "t2sViewChips";
@@ -8118,6 +8146,7 @@ function buildText2SqlChips(chips, active) {
     });
     bar.append(chip);
   });
+  bar.addEventListener("scroll", () => updateText2SqlChipsFade(bar), { passive: true });
   return bar;
 }
 
@@ -8336,6 +8365,7 @@ function updateText2SqlViewChrome(view) {
   view.chipsBar?.querySelectorAll(".t2sViewChip").forEach((chip) => {
     chip.setAttribute("aria-pressed", chip.dataset.representation === view.rep ? "true" : "false");
   });
+  revealActiveText2SqlChip(view.chipsBar);
   if (view.caption) {
     const line = text2SqlViewSummaryLine(view);
     view.caption.textContent = line;

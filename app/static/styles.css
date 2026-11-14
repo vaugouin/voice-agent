@@ -1186,10 +1186,11 @@ details.queryDetails summary {
 }
 
 /* VOICE-AGENT-261, compact since 2026-11-14 (t2s-front draws it the same): the result bar under
-   the answer block. The view chips come first, the two thumbs sit at the right end of the same
-   row (margin-left: auto, so they stay right when the chips wrap and stay together), and a
-   result without chips gets the bar with the thumbs alone, one chip row high. The comment form
-   opens under the row. The global `button` rule (96 x 42 px, padding 18px, filled green) is
+   the answer block. One row, always: the chips group takes the width left by the thumbs and
+   scrolls sideways inside itself when its chips do not fit (never wraps, never widens the page),
+   the two thumbs sit at the right end (flex: none), and a result without chips gets the bar with
+   the thumbs alone. The comment panel is the only thing that wraps, onto its own line under the
+   row (flex-basis 100%; the chips group's basis is 0 so it never pushes the thumbs down). The global `button` rule (96 x 42 px, padding 18px, filled green) is
    reset on the small buttons, as on the scatter dots, or each thumb becomes a slab. */
 .t2sResultBar {
   display: flex;
@@ -1200,10 +1201,44 @@ details.queryDetails summary {
   margin: 12px 0 4px;
 }
 
-/* The chips group keeps its role and name but lends its chips to the bar's own flex row, so the
-   thumbs wrap as one item after the last chip, never onto a row of their own when there is room. */
+/* contain: inline-size takes the chips out of the row's intrinsic width: without it the grid
+   track above the view host widens to the sum of the chips and the page scrolls at 390 px. */
 .t2sResultBar > .t2sViewChips {
-  display: contents;
+  flex: 1 1 0;
+  min-width: 0;
+  contain: inline-size;
+  flex-wrap: nowrap;
+  gap: 6px;
+  margin: 0;
+  overflow-x: auto;
+  overscroll-behavior-x: contain;
+  scrollbar-width: none;
+}
+
+.t2sResultBar > .t2sViewChips::-webkit-scrollbar {
+  display: none;
+}
+
+/* A soft fade on the right edge while chips are hidden there (class set by app.js). */
+.t2sResultBar > .t2sViewChips.hasMoreRight {
+  -webkit-mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+  mask-image: linear-gradient(to right, #000 calc(100% - 28px), transparent);
+}
+
+/* In the bar the chips drop the global button floor (96 x 42 px): the row is 36 px high. */
+.t2sResultBar .t2sViewChip {
+  flex: none;
+  min-width: 0;
+  min-height: 0;
+  height: 36px;
+  padding: 0 14px;
+  white-space: nowrap;
+}
+
+@media (max-width: 600px) {
+  .t2sResultBar .t2sViewChip {
+    padding: 0 11px;
+  }
 }
 
 .resultFeedback {
@@ -2712,6 +2747,12 @@ button.detailVisualCard:hover {
 }
 .t2sPosterRanking .t2sRankCard .t2sBarBody {
   padding: 8px 10px 12px;
+}
+/* The view host is a grid item: without min-width 0 its track grows to the table's full width
+   and the page scrolls at 390 px (seen on a five-column series table, 2026-11-14), instead of the
+   table scrolling inside .t2sTableWrap. */
+.t2sViewHost {
+  min-width: 0;
 }
 .t2sTableWrap {
   overflow-x: auto;
