@@ -1,7 +1,9 @@
 """Offline persona contracts and optional composer smoke comparison (no database calls).
 
-Run with the application's requirements. The default fixture was captured before
-VOICE-AGENT-258; never regenerate it to make a regression pass.
+Run with the application's requirements. The default fixture was recaptured after the intentional four-persona rewrite in
+1.13.3; never regenerate it merely to make a regression pass. Six assembled
+instruction hashes had already drifted before that rewrite, while SOUL.md and
+_core.md still matched the earlier fixture.
 """
 from __future__ import annotations
 

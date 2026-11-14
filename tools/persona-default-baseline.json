@@ -1,18 +1,18 @@
 {
   "files": {
-    "SOUL.md": "8fb1df88571c4e4e0e51f2014a5b8dc61628b8483309d4d073073d0d71b360c7",
+    "SOUL.md": "5adce73cbc88ed7af0ce9881c75daaec5950684bc3088499aeb846757c061512",
     "souls/_core.md": "7ca162daf96260ec8103a457d9ced8c78d2782a2deeb94f2512c053123d848cd"
   },
   "instructions": {
-    "voice/focus=False": "3c5d4a757a576ed55137ee4a5fd99fcfedaee8be21f50c7f2bd71fc8a714daa8",
-    "voice/focus=True": "1d75967fa857dc5e60ccfed9c5c44417638c74a5ef182e99f488f0677965eefc",
-    "text/en/image=False": "9a743fe2c7262f1c29ca9bda8190419b15572451da147b91e5f80a53348fa31d",
-    "text/en/image=True": "7aad8ccc8b8ba1dc2c809760888e8e8ef42bafe82de4688e068951a2fbca6834",
-    "brief/en/image=False": "6a7e4e516a0480bfe27a92f6ee0d6f5b4697ec986bfd4961622d4de107b2f788",
-    "deep/en/image=False": "4c7943420285cf622fa56f98adf735b58721ed7bd32c804c1b5cc3e74ff88892",
-    "text/fr/image=False": "9a743fe2c7262f1c29ca9bda8190419b15572451da147b91e5f80a53348fa31d",
-    "text/fr/image=True": "7aad8ccc8b8ba1dc2c809760888e8e8ef42bafe82de4688e068951a2fbca6834",
-    "brief/fr/image=False": "da6c7aae71c4e4bec38d7bd94539c35ad1b44e7710e3afa9e491d829bb421e10",
-    "deep/fr/image=False": "47cad4d9e2685ed41c4db85d5b9bfa1fbd241d8cbb1827925dae31518c9584b4"
+    "voice/focus=False": "019332ce0f8fa5985875de3d53f0918769ca0639b7571e102eadbaaff53d3705",
+    "voice/focus=True": "06cbe0d2aeaf1d69b40d8d06bc22b1972ab6d5d97c8b503e42d53a9d43cc057c",
+    "text/en/image=False": "2f51bab3db881251162d8eccfe9332fe2f71f07837130705c32723957b9329ca",
+    "text/en/image=True": "27ce566c1a4418a6aea45c7c78ecfb5be974ab61147026fd9cc53798aa0df334",
+    "brief/en/image=False": "ec173cbc267834c4e965e70648133f68c776e6545234d4f92a1a187f9c38d779",
+    "deep/en/image=False": "7c737d038abe209f9bfd8c7a56009fa33349c242acccd41fd62bb0766dda4fbe",
+    "text/fr/image=False": "2f51bab3db881251162d8eccfe9332fe2f71f07837130705c32723957b9329ca",
+    "text/fr/image=True": "27ce566c1a4418a6aea45c7c78ecfb5be974ab61147026fd9cc53798aa0df334",
+    "brief/fr/image=False": "b0f64510954e0c3a009617941f75fca8c64f2a6e7beeb3f1a9933c3db70b2a17",
+    "deep/fr/image=False": "973cafd527d4b3650f8e9209e07e3bc7251d5891b460c195546e39bab3518913"
   }
 }
