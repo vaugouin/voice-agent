@@ -347,7 +347,7 @@ TEXT2SQL_API_KEY_VALUE=...
 
 ### Result Feedback (VOICE-AGENT-261)
 
-Each search answer ends with a "Was this result right?" row (thumbs up, thumbs down, optional one-line comment; UI.md, "Text2SQL Answer Block"). The browser never calls the API: it posts to this server.
+Each search answer carries a thumbs up and a thumbs down at the right end of the row of view chips (or alone in that row when the result has no chips), with an optional one-line comment that opens under the row; the question "Was this result right?" is their accessible name, not visible text (UI.md, "Text2SQL Answer Block"). The browser never calls the API: it posts to this server.
 
 ```text
 POST /feedback

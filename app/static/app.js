@@ -1150,6 +1150,11 @@ function buildQueryDetailsToggle(detailsText) {
 // never to the API, and that route sends it once (no retry, a vote must not count twice).
 // A recorded vote is remembered for the page's lifetime (resultFeedbackVotes), so going Back to
 // the same search shows the choice already made instead of inviting a second vote.
+// Compact form (2026-11-14, the same on t2s-front): the function returns the result bar
+// (`.t2sResultBar`), the row the view chips sit in, with the two thumbs at its right end and the
+// comment form under it. The question is no visible text, only the accessible name of the thumbs
+// group. renderText2SqlResult() puts the chips into this bar when there are some, else the bar
+// carries the thumbs alone, at the place the chips would be.
 const resultFeedbackVotes = new Map();
 
 function resultFeedbackContext(output, args, upstream, uiLanguage) {
@@ -1194,10 +1199,10 @@ function buildResultFeedbackRow(context) {
     send: uiText("Send", "Envoyer"),
     skip: uiText("Skip", "Passer"),
     sending: uiText("Sending…", "Envoi…"),
-    thanksUp: uiText("Thanks, noted.", "Merci, c'est noté."),
+    thanks: uiText("Thanks", "Merci"),
     thanksDown: uiText(
-      "Thanks. This answer will be recomputed next time.",
-      "Merci. Cette réponse sera recalculée la prochaine fois."
+      "This answer will be recomputed next time.",
+      "Cette réponse sera recalculée la prochaine fois."
     ),
     failed: uiText(
       "Your feedback could not be sent. Try again.",
@@ -1206,14 +1211,12 @@ function buildResultFeedbackRow(context) {
   };
   const key = resultFeedbackKey(context);
 
+  const bar = document.createElement("div");
+  bar.className = "t2sResultBar";
   const row = document.createElement("div");
   row.className = "resultFeedback";
   row.setAttribute("role", "group");
   row.setAttribute("aria-label", text.prompt);
-
-  const prompt = document.createElement("span");
-  prompt.className = "resultFeedbackPrompt";
-  prompt.textContent = text.prompt;
 
   const makeButton = (rating, glyph, label) => {
     const button = document.createElement("button");
@@ -1250,12 +1253,41 @@ function buildResultFeedbackRow(context) {
   skipButton.textContent = text.skip;
   form.append(input, sendButton, skipButton);
 
-  const status = document.createElement("p");
+  // The short status ("Sending…", "Thanks") sits beside the thumbs; after a thumbs down the
+  // note that the answer will be recomputed is read out and shown on hover, not printed. A
+  // failure is a sentence, so it goes under the bar with the form it asks to send again.
+  const status = document.createElement("span");
   status.className = "resultFeedbackStatus";
   status.setAttribute("role", "status");
   status.setAttribute("aria-live", "polite");
+  const failure = document.createElement("p");
+  failure.className = "resultFeedbackError";
+  failure.setAttribute("role", "status");
+  failure.setAttribute("aria-live", "polite");
+  const panel = document.createElement("div");
+  panel.className = "resultFeedbackPanel";
+  panel.hidden = true;
+  panel.append(form, failure);
 
-  row.append(prompt, upButton, downButton, form, status);
+  row.append(upButton, downButton, status);
+  bar.append(row, panel);
+  const showStatus = (value, note = "") => {
+    status.textContent = value;
+    status.title = note;
+    if (note) {
+      const extra = document.createElement("span");
+      extra.className = "srOnly";
+      extra.textContent = ` ${note}`;
+      status.append(extra);
+    }
+  };
+  const setFailure = (value) => {
+    failure.textContent = value;
+  };
+  const openPanel = (open) => {
+    form.hidden = !open;
+    panel.hidden = !open && !failure.textContent;
+  };
 
   let pendingRating = 0;
   let busy = false;
@@ -1264,10 +1296,10 @@ function buildResultFeedbackRow(context) {
     downButton.setAttribute("aria-pressed", String(rating === -1));
   };
   const recordedRating = () => resultFeedbackVotes.get(key)?.rating || 0;
-  const thanks = (rating) => (rating < 0 ? text.thanksDown : text.thanksUp);
+  const thanks = (rating) => showStatus(text.thanks, rating < 0 ? text.thanksDown : "");
   if (recordedRating()) {
     setPressed(recordedRating());
-    status.textContent = thanks(recordedRating());
+    thanks(recordedRating());
   }
 
   const choose = (rating) => {
@@ -1280,8 +1312,9 @@ function buildResultFeedbackRow(context) {
     }
     pendingRating = rating;
     setPressed(rating);
-    status.textContent = "";
-    form.hidden = false;
+    showStatus("");
+    setFailure("");
+    openPanel(true);
     // No automatic focus on a touch screen: the keyboard would cover the result for a comment
     // that is optional. With a mouse, the caret waits in the field (Enter sends, Escape skips).
     if (window.matchMedia?.("(pointer: fine)").matches) {
@@ -1298,7 +1331,8 @@ function buildResultFeedbackRow(context) {
     const comment = withComment ? input.value.trim() : "";
     [upButton, downButton, sendButton, skipButton].forEach((button) => { button.disabled = true; });
     input.disabled = true;
-    status.textContent = text.sending;
+    setFailure("");
+    showStatus(text.sending);
     try {
       const response = await fetch(appUrl("feedback"), {
         method: "POST",
@@ -1312,12 +1346,14 @@ function buildResultFeedbackRow(context) {
       resultFeedbackVotes.set(key, { rating, id_feedback: body.id_feedback ?? null });
       pendingRating = 0;
       input.value = "";
-      form.hidden = true;
-      status.textContent = thanks(rating);
+      openPanel(false);
+      thanks(rating);
     } catch (error) {
       // The form stays open with the comment typed, so a second Send is the retry.
       setPressed(rating);
-      status.textContent = text.failed;
+      showStatus("");
+      setFailure(text.failed);
+      openPanel(true);
     } finally {
       busy = false;
       [upButton, downButton, sendButton, skipButton].forEach((button) => { button.disabled = false; });
@@ -1339,7 +1375,7 @@ function buildResultFeedbackRow(context) {
       submit(false);
     }
   });
-  return row;
+  return bar;
 }
 
 function cloneHistoryValue(value) {
@@ -11176,14 +11212,16 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
     // VOICE-AGENT-261: one feedback pair per search, here and only here (see
     // buildResultFeedbackRow). Also on an error or an empty result: a wrong "nothing found" is
     // the verdict most worth having. Absent when there is no upstream body to point at.
-    if (!append) {
-      const feedbackRow = buildResultFeedbackRow(resultFeedbackContext(output, args, upstream, uiLanguage));
-      if (feedbackRow) {
-        answerBlock.append(feedbackRow);
-      }
-    }
+    // The bar goes where the view chips go, under the answer block: a view host below takes it
+    // over and puts its chips in it; any other form keeps it here with the thumbs alone.
+    const feedbackBar = append
+      ? null
+      : buildResultFeedbackRow(resultFeedbackContext(output, args, upstream, uiLanguage));
     resultsContent.append(answerBlock);
     resultsContent.append(queryDetailsDock);
+    if (feedbackBar) {
+      resultsContent.append(feedbackBar);
+    }
 
     const rowsPerPage = Number(output.rows_per_page || upstream.rows_per_page || rows.length || 0);
     const pagination = reusableText2SqlQuestionHash(output, upstream, args, rows, rowsPerPage);
@@ -11230,7 +11268,13 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
       const body = document.createElement("div");
       body.className = "t2sViewBody";
       body.setAttribute("aria-describedby", caption.id);
-      if (chipsBar) {
+      // Compact feedback (2026-11-14): the chips and the thumbs share one row.
+      if (feedbackBar) {
+        if (chipsBar) {
+          feedbackBar.prepend(chipsBar);
+        }
+        host.append(feedbackBar);
+      } else if (chipsBar) {
         host.append(chipsBar);
       }
       host.append(body);

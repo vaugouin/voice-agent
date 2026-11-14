@@ -1185,40 +1185,52 @@ details.queryDetails summary {
   transform: rotate(90deg);
 }
 
-/* VOICE-AGENT-261: the "Was this result right?" row, last line of the answer block. The global
-   `button` rule (96 x 42 px, padding 18px, filled green) is reset on the small buttons, as on the
-   scatter dots, or each thumb becomes a slab. Wraps onto two lines at 390 px: prompt and thumbs,
-   then the comment field on its own full-width line. */
-.resultFeedback {
-  grid-column: 1 / -1;
+/* VOICE-AGENT-261, compact since 2026-11-14 (t2s-front draws it the same): the result bar under
+   the answer block. The view chips come first, the two thumbs sit at the right end of the same
+   row (margin-left: auto, so they stay right when the chips wrap and stay together), and a
+   result without chips gets the bar with the thumbs alone, one chip row high. The comment form
+   opens under the row. The global `button` rule (96 x 42 px, padding 18px, filled green) is
+   reset on the small buttons, as on the scatter dots, or each thumb becomes a slab. */
+.t2sResultBar {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
-  gap: 6px 8px;
+  gap: 8px;
   min-width: 0;
-  color: var(--text-secondary);
-  font-size: 0.88rem;
+  margin: 12px 0 4px;
 }
 
-.resultFeedbackPrompt {
-  margin-right: 2px;
+/* The chips group keeps its role and name but lends its chips to the bar's own flex row, so the
+   thumbs wrap as one item after the last chip, never onto a row of their own when there is room. */
+.t2sResultBar > .t2sViewChips {
+  display: contents;
+}
+
+.resultFeedback {
+  flex: none;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-left: auto;
+  color: var(--text-secondary);
+  font-size: 0.85rem;
 }
 
 .resultFeedbackButton {
   min-width: 0;
   min-height: 0;
   width: 36px;
-  height: 32px;
+  height: 36px;
   padding: 0;
   display: inline-grid;
   place-items: center;
   border: 1px solid var(--border);
-  border-radius: 6px;
-  background: #171b20;
+  border-radius: 999px;
+  background: var(--bg-tertiary);
   font-size: 1rem;
   font-weight: 400;
   line-height: 1;
-  opacity: 0.8;
+  opacity: 0.75;
 }
 
 .resultFeedbackButton:hover {
@@ -1229,11 +1241,28 @@ details.queryDetails summary {
 .resultFeedbackButton[aria-pressed="true"] {
   opacity: 1;
   border-color: var(--accent-secondary);
-  background: #20333a;
+  background: rgba(3, 218, 198, 0.14);
+}
+
+.resultFeedbackButton:focus-visible {
+  outline: 2px solid var(--accent-secondary);
+  outline-offset: 2px;
+}
+
+.resultFeedbackStatus:empty {
+  display: none;
+}
+
+.resultFeedbackPanel {
+  flex: 1 1 100%;
+  min-width: 0;
+}
+
+.resultFeedbackPanel[hidden] {
+  display: none;
 }
 
 .resultFeedbackForm:not([hidden]) {
-  flex: 1 1 260px;
   display: flex;
   gap: 6px;
   min-width: 0;
@@ -1267,14 +1296,13 @@ details.queryDetails summary {
   background: transparent;
 }
 
-.resultFeedbackStatus {
-  flex: 1 1 100%;
-  margin: 0;
-  min-height: 0;
+.resultFeedbackError {
+  margin: 6px 0 0;
   color: var(--text-secondary);
+  font-size: 0.88rem;
 }
 
-.resultFeedbackStatus:empty {
+.resultFeedbackError:empty {
   display: none;
 }
 
