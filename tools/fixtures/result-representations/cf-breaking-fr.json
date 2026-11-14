@@ -1,0 +1,198 @@
+{
+  "question": "Les séries créées par Vince Gilligan",
+  "api_version": "1.1.20",
+  "ui_language": "fr",
+  "answer": "Voici les séries créées par Vince Gilligan.",
+  "representation": "card-grid",
+  "representation_options": [
+    "card-grid",
+    "cover-flow",
+    "value-cards",
+    "ranked-bars",
+    "table"
+  ],
+  "result_kind": "entity_rows",
+  "result_columns": [
+    {
+      "name": "ID_SERIE",
+      "role": "entity_id",
+      "unit": null
+    },
+    {
+      "name": "SERIE_TITLE",
+      "role": "label",
+      "unit": null
+    },
+    {
+      "name": "DAT_FIRST_AIR",
+      "role": "date",
+      "unit": null
+    },
+    {
+      "name": "DAT_LAST_AIR",
+      "role": "date",
+      "unit": null
+    },
+    {
+      "name": "ID_IMDB",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "IMDB_RATING",
+      "role": "metric",
+      "unit": null
+    },
+    {
+      "name": "IMDB_RATING_WEIGHTED",
+      "role": "metric",
+      "unit": null,
+      "ordered": "desc"
+    },
+    {
+      "name": "IMDB_VOTES",
+      "role": "metric",
+      "unit": null
+    },
+    {
+      "name": "POSTER_PATH",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "NUMBER_OF_SEASONS",
+      "role": "metric",
+      "unit": "count",
+      "focus": true
+    },
+    {
+      "name": "NUMBER_OF_EPISODES",
+      "role": "metric",
+      "unit": "count"
+    },
+    {
+      "name": "TAGLINE",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "ID_CRITERION_SPINE",
+      "role": "other",
+      "unit": null
+    }
+  ],
+  "summary_facts": {
+    "count": 5,
+    "total": null,
+    "value_column": "NUMBER_OF_SEASONS",
+    "unit": "count",
+    "order": "IMDB_RATING_WEIGHTED",
+    "order_direction": "desc",
+    "top": {
+      "label": "Better Call Saul",
+      "id": 60059,
+      "index": 1,
+      "value": 6,
+      "extreme": "max"
+    }
+  },
+  "intent": {
+    "task": "list",
+    "focus": [],
+    "focus_columns": [],
+    "requested_view": "",
+    "source": "llm"
+  },
+  "result": [
+    {
+      "index": 0,
+      "data": {
+        "ID_SERIE": 1396,
+        "SERIE_TITLE": "Breaking Bad",
+        "DAT_FIRST_AIR": "2008-01-20",
+        "DAT_LAST_AIR": "2013-09-29",
+        "ID_IMDB": "tt0903747",
+        "IMDB_RATING": 9.5,
+        "IMDB_RATING_WEIGHTED": 9.48,
+        "IMDB_VOTES": 2704560,
+        "POSTER_PATH": "/hVVxgGZFR3JaXmkstnG1IR9Qbt6.jpg",
+        "NUMBER_OF_SEASONS": 5,
+        "NUMBER_OF_EPISODES": 62,
+        "TAGLINE": "Souviens-toi de mon nom.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 1,
+      "data": {
+        "ID_SERIE": 60059,
+        "SERIE_TITLE": "Better Call Saul",
+        "DAT_FIRST_AIR": "2015-02-08",
+        "DAT_LAST_AIR": "2022-08-15",
+        "ID_IMDB": "tt3032476",
+        "IMDB_RATING": 9,
+        "IMDB_RATING_WEIGHTED": 8.95,
+        "IMDB_VOTES": 877133,
+        "POSTER_PATH": "/7KyuCBjxsr4sNQga16DcN9ccEyf.jpg",
+        "NUMBER_OF_SEASONS": 6,
+        "NUMBER_OF_EPISODES": 63,
+        "TAGLINE": "Mettre le \"criminel\" dans \"avocat pénaliste\".",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 2,
+      "data": {
+        "ID_SERIE": 225171,
+        "SERIE_TITLE": "Pluribus",
+        "DAT_FIRST_AIR": "2025-11-06",
+        "DAT_LAST_AIR": "2025-12-23",
+        "ID_IMDB": "tt22202452",
+        "IMDB_RATING": 7.9,
+        "IMDB_RATING_WEIGHTED": 7.81,
+        "IMDB_VOTES": 184018,
+        "POSTER_PATH": "/8502I2bOEMQpJGB0h489YButCYp.jpg",
+        "NUMBER_OF_SEASONS": 1,
+        "NUMBER_OF_EPISODES": 9,
+        "TAGLINE": "Le bonheur est un état d’esprit.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 3,
+      "data": {
+        "ID_SERIE": 5715,
+        "SERIE_TITLE": "Au cœur du complot",
+        "DAT_FIRST_AIR": "2001-03-04",
+        "DAT_LAST_AIR": "2001-06-01",
+        "ID_IMDB": "tt0243069",
+        "IMDB_RATING": 7.3,
+        "IMDB_RATING_WEIGHTED": 7.05,
+        "IMDB_VOTES": 6285,
+        "POSTER_PATH": "/3vTu54RlPi0y3AzzUaGeqNmsFs3.jpg",
+        "NUMBER_OF_SEASONS": 1,
+        "NUMBER_OF_EPISODES": 13,
+        "TAGLINE": "",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 4,
+      "data": {
+        "ID_SERIE": 61676,
+        "SERIE_TITLE": "Battle Creek",
+        "DAT_FIRST_AIR": "2015-03-01",
+        "DAT_LAST_AIR": "2015-05-24",
+        "ID_IMDB": "tt3215364",
+        "IMDB_RATING": 7.2,
+        "IMDB_RATING_WEIGHTED": 7.04,
+        "IMDB_VOTES": 9424,
+        "POSTER_PATH": "/5oqPaAiwflr1o4PlNvkAGRC9DCX.jpg",
+        "NUMBER_OF_SEASONS": 1,
+        "NUMBER_OF_EPISODES": 13,
+        "TAGLINE": "Not all cops are buddies.",
+        "ID_CRITERION_SPINE": null
+      }
+    }
+  ]
+}

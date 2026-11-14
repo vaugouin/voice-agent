@@ -1,0 +1,745 @@
+{
+  "question": "List the Pixar feature films",
+  "api_version": "1.1.20",
+  "ui_language": "en",
+  "answer": "Here are the feature-length films from Pixar.",
+  "representation": "card-grid",
+  "representation_options": [
+    "card-grid",
+    "cover-flow",
+    "table"
+  ],
+  "result_kind": "entity_rows",
+  "result_columns": [
+    {
+      "name": "ID_MOVIE",
+      "role": "entity_id",
+      "unit": null
+    },
+    {
+      "name": "MOVIE_TITLE",
+      "role": "label",
+      "unit": null
+    },
+    {
+      "name": "DAT_RELEASE",
+      "role": "date",
+      "unit": null
+    },
+    {
+      "name": "ID_IMDB",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "IMDB_RATING",
+      "role": "metric",
+      "unit": null
+    },
+    {
+      "name": "IMDB_RATING_WEIGHTED",
+      "role": "metric",
+      "unit": null,
+      "ordered": "desc"
+    },
+    {
+      "name": "IMDB_VOTES",
+      "role": "metric",
+      "unit": null
+    },
+    {
+      "name": "POSTER_PATH",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "RUNTIME",
+      "role": "metric",
+      "unit": "minutes"
+    },
+    {
+      "name": "TAGLINE",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "ID_CRITERION_SPINE",
+      "role": "other",
+      "unit": null
+    }
+  ],
+  "summary_facts": {
+    "count": 41,
+    "total": null,
+    "value_column": null,
+    "unit": null,
+    "order": "IMDB_RATING_WEIGHTED",
+    "order_direction": "desc",
+    "top": null
+  },
+  "intent": {
+    "task": "list",
+    "focus": [],
+    "focus_columns": [],
+    "requested_view": "",
+    "source": "llm"
+  },
+  "result": [
+    {
+      "index": 0,
+      "data": {
+        "ID_MOVIE": 10681,
+        "MOVIE_TITLE": "WALL·E",
+        "DAT_RELEASE": "2008-06-26",
+        "ID_IMDB": "tt0910970",
+        "IMDB_RATING": 8.4,
+        "IMDB_RATING_WEIGHTED": 8.38,
+        "IMDB_VOTES": 1349740,
+        "POSTER_PATH": "/hbhFnRzzg6ZDmm8YAmxBnQpQIPh.jpg",
+        "RUNTIME": 98,
+        "TAGLINE": "After 700 years of doing what he was built for, he'll discover what he was meant for.",
+        "ID_CRITERION_SPINE": 1161
+      }
+    },
+    {
+      "index": 1,
+      "data": {
+        "ID_MOVIE": 354912,
+        "MOVIE_TITLE": "Coco",
+        "DAT_RELEASE": "2017-10-27",
+        "ID_IMDB": "tt2380307",
+        "IMDB_RATING": 8.4,
+        "IMDB_RATING_WEIGHTED": 8.36,
+        "IMDB_VOTES": 735065,
+        "POSTER_PATH": "/6Ryitt95xrO8KXuqRGm1fUuNwqF.jpg",
+        "RUNTIME": 105,
+        "TAGLINE": "The celebration of a lifetime.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 2,
+      "data": {
+        "ID_MOVIE": 14160,
+        "MOVIE_TITLE": "Up",
+        "DAT_RELEASE": "2009-05-28",
+        "ID_IMDB": "tt1049413",
+        "IMDB_RATING": 8.3,
+        "IMDB_RATING_WEIGHTED": 8.28,
+        "IMDB_VOTES": 1263348,
+        "POSTER_PATH": "/mFvoEwSfLqbcWwFsDjQebn9bzFe.jpg",
+        "RUNTIME": 96,
+        "TAGLINE": "Change is in the air.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 3,
+      "data": {
+        "ID_MOVIE": 862,
+        "MOVIE_TITLE": "Toy Story",
+        "DAT_RELEASE": "1995-11-22",
+        "ID_IMDB": "tt0114709",
+        "IMDB_RATING": 8.3,
+        "IMDB_RATING_WEIGHTED": 8.28,
+        "IMDB_VOTES": 1206895,
+        "POSTER_PATH": "/uXDfjJbdP4ijW5hWSBrPrlKpxab.jpg",
+        "RUNTIME": 81,
+        "TAGLINE": "Hang on for the comedy that goes to infinity and beyond!",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 4,
+      "data": {
+        "ID_MOVIE": 10193,
+        "MOVIE_TITLE": "Toy Story 3",
+        "DAT_RELEASE": "2010-06-16",
+        "ID_IMDB": "tt0435761",
+        "IMDB_RATING": 8.3,
+        "IMDB_RATING_WEIGHTED": 8.27,
+        "IMDB_VOTES": 996504,
+        "POSTER_PATH": "/AbbXspMOwdvwWZgVN0nabZq03Ec.jpg",
+        "RUNTIME": 103,
+        "TAGLINE": "No toy gets left behind.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 5,
+      "data": {
+        "ID_MOVIE": 12,
+        "MOVIE_TITLE": "Finding Nemo",
+        "DAT_RELEASE": "2003-05-30",
+        "ID_IMDB": "tt0266543",
+        "IMDB_RATING": 8.2,
+        "IMDB_RATING_WEIGHTED": 8.18,
+        "IMDB_VOTES": 1231556,
+        "POSTER_PATH": "/eHuGQ10FUzK1mdOY69wF5pGgEf5.jpg",
+        "RUNTIME": 100,
+        "TAGLINE": "There are 3.7 trillion fish in the ocean. They're looking for one.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 6,
+      "data": {
+        "ID_MOVIE": 585,
+        "MOVIE_TITLE": "Monsters, Inc.",
+        "DAT_RELEASE": "2001-11-01",
+        "ID_IMDB": "tt0198781",
+        "IMDB_RATING": 8.1,
+        "IMDB_RATING_WEIGHTED": 8.08,
+        "IMDB_VOTES": 1097946,
+        "POSTER_PATH": "/wFSpyMsp7H0ttERbxY7Trlv8xry.jpg",
+        "RUNTIME": 92,
+        "TAGLINE": "It's nothing personal. It's just their job.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 7,
+      "data": {
+        "ID_MOVIE": 2062,
+        "MOVIE_TITLE": "Ratatouille",
+        "DAT_RELEASE": "2007-06-28",
+        "ID_IMDB": "tt0382932",
+        "IMDB_RATING": 8.1,
+        "IMDB_RATING_WEIGHTED": 8.08,
+        "IMDB_VOTES": 973604,
+        "POSTER_PATH": "/t3vaWRPSf6WjDSamIkKDs1iQWna.jpg",
+        "RUNTIME": 111,
+        "TAGLINE": "He's dying to become a chef.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 8,
+      "data": {
+        "ID_MOVIE": 150540,
+        "MOVIE_TITLE": "Inside Out",
+        "DAT_RELEASE": "2015-06-17",
+        "ID_IMDB": "tt2096673",
+        "IMDB_RATING": 8.1,
+        "IMDB_RATING_WEIGHTED": 8.08,
+        "IMDB_VOTES": 938902,
+        "POSTER_PATH": "/2H1TmgdfNtsKlU9jKdeNyYL5y8T.jpg",
+        "RUNTIME": 95,
+        "TAGLINE": "Meet the little voices inside your head.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 9,
+      "data": {
+        "ID_MOVIE": 9806,
+        "MOVIE_TITLE": "The Incredibles",
+        "DAT_RELEASE": "2004-10-27",
+        "ID_IMDB": "tt0317705",
+        "IMDB_RATING": 8,
+        "IMDB_RATING_WEIGHTED": 7.98,
+        "IMDB_VOTES": 923066,
+        "POSTER_PATH": "/2LqaLgk4Z226KkgPJuiOQ58wvrm.jpg",
+        "RUNTIME": 115,
+        "TAGLINE": "Super strength can’t carry a family.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 10,
+      "data": {
+        "ID_MOVIE": 508442,
+        "MOVIE_TITLE": "Soul",
+        "DAT_RELEASE": "2020-12-25",
+        "ID_IMDB": "tt2948372",
+        "IMDB_RATING": 8,
+        "IMDB_RATING_WEIGHTED": 7.96,
+        "IMDB_VOTES": 461296,
+        "POSTER_PATH": "/hm58Jw4Lw8OIeECIq5qyPYhAeRJ.jpg",
+        "RUNTIME": 101,
+        "TAGLINE": "Everybody has a soul. Joe Gardner is about to find his.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 11,
+      "data": {
+        "ID_MOVIE": 863,
+        "MOVIE_TITLE": "Toy Story 2",
+        "DAT_RELEASE": "1999-10-30",
+        "ID_IMDB": "tt0120363",
+        "IMDB_RATING": 7.9,
+        "IMDB_RATING_WEIGHTED": 7.87,
+        "IMDB_VOTES": 688500,
+        "POSTER_PATH": "/4rbcp3ng8n1MKHjpeqW0L7Fnpzz.jpg",
+        "RUNTIME": 92,
+        "TAGLINE": "The toys are back!",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 12,
+      "data": {
+        "ID_MOVIE": 301528,
+        "MOVIE_TITLE": "Toy Story 4",
+        "DAT_RELEASE": "2019-06-19",
+        "ID_IMDB": "tt1979376",
+        "IMDB_RATING": 7.6,
+        "IMDB_RATING_WEIGHTED": 7.56,
+        "IMDB_VOTES": 333488,
+        "POSTER_PATH": "/w9kR8qbmQ01HwnvK4alvnQ2ca0L.jpg",
+        "RUNTIME": 100,
+        "TAGLINE": "The adventure of a lifetime.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 13,
+      "data": {
+        "ID_MOVIE": 260513,
+        "MOVIE_TITLE": "Incredibles 2",
+        "DAT_RELEASE": "2018-06-14",
+        "ID_IMDB": "tt3606756",
+        "IMDB_RATING": 7.5,
+        "IMDB_RATING_WEIGHTED": 7.47,
+        "IMDB_VOTES": 380259,
+        "POSTER_PATH": "/9lFKBtaVIhP7E2Pk0IY1CwTKTMZ.jpg",
+        "RUNTIME": 118,
+        "TAGLINE": "It's been too long, dahlings.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 14,
+      "data": {
+        "ID_MOVIE": 1022789,
+        "MOVIE_TITLE": "Inside Out 2",
+        "DAT_RELEASE": "2024-06-11",
+        "ID_IMDB": "tt22022452",
+        "IMDB_RATING": 7.5,
+        "IMDB_RATING_WEIGHTED": 7.46,
+        "IMDB_VOTES": 263628,
+        "POSTER_PATH": "/vpnVM9B6NMmQpWeZvzLvDESb2QY.jpg",
+        "RUNTIME": 97,
+        "TAGLINE": "Make room for new emotions.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 15,
+      "data": {
+        "ID_MOVIE": 508943,
+        "MOVIE_TITLE": "Luca",
+        "DAT_RELEASE": "2021-06-17",
+        "ID_IMDB": "tt12801262",
+        "IMDB_RATING": 7.4,
+        "IMDB_RATING_WEIGHTED": 7.36,
+        "IMDB_VOTES": 229903,
+        "POSTER_PATH": "/9x4i9uKGXt8IiiIF5Ey0DIoY738.jpg",
+        "RUNTIME": 95,
+        "TAGLINE": "Prepare for an unforgettable trip.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 16,
+      "data": {
+        "ID_MOVIE": 920,
+        "MOVIE_TITLE": "Cars",
+        "DAT_RELEASE": "2006-06-08",
+        "ID_IMDB": "tt0317219",
+        "IMDB_RATING": 7.3,
+        "IMDB_RATING_WEIGHTED": 7.29,
+        "IMDB_VOTES": 554253,
+        "POSTER_PATH": "/2Touk3m5gzsqr1VsvxypdyHY5ci.jpg",
+        "RUNTIME": 117,
+        "TAGLINE": "Ahhh... it's got that new movie smell.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 17,
+      "data": {
+        "ID_MOVIE": 508439,
+        "MOVIE_TITLE": "Onward",
+        "DAT_RELEASE": "2020-02-29",
+        "ID_IMDB": "tt7146812",
+        "IMDB_RATING": 7.3,
+        "IMDB_RATING_WEIGHTED": 7.27,
+        "IMDB_VOTES": 190533,
+        "POSTER_PATH": "/f4aul3FyD3jv3v4bul1IrkWZvzq.jpg",
+        "RUNTIME": 102,
+        "TAGLINE": "Their quest beginneth.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 18,
+      "data": {
+        "ID_MOVIE": 1084244,
+        "MOVIE_TITLE": "Toy Story 5",
+        "DAT_RELEASE": "2026-06-17",
+        "ID_IMDB": "tt29355505",
+        "IMDB_RATING": 7.3,
+        "IMDB_RATING_WEIGHTED": 7.25,
+        "IMDB_VOTES": 107596,
+        "POSTER_PATH": "/sfQtVlIHljToOwYjhe21KPGzZWK.jpg",
+        "RUNTIME": 102,
+        "TAGLINE": "It's on.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 19,
+      "data": {
+        "ID_MOVIE": 62211,
+        "MOVIE_TITLE": "Monsters University",
+        "DAT_RELEASE": "2013-06-19",
+        "ID_IMDB": "tt1453405",
+        "IMDB_RATING": 7.2,
+        "IMDB_RATING_WEIGHTED": 7.19,
+        "IMDB_VOTES": 433585,
+        "POSTER_PATH": "/y7thwJ7z5Bplv6vwl6RI0yteaDD.jpg",
+        "RUNTIME": 104,
+        "TAGLINE": "Before they were incorporated, they had to be educated.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 20,
+      "data": {
+        "ID_MOVIE": 9487,
+        "MOVIE_TITLE": "A Bug's Life",
+        "DAT_RELEASE": "1998-11-25",
+        "ID_IMDB": "tt0120623",
+        "IMDB_RATING": 7.2,
+        "IMDB_RATING_WEIGHTED": 7.19,
+        "IMDB_VOTES": 343052,
+        "POSTER_PATH": "/Ah3J9OJVc2CNCuH2zMydXy9fmIC.jpg",
+        "RUNTIME": 95,
+        "TAGLINE": "An epic of miniature proportions.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 21,
+      "data": {
+        "ID_MOVIE": 127380,
+        "MOVIE_TITLE": "Finding Dory",
+        "DAT_RELEASE": "2016-06-16",
+        "ID_IMDB": "tt2277860",
+        "IMDB_RATING": 7.2,
+        "IMDB_RATING_WEIGHTED": 7.19,
+        "IMDB_VOTES": 342068,
+        "POSTER_PATH": "/3UVe8NL1E2ZdUZ9EDlKGJY5UzE.jpg",
+        "RUNTIME": 97,
+        "TAGLINE": "An unforgettable journey she probably won't remember.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 22,
+      "data": {
+        "ID_MOVIE": 1327819,
+        "MOVIE_TITLE": "Hoppers",
+        "DAT_RELEASE": "2026-03-04",
+        "ID_IMDB": "tt26443616",
+        "IMDB_RATING": 7.2,
+        "IMDB_RATING_WEIGHTED": 7.16,
+        "IMDB_VOTES": 90742,
+        "POSTER_PATH": "/xjtWQ2CL1mpmMNwuU5HeS4Iuwuu.jpg",
+        "RUNTIME": 104,
+        "TAGLINE": "Act natural.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 23,
+      "data": {
+        "ID_MOVIE": 62177,
+        "MOVIE_TITLE": "Brave",
+        "DAT_RELEASE": "2012-06-21",
+        "ID_IMDB": "tt1217209",
+        "IMDB_RATING": 7.1,
+        "IMDB_RATING_WEIGHTED": 7.09,
+        "IMDB_VOTES": 488036,
+        "POSTER_PATH": "/1XAuDtMWpL0sYSFK0R6EZate2Ux.jpg",
+        "RUNTIME": 93,
+        "TAGLINE": "Change your fate.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 24,
+      "data": {
+        "ID_MOVIE": 976573,
+        "MOVIE_TITLE": "Elemental",
+        "DAT_RELEASE": "2023-06-14",
+        "ID_IMDB": "tt15789038",
+        "IMDB_RATING": 7,
+        "IMDB_RATING_WEIGHTED": 7,
+        "IMDB_VOTES": 171342,
+        "POSTER_PATH": "/4Y1WNkd88JXmGfhtWR7dmDAo1T2.jpg",
+        "RUNTIME": 102,
+        "TAGLINE": "Opposites react.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 25,
+      "data": {
+        "ID_MOVIE": 777350,
+        "MOVIE_TITLE": "Dory's Reef Cam",
+        "DAT_RELEASE": "2020-12-18",
+        "ID_IMDB": "tt13496400",
+        "IMDB_RATING": 3.8,
+        "IMDB_RATING_WEIGHTED": 6.91,
+        "IMDB_VOTES": 402,
+        "POSTER_PATH": "/mMWLGu9pFymqipN8yvISHsAaj72.jpg",
+        "RUNTIME": 182,
+        "TAGLINE": "",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 26,
+      "data": {
+        "ID_MOVIE": 508947,
+        "MOVIE_TITLE": "Turning Red",
+        "DAT_RELEASE": "2022-03-10",
+        "ID_IMDB": "tt8097030",
+        "IMDB_RATING": 6.9,
+        "IMDB_RATING_WEIGHTED": 6.91,
+        "IMDB_VOTES": 178544,
+        "POSTER_PATH": "/qsdjk9oAKSQMWs0Vt5Pyfh6O4GZ.jpg",
+        "RUNTIME": 100,
+        "TAGLINE": "Growing up is a beast.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 27,
+      "data": {
+        "ID_MOVIE": 16187,
+        "MOVIE_TITLE": "Buzz Lightyear of Star Command: The Adventure Begins",
+        "DAT_RELEASE": "2000-08-08",
+        "ID_IMDB": "tt0181196",
+        "IMDB_RATING": 6.2,
+        "IMDB_RATING_WEIGHTED": 6.79,
+        "IMDB_VOTES": 6303,
+        "POSTER_PATH": "/sbZ2ETj55ZpumplROESuWCLV3q7.jpg",
+        "RUNTIME": 70,
+        "TAGLINE": "Never fear, Buzz is here...",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 28,
+      "data": {
+        "ID_MOVIE": 105864,
+        "MOVIE_TITLE": "The Good Dinosaur",
+        "DAT_RELEASE": "2015-11-14",
+        "ID_IMDB": "tt1979388",
+        "IMDB_RATING": 6.7,
+        "IMDB_RATING_WEIGHTED": 6.73,
+        "IMDB_VOTES": 143543,
+        "POSTER_PATH": "/8RSkxOO80btfKjyiC5ZiTaCHIT8.jpg",
+        "RUNTIME": 93,
+        "TAGLINE": "A single kindness can change everything.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 29,
+      "data": {
+        "ID_MOVIE": 260514,
+        "MOVIE_TITLE": "Cars 3",
+        "DAT_RELEASE": "2017-06-15",
+        "ID_IMDB": "tt3606752",
+        "IMDB_RATING": 6.7,
+        "IMDB_RATING_WEIGHTED": 6.73,
+        "IMDB_VOTES": 159716,
+        "POSTER_PATH": "/zg5RDxvIIAKsucjuU2EZJIHEIvz.jpg",
+        "RUNTIME": 102,
+        "TAGLINE": "From this moment, everything will change.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 30,
+      "data": {
+        "ID_MOVIE": 1022787,
+        "MOVIE_TITLE": "Elio",
+        "DAT_RELEASE": "2025-06-18",
+        "ID_IMDB": "tt4900148",
+        "IMDB_RATING": 6.6,
+        "IMDB_RATING_WEIGHTED": 6.71,
+        "IMDB_VOTES": 49404,
+        "POSTER_PATH": "/7z8jDiTZZco9moIKpTUImFtTy7o.jpg",
+        "RUNTIME": 98,
+        "TAGLINE": "They asked for our leader. They got... him.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 31,
+      "data": {
+        "ID_MOVIE": 49013,
+        "MOVIE_TITLE": "Cars 2",
+        "DAT_RELEASE": "2011-06-11",
+        "ID_IMDB": "tt1216475",
+        "IMDB_RATING": 6.2,
+        "IMDB_RATING_WEIGHTED": 6.26,
+        "IMDB_VOTES": 266812,
+        "POSTER_PATH": "/okIz1HyxeVOMzYwwHUjH2pHi74I.jpg",
+        "RUNTIME": 106,
+        "TAGLINE": "The mission begins.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 32,
+      "data": {
+        "ID_MOVIE": 718789,
+        "MOVIE_TITLE": "Lightyear",
+        "DAT_RELEASE": "2022-06-15",
+        "ID_IMDB": "tt10298810",
+        "IMDB_RATING": 6.1,
+        "IMDB_RATING_WEIGHTED": 6.21,
+        "IMDB_VOTES": 139840,
+        "POSTER_PATH": "/ox4goZd956BxqJH6iLwhWPL9ct4.jpg",
+        "RUNTIME": 105,
+        "TAGLINE": "Infinity awaits.",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 33,
+      "data": {
+        "ID_MOVIE": 1327821,
+        "MOVIE_TITLE": "Incredibles 3",
+        "DAT_RELEASE": "2028-06-14",
+        "ID_IMDB": "tt33088418",
+        "IMDB_RATING": null,
+        "IMDB_RATING_WEIGHTED": null,
+        "IMDB_VOTES": null,
+        "POSTER_PATH": "/4pGPF8LuneSJKGnfgO70W3zHChF.jpg",
+        "RUNTIME": 0,
+        "TAGLINE": "",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 34,
+      "data": {
+        "ID_MOVIE": 288767,
+        "MOVIE_TITLE": "Pixar Short Films Collection: Volume 1",
+        "DAT_RELEASE": "2007-03-21",
+        "ID_IMDB": "tt4439852",
+        "IMDB_RATING": null,
+        "IMDB_RATING_WEIGHTED": null,
+        "IMDB_VOTES": null,
+        "POSTER_PATH": "/rgzqgBbdClA0nPKsJEjminOQc5t.jpg",
+        "RUNTIME": 75,
+        "TAGLINE": "",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 35,
+      "data": {
+        "ID_MOVIE": 1451567,
+        "MOVIE_TITLE": "Coco 2",
+        "DAT_RELEASE": "2029-11-20",
+        "ID_IMDB": "tt36261036",
+        "IMDB_RATING": null,
+        "IMDB_RATING_WEIGHTED": null,
+        "IMDB_VOTES": null,
+        "POSTER_PATH": "/7YiB8tOQcY8ApdKkCnjQL5jGkIP.jpg",
+        "RUNTIME": 0,
+        "TAGLINE": "",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 36,
+      "data": {
+        "ID_MOVIE": 1497464,
+        "MOVIE_TITLE": "Gatto",
+        "DAT_RELEASE": "2027-03-03",
+        "ID_IMDB": "tt26443610",
+        "IMDB_RATING": null,
+        "IMDB_RATING_WEIGHTED": null,
+        "IMDB_VOTES": null,
+        "POSTER_PATH": "/jNDWZ8hV7LHATIhaA3pDV5iWWcZ.jpg",
+        "RUNTIME": 0,
+        "TAGLINE": "",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 37,
+      "data": {
+        "ID_MOVIE": 1647601,
+        "MOVIE_TITLE": "Monsters, Inc. 3",
+        "DAT_RELEASE": null,
+        "ID_IMDB": "tt40502470",
+        "IMDB_RATING": null,
+        "IMDB_RATING_WEIGHTED": null,
+        "IMDB_VOTES": null,
+        "POSTER_PATH": null,
+        "RUNTIME": 0,
+        "TAGLINE": "",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 38,
+      "data": {
+        "ID_MOVIE": 1647603,
+        "MOVIE_TITLE": "Ghost Market",
+        "DAT_RELEASE": "2028-03-08",
+        "ID_IMDB": "tt40502487",
+        "IMDB_RATING": null,
+        "IMDB_RATING_WEIGHTED": null,
+        "IMDB_VOTES": null,
+        "POSTER_PATH": "/yrArRw51BQMIy1y1z3w1XURA7V7.jpg",
+        "RUNTIME": 0,
+        "TAGLINE": "",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 39,
+      "data": {
+        "ID_MOVIE": 1647611,
+        "MOVIE_TITLE": "Untitled Pixar Musical",
+        "DAT_RELEASE": null,
+        "ID_IMDB": "tt40502483",
+        "IMDB_RATING": null,
+        "IMDB_RATING_WEIGHTED": null,
+        "IMDB_VOTES": null,
+        "POSTER_PATH": null,
+        "RUNTIME": 0,
+        "TAGLINE": "",
+        "ID_CRITERION_SPINE": null
+      }
+    },
+    {
+      "index": 40,
+      "data": {
+        "ID_MOVIE": 1680650,
+        "MOVIE_TITLE": "Loving Dory",
+        "DAT_RELEASE": "2027-03-05",
+        "ID_IMDB": "tt43621603",
+        "IMDB_RATING": null,
+        "IMDB_RATING_WEIGHTED": null,
+        "IMDB_VOTES": null,
+        "POSTER_PATH": "/ew56ndWFPG2VdVmbd2Dsi2mZhuv.jpg",
+        "RUNTIME": 0,
+        "TAGLINE": "",
+        "ID_CRITERION_SPINE": null
+      }
+    }
+  ]
+}

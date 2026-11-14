@@ -1522,8 +1522,9 @@ def show_results_as_tool_definition() -> dict[str, Any]:
             "(counts per bin of one quantity), share (the parts of a whole as one bar, 'as a "
             "pie'), flags (countries with their flags), scatter (one dot per title over two "
             "quantities, x against y), map (countries shaded on a world map), groups (the "
-            "rows under their groups, 'grouped by trilogy') or lineage (the works of a remake "
-            "and adaptation lineage as linked cards, 'as a chain'). Returns ok false "
+            "rows under their groups, 'grouped by trilogy'), lineage (the works of a remake "
+            "and adaptation lineage as linked cards, 'as a chain') or cover-flow (the poster "
+            "cards as a carousel, one in the centre, 'as a carousel'). Returns ok false "
             "with the available views when this result cannot be shown that way."
         ),
         "parameters": {
@@ -2062,7 +2063,8 @@ ON_SCREEN_INSTRUCTIONS = (
     "shows the rows in. map: the places (or countries) on a world map, with numbered markers "
     "and the numbered list under it. scatter, ranked-bars, histogram, share-bar, "
     "trend-columns, timeline: a chart. chain: the lineage of remakes and adaptations. "
-    "hierarchy: the rows under their groups. card-grid: poster cards. entity-page: the "
+    "hierarchy: the rows under their groups. card-grid: poster cards. cover-flow: the "
+    "poster cards as a carousel, one in the centre. entity-page: the "
     "record's page. table: a table. Never say the screen cannot show a map, a chart or a "
     "picture: describe what is on screen."
 )
@@ -2199,8 +2201,8 @@ REPRESENTATION_REQUEST_INSTRUCTIONS = (
     "When the user asks to see the results already on screen in another form, without naming "
     "a new subject or filter ('show it as a table', 'as a chart', 'with the posters', 'on a "
     "timeline', 'side by side', 'as a pie', 'with the flags', 'as a scatter plot', 'on a "
-    "map', 'in groups', 'as a lineage', 'en tableau', 'en graphique', 'en frise', 'côte à côte', 'en camembert', "
-    "'en nuage de points', 'sur une carte', 'par groupe', 'en filiation', 'avec les affiches'), call "
+    "map', 'in groups', 'as a lineage', 'as a carousel', 'en tableau', 'en graphique', 'en frise', 'côte à côte', 'en camembert', "
+    "'en nuage de points', 'sur une carte', 'par groupe', 'en filiation', 'en carrousel', 'avec les affiches'), call "
     "show_results_as with that view, never query_text2sql and never a detail tool: it redraws "
     "the same rows. Then confirm in a few words. If it returns ok false, say in one short "
     "sentence that this result cannot be shown that way and name the available_views; do not "
@@ -4837,6 +4839,7 @@ HARNESS_LOG_EVENTS = frozenset({
     # not the render decision taken from it, and a screen that "did not follow the
     # conversation" is indistinguishable from a screen that was deliberately left alone.
     "forced_search_render_skipped",
+    "detail_render_skipped",  # 2026-11-14, detailCallKeepsSearchOnScreen() in app.js
     # VOICE-AGENT-158: one entry per photo the Look button sends, with its source (camera or
     # library), the size after the client-side resize, the resize and deposit wall clocks, and the
     # image_ref the API gave back — never the bytes. This is the latency the ticket promises to

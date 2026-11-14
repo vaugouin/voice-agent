@@ -341,6 +341,12 @@ let lastToolOutput = null;
 // VOICE-AGENT-198: the last detail record the model fetched, so ask_about_record can still find
 // a record after the page on screen changed or when no detail page is painted.
 let lastDetailCall = null;
+// 2026-11-14: a detail look-up the model makes in the turn of a search must not replace that
+// search's result (detailCallKeepsSearchOnScreen()). The serial counts the user's turns (a spoken
+// commit, a typed message on either path, a typed photo turn); searchOnScreen is the last search
+// drawn, {turn, rows, recordKey}, recordKey naming its one record (detailRecordKey()).
+let userTurnSerial = 0;
+let searchOnScreen = null;
 let pendingReconnectResume = null;
 const inputTranscripts = new Map();
 let pendingResponseFallbackTimer = null;
@@ -5169,11 +5175,12 @@ function renderRawTable(container, rows, columns) {
 // lot A) joined the list; before that an API sending them fell back to the front's own chooser.
 // Phase 2 lot B: `compare-cards`, `fact-card` and `verdict` joined them on 2026-11-11, and phase 2
 // lot C `histogram`, `share-bar` and `flag-list` the same day; phase 3 lot A `scatter` on 2026-11-12,
-// lot B `map` and lot C `hierarchy` the same day, lot E `chain` too.
+// lot B `map` and lot C `hierarchy` the same day, lot E `chain` too. `cover-flow` (the card
+// grid's cards as a poster carousel) on 2026-11-14.
 const T2S_KNOWN_REPRESENTATIONS = [
   "entity-page", "card-grid", "value-cards", "number-card", "stat-strip", "ranked-bars", "table",
   "timeline", "sequence-strip", "trend-columns", "compare-cards", "fact-card", "verdict",
-  "histogram", "share-bar", "flag-list", "scatter", "map", "hierarchy", "chain",
+  "histogram", "share-bar", "flag-list", "scatter", "map", "hierarchy", "chain", "cover-flow",
 ];
 // Chips only where switching means something: several entity rows, or a table of them. An
 // entity page and a one-row number keep their single form (VOICE-AGENT-247), even though the
@@ -5185,7 +5192,7 @@ const T2S_KNOWN_REPRESENTATIONS = [
 const T2S_SWITCHABLE_REPRESENTATIONS = [
   "card-grid", "value-cards", "ranked-bars", "table", "timeline", "sequence-strip", "trend-columns",
   "compare-cards", "fact-card", "verdict", "histogram", "share-bar", "flag-list", "scatter", "map", "hierarchy",
-  "chain",
+  "chain", "cover-flow",
 ];
 // The two forms that ARE the answer to the question (a yes or no, the one value asked for): a
 // remembered chip choice from an earlier list never replaces them; a chip on this result still does.
@@ -5209,6 +5216,7 @@ const T2S_REPRESENTATION_LABELS = {
   map: ["Map", "Carte"],
   hierarchy: ["Groups", "Groupes"],
   chain: ["Lineage", "Filiation"],
+  "cover-flow": ["Cover flow", "Défilement"],
 };
 // Column names the summary line and the value cards name in words. Anything else falls back to
 // prettyLabel() of the column name, in lower case.
@@ -5517,7 +5525,9 @@ function text2SqlSummaryLine(upstream, { rep = "", lang = "", spoken = false, ha
   if (!facts || typeof facts !== "object") {
     return "";
   }
-  const shown = rep || String(upstream?.representation || "");
+  // Cover flow: the card grid's cards in a carousel, so the card grid's sentence word for word.
+  const asked = rep || String(upstream?.representation || "");
+  const shown = asked === "cover-flow" ? "card-grid" : asked;
   // Phase 2 lot B: a verdict speaks even with no row (its No), so it is answered before the count
   // test; compare cards and the fact card say their own sentence too.
   if (shown === "verdict") {
@@ -6220,6 +6230,7 @@ const T2S_REQUESTED_VIEW_TARGETS = {
   map: ["map"],
   groups: ["hierarchy"],
   lineage: ["chain"],
+  "cover-flow": ["cover-flow"],
 };
 const T2S_REQUESTED_VIEW_NOUNS = {
   table: ["a table", "en tableau"],
@@ -6239,6 +6250,7 @@ const T2S_REQUESTED_VIEW_NOUNS = {
   map: ["a map", "sur une carte"],
   groups: ["groups", "par groupe"],
   lineage: ["a lineage", "en filiation"],
+  "cover-flow": ["a cover flow", "en défilement"],
 };
 const T2S_REQUESTED_VIEW_DONE = {
   table: ["Here it is as a table.", "Voici le résultat en tableau."],
@@ -6258,6 +6270,7 @@ const T2S_REQUESTED_VIEW_DONE = {
   map: ["Here it is on a map.", "Voici la carte."],
   hierarchy: ["Here it is, grouped.", "Voici le résultat par groupe."],
   chain: ["Here is the lineage.", "Voici la filiation."],
+  "cover-flow": ["Here they are as a cover flow.", "Les voici en défilement."],
 };
 
 function text2SqlRequestedView(text) {
@@ -7907,6 +7920,109 @@ function text2SqlChainSummary(upstream, { lang = "" } = {}) {
   return fr ? `${s1} ; ${s2}.` : `${s1}; ${s2}.`;
 }
 
+// 2026-11-14. A detail tool call made in the same user turn as a search keeps that search's
+// result on screen in two cases; the detail still goes to the model, only the painting is
+// withheld. (1) The search drew two rows or more and the model made the call on its own, not
+// forced by the server (log of 20:00:08: the Seven Samurai lineage, three rows drawn as a chain,
+// ended on the page of the third film the model looked up to write its answer). (2) The search
+// drew one record and the call asks for that same record, forced or not: its page is already on
+// screen, with the feedback pair of the search, which a redraw from the detail tool would drop.
+// A tap on a card never comes through here, and a turn whose only call is a detail (the user
+// asked about one film) has no search and still opens the page.
+function detailCallKeepsSearchOnScreen({ search = null, turn = 0, forced = false, detailKey = "" } = {}) {
+  if (!search || search.turn !== turn) {
+    return false;
+  }
+  if (search.rows >= 2) {
+    return !forced;
+  }
+  return search.rows === 1 && Boolean(search.recordKey) && search.recordKey === detailKey;
+}
+
+// The record a detail call or a result row stands for: the tool and its ids, "" when none.
+function detailRecordKey(toolName, args) {
+  if (!toolName || !args || typeof args !== "object") {
+    return "";
+  }
+  const text = (value) => (value === null || value === undefined ? "" : String(value).trim());
+  const nested = toolName === "get_season_detail" || toolName === "get_episode_detail";
+  const parts = nested
+    ? [text(args.id_serie), text(args.season_number), text(args.episode_number)]
+    : [text(args.id) || text(args.id_serie)];
+  return parts[0] ? `${toolName}|${parts.join("|")}` : "";
+}
+
+// Cover flow (2026-11-14; contract table `cover-flow` in fastapi-text2sql's README). The card
+// grid's own records, cards and caption, drawn as a poster carousel: one card in the centre
+// facing the viewer, up to four on each side turned towards it. Pure helpers, pinned by
+// tools/check-result-representations.mjs with the cf-* fixtures; the drawing is renderCoverFlow().
+// t2s-front has the twin, with the same slots and the same fallback.
+const T2S_COVER_FLOW_SIDE = 4;
+const T2S_COVER_FLOW_PICTURE = /(POSTER_PATH|PROFILE_PATH|LOGO_PATH|IMAGE_PATH)$/;
+
+// Rows carrying a picture, by the API's own test (a non-empty *_POSTER_PATH, *_PROFILE_PATH,
+// *_LOGO_PATH or *_IMAGE_PATH column).
+function text2SqlPictureCount(rows) {
+  return text2SqlRecords(rows).filter((record) => Object.entries(record).some(([key, value]) =>
+    T2S_COVER_FLOW_PICTURE.test(String(key).toUpperCase()) &&
+    value !== null && value !== undefined && String(value).trim() !== "")).length;
+}
+
+// A carousel of fewer than two pictures is a grid with extra steps: the card grid is drawn instead.
+function text2SqlCoverFlowUsable(rows) {
+  return text2SqlPictureCount(rows) >= 2;
+}
+
+// Where card `index` stands when card `current` is in the centre: its side (-1 left, 1 right, 0
+// centre), its distance k, its scale, its stacking order, and whether it is hidden (beyond four
+// on a side, still in the DOM) or loads its picture (the visible cards and one more each side).
+function text2SqlCoverFlowSlot(index, current, side = T2S_COVER_FLOW_SIDE) {
+  const offset = index - current;
+  const k = Math.abs(offset);
+  return {
+    side: Math.sign(offset),
+    k,
+    scale: k ? 0.85 : 1,
+    z: 100 - k,
+    hidden: k > side,
+    load: k <= side + 1,
+    eager: k <= 1,
+  };
+}
+
+// The card in the centre after a key, a button or a swipe of `steps` cards; never past an end
+// (no wrap-around).
+function text2SqlCoverFlowStep(current, count, key, steps = 1) {
+  const last = Math.max(0, Number(count) - 1);
+  let next = Number(current) || 0;
+  if (key === "ArrowLeft" || key === "prev") {
+    next -= steps;
+  } else if (key === "ArrowRight" || key === "next") {
+    next += steps;
+  } else if (key === "Home") {
+    next = 0;
+  } else if (key === "End") {
+    next = last;
+  }
+  return Math.min(last, Math.max(0, next));
+}
+
+// A horizontal drag of `dx` pixels in cards to move: none up to 40 px, one beyond, one more per
+// half card width on a long drag. Dragging left brings the next cards in (positive steps).
+function text2SqlCoverFlowSwipeSteps(dx, cardWidth) {
+  const distance = Math.abs(Number(dx) || 0);
+  if (distance <= 40) {
+    return 0;
+  }
+  const unit = Math.max(40, (Number(cardWidth) || 150) / 2);
+  const steps = Math.max(1, Math.floor(distance / unit));
+  return dx < 0 ? steps : -steps;
+}
+
+function text2SqlCoverFlowCounter(current, count) {
+  return `${(Number(current) || 0) + 1} / ${Number(count) || 0}`;
+}
+
 // One result row as a poster card, with the value(s) under it when value cards are being drawn.
 function appendText2SqlRowCard(grid, record) {
   const cardSpec = cardSpecFromRecord(record);
@@ -7978,7 +8094,12 @@ function renderText2SqlView(view) {
   body.dataset.representation = rep;
   const columns = text2SqlResultColumns(upstream);
   activeValueColumns = rep === "value-cards" ? text2SqlValueColumns(columns, upstream?.intent) : [];
-  if (T2S_GRID_REPRESENTATIONS.includes(rep)) {
+  // Cover flow: with fewer than two pictures, the card grid is drawn instead.
+  if (rep === "cover-flow" && text2SqlCoverFlowUsable(rows)) {
+    renderCoverFlow(body, view);
+    return null;
+  }
+  if (T2S_GRID_REPRESENTATIONS.includes(rep) || rep === "cover-flow") {
     const section = document.createElement("div");
     section.className = "search-poster-results";
     const grid = document.createElement("div");
@@ -7995,6 +8116,184 @@ function renderText2SqlView(view) {
   }
   renderText2SqlRepresentation(rep, body, rows, upstream);
   return null;
+}
+
+// Cover flow: the cards appendText2SqlRowCard() builds for the card grid, in the same order,
+// placed in 3D around the centre one (the transforms are in styles.css, driven by the --cf-*
+// properties set here from text2SqlCoverFlowSlot()). A side card brings itself to the centre;
+// the centre card opens the record exactly as in the grid. Pictures beyond the visible cards wait
+// in data-cf-src, so the carousel never loads more than the grid would.
+function renderCoverFlow(container, view) {
+  const fr = t2sLang(view.lang) === "fr";
+  const wrap = document.createElement("div");
+  wrap.className = "t2sCoverFlow";
+  const stage = document.createElement("div");
+  stage.className = "t2sCoverFlowStage";
+  stage.tabIndex = 0;
+  stage.setAttribute("role", "region");
+  stage.setAttribute("aria-roledescription", fr ? "carrousel" : "carousel");
+  stage.setAttribute("aria-label", text2SqlViewSummaryLine(view) || text2SqlRepresentationLabel("cover-flow", view.lang));
+  const track = document.createElement("div");
+  track.className = "t2sCoverFlowTrack";
+  view.rows.forEach((item) => {
+    const record = item?.data || item;
+    if (record && typeof record === "object") {
+      appendText2SqlRowCard(track, record);
+    }
+  });
+  const cards = Array.from(track.children);
+  cards.forEach((card) => {
+    card.classList.add("t2sCoverFlowCard");
+    const title = card.querySelector(".search-poster-card-title")?.textContent?.trim() || "";
+    const link = card.querySelector(".search-poster-card-link");
+    if (link && title && link.tagName !== "DIV") {
+      link.setAttribute("aria-label", title);
+    }
+    card.querySelectorAll("img").forEach((img) => {
+      img.draggable = false;
+      const src = img.getAttribute("src");
+      if (src) {
+        img.dataset.cfSrc = src;
+        img.removeAttribute("src");
+      }
+    });
+  });
+  stage.append(track);
+
+  const info = document.createElement("div");
+  info.className = "t2sCoverFlowInfo";
+  const titleLine = document.createElement("p");
+  titleLine.className = "t2sCoverFlowTitle";
+  const subLine = document.createElement("p");
+  subLine.className = "t2sCoverFlowSub";
+  const nav = document.createElement("div");
+  nav.className = "t2sCoverFlowNav";
+  const navButton = (cls, glyph, label) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `t2sCoverFlowButton ${cls}`;
+    button.textContent = glyph;
+    button.setAttribute("aria-label", label);
+    button.title = label;
+    return button;
+  };
+  const prev = navButton("isPrev", "\u2190", fr ? "Précédent" : "Previous");
+  const next = navButton("isNext", "\u2192", fr ? "Suivant" : "Next");
+  const counter = document.createElement("span");
+  counter.className = "t2sCoverFlowCount";
+  counter.setAttribute("aria-live", "polite");
+  nav.append(prev, counter, next);
+  info.append(titleLine, subLine, nav);
+  wrap.append(stage, info);
+  container.append(wrap);
+
+  let current = text2SqlCoverFlowStep(view.coverFlowIndex || 0, cards.length, "");
+  const place = () => {
+    cards.forEach((card, index) => {
+      const slot = text2SqlCoverFlowSlot(index, current);
+      card.style.setProperty("--cf-side", String(slot.side));
+      card.style.setProperty("--cf-k", String(slot.k));
+      card.style.setProperty("--cf-scale", String(slot.scale));
+      card.style.zIndex = String(slot.z);
+      card.style.visibility = slot.hidden ? "hidden" : "";
+      card.classList.toggle("isCenter", slot.k === 0);
+      if (slot.hidden) {
+        card.setAttribute("aria-hidden", "true");
+      } else {
+        card.removeAttribute("aria-hidden");
+      }
+      if (slot.load) {
+        card.querySelectorAll("img[data-cf-src]").forEach((img) => {
+          img.loading = slot.eager ? "eager" : "lazy";
+          img.src = img.dataset.cfSrc;
+          delete img.dataset.cfSrc;
+        });
+      }
+    });
+    const centre = cards[current];
+    titleLine.textContent = centre?.querySelector(".search-poster-card-title")?.textContent || "";
+    const sub = centre?.querySelector(".search-poster-card-year")?.textContent || "";
+    subLine.textContent = sub;
+    subLine.hidden = !sub;
+    counter.textContent = text2SqlCoverFlowCounter(current, cards.length);
+    prev.disabled = current <= 0;
+    next.disabled = current >= cards.length - 1;
+    view.coverFlowIndex = current;
+  };
+  const go = (index) => {
+    const target = Math.min(cards.length - 1, Math.max(0, index));
+    if (target === current) {
+      return;
+    }
+    const focusInTrack = track.contains(document.activeElement);
+    current = target;
+    place();
+    if (focusInTrack) {
+      cards[current]?.querySelector(".search-poster-card-link")?.focus?.({ preventScroll: true });
+    }
+  };
+  prev.addEventListener("click", () => go(text2SqlCoverFlowStep(current, cards.length, "prev")));
+  next.addEventListener("click", () => go(text2SqlCoverFlowStep(current, cards.length, "next")));
+  stage.addEventListener("keydown", (event) => {
+    if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) {
+      return;
+    }
+    event.preventDefault();
+    go(text2SqlCoverFlowStep(current, cards.length, event.key));
+  });
+  // A drag that moved the carousel is not a click on the card it ended over.
+  let dragStartX = null;
+  let dragged = false;
+  stage.addEventListener("dragstart", (event) => event.preventDefault());
+  stage.addEventListener("pointerdown", (event) => {
+    if (event.pointerType === "mouse" && event.button !== 0) {
+      return;
+    }
+    dragStartX = event.clientX;
+    dragged = false;
+  });
+  stage.addEventListener("pointerup", (event) => {
+    if (dragStartX === null) {
+      return;
+    }
+    const steps = text2SqlCoverFlowSwipeSteps(event.clientX - dragStartX, cards[current]?.offsetWidth);
+    dragStartX = null;
+    if (steps) {
+      dragged = true;
+      go(current + steps);
+    }
+  });
+  stage.addEventListener("pointercancel", () => {
+    dragStartX = null;
+  });
+  let wheel = 0;
+  stage.addEventListener("wheel", (event) => {
+    if (Math.abs(event.deltaX) <= Math.abs(event.deltaY)) {
+      return;
+    }
+    event.preventDefault();
+    wheel += event.deltaX;
+    if (Math.abs(wheel) >= 60) {
+      go(current + Math.sign(wheel));
+      wheel = 0;
+    }
+  }, { passive: false });
+  track.addEventListener("click", (event) => {
+    if (dragged) {
+      dragged = false;
+      event.preventDefault();
+      event.stopPropagation();
+      return;
+    }
+    const card = event.target.closest?.(".t2sCoverFlowCard");
+    const index = card ? cards.indexOf(card) : -1;
+    if (index >= 0 && index !== current) {
+      event.preventDefault();
+      event.stopPropagation();
+      go(index);
+    }
+  }, true);
+  place();
 }
 
 function updateText2SqlViewChrome(view) {
@@ -10791,6 +11090,14 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
   if (!append && isSearchContinuationPage(output, upstream, args)) {
     append = true;
   }
+  // The search now on screen, for the detail calls of the same turn (detailCallKeepsSearchOnScreen).
+  if (!append) {
+    const single = rows.length === 1 ? (rows[0]?.data || rows[0]) : null;
+    const request = single && typeof single === "object" ? detailRequestFromRecord(single) : null;
+    searchOnScreen = rows.length
+      ? { turn: userTurnSerial, rows: rows.length, recordKey: request ? detailRecordKey(request.toolName, request) : "" }
+      : null;
+  }
   const outputSignature = searchPageSignature(output, args, upstream, rows);
   if (!append && isSameRenderedPageView(outputSignature)) {
     resultsPanel.hidden = false;
@@ -10910,7 +11217,7 @@ async function renderText2SqlResult(output, args, { append = false, skipHistory 
     if (
       T2S_SWITCHABLE_REPRESENTATIONS.includes(hintedRepresentation) &&
       (rows.length || hintedRepresentation === "verdict") &&
-      !(rows.length === 1 && T2S_GRID_REPRESENTATIONS.includes(hintedRepresentation))
+      !(rows.length === 1 && (T2S_GRID_REPRESENTATIONS.includes(hintedRepresentation) || hintedRepresentation === "cover-flow"))
     ) {
       const chips = text2SqlChipOptions(upstream);
       const chipsBar = chips.length ? buildText2SqlChips(chips, hintedRepresentation) : null;
@@ -12434,6 +12741,7 @@ function canSendTypedRealtimeTurn() {
 }
 
 function sendTypedRealtimeTurn(text, { createResponse = true } = {}) {
+  userTurnSerial += 1;
   clearAgentAboutRequest();
   const interruptedResponse = Boolean(activeResponseId);
   const interruptedAudio = Boolean(activeAudioResponseId);
@@ -12609,6 +12917,7 @@ async function sendTextChatMessage(text, { source = "typed", imageRef = "" } = {
   // readable without pretending the user typed anything.
   const transcript = text || "📷 Photo";
   lastUserTranscript = transcript;
+  userTurnSerial += 1;
   activeUiLanguage = detectUiLanguageFromText(text);
   addRetainedContext({ type: "user", text: transcript });
   setStatus(attachedImageRef ? "Reading the photo" : "Thinking in text", "live");
@@ -12672,7 +12981,21 @@ async function sendTextChatMessage(text, { source = "typed", imageRef = "" } = {
           ...compactToolContext(toolArgs, toolOutput),
         });
       } else if (DETAIL_TOOL_ENTITIES[toolResult.name]) {
-        renderEntityDetailOutput(toolOutput, toolArgs);
+        if (detailCallKeepsSearchOnScreen({
+          search: searchOnScreen,
+          turn: userTurnSerial,
+          forced: toolResult.forced === true,
+          detailKey: detailRecordKey(toolResult.name, toolArgs),
+        })) {
+          clientLog("detail_render_skipped", {
+            source: "text",
+            name: toolResult.name,
+            id: toolArgs.id ?? null,
+            reason: searchOnScreen.rows >= 2 ? "multi_row_result_on_screen" : "same_record_on_screen",
+          });
+        } else {
+          renderEntityDetailOutput(toolOutput, toolArgs);
+        }
         if (!isCurrentTextChatRequest(requestGeneration, requestAbortController)) {
           return;
         }
@@ -14678,6 +15001,7 @@ async function sendLookVoiceTurn(imageRef, capture, options = {}) {
 
   const transcript = words || "📷 Photo";
   if (!spokenTrigger) {
+    userTurnSerial += 1;
     lastUserTranscript = transcript;
     activeUiLanguage = detectUiLanguageFromText(words);
     addRetainedContext({ type: "user", text: transcript });
@@ -16421,9 +16745,24 @@ async function handleFunctionCall(item) {
   // VOICE-AGENT-185: read BEFORE setLoadingResults() clears the panel, because it is the only
   // moment at which "was the user looking at something" still has an answer.
   const hadResultsOnScreen = !resultsPanel.hidden;
+  // A model's detail look-up in the turn of a several-row search leaves that result on screen.
+  const keepSearchOnScreen = item.name !== "query_text2sql" && detailCallKeepsSearchOnScreen({
+    search: searchOnScreen,
+    turn: userTurnSerial,
+    detailKey: detailRecordKey(item.name, args),
+  });
+  if (keepSearchOnScreen) {
+    clientLog("detail_render_skipped", {
+      source: "voice",
+      name: item.name,
+      call_id: item.call_id,
+      id: args.id ?? null,
+      reason: searchOnScreen.rows >= 2 ? "multi_row_result_on_screen" : "same_record_on_screen",
+    });
+  }
   if (item.name === "query_text2sql") {
     setLoadingResults(args.query, args.ui_language);
-  } else {
+  } else if (!keepSearchOnScreen) {
     setLoadingEntityDetail(item.name, args);
   }
   let output;
@@ -16482,7 +16821,7 @@ async function handleFunctionCall(item) {
         const rendered = await renderText2SqlResult(output, args);
         singleRecordRender = rendered?.singleRecord || null;
       }
-    } else {
+    } else if (!keepSearchOnScreen) {
       renderEntityDetailOutput(output, args);
     }
   } catch (error) {
@@ -16490,7 +16829,7 @@ async function handleFunctionCall(item) {
     clientLog("tool_call_error", { name: item.name, call_id: item.call_id, error: error.message }, "error");
     if (item.name === "query_text2sql") {
       await renderText2SqlResult(output, args);
-    } else {
+    } else if (!keepSearchOnScreen) {
       renderEntityDetailOutput(output, args);
     }
   } finally {
@@ -16841,6 +17180,7 @@ async function handleServerEvent(event) {
   }
 
   if (event.type === "input_audio_buffer.committed") {
+    userTurnSerial += 1;
     clearAgentAboutRequest();
     setStatus("Thinking", "live");
     scheduleResponseFallback();
@@ -17930,6 +18270,7 @@ function clearConversationUi() {
 
 function startNewConversation() {
   manuallyStopped = true;
+  searchOnScreen = null;
   pendingRealtimeTextTurns = [];
   cancelIdleDictation("new conversation");
   cancelAssistantOutput("new conversation");

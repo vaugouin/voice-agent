@@ -5772,3 +5772,111 @@ button.t2sDrill:focus-visible {
   }
 }
 
+
+/* Cover flow (2026-11-14): the card grid's cards as a poster carousel, one in the centre facing
+   the viewer, up to four on each side turned towards it (renderCoverFlow() in app.js sets
+   --cf-side, --cf-k and --cf-scale on each card from text2SqlCoverFlowSlot()). The stage clips
+   its own overflow, which is what keeps a 390 px phone free of page-level scroll. The selectors
+   carry the track so the grid's hover lift and the spoken-card lift never replace the 3D
+   transform. Mirror of t2s-front's .t2sCoverFlow. */
+.t2sCoverFlow {
+  background: var(--bg-tertiary);
+  border-radius: 8px;
+  contain: inline-size;
+  overflow: hidden;
+  padding: 0.75rem 0 1rem;
+}
+.t2sCoverFlowStage {
+  --cf-w: clamp(150px, 12vw + 60px, 210px);
+  background: radial-gradient(ellipse 60% 22% at 50% 92%, rgb(255 255 255 / 7%), transparent 70%);
+  height: calc(var(--cf-w) * 1.8);
+  outline: none;
+  overflow: hidden;
+  perspective: 1000px;
+  position: relative;
+  touch-action: pan-y;
+  user-select: none;
+}
+.t2sCoverFlowStage:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--accent-secondary);
+}
+.t2sCoverFlowTrack {
+  inset: 0;
+  position: absolute;
+  transform-style: preserve-3d;
+}
+.t2sCoverFlowTrack > .search-poster-card,
+.t2sCoverFlowTrack > .search-poster-card:hover,
+.t2sCoverFlowTrack > .search-poster-card.isSpokenActive {
+  left: 50%;
+  margin: calc(var(--cf-w) * -0.75) 0 0 calc(var(--cf-w) * -0.5);
+  position: absolute;
+  top: 50%;
+  transform:
+    translateX(calc(var(--cf-side, 0) * (var(--cf-w) * 0.66 + (var(--cf-k, 0) - 1) * var(--cf-w) * 0.3)))
+    rotateY(calc(var(--cf-side, 0) * -60deg))
+    scale(var(--cf-scale, 1));
+  transition: transform 350ms ease, filter 350ms ease;
+  width: var(--cf-w);
+}
+.t2sCoverFlowTrack > .search-poster-card:not(.isCenter) {
+  box-shadow: 0 6px 14px rgb(0 0 0 / 55%);
+  filter: brightness(0.72);
+}
+.t2sCoverFlowTrack > .search-poster-card.isCenter {
+  box-shadow: 0 16px 32px rgb(0 0 0 / 60%);
+}
+.t2sCoverFlowTrack .search-poster-card-text,
+.t2sCoverFlowTrack > .search-poster-card:not(.isCenter) .search-poster-card-reveal {
+  display: none;
+}
+.t2sCoverFlowTrack > .search-poster-card:not(.isCenter):hover img {
+  transform: none;
+}
+.t2sCoverFlowInfo {
+  padding: 0.25rem 1rem 0;
+  text-align: center;
+}
+.t2sCoverFlowTitle {
+  color: var(--text-primary);
+  font-size: 1rem;
+  font-weight: 600;
+  line-height: 1.3;
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.t2sCoverFlowSub {
+  color: var(--text-secondary);
+  font-size: 0.88rem;
+  margin: 0.15rem 0 0;
+}
+.t2sCoverFlowNav {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  justify-content: center;
+  margin-top: 0.6rem;
+}
+.t2sCoverFlowButton {
+  font-size: 1.5rem;
+  line-height: 1;
+  min-height: 42px;
+  min-width: 56px;
+  padding: 0 0.75rem;
+}
+.t2sCoverFlowButton:disabled {
+  cursor: default;
+  opacity: 0.4;
+}
+.t2sCoverFlowCount {
+  color: var(--text-secondary);
+  font-variant-numeric: tabular-nums;
+  min-width: 4.5em;
+}
+@media (prefers-reduced-motion: reduce) {
+  .t2sCoverFlowTrack > .search-poster-card,
+  .t2sCoverFlowTrack > .search-poster-card:hover,
+  .t2sCoverFlowTrack > .search-poster-card.isSpokenActive {
+    transition: none;
+  }
+}

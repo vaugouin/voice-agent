@@ -4,14 +4,14 @@
     "souls/_core.md": "7ca162daf96260ec8103a457d9ced8c78d2782a2deeb94f2512c053123d848cd"
   },
   "instructions": {
-    "voice/focus=False": "55aab56127641800501b1fbb2a7a89ba7530cc4003d42f357a02de99712f972d",
-    "voice/focus=True": "b589ea45cdf51fda3ffb9a97fc76262086c7374f523076a694cab17f49d25e0d",
-    "text/en/image=False": "18f87f88c3daf340fac02fc1a60f62d7f2de89117e6ef26f4e054832e045c7fa",
-    "text/en/image=True": "bc1d8dabebb0b495034886f29e1ef20c833207cb729c6519f8e4ee497ab2f1da",
+    "voice/focus=False": "6b1a6269b4d120dd51c7bc967467520a4b471cc390f8e717c34efe210fcdf495",
+    "voice/focus=True": "279bf8158a28bfac9691a72c93a5d54e4ffbb10ac12163f72b59d37675028e70",
+    "text/en/image=False": "790f6519964ccdd9e026919227dc02c5ec67a5f4c0763dac818973d2f7c6ffe8",
+    "text/en/image=True": "532585e69dfe63f2e16b8e347f5ab8c86de9b0d480c7ee9d9b274c16f9616a9e",
     "brief/en/image=False": "ec173cbc267834c4e965e70648133f68c776e6545234d4f92a1a187f9c38d779",
     "deep/en/image=False": "7c737d038abe209f9bfd8c7a56009fa33349c242acccd41fd62bb0766dda4fbe",
-    "text/fr/image=False": "18f87f88c3daf340fac02fc1a60f62d7f2de89117e6ef26f4e054832e045c7fa",
-    "text/fr/image=True": "bc1d8dabebb0b495034886f29e1ef20c833207cb729c6519f8e4ee497ab2f1da",
+    "text/fr/image=False": "790f6519964ccdd9e026919227dc02c5ec67a5f4c0763dac818973d2f7c6ffe8",
+    "text/fr/image=True": "532585e69dfe63f2e16b8e347f5ab8c86de9b0d480c7ee9d9b274c16f9616a9e",
     "brief/fr/image=False": "b0f64510954e0c3a009617941f75fca8c64f2a6e7beeb3f1a9933c3db70b2a17",
     "deep/fr/image=False": "973cafd527d4b3650f8e9209e07e3bc7251d5891b460c195546e39bab3518913"
   }

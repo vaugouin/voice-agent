@@ -1,0 +1,225 @@
+{
+  "question": "Which actors played James Bond?",
+  "api_version": "1.1.20",
+  "ui_language": "en",
+  "answer": "Here are the actors who played James Bond in movies or TV series.",
+  "representation": "card-grid",
+  "representation_options": [
+    "card-grid",
+    "cover-flow",
+    "table"
+  ],
+  "result_kind": "entity_rows",
+  "result_columns": [
+    {
+      "name": "ID_PERSON",
+      "role": "entity_id",
+      "unit": null
+    },
+    {
+      "name": "PERSON_NAME",
+      "role": "label",
+      "unit": null
+    },
+    {
+      "name": "POPULARITY",
+      "role": "metric",
+      "unit": null,
+      "ordered": "desc"
+    },
+    {
+      "name": "KNOWN_FOR_DEPARTMENT",
+      "role": "other",
+      "unit": null
+    },
+    {
+      "name": "BIRTH_YEAR",
+      "role": "date",
+      "unit": null
+    },
+    {
+      "name": "DEATH_YEAR",
+      "role": "date",
+      "unit": null
+    },
+    {
+      "name": "PROFILE_PATH",
+      "role": "other",
+      "unit": null
+    }
+  ],
+  "summary_facts": {
+    "count": 13,
+    "total": null,
+    "value_column": null,
+    "unit": null,
+    "order": "POPULARITY",
+    "order_direction": "desc",
+    "top": null
+  },
+  "intent": {
+    "task": "list",
+    "focus": [],
+    "focus_columns": [],
+    "requested_view": "",
+    "source": "llm"
+  },
+  "result": [
+    {
+      "index": 0,
+      "data": {
+        "ID_PERSON": 517,
+        "PERSON_NAME": "Pierce Brosnan",
+        "POPULARITY": 6.07,
+        "KNOWN_FOR_DEPARTMENT": "Acting",
+        "BIRTH_YEAR": 1953,
+        "DEATH_YEAR": null,
+        "PROFILE_PATH": "/dzXVwwJLPwiZeXOnf7YxorqVEEM.jpg"
+      }
+    },
+    {
+      "index": 1,
+      "data": {
+        "ID_PERSON": 21127,
+        "PERSON_NAME": "Bobby Cannavale",
+        "POPULARITY": 4.69,
+        "KNOWN_FOR_DEPARTMENT": "Acting",
+        "BIRTH_YEAR": 1970,
+        "DEATH_YEAR": null,
+        "PROFILE_PATH": "/wlp20ggyNI7x0xGUtTjC2Xl2XmD.jpg"
+      }
+    },
+    {
+      "index": 2,
+      "data": {
+        "ID_PERSON": 8784,
+        "PERSON_NAME": "Daniel Craig",
+        "POPULARITY": 4.02,
+        "KNOWN_FOR_DEPARTMENT": "Acting",
+        "BIRTH_YEAR": 1968,
+        "DEATH_YEAR": null,
+        "PROFILE_PATH": "/iFerDZUmC5Fu26i4qI8xnUVEHc7.jpg"
+      }
+    },
+    {
+      "index": 3,
+      "data": {
+        "ID_PERSON": 738,
+        "PERSON_NAME": "Sean Connery",
+        "POPULARITY": 3.61,
+        "KNOWN_FOR_DEPARTMENT": "Acting",
+        "BIRTH_YEAR": 1930,
+        "DEATH_YEAR": 2020,
+        "PROFILE_PATH": "/cd0zKpYJ6eSutkrZkLFxQCGjhnF.jpg"
+      }
+    },
+    {
+      "index": 4,
+      "data": {
+        "ID_PERSON": 26724,
+        "PERSON_NAME": "Eric Tsang Chi-wai",
+        "POPULARITY": 3.38,
+        "KNOWN_FOR_DEPARTMENT": "Acting",
+        "BIRTH_YEAR": 1953,
+        "DEATH_YEAR": null,
+        "PROFILE_PATH": "/vrPBadugqlMkfNIYzLZbP4sEF1j.jpg"
+      }
+    },
+    {
+      "index": 5,
+      "data": {
+        "ID_PERSON": 10669,
+        "PERSON_NAME": "Timothy Dalton",
+        "POPULARITY": 2.64,
+        "KNOWN_FOR_DEPARTMENT": "Acting",
+        "BIRTH_YEAR": 1946,
+        "DEATH_YEAR": null,
+        "PROFILE_PATH": "/rKYQd6ihqWiOaCHEDrvgV2VPtAo.jpg"
+      }
+    },
+    {
+      "index": 6,
+      "data": {
+        "ID_PERSON": 14261,
+        "PERSON_NAME": "David Niven",
+        "POPULARITY": 2.57,
+        "KNOWN_FOR_DEPARTMENT": "Acting",
+        "BIRTH_YEAR": 1910,
+        "DEATH_YEAR": 1983,
+        "PROFILE_PATH": "/ioW2DU6T2HPvTdqUSaLLQmGPb38.jpg"
+      }
+    },
+    {
+      "index": 7,
+      "data": {
+        "ID_PERSON": 10222,
+        "PERSON_NAME": "Roger Moore",
+        "POPULARITY": 1.92,
+        "KNOWN_FOR_DEPARTMENT": "Acting",
+        "BIRTH_YEAR": 1927,
+        "DEATH_YEAR": 2017,
+        "PROFILE_PATH": "/qUjeguNlZzpwh2bGUwEq2n2GNPx.jpg"
+      }
+    },
+    {
+      "index": 8,
+      "data": {
+        "ID_PERSON": 21142,
+        "PERSON_NAME": "Gregory Itzin",
+        "POPULARITY": 1.71,
+        "KNOWN_FOR_DEPARTMENT": "Acting",
+        "BIRTH_YEAR": 1948,
+        "DEATH_YEAR": 2022,
+        "PROFILE_PATH": "/lUACgFTvuhRhAC3GwnpcWMGLxo4.jpg"
+      }
+    },
+    {
+      "index": 9,
+      "data": {
+        "ID_PERSON": 10167,
+        "PERSON_NAME": "George Lazenby",
+        "POPULARITY": 1.08,
+        "KNOWN_FOR_DEPARTMENT": "Acting",
+        "BIRTH_YEAR": 1939,
+        "DEATH_YEAR": null,
+        "PROFILE_PATH": "/c2Sb2SYKhvwoq0MYrwpNTVuw6xH.jpg"
+      }
+    },
+    {
+      "index": 10,
+      "data": {
+        "ID_PERSON": 21264,
+        "PERSON_NAME": "Garvin Cross",
+        "POPULARITY": 1.01,
+        "KNOWN_FOR_DEPARTMENT": "Acting",
+        "BIRTH_YEAR": null,
+        "DEATH_YEAR": null,
+        "PROFILE_PATH": "/voCrYes5zQ4G0zMyCqAbOzwygUF.jpg"
+      }
+    },
+    {
+      "index": 11,
+      "data": {
+        "ID_PERSON": 10411,
+        "PERSON_NAME": "Barry Nelson",
+        "POPULARITY": 0.35,
+        "KNOWN_FOR_DEPARTMENT": "Acting",
+        "BIRTH_YEAR": 1917,
+        "DEATH_YEAR": 2007,
+        "PROFILE_PATH": "/fSrHmvOxZJbeKpNM0uWGvha1aK9.jpg"
+      }
+    },
+    {
+      "index": 12,
+      "data": {
+        "ID_PERSON": 1354001,
+        "PERSON_NAME": "Frederick Truesdell",
+        "POPULARITY": 0.0239,
+        "KNOWN_FOR_DEPARTMENT": "Acting",
+        "BIRTH_YEAR": 1870,
+        "DEATH_YEAR": 1929,
+        "PROFILE_PATH": "/hJmZru0fMD1UAmeaq86xA2SE2sr.jpg"
+      }
+    }
+  ]
+}

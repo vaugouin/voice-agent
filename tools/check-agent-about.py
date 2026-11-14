@@ -164,6 +164,7 @@ let dc=null, pc=null, localStream=null, activeResponseId=null, activeAudioRespon
 let lastUserTranscript="", activeUiLanguage="en", photo="armed-photo", loading=0, looked=0, sent=[];
 let agentAboutGeneration=1, connectionGeneration=7, toolCallsInFlight=0, awaitingToolResponse=false;
 let realtimeSessionSoul="scholar", activePersona={slug:"chatterbox"}, lastRequest=null, invalidate=false;
+let userTurnSerial=0, searchOnScreen=null;
 const questionInput={value:""}, resultsPanel={hidden:true}, lookAttachedImage={objectUrl:"fixture"};
 const retained=[], originalFilm={id:123}; let currentFilm=originalFilm;
 function activeLookImageRef(){return photo;}

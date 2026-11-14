@@ -77,7 +77,8 @@ function extractRegion(startMarker, endMarker) {
 // and the outline app/static/world-110m.json itself) the map model and its sentences, phase 3
 // lot C (fixtures p3c-*) the hierarchy model and its sentence, phase 3 lot D (fixtures p3d-places-*,
 // with the reference models p3d-places-models.json) the map of places and its sentence, phase 3 lot E (fixtures p3e-*) the
-// chain model and its sentence.
+// chain model and its sentence, the cover flow (fixtures cf-*) its chips, slots and fallback, and
+// the detail calls that leave a search on screen (2026-11-14).
 const lexicons = readFileSync(join(root, "app", "lexicons.json"), "utf8");
 const code = [
   ...["normalizeUiLanguage", "uiText", "prettyLabel", "formatDate", "formatMoney", "formatMinutes",
@@ -102,6 +103,8 @@ const code = [
   "  text2SqlPlaceMapGroups, text2SqlPlaceMapModel, text2SqlPlaceMapSummary, text2SqlPlaceMapFrame, text2SqlEqualEarth, text2SqlPlaceTypeWord, text2SqlPlaceCount,",
   "  text2SqlHierarchyModel, text2SqlHierarchySummary, text2SqlHierarchyLeafNoun, text2SqlHierarchyKind,",
   "  text2SqlChainModel, text2SqlChainSummary, text2SqlFrDe, text2SqlFrA,",
+  "  text2SqlPictureCount, text2SqlCoverFlowUsable, text2SqlCoverFlowSlot, text2SqlCoverFlowStep, text2SqlCoverFlowSwipeSteps, text2SqlCoverFlowCounter,",
+  "  detailCallKeepsSearchOnScreen, detailRecordKey, detailRequestFromRecord,",
   "  text2SqlDrillWord, text2SqlDrillQuestion, text2SqlDrillBinValue, text2SqlDrillPeriodValue,",
   "  text2SqlDrillShareQuestion, text2SqlDrillHistogramQuestion, text2SqlDrillTrendQuestion,",
   "  text2SqlDrillCountWord, text2SqlGenderWord, text2SqlGenderColumn, text2SqlPercentValueText, text2SqlLabelForRow, formatMetric,",
@@ -1029,6 +1032,72 @@ check("links: older API, from the keys", linkSummary([], ["ID_PERSON", "PERSON_N
   check("view to rep: lineage", api.text2SqlRepresentationForView("lineage", fx(P + "red-harvest-en").representation_options), "chain");
   check("view to rep: lineage not offered", api.text2SqlRepresentationForView("lineage", fx("lotc-share-hbo-type-en").representation_options), "");
   check("reply lineage fr", api.text2SqlRequestedViewReply({ ok: true, representation: "chain", view: "lineage" }, "fr"), "Voici la filiation.");
+}
+
+// Cover flow (fixtures cf-*: live answers of 2026-11-14 re-classified with the API working copy,
+// plus the hand-made "asked" variant). The carousel draws the card grid's records, in the same
+// order, under the card grid's caption; the card count and order are checked in the browser
+// (README, "Verification"), since both forms draw view.rows through appendText2SqlRowCard().
+{
+  const offered = ["cf-pixar-en", "cf-miyazaki-fr", "cf-bond-actors-en", "cf-breaking-fr", "cf-samurai-en"];
+  offered.forEach((name) => {
+    const chips = api.text2SqlChipOptions(fx(name));
+    check(`cf chip after card-grid ${name}`, chips.includes("card-grid") && chips.indexOf("cover-flow") === chips.indexOf("card-grid") + 1, true);
+  });
+  check("cf asked is the default", api.resolveText2SqlRepresentation(fx("cf-pixar-asked-en"), ""), "cover-flow");
+  check("cf asked chips", api.text2SqlChipOptions(fx("cf-pixar-asked-en")), ["cover-flow", "card-grid", "table"]);
+  check("cf preferred chip kept", api.resolveText2SqlRepresentation(fx("cf-bond-actors-en"), "cover-flow"), "cover-flow");
+  check("cf not offered, not kept", api.resolveText2SqlRepresentation(fx("p3e-chain-departed-en"), "cover-flow"), "chain");
+  [...offered, "cf-pixar-asked-en"].forEach((name) => {
+    const lang = fx(name).ui_language || "en";
+    check(`cf caption is the grid's ${name}`, api.text2SqlSummaryLine(fx(name), { lang, rep: "cover-flow" }), api.text2SqlSummaryLine(fx(name), { lang, rep: "card-grid" }));
+    check(`cf spoken is the grid's ${name}`, api.text2SqlSummaryLine(fx(name), { lang, rep: "cover-flow", spoken: true }), api.text2SqlSummaryLine(fx(name), { lang, rep: "card-grid", spoken: true }));
+  });
+  check("cf caption asked", caption("cf-pixar-asked-en", "en"), "41 films.");
+  check("cf labels", [api.text2SqlRepresentationLabel("cover-flow", "en"), api.text2SqlRepresentationLabel("cover-flow", "fr")], ["Cover flow", "Défilement"]);
+  check("cf pictures", ["cf-pixar-en", "cf-miyazaki-fr", "cf-bond-actors-en", "cf-breaking-fr"].map((n) => [fx(n).result.length, api.text2SqlPictureCount(fx(n).result)]),
+    [[41, 39], [28, 27], [13, 13], [5, 5]]);
+  const breaking = fx("cf-breaking-fr");
+  const onePicture = breaking.result.map((row, i) => ({ ...row, data: { ...row.data, POSTER_PATH: i === 0 ? row.data.POSTER_PATH : null } }));
+  check("cf fallback below two pictures", [api.text2SqlCoverFlowUsable(onePicture), api.text2SqlCoverFlowUsable(breaking.result), api.text2SqlCoverFlowUsable([])], [false, true, false]);
+  check("cf slots", [0, 1, 2, 3, 4, 5, 6].map((i) => { const s = api.text2SqlCoverFlowSlot(i, 2); return [s.side, s.k, s.scale, s.hidden, s.load, s.eager]; }),
+    [[-1, 2, 0.85, false, true, false], [-1, 1, 0.85, false, true, true], [0, 0, 1, false, true, true], [1, 1, 0.85, false, true, true],
+      [1, 2, 0.85, false, true, false], [1, 3, 0.85, false, true, false], [1, 4, 0.85, false, true, false]]);
+  check("cf hidden beyond four", [api.text2SqlCoverFlowSlot(7, 2).hidden, api.text2SqlCoverFlowSlot(7, 2).load, api.text2SqlCoverFlowSlot(8, 2).load], [true, true, false]);
+  check("cf z order", [api.text2SqlCoverFlowSlot(2, 2).z > api.text2SqlCoverFlowSlot(3, 2).z, api.text2SqlCoverFlowSlot(3, 2).z > api.text2SqlCoverFlowSlot(4, 2).z], [true, true]);
+  check("cf steps", [api.text2SqlCoverFlowStep(0, 41, "ArrowLeft"), api.text2SqlCoverFlowStep(0, 41, "ArrowRight"), api.text2SqlCoverFlowStep(40, 41, "next"),
+    api.text2SqlCoverFlowStep(5, 41, "Home"), api.text2SqlCoverFlowStep(5, 41, "End"), api.text2SqlCoverFlowStep(3, 41, "next", 3), api.text2SqlCoverFlowStep(9, 5, "")],
+    [0, 1, 40, 0, 40, 6, 4]);
+  check("cf swipes", [api.text2SqlCoverFlowSwipeSteps(30, 150), api.text2SqlCoverFlowSwipeSteps(-41, 150), api.text2SqlCoverFlowSwipeSteps(80, 150), api.text2SqlCoverFlowSwipeSteps(-300, 150)],
+    [0, 1, -1, 4]);
+  check("cf counter", api.text2SqlCoverFlowCounter(2, 41), "3 / 41");
+  const view = (text) => api.text2SqlRequestedView(text);
+  check("view: as a cover flow", view("show it as a cover flow"), "cover-flow");
+  check("view: en carrousel", view("Affiche-les en carrousel"), "cover-flow");
+  check("view: Pixar films as a carousel is a search", view("Pixar films as a carousel"), "");
+  check("view to rep: cover flow", api.text2SqlRepresentationForView("cover-flow", fx("cf-pixar-en").representation_options), "cover-flow");
+  check("view to rep: cover flow not offered", api.text2SqlRepresentationForView("cover-flow", fx("p3e-chain-departed-en").representation_options), "");
+  check("reply cover flow fr", api.text2SqlRequestedViewReply({ ok: true, representation: "cover-flow", view: "cover-flow" }, "fr"), "Les voici en défilement.");
+}
+
+// A detail call in the turn of a search (2026-11-14): several rows stay on screen unless the
+// server forced the call; one record stays when the call asks for that same record.
+{
+  const keep = api.detailCallKeepsSearchOnScreen;
+  const many = { turn: 4, rows: 3, recordKey: "" };
+  const one = { turn: 4, rows: 1, recordKey: api.detailRecordKey("get_series_detail", { id: 1396 }) };
+  check("keep: model detail after several rows", keep({ search: many, turn: 4, detailKey: api.detailRecordKey("get_movie_detail", { id: 966 }) }), true);
+  check("keep: forced detail after several rows", keep({ search: many, turn: 4, forced: true }), false);
+  check("keep: next turn", keep({ search: many, turn: 5 }), false);
+  check("keep: no search", keep({ search: null, turn: 4 }), false);
+  check("keep: same record, model", keep({ search: one, turn: 4, detailKey: api.detailRecordKey("get_series_detail", { id: "1396" }) }), true);
+  check("keep: same record, forced", keep({ search: one, turn: 4, forced: true, detailKey: api.detailRecordKey("get_series_detail", { id_serie: 1396 }) }), true);
+  check("keep: another record", keep({ search: one, turn: 4, detailKey: api.detailRecordKey("get_movie_detail", { id: 1396 }) }), false);
+  check("record keys", [api.detailRecordKey("get_episode_detail", { id_serie: 1, season_number: 2, episode_number: 3 }), api.detailRecordKey("get_movie_detail", {}),
+    api.detailRecordKey("", { id: 1 })], ["get_episode_detail|1|2|3", "", ""]);
+  const row = fx("cf-breaking-fr").result[0].data;
+  const request = api.detailRequestFromRecord(row);
+  check("record key of a result row", api.detailRecordKey(request.toolName, request), `get_series_detail|${row.ID_SERIE}`);
 }
 
 // The percent unit (PERCENT*, POURCENT*, PCT columns; the value is already a percentage), the
