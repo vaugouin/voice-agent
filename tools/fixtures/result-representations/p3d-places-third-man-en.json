@@ -1,0 +1,145 @@
+{
+ "question": "Show on a map the places where The Third Man was filmed",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the places where The Third Man was filmed.",
+ "representation": "map",
+ "representation_options": [
+  "map",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_LOCATION",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_NAME",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_TYPE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_SOURCE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "WIKIPEDIA_IMAGE_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "OVERVIEW",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_COUNT",
+   "role": "metric",
+   "unit": "count",
+   "ordered": "desc"
+  },
+  {
+   "name": "SERIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 2,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "MOVIE_COUNT",
+  "order_direction": "desc",
+  "top": null,
+  "places": {
+   "count": 2,
+   "located": 2,
+   "pins": [
+    {
+     "index": 0,
+     "id": 41,
+     "label": "Vienna",
+     "type": "city",
+     "lat": 48.208333,
+     "lon": 16.3725
+    }
+   ],
+   "areas": [
+    {
+     "index": 1,
+     "id": 148,
+     "label": "Austria",
+     "type": "country",
+     "lat": 48.0,
+     "lon": 14.0
+    }
+   ],
+   "unlocated": [],
+   "bounds": {
+    "lat_min": 48.0,
+    "lat_max": 48.208333,
+    "lon_min": 14.0,
+    "lon_max": 16.3725
+   }
+  }
+ },
+ "intent": {
+  "task": "list",
+  "focus": [],
+  "requested_view": "map",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_LOCATION": 41,
+    "LOCATION_NAME": "Vienna",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5b/Schoenbrunn_philharmoniker_2012.jpg/3840px-Schoenbrunn_philharmoniker_2012.jpg",
+    "OVERVIEW": "capital of and state in Austria",
+    "MOVIE_COUNT": 293,
+    "SERIE_COUNT": 6,
+    "IMDB_RATING": 6.4
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_LOCATION": 148,
+    "LOCATION_NAME": "Austria",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/41/Flag_of_Austria.svg/960px-Flag_of_Austria.svg.png",
+    "OVERVIEW": "country in Central Europe",
+    "MOVIE_COUNT": 236,
+    "SERIE_COUNT": 5,
+    "IMDB_RATING": 6.23
+   }
+  }
+ ],
+ "result_entity": "location"
+}

@@ -1,0 +1,62 @@
+{
+ "question": "Show the places of Akira on a map",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "",
+ "representation": "card-grid",
+ "representation_options": [
+  "card-grid",
+  "map",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": null,
+ "result_entity": "location",
+ "summary_facts": {
+  "count": 1,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": null,
+  "order_direction": null,
+  "top": null,
+  "places": {
+   "count": 1,
+   "located": 1,
+   "pins": [
+    {
+     "index": 0,
+     "id": 202,
+     "label": "Tokyo",
+     "type": "city",
+     "lat": 35.689444,
+     "lon": 139.691667
+    }
+   ],
+   "areas": [],
+   "unlocated": [],
+   "bounds": {
+    "lat_min": 35.0,
+    "lat_max": 35.689444,
+    "lon_min": 136.0,
+    "lon_max": 139.691667
+   }
+  }
+ },
+ "intent": {
+  "task": "list",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "map",
+  "source": "rules"
+ },
+ "result": [
+  {
+   "data": {
+    "ID_LOCATION": 202,
+    "LOCATION_NAME": "Tokyo",
+    "LOCATION_TYPE": "city"
+   }
+  }
+ ]
+}

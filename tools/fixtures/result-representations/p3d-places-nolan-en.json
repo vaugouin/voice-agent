@@ -1,0 +1,1249 @@
+{
+ "question": "Map the filming locations of Christopher Nolan's films",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the filming locations of films made by Christopher Nolan.",
+ "representation": "map",
+ "representation_options": [
+  "map",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_LOCATION",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_NAME",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_TYPE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_SOURCE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "WIKIPEDIA_IMAGE_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "OVERVIEW",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_COUNT",
+   "role": "metric",
+   "unit": "count",
+   "ordered": "desc"
+  },
+  {
+   "name": "SERIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 50,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "MOVIE_COUNT",
+  "order_direction": "desc",
+  "top": null,
+  "places": {
+   "count": 50,
+   "located": 49,
+   "pins": [
+    {
+     "index": 0,
+     "id": 2,
+     "label": "New York City",
+     "type": "city",
+     "lat": 40.712778,
+     "lon": -74.006111
+    },
+    {
+     "index": 1,
+     "id": 21,
+     "label": "London",
+     "type": "city",
+     "lat": 51.507222,
+     "lon": -0.1275
+    },
+    {
+     "index": 2,
+     "id": 4,
+     "label": "Los Angeles",
+     "type": "city",
+     "lat": 34.05223,
+     "lon": -118.24368
+    },
+    {
+     "index": 3,
+     "id": 38,
+     "label": "Paris",
+     "type": "city",
+     "lat": 48.856667,
+     "lon": 2.352222
+    },
+    {
+     "index": 5,
+     "id": 51,
+     "label": "Hong Kong",
+     "type": "city",
+     "lat": 22.278333,
+     "lon": 114.158611
+    },
+    {
+     "index": 6,
+     "id": 4558,
+     "label": "Pinewood Studios",
+     "type": "structure",
+     "lat": 51.548611,
+     "lon": -0.535
+    },
+    {
+     "index": 8,
+     "id": 54,
+     "label": "Vancouver",
+     "type": "city",
+     "lat": 49.260833,
+     "lon": -123.113889
+    },
+    {
+     "index": 10,
+     "id": 16,
+     "label": "Chicago",
+     "type": "city",
+     "lat": 41.881944,
+     "lon": -87.627778
+    },
+    {
+     "index": 11,
+     "id": 202,
+     "label": "Tokyo",
+     "type": "city",
+     "lat": 35.689444,
+     "lon": 139.691667
+    },
+    {
+     "index": 12,
+     "id": 162,
+     "label": "Toronto",
+     "type": "city",
+     "lat": 43.670278,
+     "lon": -79.386667
+    },
+    {
+     "index": 14,
+     "id": 114,
+     "label": "New Orleans",
+     "type": "city",
+     "lat": 29.976111,
+     "lon": -90.078333
+    },
+    {
+     "index": 16,
+     "id": 9,
+     "label": "Washington, D.C.",
+     "type": "city",
+     "lat": 38.895,
+     "lon": -77.036667
+    },
+    {
+     "index": 17,
+     "id": 15,
+     "label": "Mumbai",
+     "type": "city",
+     "lat": 19.075833,
+     "lon": 72.8775
+    },
+    {
+     "index": 21,
+     "id": 150,
+     "label": "Pittsburgh",
+     "type": "city",
+     "lat": 40.441667,
+     "lon": -80.0
+    },
+    {
+     "index": 22,
+     "id": 88,
+     "label": "Malibu",
+     "type": "city",
+     "lat": 34.035,
+     "lon": -118.695
+    },
+    {
+     "index": 24,
+     "id": 448,
+     "label": "Detroit",
+     "type": "city",
+     "lat": 42.331667,
+     "lon": -83.0475
+    },
+    {
+     "index": 30,
+     "id": 810,
+     "label": "Tangier",
+     "type": "city",
+     "lat": 35.769491,
+     "lon": -5.804468
+    },
+    {
+     "index": 32,
+     "id": 4577,
+     "label": "Warner Bros. Studios, Leavesden",
+     "type": "structure",
+     "lat": 51.693333,
+     "lon": -0.419722
+    },
+    {
+     "index": 33,
+     "id": 1022,
+     "label": "Oslo",
+     "type": "city",
+     "lat": 59.913333,
+     "lon": 10.738889
+    },
+    {
+     "index": 34,
+     "id": 661,
+     "label": "Tallinn",
+     "type": "city",
+     "lat": 59.437222,
+     "lon": 24.745
+    },
+    {
+     "index": 35,
+     "id": 1606,
+     "label": "Marrakech",
+     "type": "city",
+     "lat": 31.62947,
+     "lon": -7.98108
+    },
+    {
+     "index": 38,
+     "id": 7687,
+     "label": "Palais Galliera",
+     "type": "structure",
+     "lat": 48.865556,
+     "lon": 2.296667
+    },
+    {
+     "index": 40,
+     "id": 10317,
+     "label": "Essaouira",
+     "type": "city",
+     "lat": 31.513023,
+     "lon": -9.768696
+    },
+    {
+     "index": 41,
+     "id": 10744,
+     "label": "Universal Studios Lot",
+     "type": "structure",
+     "lat": 34.141395,
+     "lon": -118.34978
+    },
+    {
+     "index": 42,
+     "id": 3359,
+     "label": "Canary Wharf",
+     "type": "city",
+     "lat": 51.505,
+     "lon": -0.019444
+    },
+    {
+     "index": 43,
+     "id": 8688,
+     "label": "Waukegan",
+     "type": "city",
+     "lat": 42.363633,
+     "lon": -87.844794
+    },
+    {
+     "index": 44,
+     "id": 9267,
+     "label": "Coalhouse Fort",
+     "type": "structure",
+     "lat": 51.4635,
+     "lon": 0.432682
+    },
+    {
+     "index": 45,
+     "id": 10343,
+     "label": "Mentmore Towers",
+     "type": "structure",
+     "lat": 51.868221,
+     "lon": -0.690619
+    },
+    {
+     "index": 47,
+     "id": 11617,
+     "label": "Abbey Mills Pumping Station",
+     "type": null,
+     "lat": 51.5307,
+     "lon": -0.000835
+    },
+    {
+     "index": 48,
+     "id": 11992,
+     "label": "Mill Hill",
+     "type": "city",
+     "lat": 51.62,
+     "lon": -0.23
+    }
+   ],
+   "areas": [
+    {
+     "index": 4,
+     "id": 5,
+     "label": "California",
+     "type": "region",
+     "lat": 37.0,
+     "lon": -120.0
+    },
+    {
+     "index": 7,
+     "id": 176,
+     "label": "New Jersey",
+     "type": "region",
+     "lat": 40.0,
+     "lon": -74.5
+    },
+    {
+     "index": 9,
+     "id": 32,
+     "label": "Japan",
+     "type": "country",
+     "lat": 35.0,
+     "lon": 136.0
+    },
+    {
+     "index": 13,
+     "id": 224,
+     "label": "Greece",
+     "type": "country",
+     "lat": 38.5,
+     "lon": 23.0
+    },
+    {
+     "index": 15,
+     "id": 103,
+     "label": "New Mexico",
+     "type": "region",
+     "lat": 34.0,
+     "lon": -106.0
+    },
+    {
+     "index": 18,
+     "id": 416,
+     "label": "Morocco",
+     "type": "country",
+     "lat": 32.0,
+     "lon": -6.0
+    },
+    {
+     "index": 19,
+     "id": 316,
+     "label": "Sicily",
+     "type": "region",
+     "lat": 37.6,
+     "lon": 14.016667
+    },
+    {
+     "index": 20,
+     "id": 55,
+     "label": "Colorado",
+     "type": "region",
+     "lat": 39.0,
+     "lon": -105.5
+    },
+    {
+     "index": 23,
+     "id": 609,
+     "label": "Iceland",
+     "type": "country",
+     "lat": 65.0,
+     "lon": -19.0
+    },
+    {
+     "index": 25,
+     "id": 368,
+     "label": "Alberta",
+     "type": "region",
+     "lat": 54.5,
+     "lon": -115.0
+    },
+    {
+     "index": 26,
+     "id": 258,
+     "label": "United Kingdom",
+     "type": "country",
+     "lat": 54.6,
+     "lon": -2.0
+    },
+    {
+     "index": 27,
+     "id": 302,
+     "label": "Florence",
+     "type": "country",
+     "lat": 43.771389,
+     "lon": 11.254167
+    },
+    {
+     "index": 28,
+     "id": 1029,
+     "label": "Monaco",
+     "type": "country",
+     "lat": 43.731111,
+     "lon": 7.42
+    },
+    {
+     "index": 29,
+     "id": 66,
+     "label": "Hertfordshire",
+     "type": "region",
+     "lat": 51.9,
+     "lon": -0.2
+    },
+    {
+     "index": 36,
+     "id": 1770,
+     "label": "Dunkirk",
+     "type": "region",
+     "lat": 51.037778,
+     "lon": 2.376389
+    },
+    {
+     "index": 37,
+     "id": 6177,
+     "label": "RAF Cardington",
+     "type": "region",
+     "lat": 52.108922,
+     "lon": -0.422499
+    },
+    {
+     "index": 39,
+     "id": 7400,
+     "label": "Amalfi",
+     "type": "region",
+     "lat": 40.633333,
+     "lon": 14.602778
+    },
+    {
+     "index": 46,
+     "id": 11537,
+     "label": "Vatnajökull",
+     "type": "region",
+     "lat": 64.4,
+     "lon": -16.8
+    },
+    {
+     "index": 49,
+     "id": 7551,
+     "label": "Farnborough Airport",
+     "type": "region",
+     "lat": 51.275278,
+     "lon": -0.7775
+    }
+   ],
+   "unlocated": [
+    {
+     "index": 31,
+     "id": 5012,
+     "label": "Shepperton Studios",
+     "type": "structure",
+     "reason": "no-coordinates"
+    }
+   ],
+   "bounds": {
+    "lat_min": 19.075833,
+    "lat_max": 65.0,
+    "lon_min": -123.113889,
+    "lon_max": 139.691667
+   }
+  }
+ },
+ "intent": {
+  "task": "list",
+  "focus": [],
+  "requested_view": "map",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_LOCATION": 2,
+    "LOCATION_NAME": "New York City",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7a/View_of_Empire_State_Building_from_Rockefeller_Center_New_York_City_dllu_%28cropped%29.jpg/3840px-View_of_Empire_State_Building_from_Rockefeller_Center_New_York_City_dllu_%28cropped%29.jpg",
+    "OVERVIEW": "most populous city in the United States",
+    "MOVIE_COUNT": 3251,
+    "SERIE_COUNT": 599,
+    "IMDB_RATING": 6.43
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_LOCATION": 21,
+    "LOCATION_NAME": "London",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/6/67/London_Skyline_%28125508655%29.jpeg",
+    "OVERVIEW": "capital and largest city of England and the United Kingdom",
+    "MOVIE_COUNT": 2522,
+    "SERIE_COUNT": 411,
+    "IMDB_RATING": 6.38
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_LOCATION": 4,
+    "LOCATION_NAME": "Los Angeles",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2f/Hollywood_sign_%288485145044%29.jpg/3840px-Hollywood_sign_%288485145044%29.jpg",
+    "OVERVIEW": "seat of Los Angeles County, and largest city in California, United States",
+    "MOVIE_COUNT": 2507,
+    "SERIE_COUNT": 753,
+    "IMDB_RATING": 6.1
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_LOCATION": 38,
+    "LOCATION_NAME": "Paris",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4b/La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg/3840px-La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg",
+    "OVERVIEW": "capital and most populous city in France",
+    "MOVIE_COUNT": 2342,
+    "SERIE_COUNT": 60,
+    "IMDB_RATING": 6.31
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_LOCATION": 5,
+    "LOCATION_NAME": "California",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/01/Flag_of_California.svg/960px-Flag_of_California.svg.png",
+    "OVERVIEW": "state of the United States of America",
+    "MOVIE_COUNT": 1977,
+    "SERIE_COUNT": 248,
+    "IMDB_RATING": 6.07
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_LOCATION": 51,
+    "LOCATION_NAME": "Hong Kong",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5b/Flag_of_Hong_Kong.svg/960px-Flag_of_Hong_Kong.svg.png",
+    "OVERVIEW": "city and special administrative region of China",
+    "MOVIE_COUNT": 797,
+    "SERIE_COUNT": 9,
+    "IMDB_RATING": 6.08
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_LOCATION": 4558,
+    "LOCATION_NAME": "Pinewood Studios",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/3/38/Pinewood_Studios_gateway.jpg",
+    "OVERVIEW": "British film studio and television studio situated in Iver Heath, Buckinghamshire, England",
+    "MOVIE_COUNT": 658,
+    "SERIE_COUNT": 12,
+    "IMDB_RATING": 6.35
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_LOCATION": 176,
+    "LOCATION_NAME": "New Jersey",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/92/Flag_of_New_Jersey.svg/1280px-Flag_of_New_Jersey.svg.png",
+    "OVERVIEW": "state of the United States of America",
+    "MOVIE_COUNT": 539,
+    "SERIE_COUNT": 62,
+    "IMDB_RATING": 6.33
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_LOCATION": 54,
+    "LOCATION_NAME": "Vancouver",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/33/Skyline_of_Vancouver%2C_Canada.jpg/3840px-Skyline_of_Vancouver%2C_Canada.jpg",
+    "OVERVIEW": "largest city in the province of British Columbia, Canada",
+    "MOVIE_COUNT": 529,
+    "SERIE_COUNT": 107,
+    "IMDB_RATING": 5.95
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_LOCATION": 32,
+    "LOCATION_NAME": "Japan",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/en/thumb/9/9e/Flag_of_Japan.svg/960px-Flag_of_Japan.svg.png",
+    "OVERVIEW": "island country in East Asia",
+    "MOVIE_COUNT": 511,
+    "SERIE_COUNT": 31,
+    "IMDB_RATING": 6.57
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_LOCATION": 16,
+    "LOCATION_NAME": "Chicago",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/a/a5/Chicago_River_ferry_b.jpg",
+    "OVERVIEW": "city and county seat of Cook County, and largest city in State of Illinois, United States of America",
+    "MOVIE_COUNT": 464,
+    "SERIE_COUNT": 136,
+    "IMDB_RATING": 6.39
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_LOCATION": 202,
+    "LOCATION_NAME": "Tokyo",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/b/b2/Skyscrapers_of_Shinjuku_2009_January.jpg",
+    "OVERVIEW": "capital and largest city of Japan",
+    "MOVIE_COUNT": 444,
+    "SERIE_COUNT": 32,
+    "IMDB_RATING": 6.59
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_LOCATION": 162,
+    "LOCATION_NAME": "Toronto",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/8b/Toronto_Skyline_from_Snake_Island%2C_September_11_2026_%2801%29.jpg/3840px-Toronto_Skyline_from_Snake_Island%2C_September_11_2026_%2801%29.jpg",
+    "OVERVIEW": "capital and largest city of the province of Ontario, Canada",
+    "MOVIE_COUNT": 444,
+    "SERIE_COUNT": 59,
+    "IMDB_RATING": 6.21
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "ID_LOCATION": 224,
+    "LOCATION_NAME": "Greece",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5c/Flag_of_Greece.svg/960px-Flag_of_Greece.svg.png",
+    "OVERVIEW": "country in Southeast Europe",
+    "MOVIE_COUNT": 368,
+    "SERIE_COUNT": 8,
+    "IMDB_RATING": 6.44
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "ID_LOCATION": 114,
+    "LOCATION_NAME": "New Orleans",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/c/cb/New_Orleans_from_the_Air_September_2019_-_Central_Business_District_Skyline_%28cropped%29.jpg",
+    "OVERVIEW": "largest city of the state of Louisiana, United States",
+    "MOVIE_COUNT": 357,
+    "SERIE_COUNT": 22,
+    "IMDB_RATING": 6.05
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "ID_LOCATION": 103,
+    "LOCATION_NAME": "New Mexico",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c3/Flag_of_New_Mexico.svg/1920px-Flag_of_New_Mexico.svg.png",
+    "OVERVIEW": "state of the United States of America",
+    "MOVIE_COUNT": 345,
+    "SERIE_COUNT": 9,
+    "IMDB_RATING": 6.27
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "ID_LOCATION": 9,
+    "LOCATION_NAME": "Washington, D.C.",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/e/e4/12-07-13-washington-by-RalfR-08.jpg",
+    "OVERVIEW": "capital city of the United States of America",
+    "MOVIE_COUNT": 328,
+    "SERIE_COUNT": 86,
+    "IMDB_RATING": 6.49
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "ID_LOCATION": 15,
+    "LOCATION_NAME": "Mumbai",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/2/2b/Mumbai_Bandra-Worli_Sea_Link.jpg",
+    "OVERVIEW": "capital city in Maharashtra, India",
+    "MOVIE_COUNT": 323,
+    "SERIE_COUNT": 7,
+    "IMDB_RATING": 6.44
+   }
+  },
+  {
+   "index": 18,
+   "data": {
+    "ID_LOCATION": 416,
+    "LOCATION_NAME": "Morocco",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2c/Flag_of_Morocco.svg/960px-Flag_of_Morocco.svg.png",
+    "OVERVIEW": "sovereign state in North Africa",
+    "MOVIE_COUNT": 227,
+    "SERIE_COUNT": 21,
+    "IMDB_RATING": 6.34
+   }
+  },
+  {
+   "index": 19,
+   "data": {
+    "ID_LOCATION": 316,
+    "LOCATION_NAME": "Sicily",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/12/Sicily_in_Italy.svg/1280px-Sicily_in_Italy.svg.png",
+    "OVERVIEW": "island in the Mediterranean, region of Italy",
+    "MOVIE_COUNT": 215,
+    "SERIE_COUNT": 1,
+    "IMDB_RATING": 6.24
+   }
+  },
+  {
+   "index": 20,
+   "data": {
+    "ID_LOCATION": 55,
+    "LOCATION_NAME": "Colorado",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/46/Flag_of_Colorado.svg/1920px-Flag_of_Colorado.svg.png",
+    "OVERVIEW": "state of the United States of America",
+    "MOVIE_COUNT": 168,
+    "SERIE_COUNT": 7,
+    "IMDB_RATING": 6.39
+   }
+  },
+  {
+   "index": 21,
+   "data": {
+    "ID_LOCATION": 150,
+    "LOCATION_NAME": "Pittsburgh",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d6/Ascending_the_Duquesne_Incline.jpg/3840px-Ascending_the_Duquesne_Incline.jpg",
+    "OVERVIEW": "city and county seat in Allegheny County, Pennsylvania, United States",
+    "MOVIE_COUNT": 135,
+    "SERIE_COUNT": 28,
+    "IMDB_RATING": 6.4
+   }
+  },
+  {
+   "index": 22,
+   "data": {
+    "ID_LOCATION": 88,
+    "LOCATION_NAME": "Malibu",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/4/4f/MalibuAir.jpg",
+    "OVERVIEW": "city in Los Angeles County, California, United States",
+    "MOVIE_COUNT": 122,
+    "SERIE_COUNT": 7,
+    "IMDB_RATING": 6.57
+   }
+  },
+  {
+   "index": 23,
+   "data": {
+    "ID_LOCATION": 609,
+    "LOCATION_NAME": "Iceland",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/ce/Flag_of_Iceland.svg/1280px-Flag_of_Iceland.svg.png",
+    "OVERVIEW": "Nordic island country in the North Atlantic Ocean",
+    "MOVIE_COUNT": 97,
+    "SERIE_COUNT": 3,
+    "IMDB_RATING": 6.63
+   }
+  },
+  {
+   "index": 24,
+   "data": {
+    "ID_LOCATION": 448,
+    "LOCATION_NAME": "Detroit",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/45/Detroit_Skyline_from_Windsor_2025-09-01.jpg/3840px-Detroit_Skyline_from_Windsor_2025-09-01.jpg",
+    "OVERVIEW": "city in and county seat of Wayne County, and largest city in State of Michigan, United States",
+    "MOVIE_COUNT": 80,
+    "SERIE_COUNT": 6,
+    "IMDB_RATING": 6.3
+   }
+  },
+  {
+   "index": 25,
+   "data": {
+    "ID_LOCATION": 368,
+    "LOCATION_NAME": "Alberta",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f5/Flag_of_Alberta.svg/1280px-Flag_of_Alberta.svg.png",
+    "OVERVIEW": "province of Canada",
+    "MOVIE_COUNT": 78,
+    "SERIE_COUNT": 3,
+    "IMDB_RATING": 6.62
+   }
+  },
+  {
+   "index": 26,
+   "data": {
+    "ID_LOCATION": 258,
+    "LOCATION_NAME": "United Kingdom",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a5/Flag_of_the_United_Kingdom_%281-2%29.svg/1280px-Flag_of_the_United_Kingdom_%281-2%29.svg.png",
+    "OVERVIEW": "island country in north-west Europe",
+    "MOVIE_COUNT": 73,
+    "SERIE_COUNT": 88,
+    "IMDB_RATING": 6.98
+   }
+  },
+  {
+   "index": 27,
+   "data": {
+    "ID_LOCATION": 302,
+    "LOCATION_NAME": "Florence",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/3/3a/Firenze_-_Piazzale_Michelangelo%2C_Firenze%2C_Italy_-_April_6%2C_2015_02.jpg/3840px-Firenze_-_Piazzale_Michelangelo%2C_Firenze%2C_Italy_-_April_6%2C_2015_02.jpg",
+    "OVERVIEW": "Italian city and commune, located in Tuscany",
+    "MOVIE_COUNT": 72,
+    "SERIE_COUNT": 3,
+    "IMDB_RATING": 6.36
+   }
+  },
+  {
+   "index": 28,
+   "data": {
+    "ID_LOCATION": 1029,
+    "LOCATION_NAME": "Monaco",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ea/Flag_of_Monaco.svg/1280px-Flag_of_Monaco.svg.png",
+    "OVERVIEW": "microstate in Western Europe",
+    "MOVIE_COUNT": 72,
+    "SERIE_COUNT": 2,
+    "IMDB_RATING": 5.94
+   }
+  },
+  {
+   "index": 29,
+   "data": {
+    "ID_LOCATION": 66,
+    "LOCATION_NAME": "Hertfordshire",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a1/GOC_Hexton_007_Chilterns_landscape_%2824372234911%29_%28cropped%29.jpg/3840px-GOC_Hexton_007_Chilterns_landscape_%2824372234911%29_%28cropped%29.jpg",
+    "OVERVIEW": "non-metropolitan and ceremonial county in England",
+    "MOVIE_COUNT": 30,
+    "SERIE_COUNT": 15,
+    "IMDB_RATING": 7.11
+   }
+  },
+  {
+   "index": 30,
+   "data": {
+    "ID_LOCATION": 810,
+    "LOCATION_NAME": "Tangier",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/a/a4/Tanger_cor.jpg",
+    "OVERVIEW": "city in and capital of Tanger-Tetouan-Al Hoceima, Morocco",
+    "MOVIE_COUNT": 28,
+    "SERIE_COUNT": 3,
+    "IMDB_RATING": 6.28
+   }
+  },
+  {
+   "index": 31,
+   "data": {
+    "ID_LOCATION": 5012,
+    "LOCATION_NAME": "Shepperton Studios",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/3/34/Shepperton_Studios.jpg",
+    "OVERVIEW": "film studio, special effects studios and pre- and post-production centre",
+    "MOVIE_COUNT": 24,
+    "SERIE_COUNT": 3,
+    "IMDB_RATING": 7.21
+   }
+  },
+  {
+   "index": 32,
+   "data": {
+    "ID_LOCATION": 4577,
+    "LOCATION_NAME": "Warner Bros. Studios, Leavesden",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/17/Warner_Bros._Studios%2C_Leavesden%2C_September_2023.JPG/3840px-Warner_Bros._Studios%2C_Leavesden%2C_September_2023.JPG",
+    "OVERVIEW": "studio complex in Leavesden, Hertfordshire, England",
+    "MOVIE_COUNT": 23,
+    "SERIE_COUNT": 2,
+    "IMDB_RATING": 6.75
+   }
+  },
+  {
+   "index": 33,
+   "data": {
+    "ID_LOCATION": 1022,
+    "LOCATION_NAME": "Oslo",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9a/Nationaltheatret_evening.jpg/3840px-Nationaltheatret_evening.jpg",
+    "OVERVIEW": "capital city of Norway",
+    "MOVIE_COUNT": 23,
+    "SERIE_COUNT": 7,
+    "IMDB_RATING": 6.84
+   }
+  },
+  {
+   "index": 34,
+   "data": {
+    "ID_LOCATION": 661,
+    "LOCATION_NAME": "Tallinn",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/70/Raekoja_plats_at_night.jpg/3840px-Raekoja_plats_at_night.jpg",
+    "OVERVIEW": "capital and most populous city of Estonia",
+    "MOVIE_COUNT": 19,
+    "SERIE_COUNT": 2,
+    "IMDB_RATING": 6.76
+   }
+  },
+  {
+   "index": 35,
+   "data": {
+    "ID_LOCATION": 1606,
+    "LOCATION_NAME": "Marrakech",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/9/9c/Pavillon_Menarag%C3%A4rten.jpg",
+    "OVERVIEW": "city in Marrakesh-Safi, Morocco",
+    "MOVIE_COUNT": 11,
+    "SERIE_COUNT": 7,
+    "IMDB_RATING": 6.35
+   }
+  },
+  {
+   "index": 36,
+   "data": {
+    "ID_LOCATION": 1770,
+    "LOCATION_NAME": "Dunkirk",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/b/b1/Dunkerque_hotel_de_ville_vu_port.jpg",
+    "OVERVIEW": "commune in Nord, France",
+    "MOVIE_COUNT": 5,
+    "SERIE_COUNT": 2,
+    "IMDB_RATING": 6.74
+   }
+  },
+  {
+   "index": 37,
+   "data": {
+    "ID_LOCATION": 6177,
+    "LOCATION_NAME": "RAF Cardington",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/47/Cardington_Airship_Sheds._6-8-2017_%2836430366255%29.jpg/3840px-Cardington_Airship_Sheds._6-8-2017_%2836430366255%29.jpg",
+    "OVERVIEW": "former Royal Air Force station in Bedfordshire, England",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 8.5
+   }
+  },
+  {
+   "index": 38,
+   "data": {
+    "ID_LOCATION": 7687,
+    "LOCATION_NAME": "Palais Galliera",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5e/Mus%C3%A9e_Galliera%2C_Paris_21_July_2017.jpg/3840px-Mus%C3%A9e_Galliera%2C_Paris_21_July_2017.jpg",
+    "OVERVIEW": "museum of fashion and fashion history located in Paris",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.75
+   }
+  },
+  {
+   "index": 39,
+   "data": {
+    "ID_LOCATION": 7400,
+    "LOCATION_NAME": "Amalfi",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/0/08/Amalfi_sea_view_Italy.JPG",
+    "OVERVIEW": "Italian comune",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.35
+   }
+  },
+  {
+   "index": 40,
+   "data": {
+    "ID_LOCATION": 10317,
+    "LOCATION_NAME": "Essaouira",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/65/%22Ein_bemerkenswertes_historisches_Denkmal%22._16.jpg/3840px-%22Ein_bemerkenswertes_historisches_Denkmal%22._16.jpg",
+    "OVERVIEW": "city in Marrakech-Safi, Morocco",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.65
+   }
+  },
+  {
+   "index": 41,
+   "data": {
+    "ID_LOCATION": 10744,
+    "LOCATION_NAME": "Universal Studios Lot",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/7/7f/Universal_Studios_Lot_Logo.png",
+    "OVERVIEW": "television and film studio complex in Universal City, California",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 1,
+    "IMDB_RATING": 6.57
+   }
+  },
+  {
+   "index": 42,
+   "data": {
+    "ID_LOCATION": 3359,
+    "LOCATION_NAME": "Canary Wharf",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/3/32/Canary_Wharf_from_entrance_to_Limehouse_Basin_-_2022-04-03.jpg",
+    "OVERVIEW": "privately-owned district in the London Borough of Tower Hamlets",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 1,
+    "IMDB_RATING": 7.25
+   }
+  },
+  {
+   "index": 43,
+   "data": {
+    "ID_LOCATION": 8688,
+    "LOCATION_NAME": "Waukegan",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/1/17/Genesee_Theatre.jpg",
+    "OVERVIEW": "city in and county seat of Lake County, Illinois, United States",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 8.2
+   }
+  },
+  {
+   "index": 44,
+   "data": {
+    "ID_LOCATION": 9267,
+    "LOCATION_NAME": "Coalhouse Fort",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/e/e3/Coalhouse_Fort%2C_Tilbury_UK.jpg",
+    "OVERVIEW": "artillery fort at Coalhouse Point in Essex, England, UK",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 8.2
+   }
+  },
+  {
+   "index": 45,
+   "data": {
+    "ID_LOCATION": 10343,
+    "LOCATION_NAME": "Mentmore Towers",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/e/e9/Mentmore_Towers_from_angle.jpg",
+    "OVERVIEW": "country house in Mentmore, Buckinghamshire, England, UK",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 8.2
+   }
+  },
+  {
+   "index": 46,
+   "data": {
+    "ID_LOCATION": 11537,
+    "LOCATION_NAME": "Vatnajökull",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/8/8f/Vatnaj%C3%B6kull.jpeg",
+    "OVERVIEW": "largest and most voluminous Icelandic glacier",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 8.2
+   }
+  },
+  {
+   "index": 47,
+   "data": {
+    "ID_LOCATION": 11617,
+    "LOCATION_NAME": "Abbey Mills Pumping Station",
+    "LOCATION_TYPE": null,
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/9/97/Abbey_Mills_Pumping_Station_main_building_%281%29_-_2022-04-03.jpg",
+    "OVERVIEW": "historic sewage pumping station in Abbey Lane, London",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 8.2
+   }
+  },
+  {
+   "index": 48,
+   "data": {
+    "ID_LOCATION": 11992,
+    "LOCATION_NAME": "Mill Hill",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Mill_hill_village2009.JPG",
+    "OVERVIEW": "suburb in the London Borough of Barnet",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 8.2
+   }
+  },
+  {
+   "index": 49,
+   "data": {
+    "ID_LOCATION": 7551,
+    "LOCATION_NAME": "Farnborough Airport",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/6/63/Farnborough2008-073.jpg",
+    "OVERVIEW": "airport in the United Kingdom",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 8.8
+   }
+  }
+ ],
+ "result_entity": "location"
+}

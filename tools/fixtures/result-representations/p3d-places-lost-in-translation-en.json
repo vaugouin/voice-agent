@@ -1,0 +1,191 @@
+{
+ "question": "On a map, where does the story of Lost in Translation take place?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the places where the story of Lost in Translation takes place, ready to explore on a map.",
+ "representation": "map",
+ "representation_options": [
+  "map",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_LOCATION",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_NAME",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_TYPE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_SOURCE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "WIKIPEDIA_IMAGE_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "OVERVIEW",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_COUNT",
+   "role": "metric",
+   "unit": "count",
+   "ordered": "desc"
+  },
+  {
+   "name": "SERIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 4,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "MOVIE_COUNT",
+  "order_direction": "desc",
+  "top": null,
+  "places": {
+   "count": 4,
+   "located": 4,
+   "pins": [
+    {
+     "index": 1,
+     "id": 202,
+     "label": "Tokyo",
+     "type": "city",
+     "lat": 35.689444,
+     "lon": 139.691667
+    },
+    {
+     "index": 2,
+     "id": 59,
+     "label": "Kyoto",
+     "type": "city",
+     "lat": 35.011611,
+     "lon": 135.768111
+    },
+    {
+     "index": 3,
+     "id": 3130,
+     "label": "Heian Jingū",
+     "type": "structure",
+     "lat": 35.016667,
+     "lon": 135.782222
+    }
+   ],
+   "areas": [
+    {
+     "index": 0,
+     "id": 32,
+     "label": "Japan",
+     "type": "country",
+     "lat": 35.0,
+     "lon": 136.0
+    }
+   ],
+   "unlocated": [],
+   "bounds": {
+    "lat_min": 35.0,
+    "lat_max": 35.689444,
+    "lon_min": 135.768111,
+    "lon_max": 139.691667
+   }
+  }
+ },
+ "intent": {
+  "task": "list",
+  "focus": [],
+  "requested_view": "map",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_LOCATION": 32,
+    "LOCATION_NAME": "Japan",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/en/thumb/9/9e/Flag_of_Japan.svg/960px-Flag_of_Japan.svg.png",
+    "OVERVIEW": "island country in East Asia",
+    "MOVIE_COUNT": 511,
+    "SERIE_COUNT": 31,
+    "IMDB_RATING": 6.57
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_LOCATION": 202,
+    "LOCATION_NAME": "Tokyo",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/b/b2/Skyscrapers_of_Shinjuku_2009_January.jpg",
+    "OVERVIEW": "capital and largest city of Japan",
+    "MOVIE_COUNT": 444,
+    "SERIE_COUNT": 32,
+    "IMDB_RATING": 6.59
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_LOCATION": 59,
+    "LOCATION_NAME": "Kyoto",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/6b/Kyoto%2C_Japan_%2849667780482%29.jpg/3840px-Kyoto%2C_Japan_%2849667780482%29.jpg",
+    "OVERVIEW": "city in the Kyōto Prefecture, Japan",
+    "MOVIE_COUNT": 88,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.75
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_LOCATION": 3130,
+    "LOCATION_NAME": "Heian Jingū",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/5/5f/Heian-jing%C5%AB_daigokuden.jpg",
+    "OVERVIEW": "Shinto shrine in Kyoto Prefecture, Japan",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7
+   }
+  }
+ ],
+ "result_entity": "location"
+}

@@ -1,0 +1,2889 @@
+{
+ "p3d-places-akira-hand-en": {
+  "viewBox": "1617 177 160 100",
+  "frame": {
+   "x": 1617,
+   "y": 177,
+   "width": 160,
+   "height": 100
+  },
+  "marks": [
+   {
+    "n": 1,
+    "kind": "pin",
+    "index": 0,
+    "id": 202,
+    "label": "Tokyo",
+    "typeText": "City",
+    "left": 55.3,
+    "top": 48.17
+   },
+   {
+    "n": 2,
+    "kind": "area",
+    "index": 1,
+    "id": 30,
+    "label": "Japan",
+    "typeText": "Country",
+    "left": 45.26,
+    "top": 52.79
+   }
+  ],
+  "offText": "Not on the map: Neo-Tokyo (a fictional place), Studio lot (no coordinates).",
+  "caption": "Two places on the map: Tokyo and Japan; two more are not on it."
+ },
+ "p3d-places-akira-hand-fr": {
+  "viewBox": "1617 177 160 100",
+  "frame": {
+   "x": 1617,
+   "y": 177,
+   "width": 160,
+   "height": 100
+  },
+  "marks": [
+   {
+    "n": 1,
+    "kind": "pin",
+    "index": 0,
+    "id": 202,
+    "label": "Tokyo",
+    "typeText": "Ville",
+    "left": 55.3,
+    "top": 48.17
+   },
+   {
+    "n": 2,
+    "kind": "area",
+    "index": 1,
+    "id": 30,
+    "label": "Japon",
+    "typeText": "Pays",
+    "left": 45.26,
+    "top": 52.79
+   }
+  ],
+  "offText": "Absents de la carte : Neo-Tokyo (lieu fictif), Studio lot (sans coordonnées).",
+  "caption": "Deux lieux sur la carte : Tokyo et Japon ; deux autres n'y figurent pas."
+ },
+ "p3d-places-akira-one-off-hand-en": {
+  "viewBox": "1617 177 160 100",
+  "frame": {
+   "x": 1617,
+   "y": 177,
+   "width": 160,
+   "height": 100
+  },
+  "marks": [
+   {
+    "n": 1,
+    "kind": "pin",
+    "index": 0,
+    "id": 202,
+    "label": "Tokyo",
+    "typeText": "City",
+    "left": 55.3,
+    "top": 48.17
+   },
+   {
+    "n": 2,
+    "kind": "area",
+    "index": 1,
+    "id": 30,
+    "label": "Japan",
+    "typeText": "Country",
+    "left": 45.26,
+    "top": 52.79
+   }
+  ],
+  "offText": "Not on the map: Neo-Tokyo (a fictional place).",
+  "caption": "Two places on the map: Tokyo and Japan; Neo-Tokyo is not on it (a fictional place)."
+ },
+ "p3d-places-akira-one-off-hand-fr": {
+  "viewBox": "1617 177 160 100",
+  "frame": {
+   "x": 1617,
+   "y": 177,
+   "width": 160,
+   "height": 100
+  },
+  "marks": [
+   {
+    "n": 1,
+    "kind": "pin",
+    "index": 0,
+    "id": 202,
+    "label": "Tokyo",
+    "typeText": "Ville",
+    "left": 55.3,
+    "top": 48.17
+   },
+   {
+    "n": 2,
+    "kind": "area",
+    "index": 1,
+    "id": 30,
+    "label": "Japon",
+    "typeText": "Pays",
+    "left": 45.26,
+    "top": 52.79
+   }
+  ],
+  "offText": "Absents de la carte : Neo-Tokyo (lieu fictif).",
+  "caption": "Deux lieux sur la carte : Tokyo et Japon ; Neo-Tokyo n'y figure pas (lieu fictif)."
+ },
+ "p3d-places-bond-en": {
+  "viewBox": "0 0 2000 863",
+  "frame": {
+   "x": 0,
+   "y": 0,
+   "width": 2000,
+   "height": 863
+  },
+  "marks": [
+   {
+    "n": 1,
+    "kind": "pin",
+    "index": 0,
+    "id": 2,
+    "label": "New York City",
+    "typeText": "City",
+    "left": 31.86,
+    "top": 22.27
+   },
+   {
+    "n": 2,
+    "kind": "pin",
+    "index": 1,
+    "id": 21,
+    "label": "London",
+    "typeText": "City",
+    "left": 49.97,
+    "top": 14.65
+   },
+   {
+    "n": 3,
+    "kind": "pin",
+    "index": 2,
+    "id": 4,
+    "label": "Los Angeles",
+    "typeText": "City",
+    "left": 19.88,
+    "top": 27.37
+   },
+   {
+    "n": 4,
+    "kind": "pin",
+    "index": 3,
+    "id": 38,
+    "label": "Paris",
+    "typeText": "City",
+    "left": 50.54,
+    "top": 16.44
+   },
+   {
+    "n": 5,
+    "kind": "area",
+    "index": 4,
+    "id": 5,
+    "label": "California",
+    "typeText": "Region",
+    "left": 19.92,
+    "top": 25.08
+   },
+   {
+    "n": 6,
+    "kind": "area",
+    "index": 5,
+    "id": 112,
+    "label": "England",
+    "typeText": "Country",
+    "left": 49.78,
+    "top": 13.67
+   },
+   {
+    "n": 7,
+    "kind": "pin",
+    "index": 6,
+    "id": 3,
+    "label": "Rome",
+    "typeText": "City",
+    "left": 53.04,
+    "top": 21.4
+   },
+   {
+    "n": 8,
+    "kind": "area",
+    "index": 7,
+    "id": 126,
+    "label": "France",
+    "typeText": "Country",
+    "left": 50.47,
+    "top": 17.72
+   },
+   {
+    "n": 9,
+    "kind": "pin",
+    "index": 8,
+    "id": 51,
+    "label": "Hong Kong",
+    "typeText": "City",
+    "left": 80.57,
+    "top": 36.9
+   },
+   {
+    "n": 10,
+    "kind": "area",
+    "index": 9,
+    "id": 45,
+    "label": "Italy",
+    "typeText": "Country",
+    "left": 53.03,
+    "top": 20.95
+   },
+   {
+    "n": 11,
+    "kind": "pin",
+    "index": 10,
+    "id": 111,
+    "label": "Berlin",
+    "typeText": "City",
+    "left": 53.0,
+    "top": 13.99
+   },
+   {
+    "n": 12,
+    "kind": "area",
+    "index": 11,
+    "id": 63,
+    "label": "Mexico",
+    "typeText": "Country",
+    "left": 22.75,
+    "top": 36.3
+   },
+   {
+    "n": 13,
+    "kind": "pin",
+    "index": 12,
+    "id": 4558,
+    "label": "Pinewood Studios",
+    "typeText": "Site",
+    "left": 49.88,
+    "top": 14.62
+   },
+   {
+    "n": 14,
+    "kind": "pin",
+    "index": 13,
+    "id": 158,
+    "label": "San Francisco",
+    "typeText": "City",
+    "left": 19.45,
+    "top": 24.49
+   },
+   {
+    "n": 15,
+    "kind": "area",
+    "index": 14,
+    "id": 70,
+    "label": "Madrid",
+    "typeText": "Region",
+    "left": 49.09,
+    "top": 22.49
+   },
+   {
+    "n": 16,
+    "kind": "area",
+    "index": 15,
+    "id": 56,
+    "label": "Spain",
+    "typeText": "Country",
+    "left": 49.14,
+    "top": 22.66
+   },
+   {
+    "n": 17,
+    "kind": "area",
+    "index": 16,
+    "id": 32,
+    "label": "Japan",
+    "typeText": "Country",
+    "left": 84.47,
+    "top": 26.63
+   },
+   {
+    "n": 18,
+    "kind": "area",
+    "index": 17,
+    "id": 269,
+    "label": "Germany",
+    "typeText": "Country",
+    "left": 52.27,
+    "top": 14.99
+   },
+   {
+    "n": 19,
+    "kind": "pin",
+    "index": 18,
+    "id": 16,
+    "label": "Chicago",
+    "typeText": "City",
+    "left": 28.69,
+    "top": 21.41
+   },
+   {
+    "n": 20,
+    "kind": "area",
+    "index": 19,
+    "id": 24,
+    "label": "Florida",
+    "typeText": "Region",
+    "left": 28.62,
+    "top": 32.09
+   },
+   {
+    "n": 21,
+    "kind": "pin",
+    "index": 20,
+    "id": 136,
+    "label": "Istanbul",
+    "typeText": "City",
+    "left": 57.08,
+    "top": 22.05
+   },
+   {
+    "n": 22,
+    "kind": "area",
+    "index": 21,
+    "id": 25,
+    "label": "Turkey",
+    "typeText": "Country",
+    "left": 58.92,
+    "top": 23.56
+   },
+   {
+    "n": 23,
+    "kind": "area",
+    "index": 22,
+    "id": 224,
+    "label": "Greece",
+    "typeText": "Country",
+    "left": 55.71,
+    "top": 23.94
+   },
+   {
+    "n": 24,
+    "kind": "pin",
+    "index": 23,
+    "id": 114,
+    "label": "New Orleans",
+    "typeText": "City",
+    "left": 26.59,
+    "top": 30.6
+   },
+   {
+    "n": 25,
+    "kind": "pin",
+    "index": 24,
+    "id": 41,
+    "label": "Vienna",
+    "typeText": "City",
+    "left": 53.81,
+    "top": 16.88
+   },
+   {
+    "n": 26,
+    "kind": "area",
+    "index": 25,
+    "id": 29,
+    "label": "Switzerland",
+    "typeText": "Country",
+    "left": 51.93,
+    "top": 17.86
+   },
+   {
+    "n": 27,
+    "kind": "pin",
+    "index": 26,
+    "id": 95,
+    "label": "Rio de Janeiro",
+    "typeText": "City",
+    "left": 38.45,
+    "top": 75.56
+   },
+   {
+    "n": 28,
+    "kind": "area",
+    "index": 27,
+    "id": 323,
+    "label": "Thailand",
+    "typeText": "Country",
+    "left": 77.66,
+    "top": 43.89
+   },
+   {
+    "n": 29,
+    "kind": "area",
+    "index": 28,
+    "id": 10,
+    "label": "Russia",
+    "typeText": "Country",
+    "left": 68.46,
+    "top": 5.94
+   },
+   {
+    "n": 30,
+    "kind": "area",
+    "index": 29,
+    "id": 148,
+    "label": "Austria",
+    "typeText": "Country",
+    "left": 53.26,
+    "top": 17.03
+   },
+   {
+    "n": 31,
+    "kind": "area",
+    "index": 30,
+    "id": 190,
+    "label": "Utah",
+    "typeText": "Region",
+    "left": 22.46,
+    "top": 23.18
+   },
+   {
+    "n": 32,
+    "kind": "area",
+    "index": 31,
+    "id": 58,
+    "label": "Egypt",
+    "typeText": "Country",
+    "left": 57.63,
+    "top": 33.01
+   },
+   {
+    "n": 33,
+    "kind": "area",
+    "index": 32,
+    "id": 416,
+    "label": "Morocco",
+    "typeText": "Country",
+    "left": 48.46,
+    "top": 28.99
+   },
+   {
+    "n": 34,
+    "kind": "pin",
+    "index": 33,
+    "id": 154,
+    "label": "Shanghai",
+    "typeText": "City",
+    "left": 81.38,
+    "top": 29.6
+   },
+   {
+    "n": 35,
+    "kind": "area",
+    "index": 34,
+    "id": 7,
+    "label": "Venice",
+    "typeText": "Country",
+    "left": 52.93,
+    "top": 18.83
+   },
+   {
+    "n": 36,
+    "kind": "area",
+    "index": 35,
+    "id": 80,
+    "label": "Norway",
+    "typeText": "Country",
+    "left": 52.24,
+    "top": 9.41
+   },
+   {
+    "n": 37,
+    "kind": "pin",
+    "index": 36,
+    "id": 493,
+    "label": "Prague",
+    "typeText": "City",
+    "left": 53.3,
+    "top": 15.6
+   },
+   {
+    "n": 38,
+    "kind": "area",
+    "index": 37,
+    "id": 30,
+    "label": "South Korea",
+    "typeText": "Country",
+    "left": 82.27,
+    "top": 25.85
+   },
+   {
+    "n": 39,
+    "kind": "pin",
+    "index": 38,
+    "id": 290,
+    "label": "Miami",
+    "typeText": "City",
+    "left": 28.79,
+    "top": 34.01
+   },
+   {
+    "n": 40,
+    "kind": "pin",
+    "index": 39,
+    "id": 222,
+    "label": "Las Vegas Valley",
+    "typeText": "City",
+    "left": 20.99,
+    "top": 25.75
+   },
+   {
+    "n": 41,
+    "kind": "pin",
+    "index": 40,
+    "id": 230,
+    "label": "Saint Petersburg",
+    "typeText": "City",
+    "left": 56.35,
+    "top": 9.4
+   },
+   {
+    "n": 42,
+    "kind": "area",
+    "index": 41,
+    "id": 1064,
+    "label": "Czech Republic",
+    "typeText": "Country",
+    "left": 53.44,
+    "top": 15.66
+   },
+   {
+    "n": 43,
+    "kind": "area",
+    "index": 42,
+    "id": 363,
+    "label": "Hawaii",
+    "typeText": "Region",
+    "left": 7.58,
+    "top": 37.55
+   },
+   {
+    "n": 44,
+    "kind": "pin",
+    "index": 43,
+    "id": 254,
+    "label": "Lisbon",
+    "typeText": "City",
+    "left": 47.73,
+    "top": 23.78
+   },
+   {
+    "n": 45,
+    "kind": "area",
+    "index": 44,
+    "id": 159,
+    "label": "Portugal",
+    "typeText": "Country",
+    "left": 47.72,
+    "top": 23.78
+   },
+   {
+    "n": 46,
+    "kind": "pin",
+    "index": 45,
+    "id": 250,
+    "label": "Amsterdam",
+    "typeText": "City",
+    "left": 51.1,
+    "top": 14.08
+   },
+   {
+    "n": 47,
+    "kind": "area",
+    "index": 46,
+    "id": 211,
+    "label": "Cuba",
+    "typeText": "Country",
+    "left": 28.69,
+    "top": 37.14
+   },
+   {
+    "n": 48,
+    "kind": "area",
+    "index": 47,
+    "id": 609,
+    "label": "Iceland",
+    "typeText": "Country",
+    "left": 46.22,
+    "top": 6.65
+   },
+   {
+    "n": 49,
+    "kind": "area",
+    "index": 48,
+    "id": 299,
+    "label": "Chile",
+    "typeText": "Country",
+    "left": 31.82,
+    "top": 83.74
+   },
+   {
+    "n": 50,
+    "kind": "area",
+    "index": 49,
+    "id": 4726,
+    "label": "Almería",
+    "typeText": "Region",
+    "left": 49.38,
+    "top": 25.2
+   }
+  ],
+  "offText": "",
+  "caption": "50 places on the map: New York City, London, Los Angeles and 47 more."
+ },
+ "p3d-places-harry-potter-uk-en": {
+  "viewBox": "908 61 160 100",
+  "frame": {
+   "x": 908,
+   "y": 61,
+   "width": 160,
+   "height": 100
+  },
+  "marks": [
+   {
+    "n": 1,
+    "kind": "pin",
+    "index": 0,
+    "id": 5967,
+    "label": "Alnwick Castle",
+    "typeText": "Site",
+    "left": 52.84,
+    "top": 43.69
+   },
+   {
+    "n": 2,
+    "kind": "pin",
+    "index": 1,
+    "id": 9037,
+    "label": "Christ Church",
+    "typeText": "Place",
+    "left": 53.95,
+    "top": 64.04
+   },
+   {
+    "n": 3,
+    "kind": "pin",
+    "index": 2,
+    "id": 4752,
+    "label": "Goathland railway station",
+    "typeText": "Site",
+    "left": 55.54,
+    "top": 49.22
+   },
+   {
+    "n": 4,
+    "kind": "pin",
+    "index": 3,
+    "id": 7402,
+    "label": "Harrow School",
+    "typeText": "Site",
+    "left": 56.55,
+    "top": 65.06
+   },
+   {
+    "n": 5,
+    "kind": "area",
+    "index": 4,
+    "id": 66,
+    "label": "Hertfordshire",
+    "typeText": "Region",
+    "left": 56.94,
+    "top": 63.19
+   },
+   {
+    "n": 6,
+    "kind": "pin",
+    "index": 5,
+    "id": 8390,
+    "label": "Leadenhall Market",
+    "typeText": "Site",
+    "left": 57.26,
+    "top": 65.4
+   },
+   {
+    "n": 7,
+    "kind": "pin",
+    "index": 6,
+    "id": 271,
+    "label": "Liverpool",
+    "typeText": "City",
+    "left": 49.17,
+    "top": 54.71
+   },
+   {
+    "n": 8,
+    "kind": "pin",
+    "index": 7,
+    "id": 21,
+    "label": "London",
+    "typeText": "City",
+    "left": 57.14,
+    "top": 65.43
+   },
+   {
+    "n": 9,
+    "kind": "pin",
+    "index": 8,
+    "id": 8307,
+    "label": "London Zoo",
+    "typeText": "Site",
+    "left": 57.06,
+    "top": 65.27
+   },
+   {
+    "n": 10,
+    "kind": "pin",
+    "index": 9,
+    "id": 6790,
+    "label": "New College",
+    "typeText": "Site",
+    "left": 53.97,
+    "top": 64.02
+   },
+   {
+    "n": 11,
+    "kind": "area",
+    "index": 10,
+    "id": 4637,
+    "label": "Oxfordshire",
+    "typeText": "Region",
+    "left": 53.89,
+    "top": 64.04
+   },
+   {
+    "n": 12,
+    "kind": "pin",
+    "index": 11,
+    "id": 4558,
+    "label": "Pinewood Studios",
+    "typeText": "Site",
+    "left": 55.99,
+    "top": 65.19
+   },
+   {
+    "n": 13,
+    "kind": "area",
+    "index": 12,
+    "id": 11866,
+    "label": "Glen Nevis",
+    "typeText": "Region",
+    "left": 43.91,
+    "top": 36.46
+   },
+   {
+    "n": 14,
+    "kind": "pin",
+    "index": 15,
+    "id": 8326,
+    "label": "Durham Cathedral",
+    "typeText": "Site",
+    "left": 53.17,
+    "top": 47.18
+   },
+   {
+    "n": 15,
+    "kind": "pin",
+    "index": 17,
+    "id": 6322,
+    "label": "Gloucester Cathedral",
+    "typeText": "Site",
+    "left": 51.16,
+    "top": 63.38
+   },
+   {
+    "n": 16,
+    "kind": "area",
+    "index": 27,
+    "id": 4936,
+    "label": "Pembrokeshire",
+    "typeText": "Region",
+    "left": 43.84,
+    "top": 63.5
+   },
+   {
+    "n": 17,
+    "kind": "pin",
+    "index": 29,
+    "id": 4577,
+    "label": "Warner Bros. Studios, Leavesden",
+    "typeText": "Site",
+    "left": 56.31,
+    "top": 64.37
+   }
+  ],
+  "offText": "",
+  "caption": "17 places on the map: Alnwick Castle, Christ Church, Goathland railway station and 14 more."
+ },
+ "p3d-places-inception-en": {
+  "viewBox": "178 0 1744 793",
+  "frame": {
+   "x": 178,
+   "y": 0,
+   "width": 1744,
+   "height": 793
+  },
+  "marks": [
+   {
+    "n": 1,
+    "kind": "pin",
+    "index": 0,
+    "id": 38,
+    "label": "Paris",
+    "typeText": "City",
+    "left": 47.76,
+    "top": 17.89
+   },
+   {
+    "n": 2,
+    "kind": "area",
+    "index": 1,
+    "id": 5,
+    "label": "California",
+    "typeText": "Region",
+    "left": 12.64,
+    "top": 27.3
+   },
+   {
+    "n": 3,
+    "kind": "area",
+    "index": 2,
+    "id": 32,
+    "label": "Japan",
+    "typeText": "Country",
+    "left": 86.66,
+    "top": 28.98
+   },
+   {
+    "n": 4,
+    "kind": "pin",
+    "index": 3,
+    "id": 202,
+    "label": "Tokyo",
+    "typeText": "City",
+    "left": 87.58,
+    "top": 28.4
+   },
+   {
+    "n": 5,
+    "kind": "area",
+    "index": 4,
+    "id": 416,
+    "label": "Morocco",
+    "typeText": "Country",
+    "left": 45.36,
+    "top": 31.54
+   },
+   {
+    "n": 6,
+    "kind": "pin",
+    "index": 5,
+    "id": 88,
+    "label": "Malibu",
+    "typeText": "City",
+    "left": 12.46,
+    "top": 29.8
+   },
+   {
+    "n": 7,
+    "kind": "area",
+    "index": 6,
+    "id": 368,
+    "label": "Alberta",
+    "typeText": "Region",
+    "left": 18.06,
+    "top": 13.83
+   },
+   {
+    "n": 8,
+    "kind": "pin",
+    "index": 7,
+    "id": 810,
+    "label": "Tangier",
+    "typeText": "City",
+    "left": 45.45,
+    "top": 28.33
+   },
+   {
+    "n": 9,
+    "kind": "area",
+    "index": 8,
+    "id": 6177,
+    "label": "RAF Cardington",
+    "typeText": "Region",
+    "left": 47.02,
+    "top": 15.51
+   },
+   {
+    "n": 10,
+    "kind": "pin",
+    "index": 9,
+    "id": 7687,
+    "label": "Palais Galliera",
+    "typeText": "Site",
+    "left": 47.74,
+    "top": 17.88
+   },
+   {
+    "n": 11,
+    "kind": "area",
+    "index": 10,
+    "id": 7551,
+    "label": "Farnborough Airport",
+    "typeText": "Region",
+    "left": 46.93,
+    "top": 16.11
+   },
+   {
+    "n": 12,
+    "kind": "pin",
+    "index": 11,
+    "id": 9516,
+    "label": "Fortress Mountain Resort",
+    "typeText": "City",
+    "left": 17.07,
+    "top": 16.44
+   },
+   {
+    "n": 13,
+    "kind": "area",
+    "index": 12,
+    "id": 9741,
+    "label": "pont de Bir-Hakeim",
+    "typeText": "Region",
+    "left": 47.74,
+    "top": 17.89
+   },
+   {
+    "n": 14,
+    "kind": "area",
+    "index": 13,
+    "id": 11284,
+    "label": "Commodore Schuyler F. Heim Bridge",
+    "typeText": "Region",
+    "left": 12.54,
+    "top": 30.03
+   },
+   {
+    "n": 15,
+    "kind": "pin",
+    "index": 14,
+    "id": 11853,
+    "label": "University College London",
+    "typeText": "Place",
+    "left": 47.1,
+    "top": 15.93
+   }
+  ],
+  "offText": "",
+  "caption": "15 places on the map: Paris, California, Japan and twelve more."
+ },
+ "p3d-places-italy-regions-en": {
+  "viewBox": "982 127 160 116",
+  "frame": {
+   "x": 982,
+   "y": 127,
+   "width": 160,
+   "height": 116
+  },
+  "marks": [
+   {
+    "n": 1,
+    "kind": "pin",
+    "index": 0,
+    "id": 5399,
+    "label": "Brindisi",
+    "typeText": "City",
+    "left": 66.26,
+    "top": 56.63
+   },
+   {
+    "n": 2,
+    "kind": "pin",
+    "index": 1,
+    "id": 677,
+    "label": "Lecce",
+    "typeText": "City",
+    "left": 67.04,
+    "top": 58.22
+   },
+   {
+    "n": 3,
+    "kind": "pin",
+    "index": 2,
+    "id": 11505,
+    "label": "Cirella",
+    "typeText": "City",
+    "left": 59.99,
+    "top": 61.78
+   },
+   {
+    "n": 4,
+    "kind": "pin",
+    "index": 3,
+    "id": 2205,
+    "label": "Crotone",
+    "typeText": "City",
+    "left": 64.22,
+    "top": 65.31
+   },
+   {
+    "n": 5,
+    "kind": "pin",
+    "index": 4,
+    "id": 6704,
+    "label": "Caserta",
+    "typeText": "City",
+    "left": 55.06,
+    "top": 54.26
+   },
+   {
+    "n": 6,
+    "kind": "pin",
+    "index": 5,
+    "id": 65,
+    "label": "Naples",
+    "typeText": "City",
+    "left": 54.87,
+    "top": 55.53
+   },
+   {
+    "n": 7,
+    "kind": "pin",
+    "index": 6,
+    "id": 7724,
+    "label": "Palace of Caserta",
+    "typeText": "City",
+    "left": 55.04,
+    "top": 54.22
+   },
+   {
+    "n": 8,
+    "kind": "pin",
+    "index": 8,
+    "id": 6207,
+    "label": "Cesena",
+    "typeText": "City",
+    "left": 47.88,
+    "top": 37.54
+   },
+   {
+    "n": 9,
+    "kind": "pin",
+    "index": 9,
+    "id": 6623,
+    "label": "Imola",
+    "typeText": "City",
+    "left": 46.27,
+    "top": 36.37
+   },
+   {
+    "n": 10,
+    "kind": "pin",
+    "index": 10,
+    "id": 4613,
+    "label": "Duino",
+    "typeText": "City",
+    "left": 51.5,
+    "top": 28.85
+   },
+   {
+    "n": 11,
+    "kind": "pin",
+    "index": 11,
+    "id": 7645,
+    "label": "Sistiana",
+    "typeText": "City",
+    "left": 51.61,
+    "top": 28.82
+   },
+   {
+    "n": 12,
+    "kind": "pin",
+    "index": 12,
+    "id": 346,
+    "label": "Trieste",
+    "typeText": "City",
+    "left": 52.04,
+    "top": 29.46
+   },
+   {
+    "n": 13,
+    "kind": "pin",
+    "index": 13,
+    "id": 10759,
+    "label": "Acilia",
+    "typeText": "City",
+    "left": 48.87,
+    "top": 50.31
+   },
+   {
+    "n": 14,
+    "kind": "pin",
+    "index": 14,
+    "id": 4699,
+    "label": "Europa",
+    "typeText": "City",
+    "left": 49.18,
+    "top": 50.04
+   },
+   {
+    "n": 15,
+    "kind": "pin",
+    "index": 15,
+    "id": 5237,
+    "label": "Garbatella",
+    "typeText": "City",
+    "left": 49.22,
+    "top": 49.88
+   },
+   {
+    "n": 16,
+    "kind": "pin",
+    "index": 16,
+    "id": 2790,
+    "label": "Latina",
+    "typeText": "City",
+    "left": 50.59,
+    "top": 52.05
+   },
+   {
+    "n": 17,
+    "kind": "pin",
+    "index": 17,
+    "id": 6851,
+    "label": "Lido di Ostia",
+    "typeText": "City",
+    "left": 48.62,
+    "top": 50.58
+   },
+   {
+    "n": 18,
+    "kind": "pin",
+    "index": 18,
+    "id": 5463,
+    "label": "Maccarese",
+    "typeText": "City",
+    "left": 48.4,
+    "top": 49.79
+   },
+   {
+    "n": 19,
+    "kind": "pin",
+    "index": 19,
+    "id": 6404,
+    "label": "Monte Sacro",
+    "typeText": "City",
+    "left": 49.34,
+    "top": 49.49
+   },
+   {
+    "n": 20,
+    "kind": "pin",
+    "index": 20,
+    "id": 9343,
+    "label": "Municipio III",
+    "typeText": "City",
+    "left": 49.35,
+    "top": 49.47
+   },
+   {
+    "n": 21,
+    "kind": "pin",
+    "index": 21,
+    "id": 3,
+    "label": "Rome",
+    "typeText": "City",
+    "left": 49.2,
+    "top": 49.71
+   },
+   {
+    "n": 22,
+    "kind": "pin",
+    "index": 22,
+    "id": 10106,
+    "label": "Testaccio",
+    "typeText": "City",
+    "left": 49.18,
+    "top": 49.8
+   },
+   {
+    "n": 23,
+    "kind": "pin",
+    "index": 23,
+    "id": 3602,
+    "label": "Torvaianica",
+    "typeText": "City",
+    "left": 49.16,
+    "top": 51.13
+   },
+   {
+    "n": 24,
+    "kind": "pin",
+    "index": 24,
+    "id": 135,
+    "label": "Genoa",
+    "typeText": "City",
+    "left": 37.95,
+    "top": 36.08
+   },
+   {
+    "n": 25,
+    "kind": "pin",
+    "index": 25,
+    "id": 5715,
+    "label": "Imperia",
+    "typeText": "City",
+    "left": 35.33,
+    "top": 38.87
+   },
+   {
+    "n": 26,
+    "kind": "pin",
+    "index": 26,
+    "id": 1505,
+    "label": "Sanremo",
+    "typeText": "City",
+    "left": 34.58,
+    "top": 39.24
+   },
+   {
+    "n": 27,
+    "kind": "pin",
+    "index": 27,
+    "id": 6897,
+    "label": "Ventimiglia",
+    "typeText": "City",
+    "left": 34.09,
+    "top": 39.39
+   },
+   {
+    "n": 28,
+    "kind": "pin",
+    "index": 28,
+    "id": 12313,
+    "label": "Certosa di Pavia",
+    "typeText": "City",
+    "left": 38.42,
+    "top": 31.54
+   },
+   {
+    "n": 29,
+    "kind": "pin",
+    "index": 29,
+    "id": 9844,
+    "label": "Consonno",
+    "typeText": "City",
+    "left": 39.04,
+    "top": 28.75
+   },
+   {
+    "n": 30,
+    "kind": "pin",
+    "index": 30,
+    "id": 12260,
+    "label": "Corso Vittorio Emanuele II",
+    "typeText": "City",
+    "left": 38.52,
+    "top": 30.44
+   },
+   {
+    "n": 31,
+    "kind": "pin",
+    "index": 32,
+    "id": 12174,
+    "label": "Albinia",
+    "typeText": "City",
+    "left": 45.19,
+    "top": 46.37
+   },
+   {
+    "n": 32,
+    "kind": "pin",
+    "index": 33,
+    "id": 3551,
+    "label": "Metropolitan City of Turin",
+    "typeText": "City",
+    "left": 34.15,
+    "top": 32.56
+   },
+   {
+    "n": 33,
+    "kind": "pin",
+    "index": 34,
+    "id": 12233,
+    "label": "Selve",
+    "typeText": "City",
+    "left": 35.92,
+    "top": 31.19
+   },
+   {
+    "n": 34,
+    "kind": "pin",
+    "index": 35,
+    "id": 275,
+    "label": "Turin",
+    "typeText": "City",
+    "left": 34.08,
+    "top": 32.49
+   },
+   {
+    "n": 35,
+    "kind": "pin",
+    "index": 38,
+    "id": 4971,
+    "label": "Agrigento",
+    "typeText": "City",
+    "left": 53.71,
+    "top": 75.33
+   },
+   {
+    "n": 36,
+    "kind": "pin",
+    "index": 39,
+    "id": 394,
+    "label": "Palermo",
+    "typeText": "City",
+    "left": 52.84,
+    "top": 70.77
+   },
+   {
+    "n": 37,
+    "kind": "pin",
+    "index": 40,
+    "id": 11879,
+    "label": "Bolzano",
+    "typeText": "City",
+    "left": 44.67,
+    "top": 25.0
+   },
+   {
+    "n": 38,
+    "kind": "pin",
+    "index": 41,
+    "id": 4945,
+    "label": "Rogaro",
+    "typeText": "City",
+    "left": 38.5,
+    "top": 27.68
+   },
+   {
+    "n": 39,
+    "kind": "pin",
+    "index": 44,
+    "id": 11552,
+    "label": "Carrara",
+    "typeText": "City",
+    "left": 41.5,
+    "top": 37.81
+   },
+   {
+    "n": 40,
+    "kind": "pin",
+    "index": 45,
+    "id": 6020,
+    "label": "Castiglioncello",
+    "typeText": "City",
+    "left": 42.58,
+    "top": 41.47
+   },
+   {
+    "n": 41,
+    "kind": "pin",
+    "index": 46,
+    "id": 589,
+    "label": "Livorno",
+    "typeText": "City",
+    "left": 42.27,
+    "top": 40.69
+   },
+   {
+    "n": 42,
+    "kind": "pin",
+    "index": 47,
+    "id": 3286,
+    "label": "Lucca",
+    "typeText": "City",
+    "left": 42.8,
+    "top": 39.07
+   },
+   {
+    "n": 43,
+    "kind": "pin",
+    "index": 48,
+    "id": 406,
+    "label": "Pisa",
+    "typeText": "City",
+    "left": 42.48,
+    "top": 39.79
+   },
+   {
+    "n": 44,
+    "kind": "pin",
+    "index": 49,
+    "id": 7055,
+    "label": "Prato",
+    "typeText": "City",
+    "left": 44.53,
+    "top": 38.9
+   }
+  ],
+  "offText": "",
+  "caption": "44 places on the map: Brindisi, Lecce, Cirella and 41 more."
+ },
+ "p3d-places-italy-regions-fr": {
+  "viewBox": "982 125 160 118",
+  "frame": {
+   "x": 982,
+   "y": 125,
+   "width": 160,
+   "height": 118
+  },
+  "marks": [
+   {
+    "n": 1,
+    "kind": "pin",
+    "index": 0,
+    "id": 5399,
+    "label": "Brindisi",
+    "typeText": "Ville",
+    "left": 66.26,
+    "top": 57.36
+   },
+   {
+    "n": 2,
+    "kind": "pin",
+    "index": 1,
+    "id": 677,
+    "label": "Lecce",
+    "typeText": "Ville",
+    "left": 67.04,
+    "top": 58.93
+   },
+   {
+    "n": 3,
+    "kind": "pin",
+    "index": 2,
+    "id": 11505,
+    "label": "Cirella",
+    "typeText": "Ville",
+    "left": 59.99,
+    "top": 62.42
+   },
+   {
+    "n": 4,
+    "kind": "pin",
+    "index": 3,
+    "id": 2205,
+    "label": "Crotone",
+    "typeText": "Ville",
+    "left": 64.22,
+    "top": 65.9
+   },
+   {
+    "n": 5,
+    "kind": "pin",
+    "index": 4,
+    "id": 6704,
+    "label": "Caserte",
+    "typeText": "Ville",
+    "left": 55.06,
+    "top": 55.03
+   },
+   {
+    "n": 6,
+    "kind": "pin",
+    "index": 5,
+    "id": 65,
+    "label": "Naples",
+    "typeText": "Ville",
+    "left": 54.87,
+    "top": 56.29
+   },
+   {
+    "n": 7,
+    "kind": "pin",
+    "index": 6,
+    "id": 7724,
+    "label": "palais de Caserte",
+    "typeText": "Ville",
+    "left": 55.04,
+    "top": 55.0
+   },
+   {
+    "n": 8,
+    "kind": "pin",
+    "index": 8,
+    "id": 6207,
+    "label": "Cesena",
+    "typeText": "Ville",
+    "left": 47.88,
+    "top": 38.6
+   },
+   {
+    "n": 9,
+    "kind": "pin",
+    "index": 9,
+    "id": 6623,
+    "label": "Imola",
+    "typeText": "Ville",
+    "left": 46.27,
+    "top": 37.44
+   },
+   {
+    "n": 10,
+    "kind": "pin",
+    "index": 10,
+    "id": 4613,
+    "label": "Duino",
+    "typeText": "Ville",
+    "left": 51.5,
+    "top": 30.05
+   },
+   {
+    "n": 11,
+    "kind": "pin",
+    "index": 11,
+    "id": 7645,
+    "label": "Sistiana",
+    "typeText": "Ville",
+    "left": 51.61,
+    "top": 30.02
+   },
+   {
+    "n": 12,
+    "kind": "pin",
+    "index": 12,
+    "id": 346,
+    "label": "Trieste",
+    "typeText": "Ville",
+    "left": 52.04,
+    "top": 30.66
+   },
+   {
+    "n": 13,
+    "kind": "pin",
+    "index": 13,
+    "id": 10759,
+    "label": "Acilia",
+    "typeText": "Ville",
+    "left": 48.87,
+    "top": 51.15
+   },
+   {
+    "n": 14,
+    "kind": "pin",
+    "index": 14,
+    "id": 4699,
+    "label": "Europa",
+    "typeText": "Ville",
+    "left": 49.18,
+    "top": 50.89
+   },
+   {
+    "n": 15,
+    "kind": "pin",
+    "index": 15,
+    "id": 5237,
+    "label": "Garbatella",
+    "typeText": "Ville",
+    "left": 49.22,
+    "top": 50.73
+   },
+   {
+    "n": 16,
+    "kind": "pin",
+    "index": 16,
+    "id": 2790,
+    "label": "Latina",
+    "typeText": "Ville",
+    "left": 50.59,
+    "top": 52.86
+   },
+   {
+    "n": 17,
+    "kind": "pin",
+    "index": 17,
+    "id": 6851,
+    "label": "Ostie",
+    "typeText": "Ville",
+    "left": 48.62,
+    "top": 51.42
+   },
+   {
+    "n": 18,
+    "kind": "pin",
+    "index": 18,
+    "id": 5463,
+    "label": "Maccarese",
+    "typeText": "Ville",
+    "left": 48.4,
+    "top": 50.65
+   },
+   {
+    "n": 19,
+    "kind": "pin",
+    "index": 19,
+    "id": 6404,
+    "label": "Monte Sacro",
+    "typeText": "Ville",
+    "left": 49.34,
+    "top": 50.34
+   },
+   {
+    "n": 20,
+    "kind": "pin",
+    "index": 20,
+    "id": 9343,
+    "label": "Municipio III",
+    "typeText": "Ville",
+    "left": 49.35,
+    "top": 50.33
+   },
+   {
+    "n": 21,
+    "kind": "pin",
+    "index": 21,
+    "id": 3,
+    "label": "Rome",
+    "typeText": "Ville",
+    "left": 49.2,
+    "top": 50.56
+   },
+   {
+    "n": 22,
+    "kind": "pin",
+    "index": 22,
+    "id": 10106,
+    "label": "Testaccio",
+    "typeText": "Ville",
+    "left": 49.18,
+    "top": 50.65
+   },
+   {
+    "n": 23,
+    "kind": "pin",
+    "index": 23,
+    "id": 3602,
+    "label": "Torvaianica",
+    "typeText": "Ville",
+    "left": 49.16,
+    "top": 51.96
+   },
+   {
+    "n": 24,
+    "kind": "pin",
+    "index": 24,
+    "id": 135,
+    "label": "Gênes",
+    "typeText": "Ville",
+    "left": 37.95,
+    "top": 37.16
+   },
+   {
+    "n": 25,
+    "kind": "pin",
+    "index": 25,
+    "id": 5715,
+    "label": "Imperia",
+    "typeText": "Ville",
+    "left": 35.33,
+    "top": 39.91
+   },
+   {
+    "n": 26,
+    "kind": "pin",
+    "index": 26,
+    "id": 1505,
+    "label": "Sanremo",
+    "typeText": "Ville",
+    "left": 34.58,
+    "top": 40.27
+   },
+   {
+    "n": 27,
+    "kind": "pin",
+    "index": 27,
+    "id": 6897,
+    "label": "Vintimille",
+    "typeText": "Ville",
+    "left": 34.09,
+    "top": 40.42
+   },
+   {
+    "n": 28,
+    "kind": "pin",
+    "index": 28,
+    "id": 12313,
+    "label": "chartreuse de Pavie",
+    "typeText": "Ville",
+    "left": 38.42,
+    "top": 32.7
+   },
+   {
+    "n": 29,
+    "kind": "pin",
+    "index": 29,
+    "id": 9844,
+    "label": "Consonno",
+    "typeText": "Ville",
+    "left": 39.04,
+    "top": 29.96
+   },
+   {
+    "n": 30,
+    "kind": "pin",
+    "index": 30,
+    "id": 12260,
+    "label": "Corso Vittorio Emanuele II",
+    "typeText": "Ville",
+    "left": 38.52,
+    "top": 31.62
+   },
+   {
+    "n": 31,
+    "kind": "pin",
+    "index": 31,
+    "id": 2838,
+    "label": "Milano Due",
+    "typeText": "Ville",
+    "left": 38.72,
+    "top": 31.44
+   },
+   {
+    "n": 32,
+    "kind": "pin",
+    "index": 33,
+    "id": 12174,
+    "label": "Albinia",
+    "typeText": "Ville",
+    "left": 45.19,
+    "top": 47.28
+   },
+   {
+    "n": 33,
+    "kind": "pin",
+    "index": 34,
+    "id": 12233,
+    "label": "Selve",
+    "typeText": "Ville",
+    "left": 35.92,
+    "top": 32.35
+   },
+   {
+    "n": 34,
+    "kind": "pin",
+    "index": 35,
+    "id": 275,
+    "label": "Turin",
+    "typeText": "Ville",
+    "left": 34.08,
+    "top": 33.63
+   },
+   {
+    "n": 35,
+    "kind": "pin",
+    "index": 38,
+    "id": 4971,
+    "label": "Agrigente",
+    "typeText": "Ville",
+    "left": 53.71,
+    "top": 75.75
+   },
+   {
+    "n": 36,
+    "kind": "pin",
+    "index": 39,
+    "id": 394,
+    "label": "Palerme",
+    "typeText": "Ville",
+    "left": 52.84,
+    "top": 71.26
+   },
+   {
+    "n": 37,
+    "kind": "pin",
+    "index": 40,
+    "id": 11879,
+    "label": "Bolzano",
+    "typeText": "Ville",
+    "left": 44.67,
+    "top": 26.27
+   },
+   {
+    "n": 38,
+    "kind": "pin",
+    "index": 41,
+    "id": 13031,
+    "label": "Plan de Corones",
+    "typeText": "Ville",
+    "left": 46.39,
+    "top": 25.03
+   },
+   {
+    "n": 39,
+    "kind": "pin",
+    "index": 42,
+    "id": 4945,
+    "label": "Rogaro",
+    "typeText": "Ville",
+    "left": 38.5,
+    "top": 28.91
+   },
+   {
+    "n": 40,
+    "kind": "pin",
+    "index": 43,
+    "id": 12042,
+    "label": "Riva",
+    "typeText": "Ville",
+    "left": 44.11,
+    "top": 29.98
+   },
+   {
+    "n": 41,
+    "kind": "pin",
+    "index": 48,
+    "id": 11552,
+    "label": "Carrare",
+    "typeText": "Ville",
+    "left": 41.5,
+    "top": 38.87
+   },
+   {
+    "n": 42,
+    "kind": "pin",
+    "index": 49,
+    "id": 6020,
+    "label": "Castiglioncello",
+    "typeText": "Ville",
+    "left": 42.58,
+    "top": 42.46
+   }
+  ],
+  "offText": "",
+  "caption": "42 lieux sur la carte : Brindisi, Lecce, Cirella et 39 autres."
+ },
+ "p3d-places-john-ford-states-en": {
+  "viewBox": "71 130 506 232",
+  "frame": {
+   "x": 71,
+   "y": 130,
+   "width": 506,
+   "height": 232
+  },
+  "marks": [
+   {
+    "n": 1,
+    "kind": "area",
+    "index": 0,
+    "id": 23,
+    "label": "Arizona",
+    "typeText": "Region",
+    "left": 71.31,
+    "top": 45.09
+   },
+   {
+    "n": 2,
+    "kind": "pin",
+    "index": 1,
+    "id": 5433,
+    "label": "Alabama Hills",
+    "typeText": "Natural site",
+    "left": 66.33,
+    "top": 38.38
+   },
+   {
+    "n": 3,
+    "kind": "area",
+    "index": 2,
+    "id": 5,
+    "label": "California",
+    "typeText": "Region",
+    "left": 64.71,
+    "top": 37.26
+   },
+   {
+    "n": 4,
+    "kind": "pin",
+    "index": 3,
+    "id": 9592,
+    "label": "Inyo National Forest",
+    "typeText": "Site",
+    "left": 66.98,
+    "top": 34.84
+   },
+   {
+    "n": 5,
+    "kind": "pin",
+    "index": 4,
+    "id": 4,
+    "label": "Los Angeles",
+    "typeText": "City",
+    "left": 64.54,
+    "top": 45.77
+   },
+   {
+    "n": 6,
+    "kind": "pin",
+    "index": 5,
+    "id": 88,
+    "label": "Malibu",
+    "typeText": "City",
+    "left": 64.08,
+    "top": 45.82
+   },
+   {
+    "n": 7,
+    "kind": "area",
+    "index": 6,
+    "id": 55,
+    "label": "Colorado",
+    "typeText": "Region",
+    "left": 80.3,
+    "top": 31.6
+   },
+   {
+    "n": 8,
+    "kind": "pin",
+    "index": 7,
+    "id": 10136,
+    "label": "Uncompahgre National Forest",
+    "typeText": "Site",
+    "left": 77.27,
+    "top": 33.67
+   },
+   {
+    "n": 9,
+    "kind": "pin",
+    "index": 8,
+    "id": 194,
+    "label": "Kauaʻi",
+    "typeText": "Island",
+    "left": 14.64,
+    "top": 81.88
+   },
+   {
+    "n": 10,
+    "kind": "area",
+    "index": 12,
+    "id": 103,
+    "label": "New Mexico",
+    "typeText": "Region",
+    "left": 76.84,
+    "top": 45.92
+   },
+   {
+    "n": 11,
+    "kind": "pin",
+    "index": 13,
+    "id": 6514,
+    "label": "Custer State Park",
+    "typeText": "Site",
+    "left": 85.42,
+    "top": 18.52
+   },
+   {
+    "n": 12,
+    "kind": "area",
+    "index": 14,
+    "id": 190,
+    "label": "Utah",
+    "typeText": "Region",
+    "left": 74.76,
+    "top": 30.19
+   }
+  ],
+  "offText": "",
+  "caption": "Twelve places on the map: Arizona, Alabama Hills, California and nine more."
+ },
+ "p3d-places-lawrence-en": {
+  "viewBox": "916 87 326 208",
+  "frame": {
+   "x": 916,
+   "y": 87,
+   "width": 326,
+   "height": 208
+  },
+  "marks": [
+   {
+    "n": 1,
+    "kind": "pin",
+    "index": 0,
+    "id": 21,
+    "label": "London",
+    "typeText": "City",
+    "left": 25.59,
+    "top": 18.96
+   },
+   {
+    "n": 2,
+    "kind": "area",
+    "index": 1,
+    "id": 56,
+    "label": "Spain",
+    "typeText": "Country",
+    "left": 20.49,
+    "top": 52.17
+   },
+   {
+    "n": 3,
+    "kind": "area",
+    "index": 2,
+    "id": 416,
+    "label": "Morocco",
+    "typeText": "Country",
+    "left": 16.29,
+    "top": 78.44
+   },
+   {
+    "n": 4,
+    "kind": "area",
+    "index": 3,
+    "id": 879,
+    "label": "Jordan",
+    "typeText": "Country",
+    "left": 83.63,
+    "top": 81.08
+   },
+   {
+    "n": 5,
+    "kind": "area",
+    "index": 4,
+    "id": 1144,
+    "label": "Almería Province",
+    "typeText": "Region",
+    "left": 22.01,
+    "top": 62.18
+   }
+  ],
+  "offText": "",
+  "caption": "Five places on the map: London, Spain, Morocco and two more."
+ },
+ "p3d-places-lawrence-fr": {
+  "viewBox": "916 87 326 208",
+  "frame": {
+   "x": 916,
+   "y": 87,
+   "width": 326,
+   "height": 208
+  },
+  "marks": [
+   {
+    "n": 1,
+    "kind": "pin",
+    "index": 0,
+    "id": 21,
+    "label": "Londres",
+    "typeText": "Ville",
+    "left": 25.59,
+    "top": 18.96
+   },
+   {
+    "n": 2,
+    "kind": "area",
+    "index": 1,
+    "id": 56,
+    "label": "Espagne",
+    "typeText": "Pays",
+    "left": 20.49,
+    "top": 52.17
+   },
+   {
+    "n": 3,
+    "kind": "area",
+    "index": 2,
+    "id": 416,
+    "label": "Maroc",
+    "typeText": "Pays",
+    "left": 16.29,
+    "top": 78.44
+   },
+   {
+    "n": 4,
+    "kind": "area",
+    "index": 3,
+    "id": 879,
+    "label": "Jordanie",
+    "typeText": "Pays",
+    "left": 83.63,
+    "top": 81.08
+   },
+   {
+    "n": 5,
+    "kind": "area",
+    "index": 4,
+    "id": 1144,
+    "label": "province d'Almería",
+    "typeText": "Région",
+    "left": 22.01,
+    "top": 62.18
+   }
+  ],
+  "offText": "",
+  "caption": "Cinq lieux sur la carte : Londres, Espagne, Maroc et deux autres."
+ },
+ "p3d-places-lost-in-translation-en": {
+  "viewBox": "1616 177 160 100",
+  "frame": {
+   "x": 1616,
+   "y": 177,
+   "width": 160,
+   "height": 100
+  },
+  "marks": [
+   {
+    "n": 1,
+    "kind": "area",
+    "index": 0,
+    "id": 32,
+    "label": "Japan",
+    "typeText": "Country",
+    "left": 45.88,
+    "top": 52.79
+   },
+   {
+    "n": 2,
+    "kind": "pin",
+    "index": 1,
+    "id": 202,
+    "label": "Tokyo",
+    "typeText": "City",
+    "left": 55.92,
+    "top": 48.17
+   },
+   {
+    "n": 3,
+    "kind": "pin",
+    "index": 2,
+    "id": 59,
+    "label": "Kyoto",
+    "typeText": "City",
+    "left": 45.12,
+    "top": 52.72
+   },
+   {
+    "n": 4,
+    "kind": "pin",
+    "index": 3,
+    "id": 3130,
+    "label": "Heian Jingū",
+    "typeText": "Site",
+    "left": 45.15,
+    "top": 52.68
+   }
+  ],
+  "offText": "",
+  "caption": "Four places on the map: Japan, Tokyo, Kyoto and Heian Jingū."
+ },
+ "p3d-places-lost-in-translation-fr": {
+  "viewBox": "1616 177 160 100",
+  "frame": {
+   "x": 1616,
+   "y": 177,
+   "width": 160,
+   "height": 100
+  },
+  "marks": [
+   {
+    "n": 1,
+    "kind": "area",
+    "index": 0,
+    "id": 32,
+    "label": "Japon",
+    "typeText": "Pays",
+    "left": 45.88,
+    "top": 52.79
+   },
+   {
+    "n": 2,
+    "kind": "pin",
+    "index": 1,
+    "id": 59,
+    "label": "Kyoto",
+    "typeText": "Ville",
+    "left": 45.12,
+    "top": 52.72
+   },
+   {
+    "n": 3,
+    "kind": "pin",
+    "index": 2,
+    "id": 202,
+    "label": "Tokyo",
+    "typeText": "Ville",
+    "left": 55.92,
+    "top": 48.17
+   },
+   {
+    "n": 4,
+    "kind": "pin",
+    "index": 3,
+    "id": 3130,
+    "label": "sanctuaire Heian",
+    "typeText": "Site",
+    "left": 45.15,
+    "top": 52.68
+   }
+  ],
+  "offText": "",
+  "caption": "Quatre lieux sur la carte : Japon, Kyoto, Tokyo et sanctuaire Heian."
+ },
+ "p3d-places-nolan-en": {
+  "viewBox": "178 0 1744 793",
+  "frame": {
+   "x": 178,
+   "y": 0,
+   "width": 1744,
+   "height": 793
+  },
+  "marks": [
+   {
+    "n": 1,
+    "kind": "pin",
+    "index": 0,
+    "id": 2,
+    "label": "New York City",
+    "typeText": "City",
+    "left": 26.33,
+    "top": 24.24
+   },
+   {
+    "n": 2,
+    "kind": "pin",
+    "index": 1,
+    "id": 21,
+    "label": "London",
+    "typeText": "City",
+    "left": 47.1,
+    "top": 15.94
+   },
+   {
+    "n": 3,
+    "kind": "pin",
+    "index": 2,
+    "id": 4,
+    "label": "Los Angeles",
+    "typeText": "City",
+    "left": 12.59,
+    "top": 29.78
+   },
+   {
+    "n": 4,
+    "kind": "pin",
+    "index": 3,
+    "id": 38,
+    "label": "Paris",
+    "typeText": "City",
+    "left": 47.76,
+    "top": 17.89
+   },
+   {
+    "n": 5,
+    "kind": "area",
+    "index": 4,
+    "id": 5,
+    "label": "California",
+    "typeText": "Region",
+    "left": 12.64,
+    "top": 27.3
+   },
+   {
+    "n": 6,
+    "kind": "pin",
+    "index": 5,
+    "id": 51,
+    "label": "Hong Kong",
+    "typeText": "City",
+    "left": 82.19,
+    "top": 40.16
+   },
+   {
+    "n": 7,
+    "kind": "pin",
+    "index": 6,
+    "id": 4558,
+    "label": "Pinewood Studios",
+    "typeText": "Site",
+    "left": 46.99,
+    "top": 15.91
+   },
+   {
+    "n": 8,
+    "kind": "area",
+    "index": 7,
+    "id": 176,
+    "label": "New Jersey",
+    "typeText": "Region",
+    "left": 26.1,
+    "top": 24.82
+   },
+   {
+    "n": 9,
+    "kind": "pin",
+    "index": 8,
+    "id": 54,
+    "label": "Vancouver",
+    "typeText": "City",
+    "left": 14.59,
+    "top": 17.59
+   },
+   {
+    "n": 10,
+    "kind": "area",
+    "index": 9,
+    "id": 32,
+    "label": "Japan",
+    "typeText": "Country",
+    "left": 86.66,
+    "top": 28.98
+   },
+   {
+    "n": 11,
+    "kind": "pin",
+    "index": 10,
+    "id": 16,
+    "label": "Chicago",
+    "typeText": "City",
+    "left": 22.69,
+    "top": 23.3
+   },
+   {
+    "n": 12,
+    "kind": "pin",
+    "index": 11,
+    "id": 202,
+    "label": "Tokyo",
+    "typeText": "City",
+    "left": 87.58,
+    "top": 28.4
+   },
+   {
+    "n": 13,
+    "kind": "pin",
+    "index": 12,
+    "id": 162,
+    "label": "Toronto",
+    "typeText": "City",
+    "left": 25.26,
+    "top": 21.87
+   },
+   {
+    "n": 14,
+    "kind": "area",
+    "index": 13,
+    "id": 224,
+    "label": "Greece",
+    "typeText": "Country",
+    "left": 53.69,
+    "top": 26.05
+   },
+   {
+    "n": 15,
+    "kind": "pin",
+    "index": 14,
+    "id": 114,
+    "label": "New Orleans",
+    "typeText": "City",
+    "left": 20.29,
+    "top": 33.3
+   },
+   {
+    "n": 16,
+    "kind": "area",
+    "index": 15,
+    "id": 103,
+    "label": "New Mexico",
+    "typeText": "Region",
+    "left": 16.16,
+    "top": 29.83
+   },
+   {
+    "n": 17,
+    "kind": "pin",
+    "index": 16,
+    "id": 9,
+    "label": "Washington, D.C.",
+    "typeText": "City",
+    "left": 25.23,
+    "top": 25.72
+   },
+   {
+    "n": 18,
+    "kind": "pin",
+    "index": 17,
+    "id": 15,
+    "label": "Mumbai",
+    "typeText": "City",
+    "left": 69.74,
+    "top": 43.08
+   },
+   {
+    "n": 19,
+    "kind": "area",
+    "index": 18,
+    "id": 416,
+    "label": "Morocco",
+    "typeText": "Country",
+    "left": 45.36,
+    "top": 31.54
+   },
+   {
+    "n": 20,
+    "kind": "area",
+    "index": 19,
+    "id": 316,
+    "label": "Sicily",
+    "typeText": "Region",
+    "left": 51.15,
+    "top": 26.79
+   },
+   {
+    "n": 21,
+    "kind": "area",
+    "index": 20,
+    "id": 55,
+    "label": "Colorado",
+    "typeText": "Region",
+    "left": 17.16,
+    "top": 25.64
+   },
+   {
+    "n": 22,
+    "kind": "pin",
+    "index": 21,
+    "id": 150,
+    "label": "Pittsburgh",
+    "typeText": "City",
+    "left": 24.61,
+    "top": 24.46
+   },
+   {
+    "n": 23,
+    "kind": "pin",
+    "index": 22,
+    "id": 88,
+    "label": "Malibu",
+    "typeText": "City",
+    "left": 12.46,
+    "top": 29.8
+   },
+   {
+    "n": 24,
+    "kind": "area",
+    "index": 23,
+    "id": 609,
+    "label": "Iceland",
+    "typeText": "Country",
+    "left": 42.8,
+    "top": 7.24
+   },
+   {
+    "n": 25,
+    "kind": "pin",
+    "index": 24,
+    "id": 448,
+    "label": "Detroit",
+    "typeText": "City",
+    "left": 24.04,
+    "top": 22.93
+   },
+   {
+    "n": 26,
+    "kind": "area",
+    "index": 25,
+    "id": 368,
+    "label": "Alberta",
+    "typeText": "Region",
+    "left": 18.06,
+    "top": 13.83
+   },
+   {
+    "n": 27,
+    "kind": "area",
+    "index": 26,
+    "id": 258,
+    "label": "United Kingdom",
+    "typeText": "Country",
+    "left": 46.63,
+    "top": 13.76
+   },
+   {
+    "n": 28,
+    "kind": "area",
+    "index": 27,
+    "id": 302,
+    "label": "Florence",
+    "typeText": "Country",
+    "left": 50.23,
+    "top": 21.79
+   },
+   {
+    "n": 29,
+    "kind": "area",
+    "index": 28,
+    "id": 1029,
+    "label": "Monaco",
+    "typeText": "Country",
+    "left": 49.18,
+    "top": 21.82
+   },
+   {
+    "n": 30,
+    "kind": "area",
+    "index": 29,
+    "id": 66,
+    "label": "Hertfordshire",
+    "typeText": "Region",
+    "left": 47.08,
+    "top": 15.66
+   },
+   {
+    "n": 31,
+    "kind": "pin",
+    "index": 30,
+    "id": 810,
+    "label": "Tangier",
+    "typeText": "City",
+    "left": 45.45,
+    "top": 28.33
+   },
+   {
+    "n": 32,
+    "kind": "pin",
+    "index": 32,
+    "id": 4577,
+    "label": "Warner Bros. Studios, Leavesden",
+    "typeText": "Site",
+    "left": 47.02,
+    "top": 15.81
+   },
+   {
+    "n": 33,
+    "kind": "pin",
+    "index": 33,
+    "id": 1022,
+    "label": "Oslo",
+    "typeText": "City",
+    "left": 49.71,
+    "top": 10.26
+   },
+   {
+    "n": 34,
+    "kind": "pin",
+    "index": 34,
+    "id": 661,
+    "label": "Tallinn",
+    "typeText": "City",
+    "left": 53.1,
+    "top": 10.56
+   },
+   {
+    "n": 35,
+    "kind": "pin",
+    "index": 35,
+    "id": 1606,
+    "label": "Marrakech",
+    "typeText": "City",
+    "left": 44.77,
+    "top": 31.87
+   },
+   {
+    "n": 36,
+    "kind": "area",
+    "index": 36,
+    "id": 1770,
+    "label": "Dunkirk",
+    "typeText": "Region",
+    "left": 47.75,
+    "top": 16.28
+   },
+   {
+    "n": 37,
+    "kind": "area",
+    "index": 37,
+    "id": 6177,
+    "label": "RAF Cardington",
+    "typeText": "Region",
+    "left": 47.02,
+    "top": 15.51
+   },
+   {
+    "n": 38,
+    "kind": "pin",
+    "index": 38,
+    "id": 7687,
+    "label": "Palais Galliera",
+    "typeText": "Site",
+    "left": 47.74,
+    "top": 17.88
+   },
+   {
+    "n": 39,
+    "kind": "area",
+    "index": 39,
+    "id": 7400,
+    "label": "Amalfi",
+    "typeText": "Region",
+    "left": 51.24,
+    "top": 24.3
+   },
+   {
+    "n": 40,
+    "kind": "pin",
+    "index": 40,
+    "id": 10317,
+    "label": "Essaouira",
+    "typeText": "City",
+    "left": 44.24,
+    "top": 31.97
+   },
+   {
+    "n": 41,
+    "kind": "pin",
+    "index": 41,
+    "id": 10744,
+    "label": "Universal Studios Lot",
+    "typeText": "Site",
+    "left": 12.58,
+    "top": 29.71
+   },
+   {
+    "n": 42,
+    "kind": "pin",
+    "index": 42,
+    "id": 3359,
+    "label": "Canary Wharf",
+    "typeText": "City",
+    "left": 47.13,
+    "top": 15.94
+   },
+   {
+    "n": 43,
+    "kind": "pin",
+    "index": 43,
+    "id": 8688,
+    "label": "Waukegan",
+    "typeText": "City",
+    "left": 22.71,
+    "top": 22.91
+   },
+   {
+    "n": 44,
+    "kind": "pin",
+    "index": 44,
+    "id": 9267,
+    "label": "Coalhouse Fort",
+    "typeText": "Site",
+    "left": 47.25,
+    "top": 15.97
+   },
+   {
+    "n": 45,
+    "kind": "pin",
+    "index": 45,
+    "id": 10343,
+    "label": "Mentmore Towers",
+    "typeText": "Site",
+    "left": 46.95,
+    "top": 15.68
+   },
+   {
+    "n": 46,
+    "kind": "area",
+    "index": 46,
+    "id": 11537,
+    "label": "Vatnajökull",
+    "typeText": "Region",
+    "left": 43.28,
+    "top": 7.58
+   },
+   {
+    "n": 47,
+    "kind": "pin",
+    "index": 47,
+    "id": 11617,
+    "label": "Abbey Mills Pumping Station",
+    "typeText": "Place",
+    "left": 47.13,
+    "top": 15.93
+   },
+   {
+    "n": 48,
+    "kind": "pin",
+    "index": 48,
+    "id": 11992,
+    "label": "Mill Hill",
+    "typeText": "City",
+    "left": 47.07,
+    "top": 15.86
+   },
+   {
+    "n": 49,
+    "kind": "area",
+    "index": 49,
+    "id": 7551,
+    "label": "Farnborough Airport",
+    "typeText": "Region",
+    "left": 46.93,
+    "top": 16.11
+   }
+  ],
+  "offText": "Not on the map: Shepperton Studios (no coordinates).",
+  "caption": "49 places on the map: New York City, London, Los Angeles and 46 more; Shepperton Studios is not on it (no coordinates)."
+ },
+ "p3d-places-third-man-en": {
+  "viewBox": "990 96 160 100",
+  "frame": {
+   "x": 990,
+   "y": 96,
+   "width": 160,
+   "height": 100
+  },
+  "marks": [
+   {
+    "n": 1,
+    "kind": "pin",
+    "index": 0,
+    "id": 41,
+    "label": "Vienna",
+    "typeText": "City",
+    "left": 53.82,
+    "top": 49.7
+   },
+   {
+    "n": 2,
+    "kind": "area",
+    "index": 1,
+    "id": 148,
+    "label": "Austria",
+    "typeText": "Country",
+    "left": 46.99,
+    "top": 50.95
+   }
+  ],
+  "offText": "",
+  "caption": "Two places on the map: Vienna and Austria."
+ },
+ "p3d-places-tokyo-single-hand-en": {
+  "viewBox": "1625 175 160 100",
+  "frame": {
+   "x": 1625,
+   "y": 175,
+   "width": 160,
+   "height": 100
+  },
+  "marks": [
+   {
+    "n": 1,
+    "kind": "pin",
+    "index": 0,
+    "id": 202,
+    "label": "Tokyo",
+    "typeText": "City",
+    "left": 50.3,
+    "top": 50.17
+   }
+  ],
+  "offText": "",
+  "caption": "Tokyo on the map."
+ },
+ "p3d-places-tokyo-single-hand-fr": {
+  "viewBox": "1625 175 160 100",
+  "frame": {
+   "x": 1625,
+   "y": 175,
+   "width": 160,
+   "height": 100
+  },
+  "marks": [
+   {
+    "n": 1,
+    "kind": "pin",
+    "index": 0,
+    "id": 202,
+    "label": "Tokyo",
+    "typeText": "Ville",
+    "left": 50.3,
+    "top": 50.17
+   }
+  ],
+  "offText": "",
+  "caption": "Tokyo sur la carte."
+ },
+ "p3d-places-woody-allen-france-en": {
+  "viewBox": "928 91 160 100",
+  "frame": {
+   "x": 928,
+   "y": 91,
+   "width": 160,
+   "height": 100
+  },
+  "marks": [
+   {
+    "n": 1,
+    "kind": "area",
+    "index": 0,
+    "id": 5160,
+    "label": "Giverny",
+    "typeText": "Region",
+    "left": 49.41,
+    "top": 49.56
+   },
+   {
+    "n": 2,
+    "kind": "pin",
+    "index": 2,
+    "id": 38,
+    "label": "Paris",
+    "typeText": "City",
+    "left": 51.8,
+    "top": 50.85
+   },
+   {
+    "n": 3,
+    "kind": "pin",
+    "index": 3,
+    "id": 8300,
+    "label": "Saint-Étienne-du-Mont",
+    "typeText": "Site",
+    "left": 51.79,
+    "top": 50.91
+   },
+   {
+    "n": 4,
+    "kind": "pin",
+    "index": 4,
+    "id": 5935,
+    "label": "square Jean-XXIII",
+    "typeText": "Site",
+    "left": 51.8,
+    "top": 50.88
+   },
+   {
+    "n": 5,
+    "kind": "pin",
+    "index": 5,
+    "id": 1486,
+    "label": "Palace of Versailles",
+    "typeText": "Site",
+    "left": 51.13,
+    "top": 51.16
+   }
+  ],
+  "offText": "",
+  "caption": "Five places on the map: Giverny, Paris, Saint-Étienne-du-Mont and two more."
+ }
+}

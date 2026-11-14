@@ -1,0 +1,107 @@
+{
+ "question": "Show the places of Akira on a map",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "",
+ "representation": "map",
+ "representation_options": [
+  "map",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": null,
+ "result_entity": "location",
+ "summary_facts": {
+  "count": 4,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": null,
+  "order_direction": null,
+  "top": null,
+  "places": {
+   "count": 4,
+   "located": 2,
+   "pins": [
+    {
+     "index": 0,
+     "id": 202,
+     "label": "Tokyo",
+     "type": "city",
+     "lat": 35.689444,
+     "lon": 139.691667
+    }
+   ],
+   "areas": [
+    {
+     "index": 1,
+     "id": 30,
+     "label": "Japan",
+     "type": "country",
+     "lat": 35.0,
+     "lon": 136.0
+    }
+   ],
+   "unlocated": [
+    {
+     "index": 2,
+     "id": 9001,
+     "label": "Neo-Tokyo",
+     "type": "fiction",
+     "reason": "fiction"
+    },
+    {
+     "index": 3,
+     "id": 9002,
+     "label": "Studio lot",
+     "type": null,
+     "reason": "no-coordinates"
+    }
+   ],
+   "bounds": {
+    "lat_min": 35.0,
+    "lat_max": 35.689444,
+    "lon_min": 136.0,
+    "lon_max": 139.691667
+   }
+  }
+ },
+ "intent": {
+  "task": "list",
+  "focus": [],
+  "focus_columns": [],
+  "requested_view": "map",
+  "source": "rules"
+ },
+ "result": [
+  {
+   "data": {
+    "ID_LOCATION": 202,
+    "LOCATION_NAME": "Tokyo",
+    "LOCATION_TYPE": "city"
+   }
+  },
+  {
+   "data": {
+    "ID_LOCATION": 30,
+    "LOCATION_NAME": "Japan",
+    "LOCATION_TYPE": "country"
+   }
+  },
+  {
+   "data": {
+    "ID_LOCATION": 9001,
+    "LOCATION_NAME": "Neo-Tokyo",
+    "LOCATION_TYPE": "fiction"
+   }
+  },
+  {
+   "data": {
+    "ID_LOCATION": 9002,
+    "LOCATION_NAME": "Studio lot",
+    "LOCATION_TYPE": null
+   }
+  }
+ ]
+}

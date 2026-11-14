@@ -1,0 +1,213 @@
+{
+ "question": "Show on a map where Lawrence of Arabia was filmed",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the places where Lawrence of Arabia was filmed; I can’t show them on a map.",
+ "representation": "map",
+ "representation_options": [
+  "map",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_LOCATION",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_NAME",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_TYPE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_SOURCE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "WIKIPEDIA_IMAGE_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "OVERVIEW",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "SERIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 5,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "collection",
+  "order_direction": null,
+  "top": null,
+  "places": {
+   "count": 5,
+   "located": 5,
+   "pins": [
+    {
+     "index": 0,
+     "id": 21,
+     "label": "London",
+     "type": "city",
+     "lat": 51.507222,
+     "lon": -0.1275
+    }
+   ],
+   "areas": [
+    {
+     "index": 1,
+     "id": 56,
+     "label": "Spain",
+     "type": "country",
+     "lat": 40.2,
+     "lon": -3.5
+    },
+    {
+     "index": 2,
+     "id": 416,
+     "label": "Morocco",
+     "type": "country",
+     "lat": 32.0,
+     "lon": -6.0
+    },
+    {
+     "index": 3,
+     "id": 879,
+     "label": "Jordan",
+     "type": "country",
+     "lat": 31.2,
+     "lon": 36.5
+    },
+    {
+     "index": 4,
+     "id": 1144,
+     "label": "Almería Province",
+     "type": "region",
+     "lat": 37.018611,
+     "lon": -2.444722
+    }
+   ],
+   "unlocated": [],
+   "bounds": {
+    "lat_min": 31.2,
+    "lat_max": 51.507222,
+    "lon_min": -6.0,
+    "lon_max": 36.5
+   }
+  }
+ },
+ "intent": {
+  "task": "list",
+  "focus": [],
+  "requested_view": "map",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_LOCATION": 21,
+    "LOCATION_NAME": "London",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/6/67/London_Skyline_%28125508655%29.jpeg",
+    "OVERVIEW": "capital and largest city of England and the United Kingdom",
+    "MOVIE_COUNT": 2522,
+    "SERIE_COUNT": 411,
+    "IMDB_RATING": 6.38
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_LOCATION": 56,
+    "LOCATION_NAME": "Spain",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/24/Flag_of_the_Kingdom_of_Spain.svg/960px-Flag_of_the_Kingdom_of_Spain.svg.png",
+    "OVERVIEW": "country in southwestern Europe with territories in Africa",
+    "MOVIE_COUNT": 533,
+    "SERIE_COUNT": 23,
+    "IMDB_RATING": 6.18
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_LOCATION": 416,
+    "LOCATION_NAME": "Morocco",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2c/Flag_of_Morocco.svg/960px-Flag_of_Morocco.svg.png",
+    "OVERVIEW": "sovereign state in North Africa",
+    "MOVIE_COUNT": 227,
+    "SERIE_COUNT": 21,
+    "IMDB_RATING": 6.34
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_LOCATION": 879,
+    "LOCATION_NAME": "Jordan",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c0/Flag_of_Jordan.svg/1280px-Flag_of_Jordan.svg.png",
+    "OVERVIEW": "country in West Asia",
+    "MOVIE_COUNT": 25,
+    "SERIE_COUNT": 4,
+    "IMDB_RATING": 6.64
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_LOCATION": 1144,
+    "LOCATION_NAME": "Almería Province",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a9/Almeria_in_Spain_%28plus_Canarias%29.svg/1280px-Almeria_in_Spain_%28plus_Canarias%29.svg.png",
+    "OVERVIEW": "province of Andalusia, Spain",
+    "MOVIE_COUNT": 19,
+    "SERIE_COUNT": 1,
+    "IMDB_RATING": 6.77
+   }
+  }
+ ],
+ "result_entity": "location"
+}

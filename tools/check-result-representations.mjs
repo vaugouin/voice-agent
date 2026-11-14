@@ -75,7 +75,8 @@ function extractRegion(startMarker, endMarker) {
 // lot C (fixtures lotc-*) the histogram, share-bar and flag-list models and sentences, phase 3
 // lot A (fixtures p3a-*) the scatter model, ticks and sentences, phase 3 lot B (fixtures p3b-*,
 // and the outline app/static/world-110m.json itself) the map model and its sentences, phase 3
-// lot C (fixtures p3c-*) the hierarchy model and its sentence, phase 3 lot E (fixtures p3e-*) the
+// lot C (fixtures p3c-*) the hierarchy model and its sentence, phase 3 lot D (fixtures p3d-places-*,
+// with the reference models p3d-places-models.json) the map of places and its sentence, phase 3 lot E (fixtures p3e-*) the
 // chain model and its sentence.
 const lexicons = readFileSync(join(root, "app", "lexicons.json"), "utf8");
 const code = [
@@ -98,6 +99,7 @@ const code = [
   "  text2SqlScatterModel, text2SqlScatterSummary, text2SqlScatterTicks, text2SqlScatterTickText,",
   "  text2SqlScatterValueText, text2SqlScatterAxisTitle, text2SqlScatterWords,",
   "  text2SqlMapModel, text2SqlMapTone, text2SqlMapStepText,",
+  "  text2SqlPlaceMapModel, text2SqlPlaceMapSummary, text2SqlPlaceMapFrame, text2SqlEqualEarth, text2SqlPlaceTypeWord, text2SqlPlaceCount,",
   "  text2SqlHierarchyModel, text2SqlHierarchySummary, text2SqlHierarchyLeafNoun, text2SqlHierarchyKind,",
   "  text2SqlChainModel, text2SqlChainSummary, text2SqlFrDe, text2SqlFrA,",
   "  text2SqlDrillWord, text2SqlDrillQuestion, text2SqlDrillBinValue, text2SqlDrillPeriodValue,",
@@ -821,6 +823,80 @@ check("links: older API, from the keys", linkSummary([], ["ID_PERSON", "PERSON_N
   check("view to rep: map", api.text2SqlRepresentationForView("map", fx("lotc-flags-codes-netflix-en").representation_options.concat("map")), "map");
   check("view to rep: map not offered", api.text2SqlRepresentationForView("map", fx("lotc-share-hbo-type-en").representation_options), "");
   check("reply map fr", api.text2SqlRequestedViewReply({ ok: true, representation: "map", view: "map" }, "fr"), "Voici la carte.");
+}
+
+// Phase 3 lot D (fixtures p3d-places-*: the 1.1.20 baseline answers of evaluations 2910 to 2915,
+// 2922, 2923, 2926 and 2928, re-classified with the API's places module and the live coordinates,
+// plus six hand-written: two places off the map, one off the map, a single pin, in both
+// languages). The captions and the models are the ones of the Python reference both fronts follow
+// (p3d-places-models.json is its output); t2s-front asserts the same words and numbers.
+{
+  const world = JSON.parse(readFileSync(join(root, "app", "static", "world-110m.json"), "utf8"));
+  const expected = fx("p3d-places-models");
+  const P = "p3d-places-";
+  const captions = {
+    "akira-hand-en": "Two places on the map: Tokyo and Japan; two more are not on it.",
+    "akira-hand-fr": "Deux lieux sur la carte : Tokyo et Japon ; deux autres n'y figurent pas.",
+    "akira-one-off-hand-en": "Two places on the map: Tokyo and Japan; Neo-Tokyo is not on it (a fictional place).",
+    "akira-one-off-hand-fr": "Deux lieux sur la carte : Tokyo et Japon ; Neo-Tokyo n'y figure pas (lieu fictif).",
+    "bond-en": "50 places on the map: New York City, London, Los Angeles and 47 more.",
+    "harry-potter-uk-en": "17 places on the map: Alnwick Castle, Christ Church, Goathland railway station and 14 more.",
+    "inception-en": "15 places on the map: Paris, California, Japan and twelve more.",
+    "italy-regions-en": "44 places on the map: Brindisi, Lecce, Cirella and 41 more.",
+    "italy-regions-fr": "42 lieux sur la carte : Brindisi, Lecce, Cirella et 39 autres.",
+    "john-ford-states-en": "Twelve places on the map: Arizona, Alabama Hills, California and nine more.",
+    "lawrence-en": "Five places on the map: London, Spain, Morocco and two more.",
+    "lawrence-fr": "Cinq lieux sur la carte : Londres, Espagne, Maroc et deux autres.",
+    "lost-in-translation-en": "Four places on the map: Japan, Tokyo, Kyoto and Heian Jingū.",
+    "lost-in-translation-fr": "Quatre lieux sur la carte : Japon, Kyoto, Tokyo et sanctuaire Heian.",
+    "nolan-en": "49 places on the map: New York City, London, Los Angeles and 46 more; Shepperton Studios is not on it (no coordinates).",
+    "third-man-en": "Two places on the map: Vienna and Austria.",
+    "tokyo-single-hand-en": "Tokyo on the map.",
+    "tokyo-single-hand-fr": "Tokyo sur la carte.",
+    "woody-allen-france-en": "Five places on the map: Giverny, Paris, Saint-Étienne-du-Mont and two more.",
+  };
+  check("p3d nineteen fixtures", Object.keys(captions).length, 19);
+  // The caption under the map (tokyo-single comes as posters, its map sentence is the map chip's).
+  Object.entries(captions).forEach(([name, text]) => {
+    const f = fx(P + name);
+    check(`p3d caption ${name}`, api.text2SqlSummaryLine(f, { lang: f.ui_language, rep: "map" }), text);
+    check(`p3d spoken ${name}`, api.text2SqlSummaryLine(f, { lang: f.ui_language, rep: "map", spoken: true }), text);
+  });
+  // The model, pinned on every fixture: frame, marks and the line under the map.
+  const pin = (m) => m && {
+    viewBox: m.viewBox, frame: m.frame, offText: m.offText, caption: m.caption,
+    marks: m.marks.map(({ n, kind, index, id, label, typeText, left, top }) => ({ n, kind, index, id, label, typeText, left, top })),
+  };
+  Object.keys(captions).forEach((name) => {
+    const f = fx(P + name);
+    check(`p3d model ${name}`, pin(api.text2SqlPlaceMapModel(f, f.ui_language, world)), pin(expected[P + name]));
+  });
+  const nolan = api.text2SqlPlaceMapModel(fx(P + "nolan-en"), "en", world);
+  check("p3d nolan: whole width, the line off the map", [nolan.viewBox, nolan.marks.length, nolan.offText],
+    ["178 0 1744 793", 49, "Not on the map: Shepperton Studios (no coordinates)."]);
+  const lawrence = api.text2SqlPlaceMapModel(fx(P + "lawrence-fr"), "fr", world);
+  check("p3d lawrence fr: a pin then areas, in row order", lawrence.marks.map((m) => [m.n, m.kind, m.label, m.typeText]),
+    [[1, "pin", "Londres", "Ville"], [2, "area", "Espagne", "Pays"], [3, "area", "Maroc", "Pays"], [4, "area", "Jordanie", "Pays"], [5, "area", "province d'Almería", "Région"]]);
+  check("p3d akira fr off the map", api.text2SqlPlaceMapModel(fx(P + "akira-hand-fr"), "fr", world).offText,
+    "Absents de la carte : Neo-Tokyo (lieu fictif), Studio lot (sans coordonnées).");
+  check("p3d tokyo: the smallest frame", api.text2SqlPlaceMapModel(fx(P + "tokyo-single-hand-fr"), "fr", world).viewBox, "1625 175 160 100");
+  check("p3d type words", [api.text2SqlPlaceTypeWord("nature", "fr"), api.text2SqlPlaceTypeWord("island", "en"), api.text2SqlPlaceTypeWord(null, "fr"), api.text2SqlPlaceTypeWord("planet", "en")],
+    ["Site naturel", "Island", "Lieu", "Place"]);
+  check("p3d count words", [api.text2SqlPlaceCount(12, "fr"), api.text2SqlPlaceCount(13, "fr"), api.text2SqlPlaceCount(1234, "fr")], ["douze", "13", "1,234"]);
+  // No model: a lot B country map, an answer without places, none located, no outline or no projection.
+  const noneLocated = { ...fx(P + "akira-hand-en"), summary_facts: { ...fx(P + "akira-hand-en").summary_facts,
+    places: { ...fx(P + "akira-hand-en").summary_facts.places, located: 0, pins: [], areas: [] } } };
+  const { projection, ...flat } = world;
+  check("p3d no model", [api.text2SqlPlaceMapModel(fx("p3b-map-films-2020-en"), "en", world), api.text2SqlPlaceMapModel(fx("lotc-share-hbo-type-en"), "en", world),
+    api.text2SqlPlaceMapModel(noneLocated, "en", world), api.text2SqlPlaceMapModel(fx(P + "lawrence-en"), "en", null),
+    api.text2SqlPlaceMapModel(fx(P + "lawrence-en"), "en", flat)], [null, null, null, null, null]);
+  check("p3d none located: the generic sentence", api.text2SqlSummaryLine(noneLocated, { lang: "en" }).includes("on the map"), false);
+  // The lot B country maps keep their sentence.
+  check("p3d lot B caption unchanged", [caption("p3b-map-films-2020-en", "en"), caption("p3b-map-country-locations-en", "en")],
+    ["The first 50 countries by number of films on the map; United States leads with 3,957 films.",
+      "50 countries on the map: Indonesia, England, France, Italy, Mexico and 45 more."]);
+  check("p3d chips", [api.text2SqlChipOptionsLotC(fx(P + "lawrence-en")), api.text2SqlChipOptionsLotC(fx(P + "tokyo-single-hand-en"))],
+    [["map", "card-grid", "table"], ["card-grid", "map", "table"]]);
 }
 
 // Phase 3 lot C (fixtures p3c-*: the 1.1.20 answers of evaluations 2920, 2922, 2926 and 2927,

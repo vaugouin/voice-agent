@@ -1,0 +1,542 @@
+{
+ "question": "In which places of the United States were John Ford's films shot, grouped by state?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the places where John Ford’s films were shot in United States, arranged by region.",
+ "representation": "hierarchy",
+ "representation_options": [
+  "hierarchy",
+  "card-grid",
+  "map",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_LOCATION",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_NAME",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_TYPE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_SOURCE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "WIKIPEDIA_IMAGE_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "OVERVIEW",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "SERIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "STATE_NAME",
+   "role": "label",
+   "unit": null,
+   "ordered": "asc"
+  }
+ ],
+ "summary_facts": {
+  "count": 15,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": null,
+  "order_direction": null,
+  "top": null,
+  "hierarchy": {
+   "levels": [
+    {
+     "column": "STATE_NAME",
+     "id_column": null,
+     "kind": "state",
+     "count": 9
+    }
+   ],
+   "leaf": {
+    "id_column": "ID_LOCATION",
+    "label_column": "LOCATION_NAME",
+    "image": true,
+    "count": 12
+   },
+   "count": 15,
+   "shared": 3,
+   "ungrouped": 0,
+   "even": false,
+   "largest": 1,
+   "groups": [
+    {
+     "label": "Arizona",
+     "id": null,
+     "count": 1,
+     "rows": [
+      0
+     ]
+    },
+    {
+     "label": "California",
+     "id": null,
+     "count": 5,
+     "rows": [
+      1,
+      2,
+      3,
+      4,
+      5
+     ]
+    },
+    {
+     "label": "Colorado",
+     "id": null,
+     "count": 2,
+     "rows": [
+      6,
+      7
+     ]
+    },
+    {
+     "label": "Hawaii",
+     "id": null,
+     "count": 1,
+     "rows": [
+      8
+     ]
+    },
+    {
+     "label": "Los Angeles County",
+     "id": null,
+     "count": 2,
+     "rows": [
+      9,
+      10
+     ]
+    },
+    {
+     "label": "Nevada",
+     "id": null,
+     "count": 1,
+     "rows": [
+      11
+     ]
+    },
+    {
+     "label": "New Mexico",
+     "id": null,
+     "count": 1,
+     "rows": [
+      12
+     ]
+    },
+    {
+     "label": "South Dakota",
+     "id": null,
+     "count": 1,
+     "rows": [
+      13
+     ]
+    },
+    {
+     "label": "Utah",
+     "id": null,
+     "count": 1,
+     "rows": [
+      14
+     ]
+    }
+   ]
+  },
+  "places": {
+   "count": 12,
+   "located": 12,
+   "pins": [
+    {
+     "index": 1,
+     "id": 5433,
+     "label": "Alabama Hills",
+     "type": "nature",
+     "lat": 36.61,
+     "lon": -118.1
+    },
+    {
+     "index": 3,
+     "id": 9592,
+     "label": "Inyo National Forest",
+     "type": "structure",
+     "lat": 37.8528,
+     "lon": -118.286
+    },
+    {
+     "index": 4,
+     "id": 4,
+     "label": "Los Angeles",
+     "type": "city",
+     "lat": 34.05223,
+     "lon": -118.24368
+    },
+    {
+     "index": 5,
+     "id": 88,
+     "label": "Malibu",
+     "type": "city",
+     "lat": 34.035,
+     "lon": -118.695
+    },
+    {
+     "index": 7,
+     "id": 10136,
+     "label": "Uncompahgre National Forest",
+     "type": "structure",
+     "lat": 38.2629,
+     "lon": -108.1124
+    },
+    {
+     "index": 8,
+     "id": 194,
+     "label": "Kauaʻi",
+     "type": "island",
+     "lat": 22.07,
+     "lon": -159.4975
+    },
+    {
+     "index": 13,
+     "id": 6514,
+     "label": "Custer State Park",
+     "type": "structure",
+     "lat": 43.7458,
+     "lon": -103.418
+    }
+   ],
+   "areas": [
+    {
+     "index": 0,
+     "id": 23,
+     "label": "Arizona",
+     "type": "region",
+     "lat": 34.286667,
+     "lon": -111.656944
+    },
+    {
+     "index": 2,
+     "id": 5,
+     "label": "California",
+     "type": "region",
+     "lat": 37.0,
+     "lon": -120.0
+    },
+    {
+     "index": 6,
+     "id": 55,
+     "label": "Colorado",
+     "type": "region",
+     "lat": 39.0,
+     "lon": -105.5
+    },
+    {
+     "index": 12,
+     "id": 103,
+     "label": "New Mexico",
+     "type": "region",
+     "lat": 34.0,
+     "lon": -106.0
+    },
+    {
+     "index": 14,
+     "id": 190,
+     "label": "Utah",
+     "type": "region",
+     "lat": 39.5,
+     "lon": -111.5
+    }
+   ],
+   "unlocated": [],
+   "bounds": {
+    "lat_min": 22.07,
+    "lat_max": 43.7458,
+    "lon_min": -159.4975,
+    "lon_max": -103.418
+   }
+  }
+ },
+ "intent": {
+  "task": "list",
+  "focus": [],
+  "requested_view": "hierarchy",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_LOCATION": 23,
+    "LOCATION_NAME": "Arizona",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9d/Flag_of_Arizona.svg/960px-Flag_of_Arizona.svg.png",
+    "OVERVIEW": "state of the United States of America",
+    "MOVIE_COUNT": 443,
+    "SERIE_COUNT": 3,
+    "IMDB_RATING": 6.23,
+    "STATE_NAME": "Arizona"
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_LOCATION": 5433,
+    "LOCATION_NAME": "Alabama Hills",
+    "LOCATION_TYPE": "nature",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/4/48/Alabamahills.jpg",
+    "OVERVIEW": "mountain range in the Owens Valley of Inyo County, California, United States",
+    "MOVIE_COUNT": 7,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.9,
+    "STATE_NAME": "California"
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_LOCATION": 5,
+    "LOCATION_NAME": "California",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/01/Flag_of_California.svg/960px-Flag_of_California.svg.png",
+    "OVERVIEW": "state of the United States of America",
+    "MOVIE_COUNT": 1977,
+    "SERIE_COUNT": 248,
+    "IMDB_RATING": 6.07,
+    "STATE_NAME": "California"
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_LOCATION": 9592,
+    "LOCATION_NAME": "Inyo National Forest",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/d/d5/Mount_Whitney_September_2009.JPG",
+    "OVERVIEW": "national forest in California and Nevada, United States",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.1,
+    "STATE_NAME": "California"
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_LOCATION": 4,
+    "LOCATION_NAME": "Los Angeles",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2f/Hollywood_sign_%288485145044%29.jpg/3840px-Hollywood_sign_%288485145044%29.jpg",
+    "OVERVIEW": "seat of Los Angeles County, and largest city in California, United States",
+    "MOVIE_COUNT": 2507,
+    "SERIE_COUNT": 753,
+    "IMDB_RATING": 6.1,
+    "STATE_NAME": "California"
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_LOCATION": 88,
+    "LOCATION_NAME": "Malibu",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/4/4f/MalibuAir.jpg",
+    "OVERVIEW": "city in Los Angeles County, California, United States",
+    "MOVIE_COUNT": 122,
+    "SERIE_COUNT": 7,
+    "IMDB_RATING": 6.57,
+    "STATE_NAME": "California"
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_LOCATION": 55,
+    "LOCATION_NAME": "Colorado",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/46/Flag_of_Colorado.svg/1920px-Flag_of_Colorado.svg.png",
+    "OVERVIEW": "state of the United States of America",
+    "MOVIE_COUNT": 168,
+    "SERIE_COUNT": 7,
+    "IMDB_RATING": 6.39,
+    "STATE_NAME": "Colorado"
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_LOCATION": 10136,
+    "LOCATION_NAME": "Uncompahgre National Forest",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/9/9d/Wetterhorn_peak.jpg",
+    "OVERVIEW": "national forest in Colorado, United States",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.1,
+    "STATE_NAME": "Colorado"
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_LOCATION": 194,
+    "LOCATION_NAME": "Kauaʻi",
+    "LOCATION_TYPE": "island",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/6/63/Kauai_from_space_2.jpg",
+    "OVERVIEW": "northernmost populated island of the Hawaiian archipelago",
+    "MOVIE_COUNT": 8,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.78,
+    "STATE_NAME": "Hawaii"
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_LOCATION": 4,
+    "LOCATION_NAME": "Los Angeles",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2f/Hollywood_sign_%288485145044%29.jpg/3840px-Hollywood_sign_%288485145044%29.jpg",
+    "OVERVIEW": "seat of Los Angeles County, and largest city in California, United States",
+    "MOVIE_COUNT": 2507,
+    "SERIE_COUNT": 753,
+    "IMDB_RATING": 6.1,
+    "STATE_NAME": "Los Angeles County"
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_LOCATION": 88,
+    "LOCATION_NAME": "Malibu",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/4/4f/MalibuAir.jpg",
+    "OVERVIEW": "city in Los Angeles County, California, United States",
+    "MOVIE_COUNT": 122,
+    "SERIE_COUNT": 7,
+    "IMDB_RATING": 6.57,
+    "STATE_NAME": "Los Angeles County"
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_LOCATION": 9592,
+    "LOCATION_NAME": "Inyo National Forest",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/d/d5/Mount_Whitney_September_2009.JPG",
+    "OVERVIEW": "national forest in California and Nevada, United States",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.1,
+    "STATE_NAME": "Nevada"
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_LOCATION": 103,
+    "LOCATION_NAME": "New Mexico",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/c3/Flag_of_New_Mexico.svg/1920px-Flag_of_New_Mexico.svg.png",
+    "OVERVIEW": "state of the United States of America",
+    "MOVIE_COUNT": 345,
+    "SERIE_COUNT": 9,
+    "IMDB_RATING": 6.27,
+    "STATE_NAME": "New Mexico"
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "ID_LOCATION": 6514,
+    "LOCATION_NAME": "Custer State Park",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/3/3a/Adult_bison_and_calf%2C_Custer_State_Park%2C_South_Dakota_%282009-08-25%29.jpg",
+    "OVERVIEW": "state park in South Dakota, United States",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.1,
+    "STATE_NAME": "South Dakota"
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "ID_LOCATION": 190,
+    "LOCATION_NAME": "Utah",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f6/Flag_of_Utah.svg/960px-Flag_of_Utah.svg.png",
+    "OVERVIEW": "state of the United States of America",
+    "MOVIE_COUNT": 234,
+    "SERIE_COUNT": 2,
+    "IMDB_RATING": 6.04,
+    "STATE_NAME": "Utah"
+   }
+  }
+ ],
+ "result_entity": "location"
+}

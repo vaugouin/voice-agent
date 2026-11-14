@@ -5376,6 +5376,145 @@ button.t2sDrill:focus-visible {
   font-size: 0.82rem;
   overflow-wrap: anywhere;
 }
+/* Phase 3 lot D, the map of places (renderPlaceMap): the same land as lot B, cropped to a frame
+   around the places (aspect-ratio set from the frame, so the marks' percentages line up); a pin is
+   a numbered accent disc, a country or a region a dashed ring with a numbered badge, so an area
+   never reads as a point and nothing reads from colour alone. Marks keep their size at any width;
+   the sea is a shade lighter than the page, so a crop of open water still reads as a map.
+   The global button rule is reset on the marks and the list links. */
+.t2sPlaceMapFrame {
+  position: relative;
+  width: 100%;
+  max-width: 760px;
+  background: var(--bg-secondary);
+}
+.t2sPlaceMapSvg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+.t2sPlaceMark {
+  position: absolute;
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 50%;
+  transform: translate(-50%, -50%);
+  cursor: pointer;
+  font: 700 11px/1 system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+}
+.t2sPlaceMark.t2sPlacePin {
+  width: 22px;
+  height: 22px;
+  background: var(--accent-secondary);
+  color: #04201d;
+  box-shadow: 0 0 0 1.5px var(--bg-primary);
+  z-index: 2;
+}
+.t2sPlaceMark.t2sPlaceArea {
+  width: 34px;
+  height: 34px;
+  background: rgba(3, 218, 198, 0.12);
+  border: 2px dashed var(--accent-secondary);
+  color: #04201d;
+  z-index: 1;
+}
+.t2sPlaceMark.t2sPlaceArea .t2sPlaceNum {
+  position: absolute;
+  right: -7px;
+  top: -7px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 3px;
+  border-radius: 8px;
+  background: var(--accent-secondary);
+  box-shadow: 0 0 0 1.5px var(--bg-primary);
+  font-size: 10px;
+  line-height: 16px;
+}
+.t2sPlaceMark:hover,
+.t2sPlaceMark:focus-visible,
+.t2sPlaceMark.isSelected {
+  outline: 2px solid var(--text-primary);
+  outline-offset: 1px;
+  z-index: 3;
+}
+.t2sPlaceList {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(min(100%, 220px), 1fr));
+  align-items: start;
+  gap: 4px 16px;
+  margin: 8px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 0.9rem;
+}
+.t2sPlaceItem {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  padding: 3px 4px;
+  border-radius: 6px;
+}
+.t2sPlaceItem.isSelected {
+  background: var(--bg-secondary);
+}
+.t2sPlaceText {
+  min-width: 0;
+  padding-top: 2px;
+}
+.t2sPlaceBadge {
+  flex: none;
+  box-sizing: border-box;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 4px;
+  border-radius: 11px;
+  font: 700 11px/22px system-ui, sans-serif;
+  font-variant-numeric: tabular-nums;
+  text-align: center;
+}
+.t2sPlaceBadge.t2sPlacePin {
+  background: var(--accent-secondary);
+  color: #04201d;
+}
+.t2sPlaceBadge.t2sPlaceArea {
+  border: 2px dashed var(--accent-secondary);
+  color: var(--text-primary);
+  line-height: 18px;
+}
+.t2sPlaceLink,
+.t2sPlaceName {
+  min-width: 0;
+  min-height: 0;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--text-primary);
+  font: inherit;
+  text-align: left;
+  overflow-wrap: anywhere;
+}
+.t2sPlaceLink {
+  cursor: pointer;
+  text-decoration: underline;
+  text-decoration-color: var(--border);
+  text-underline-offset: 3px;
+}
+.t2sPlaceLink:hover,
+.t2sPlaceLink:focus-visible {
+  color: var(--accent-secondary);
+  text-decoration-color: currentColor;
+}
+.t2sPlaceType {
+  color: var(--text-secondary);
+  font-size: 0.82rem;
+}
 /* Phase 3 lot C: hierarchy. One section per outer group (heading with its name and count), a
    third level as nested sections, the leaves as compact rows in a grid of columns that falls to
    one column on a phone. Headings and lists, no collapsing; the same markup as t2s-front. */

@@ -24,6 +24,10 @@ Output (JSON, keys sorted):
                     Natural Earth draws inside another country (MANUAL_DOTS, by hand)
     alpha2          {numeric: alpha-2} for every key of shapes and dots
     other           one path for the land with no ISO numeric code (Kosovo), drawn neutral
+    projection      {name, scale, x_max, y0}: a front places a latitude and a longitude on the
+                    outline with the same Equal Earth as project() here, then x_max and scale
+                    (x = (ex + x_max) * scale, y = -ey * scale - y0); the pins of the map of
+                    places (phase 3 lot D)
     about           source, version, licence, projection, build command
 """
 import json
@@ -247,6 +251,7 @@ def main():
         "dots": dots,
         "alpha2": alpha2,
         "other": path(other, y0),
+        "projection": {"name": "equal-earth", "scale": round(SCALE, 9), "x_max": round(X_MAX, 12), "y0": y0},
     }
     with open(out_path, "w", encoding="utf-8", newline="\n") as f:
         json.dump(data, f, ensure_ascii=False, sort_keys=True, separators=(",", ":"))

@@ -1,0 +1,736 @@
+{
+ "question": "In which places of the United Kingdom were the Harry Potter films shot, grouped by nation?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the places within United Kingdom where works from Harry Potter Collection were shot, arranged by nation.",
+ "representation": "map",
+ "representation_options": [
+  "map",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_LOCATION",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_NAME",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_TYPE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_SOURCE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "WIKIPEDIA_IMAGE_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "OVERVIEW",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "SERIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "NATION_NAME",
+   "role": "label",
+   "unit": null,
+   "ordered": "asc"
+  }
+ ],
+ "summary_facts": {
+  "count": 31,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": null,
+  "order_direction": null,
+  "top": null,
+  "places": {
+   "count": 17,
+   "located": 17,
+   "pins": [
+    {
+     "index": 0,
+     "id": 5967,
+     "label": "Alnwick Castle",
+     "type": "structure",
+     "lat": 55.415783,
+     "lon": -1.706078
+    },
+    {
+     "index": 1,
+     "id": 9037,
+     "label": "Christ Church",
+     "type": null,
+     "lat": 51.7502,
+     "lon": -1.25585
+    },
+    {
+     "index": 2,
+     "id": 4752,
+     "label": "Goathland railway station",
+     "type": "structure",
+     "lat": 54.4007,
+     "lon": -0.712124
+    },
+    {
+     "index": 3,
+     "id": 7402,
+     "label": "Harrow School",
+     "type": "structure",
+     "lat": 51.5725,
+     "lon": -0.335
+    },
+    {
+     "index": 5,
+     "id": 8390,
+     "label": "Leadenhall Market",
+     "type": "structure",
+     "lat": 51.5127,
+     "lon": -0.0835
+    },
+    {
+     "index": 6,
+     "id": 271,
+     "label": "Liverpool",
+     "type": "city",
+     "lat": 53.407222,
+     "lon": -2.991667
+    },
+    {
+     "index": 7,
+     "id": 21,
+     "label": "London",
+     "type": "city",
+     "lat": 51.507222,
+     "lon": -0.1275
+    },
+    {
+     "index": 8,
+     "id": 8307,
+     "label": "London Zoo",
+     "type": "structure",
+     "lat": 51.535556,
+     "lon": -0.155833
+    },
+    {
+     "index": 9,
+     "id": 6790,
+     "label": "New College",
+     "type": "structure",
+     "lat": 51.754167,
+     "lon": -1.251111
+    },
+    {
+     "index": 11,
+     "id": 4558,
+     "label": "Pinewood Studios",
+     "type": "structure",
+     "lat": 51.548611,
+     "lon": -0.535
+    },
+    {
+     "index": 15,
+     "id": 8326,
+     "label": "Durham Cathedral",
+     "type": "structure",
+     "lat": 54.773475,
+     "lon": -1.576215
+    },
+    {
+     "index": 17,
+     "id": 6322,
+     "label": "Gloucester Cathedral",
+     "type": "structure",
+     "lat": 51.8673,
+     "lon": -2.24654
+    },
+    {
+     "index": 29,
+     "id": 4577,
+     "label": "Warner Bros. Studios, Leavesden",
+     "type": "structure",
+     "lat": 51.693333,
+     "lon": -0.419722
+    }
+   ],
+   "areas": [
+    {
+     "index": 4,
+     "id": 66,
+     "label": "Hertfordshire",
+     "type": "region",
+     "lat": 51.9,
+     "lon": -0.2
+    },
+    {
+     "index": 10,
+     "id": 4637,
+     "label": "Oxfordshire",
+     "type": "region",
+     "lat": 51.75,
+     "lon": -1.28
+    },
+    {
+     "index": 12,
+     "id": 11866,
+     "label": "Glen Nevis",
+     "type": "region",
+     "lat": 56.770556,
+     "lon": -5.035556
+    },
+    {
+     "index": 27,
+     "id": 4936,
+     "label": "Pembrokeshire",
+     "type": "region",
+     "lat": 51.845,
+     "lon": -4.842222
+    }
+   ],
+   "unlocated": [],
+   "bounds": {
+    "lat_min": 51.507222,
+    "lat_max": 56.770556,
+    "lon_min": -5.035556,
+    "lon_max": -0.0835
+   }
+  }
+ },
+ "intent": {
+  "task": "list",
+  "focus": [],
+  "requested_view": "hierarchy",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_LOCATION": 5967,
+    "LOCATION_NAME": "Alnwick Castle",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/10/Alnwick_-_Alnwick_Castle_-_30.jpg/3840px-Alnwick_-_Alnwick_Castle_-_30.jpg",
+    "OVERVIEW": "castle and stately home in Alnwick, Northumberland, England, UK; seat of the Duke of Northumberland, England, UK",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 1,
+    "IMDB_RATING": 7.83,
+    "NATION_NAME": "England"
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_LOCATION": 9037,
+    "LOCATION_NAME": "Christ Church",
+    "LOCATION_TYPE": null,
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b8/Tom_Quad%2C_Christ_Church%2C_Oxford.jpg/3840px-Tom_Quad%2C_Christ_Church%2C_Oxford.jpg",
+    "OVERVIEW": "constituent college of the University of Oxford in England",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7,
+    "NATION_NAME": "England"
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_LOCATION": 4752,
+    "LOCATION_NAME": "Goathland railway station",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/1/14/Goathland_station.jpg",
+    "OVERVIEW": "railway station in North Yorkshire, England, UK",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7,
+    "NATION_NAME": "England"
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_LOCATION": 7402,
+    "LOCATION_NAME": "Harrow School",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/en/thumb/b/bb/Harrow_Crest.svg/250px-Harrow_Crest.svg.png",
+    "OVERVIEW": "school in Harrow, UK",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7,
+    "NATION_NAME": "England"
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_LOCATION": 66,
+    "LOCATION_NAME": "Hertfordshire",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a1/GOC_Hexton_007_Chilterns_landscape_%2824372234911%29_%28cropped%29.jpg/3840px-GOC_Hexton_007_Chilterns_landscape_%2824372234911%29_%28cropped%29.jpg",
+    "OVERVIEW": "non-metropolitan and ceremonial county in England",
+    "MOVIE_COUNT": 30,
+    "SERIE_COUNT": 15,
+    "IMDB_RATING": 7.11,
+    "NATION_NAME": "England"
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_LOCATION": 8390,
+    "LOCATION_NAME": "Leadenhall Market",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/4/46/Leadenhall_Market_In_London_-_Feb_2006_rotated.jpg",
+    "OVERVIEW": "covered market in London, located on Gracechurch Street",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7,
+    "NATION_NAME": "England"
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_LOCATION": 271,
+    "LOCATION_NAME": "Liverpool",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/7/78/Pier_Head%2C_Liverpool_-_geograph.org.uk_-_3059094.jpg",
+    "OVERVIEW": "city in Merseyside, England, United Kingdom",
+    "MOVIE_COUNT": 52,
+    "SERIE_COUNT": 28,
+    "IMDB_RATING": 6.78,
+    "NATION_NAME": "England"
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_LOCATION": 21,
+    "LOCATION_NAME": "London",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/6/67/London_Skyline_%28125508655%29.jpeg",
+    "OVERVIEW": "capital and largest city of England and the United Kingdom",
+    "MOVIE_COUNT": 2522,
+    "SERIE_COUNT": 411,
+    "IMDB_RATING": 6.38,
+    "NATION_NAME": "England"
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_LOCATION": 8307,
+    "LOCATION_NAME": "London Zoo",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/4/44/Wapiti_from_Wagon_Trails.jpg",
+    "OVERVIEW": "world's oldest scientific zoo, in London, England",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 1,
+    "IMDB_RATING": 5.45,
+    "NATION_NAME": "England"
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_LOCATION": 6790,
+    "LOCATION_NAME": "New College",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f2/Chapel_and_Cloisters%2C_New_College.jpg/3840px-Chapel_and_Cloisters%2C_New_College.jpg",
+    "OVERVIEW": "constituent college of the University of Oxford in the United Kingdom",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7,
+    "NATION_NAME": "England"
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_LOCATION": 4637,
+    "LOCATION_NAME": "Oxfordshire",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/c/cc/Aerial_view_of_Islip%2C_Oxfordshire_-_geograph.org.uk_-_3892478_%28cropped%29.jpg",
+    "OVERVIEW": "county in England, UK",
+    "MOVIE_COUNT": 11,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.22,
+    "NATION_NAME": "England"
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_LOCATION": 4558,
+    "LOCATION_NAME": "Pinewood Studios",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/3/38/Pinewood_Studios_gateway.jpg",
+    "OVERVIEW": "British film studio and television studio situated in Iver Heath, Buckinghamshire, England",
+    "MOVIE_COUNT": 658,
+    "SERIE_COUNT": 12,
+    "IMDB_RATING": 6.35,
+    "NATION_NAME": "England"
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_LOCATION": 11866,
+    "LOCATION_NAME": "Glen Nevis",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/0/0f/UK-Scotland-Glen_Nevis-Steall_Waterfall-2006.jpg",
+    "OVERVIEW": "glen in Lochaber, Highland, Scotland, UK",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7,
+    "NATION_NAME": "Scotland"
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "ID_LOCATION": 5967,
+    "LOCATION_NAME": "Alnwick Castle",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/10/Alnwick_-_Alnwick_Castle_-_30.jpg/3840px-Alnwick_-_Alnwick_Castle_-_30.jpg",
+    "OVERVIEW": "castle and stately home in Alnwick, Northumberland, England, UK; seat of the Duke of Northumberland, England, UK",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 1,
+    "IMDB_RATING": 7.83,
+    "NATION_NAME": "United Kingdom"
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "ID_LOCATION": 9037,
+    "LOCATION_NAME": "Christ Church",
+    "LOCATION_TYPE": null,
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b8/Tom_Quad%2C_Christ_Church%2C_Oxford.jpg/3840px-Tom_Quad%2C_Christ_Church%2C_Oxford.jpg",
+    "OVERVIEW": "constituent college of the University of Oxford in England",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7,
+    "NATION_NAME": "United Kingdom"
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "ID_LOCATION": 8326,
+    "LOCATION_NAME": "Durham Cathedral",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d6/Durham_MMB_02_Cathedral.jpg/3840px-Durham_MMB_02_Cathedral.jpg",
+    "OVERVIEW": "cathedral in Durham, England, UK",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7,
+    "NATION_NAME": "United Kingdom"
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "ID_LOCATION": 11866,
+    "LOCATION_NAME": "Glen Nevis",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/0/0f/UK-Scotland-Glen_Nevis-Steall_Waterfall-2006.jpg",
+    "OVERVIEW": "glen in Lochaber, Highland, Scotland, UK",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7,
+    "NATION_NAME": "United Kingdom"
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "ID_LOCATION": 6322,
+    "LOCATION_NAME": "Gloucester Cathedral",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/26/Gloucester_Cathedral_exterior_2019.JPG/3840px-Gloucester_Cathedral_exterior_2019.JPG",
+    "OVERVIEW": "cathedral in England",
+    "MOVIE_COUNT": 3,
+    "SERIE_COUNT": 1,
+    "IMDB_RATING": 7.75,
+    "NATION_NAME": "United Kingdom"
+   }
+  },
+  {
+   "index": 18,
+   "data": {
+    "ID_LOCATION": 4752,
+    "LOCATION_NAME": "Goathland railway station",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/1/14/Goathland_station.jpg",
+    "OVERVIEW": "railway station in North Yorkshire, England, UK",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7,
+    "NATION_NAME": "United Kingdom"
+   }
+  },
+  {
+   "index": 19,
+   "data": {
+    "ID_LOCATION": 7402,
+    "LOCATION_NAME": "Harrow School",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/en/thumb/b/bb/Harrow_Crest.svg/250px-Harrow_Crest.svg.png",
+    "OVERVIEW": "school in Harrow, UK",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7,
+    "NATION_NAME": "United Kingdom"
+   }
+  },
+  {
+   "index": 20,
+   "data": {
+    "ID_LOCATION": 66,
+    "LOCATION_NAME": "Hertfordshire",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a1/GOC_Hexton_007_Chilterns_landscape_%2824372234911%29_%28cropped%29.jpg/3840px-GOC_Hexton_007_Chilterns_landscape_%2824372234911%29_%28cropped%29.jpg",
+    "OVERVIEW": "non-metropolitan and ceremonial county in England",
+    "MOVIE_COUNT": 30,
+    "SERIE_COUNT": 15,
+    "IMDB_RATING": 7.11,
+    "NATION_NAME": "United Kingdom"
+   }
+  },
+  {
+   "index": 21,
+   "data": {
+    "ID_LOCATION": 8390,
+    "LOCATION_NAME": "Leadenhall Market",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/4/46/Leadenhall_Market_In_London_-_Feb_2006_rotated.jpg",
+    "OVERVIEW": "covered market in London, located on Gracechurch Street",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7,
+    "NATION_NAME": "United Kingdom"
+   }
+  },
+  {
+   "index": 22,
+   "data": {
+    "ID_LOCATION": 271,
+    "LOCATION_NAME": "Liverpool",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/7/78/Pier_Head%2C_Liverpool_-_geograph.org.uk_-_3059094.jpg",
+    "OVERVIEW": "city in Merseyside, England, United Kingdom",
+    "MOVIE_COUNT": 52,
+    "SERIE_COUNT": 28,
+    "IMDB_RATING": 6.78,
+    "NATION_NAME": "United Kingdom"
+   }
+  },
+  {
+   "index": 23,
+   "data": {
+    "ID_LOCATION": 21,
+    "LOCATION_NAME": "London",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/6/67/London_Skyline_%28125508655%29.jpeg",
+    "OVERVIEW": "capital and largest city of England and the United Kingdom",
+    "MOVIE_COUNT": 2522,
+    "SERIE_COUNT": 411,
+    "IMDB_RATING": 6.38,
+    "NATION_NAME": "United Kingdom"
+   }
+  },
+  {
+   "index": 24,
+   "data": {
+    "ID_LOCATION": 8307,
+    "LOCATION_NAME": "London Zoo",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/4/44/Wapiti_from_Wagon_Trails.jpg",
+    "OVERVIEW": "world's oldest scientific zoo, in London, England",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 1,
+    "IMDB_RATING": 5.45,
+    "NATION_NAME": "United Kingdom"
+   }
+  },
+  {
+   "index": 25,
+   "data": {
+    "ID_LOCATION": 6790,
+    "LOCATION_NAME": "New College",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f2/Chapel_and_Cloisters%2C_New_College.jpg/3840px-Chapel_and_Cloisters%2C_New_College.jpg",
+    "OVERVIEW": "constituent college of the University of Oxford in the United Kingdom",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7,
+    "NATION_NAME": "United Kingdom"
+   }
+  },
+  {
+   "index": 26,
+   "data": {
+    "ID_LOCATION": 4637,
+    "LOCATION_NAME": "Oxfordshire",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/c/cc/Aerial_view_of_Islip%2C_Oxfordshire_-_geograph.org.uk_-_3892478_%28cropped%29.jpg",
+    "OVERVIEW": "county in England, UK",
+    "MOVIE_COUNT": 11,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.22,
+    "NATION_NAME": "United Kingdom"
+   }
+  },
+  {
+   "index": 27,
+   "data": {
+    "ID_LOCATION": 4936,
+    "LOCATION_NAME": "Pembrokeshire",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/9/98/Tenby_Harbour_-_geograph.org.uk_-_3983172.jpg",
+    "OVERVIEW": "principal area in south-west Wales, United Kingdom",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7,
+    "NATION_NAME": "United Kingdom"
+   }
+  },
+  {
+   "index": 28,
+   "data": {
+    "ID_LOCATION": 4558,
+    "LOCATION_NAME": "Pinewood Studios",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/3/38/Pinewood_Studios_gateway.jpg",
+    "OVERVIEW": "British film studio and television studio situated in Iver Heath, Buckinghamshire, England",
+    "MOVIE_COUNT": 658,
+    "SERIE_COUNT": 12,
+    "IMDB_RATING": 6.35,
+    "NATION_NAME": "United Kingdom"
+   }
+  },
+  {
+   "index": 29,
+   "data": {
+    "ID_LOCATION": 4577,
+    "LOCATION_NAME": "Warner Bros. Studios, Leavesden",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/17/Warner_Bros._Studios%2C_Leavesden%2C_September_2023.JPG/3840px-Warner_Bros._Studios%2C_Leavesden%2C_September_2023.JPG",
+    "OVERVIEW": "studio complex in Leavesden, Hertfordshire, England",
+    "MOVIE_COUNT": 23,
+    "SERIE_COUNT": 2,
+    "IMDB_RATING": 6.75,
+    "NATION_NAME": "United Kingdom"
+   }
+  },
+  {
+   "index": 30,
+   "data": {
+    "ID_LOCATION": 4936,
+    "LOCATION_NAME": "Pembrokeshire",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/9/98/Tenby_Harbour_-_geograph.org.uk_-_3983172.jpg",
+    "OVERVIEW": "principal area in south-west Wales, United Kingdom",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.7,
+    "NATION_NAME": "Wales"
+   }
+  }
+ ],
+ "result_entity": "location"
+}

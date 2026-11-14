@@ -1,0 +1,336 @@
+{
+ "question": "Which places of France were Woody Allen's films shot in, grouped by the region they are in?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the places in France where Woody Allen’s films were shot, grouped by region.",
+ "representation": "map",
+ "representation_options": [
+  "map",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_LOCATION",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_NAME",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_TYPE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_SOURCE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "WIKIPEDIA_IMAGE_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "OVERVIEW",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "SERIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "REGION_NAME",
+   "role": "label",
+   "unit": null,
+   "ordered": "asc"
+  }
+ ],
+ "summary_facts": {
+  "count": 12,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": null,
+  "order_direction": null,
+  "top": null,
+  "places": {
+   "count": 5,
+   "located": 5,
+   "pins": [
+    {
+     "index": 2,
+     "id": 38,
+     "label": "Paris",
+     "type": "city",
+     "lat": 48.856667,
+     "lon": 2.352222
+    },
+    {
+     "index": 3,
+     "id": 8300,
+     "label": "Saint-Étienne-du-Mont",
+     "type": "structure",
+     "lat": 48.84653,
+     "lon": 2.34803
+    },
+    {
+     "index": 4,
+     "id": 5935,
+     "label": "square Jean-XXIII",
+     "type": "structure",
+     "lat": 48.8525,
+     "lon": 2.35139
+    },
+    {
+     "index": 5,
+     "id": 1486,
+     "label": "Palace of Versailles",
+     "type": "structure",
+     "lat": 48.804722,
+     "lon": 2.120278
+    }
+   ],
+   "areas": [
+    {
+     "index": 0,
+     "id": 5160,
+     "label": "Giverny",
+     "type": "region",
+     "lat": 49.076111,
+     "lon": 1.529167
+    }
+   ],
+   "unlocated": [],
+   "bounds": {
+    "lat_min": 48.804722,
+    "lat_max": 49.076111,
+    "lon_min": 1.529167,
+    "lon_max": 2.352222
+   }
+  }
+ },
+ "intent": {
+  "task": "list",
+  "focus": [],
+  "requested_view": "hierarchy",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_LOCATION": 5160,
+    "LOCATION_NAME": "Giverny",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/1/10/Giverny_nympheas.jpg",
+    "OVERVIEW": "commune in Eure, France",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.4,
+    "REGION_NAME": "Eure"
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_LOCATION": 5160,
+    "LOCATION_NAME": "Giverny",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/1/10/Giverny_nympheas.jpg",
+    "OVERVIEW": "commune in Eure, France",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.4,
+    "REGION_NAME": "Giverny"
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_LOCATION": 38,
+    "LOCATION_NAME": "Paris",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4b/La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg/3840px-La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg",
+    "OVERVIEW": "capital and most populous city in France",
+    "MOVIE_COUNT": 2342,
+    "SERIE_COUNT": 60,
+    "IMDB_RATING": 6.31,
+    "REGION_NAME": "Grand Paris"
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_LOCATION": 8300,
+    "LOCATION_NAME": "Saint-Étienne-du-Mont",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/1/1a/St-Etienne-du-Mont_Exterior%2C_Paris%2C_France_-_Diliff.jpg",
+    "OVERVIEW": "church located in Paris, in France",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.6,
+    "REGION_NAME": "Grand Paris"
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_LOCATION": 5935,
+    "LOCATION_NAME": "square Jean-XXIII",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f9/La_cath%C3%A9dr%C3%A2le_Notre-Dame_vue_des_jardins.jpg/3840px-La_cath%C3%A9dr%C3%A2le_Notre-Dame_vue_des_jardins.jpg",
+    "OVERVIEW": "urban park in Paris, France",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.6,
+    "REGION_NAME": "Grand Paris"
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_LOCATION": 1486,
+    "LOCATION_NAME": "Palace of Versailles",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/95/Vue_a%C3%A9rienne_du_domaine_de_Versailles_par_ToucanWings_-_Creative_Commons_By_Sa_3.0_-_081_%28cropped%29.jpg/3840px-Vue_a%C3%A9rienne_du_domaine_de_Versailles_par_ToucanWings_-_Creative_Commons_By_Sa_3.0_-_081_%28cropped%29.jpg",
+    "OVERVIEW": "palace in Versailles, France and location of the Museum of the History of France",
+    "MOVIE_COUNT": 9,
+    "SERIE_COUNT": 4,
+    "IMDB_RATING": 6.91,
+    "REGION_NAME": "Île-de-France"
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_LOCATION": 38,
+    "LOCATION_NAME": "Paris",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4b/La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg/3840px-La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg",
+    "OVERVIEW": "capital and most populous city in France",
+    "MOVIE_COUNT": 2342,
+    "SERIE_COUNT": 60,
+    "IMDB_RATING": 6.31,
+    "REGION_NAME": "Île-de-France"
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_LOCATION": 8300,
+    "LOCATION_NAME": "Saint-Étienne-du-Mont",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/1/1a/St-Etienne-du-Mont_Exterior%2C_Paris%2C_France_-_Diliff.jpg",
+    "OVERVIEW": "church located in Paris, in France",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.6,
+    "REGION_NAME": "Île-de-France"
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_LOCATION": 5935,
+    "LOCATION_NAME": "square Jean-XXIII",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f9/La_cath%C3%A9dr%C3%A2le_Notre-Dame_vue_des_jardins.jpg/3840px-La_cath%C3%A9dr%C3%A2le_Notre-Dame_vue_des_jardins.jpg",
+    "OVERVIEW": "urban park in Paris, France",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.6,
+    "REGION_NAME": "Île-de-France"
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_LOCATION": 5160,
+    "LOCATION_NAME": "Giverny",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/1/10/Giverny_nympheas.jpg",
+    "OVERVIEW": "commune in Eure, France",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.4,
+    "REGION_NAME": "Normandy"
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_LOCATION": 1486,
+    "LOCATION_NAME": "Palace of Versailles",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/95/Vue_a%C3%A9rienne_du_domaine_de_Versailles_par_ToucanWings_-_Creative_Commons_By_Sa_3.0_-_081_%28cropped%29.jpg/3840px-Vue_a%C3%A9rienne_du_domaine_de_Versailles_par_ToucanWings_-_Creative_Commons_By_Sa_3.0_-_081_%28cropped%29.jpg",
+    "OVERVIEW": "palace in Versailles, France and location of the Museum of the History of France",
+    "MOVIE_COUNT": 9,
+    "SERIE_COUNT": 4,
+    "IMDB_RATING": 6.91,
+    "REGION_NAME": "Versailles"
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_LOCATION": 1486,
+    "LOCATION_NAME": "Palace of Versailles",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/95/Vue_a%C3%A9rienne_du_domaine_de_Versailles_par_ToucanWings_-_Creative_Commons_By_Sa_3.0_-_081_%28cropped%29.jpg/3840px-Vue_a%C3%A9rienne_du_domaine_de_Versailles_par_ToucanWings_-_Creative_Commons_By_Sa_3.0_-_081_%28cropped%29.jpg",
+    "OVERVIEW": "palace in Versailles, France and location of the Museum of the History of France",
+    "MOVIE_COUNT": 9,
+    "SERIE_COUNT": 4,
+    "IMDB_RATING": 6.91,
+    "REGION_NAME": "Yvelines"
+   }
+  }
+ ],
+ "result_entity": "location"
+}

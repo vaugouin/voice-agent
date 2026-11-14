@@ -1,0 +1,1249 @@
+{
+ "question": "Where were the James Bond films shot? Show the places on a map",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the places where the movies and series in James Bond Collection were filmed. I can list them, but I can’t show them on a map.",
+ "representation": "map",
+ "representation_options": [
+  "map",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_LOCATION",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_NAME",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_TYPE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_SOURCE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "WIKIPEDIA_IMAGE_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "OVERVIEW",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_COUNT",
+   "role": "metric",
+   "unit": "count",
+   "ordered": "desc"
+  },
+  {
+   "name": "SERIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 50,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "MOVIE_COUNT",
+  "order_direction": "desc",
+  "top": null,
+  "places": {
+   "count": 50,
+   "located": 50,
+   "pins": [
+    {
+     "index": 0,
+     "id": 2,
+     "label": "New York City",
+     "type": "city",
+     "lat": 40.712778,
+     "lon": -74.006111
+    },
+    {
+     "index": 1,
+     "id": 21,
+     "label": "London",
+     "type": "city",
+     "lat": 51.507222,
+     "lon": -0.1275
+    },
+    {
+     "index": 2,
+     "id": 4,
+     "label": "Los Angeles",
+     "type": "city",
+     "lat": 34.05223,
+     "lon": -118.24368
+    },
+    {
+     "index": 3,
+     "id": 38,
+     "label": "Paris",
+     "type": "city",
+     "lat": 48.856667,
+     "lon": 2.352222
+    },
+    {
+     "index": 6,
+     "id": 3,
+     "label": "Rome",
+     "type": "city",
+     "lat": 41.893056,
+     "lon": 12.482778
+    },
+    {
+     "index": 8,
+     "id": 51,
+     "label": "Hong Kong",
+     "type": "city",
+     "lat": 22.278333,
+     "lon": 114.158611
+    },
+    {
+     "index": 10,
+     "id": 111,
+     "label": "Berlin",
+     "type": "city",
+     "lat": 52.516667,
+     "lon": 13.383333
+    },
+    {
+     "index": 12,
+     "id": 4558,
+     "label": "Pinewood Studios",
+     "type": "structure",
+     "lat": 51.548611,
+     "lon": -0.535
+    },
+    {
+     "index": 13,
+     "id": 158,
+     "label": "San Francisco",
+     "type": "city",
+     "lat": 37.775,
+     "lon": -122.419444
+    },
+    {
+     "index": 18,
+     "id": 16,
+     "label": "Chicago",
+     "type": "city",
+     "lat": 41.881944,
+     "lon": -87.627778
+    },
+    {
+     "index": 20,
+     "id": 136,
+     "label": "Istanbul",
+     "type": "city",
+     "lat": 41.01,
+     "lon": 28.960278
+    },
+    {
+     "index": 23,
+     "id": 114,
+     "label": "New Orleans",
+     "type": "city",
+     "lat": 29.976111,
+     "lon": -90.078333
+    },
+    {
+     "index": 24,
+     "id": 41,
+     "label": "Vienna",
+     "type": "city",
+     "lat": 48.208333,
+     "lon": 16.3725
+    },
+    {
+     "index": 26,
+     "id": 95,
+     "label": "Rio de Janeiro",
+     "type": "city",
+     "lat": -22.911111,
+     "lon": -43.205556
+    },
+    {
+     "index": 33,
+     "id": 154,
+     "label": "Shanghai",
+     "type": "city",
+     "lat": 31.2325,
+     "lon": 121.469167
+    },
+    {
+     "index": 36,
+     "id": 493,
+     "label": "Prague",
+     "type": "city",
+     "lat": 50.0875,
+     "lon": 14.421389
+    },
+    {
+     "index": 38,
+     "id": 290,
+     "label": "Miami",
+     "type": "city",
+     "lat": 25.774167,
+     "lon": -80.193611
+    },
+    {
+     "index": 39,
+     "id": 222,
+     "label": "Las Vegas Valley",
+     "type": "city",
+     "lat": 36.1318,
+     "lon": -115.184
+    },
+    {
+     "index": 40,
+     "id": 230,
+     "label": "Saint Petersburg",
+     "type": "city",
+     "lat": 59.95,
+     "lon": 30.316667
+    },
+    {
+     "index": 43,
+     "id": 254,
+     "label": "Lisbon",
+     "type": "city",
+     "lat": 38.708042,
+     "lon": -9.139016
+    },
+    {
+     "index": 45,
+     "id": 250,
+     "label": "Amsterdam",
+     "type": "city",
+     "lat": 52.366667,
+     "lon": 4.883333
+    }
+   ],
+   "areas": [
+    {
+     "index": 4,
+     "id": 5,
+     "label": "California",
+     "type": "region",
+     "lat": 37.0,
+     "lon": -120.0
+    },
+    {
+     "index": 5,
+     "id": 112,
+     "label": "England",
+     "type": "country",
+     "lat": 53.0,
+     "lon": -1.0
+    },
+    {
+     "index": 7,
+     "id": 126,
+     "label": "France",
+     "type": "country",
+     "lat": 47.0,
+     "lon": 2.0
+    },
+    {
+     "index": 9,
+     "id": 45,
+     "label": "Italy",
+     "type": "country",
+     "lat": 42.5,
+     "lon": 12.5
+    },
+    {
+     "index": 11,
+     "id": 63,
+     "label": "Mexico",
+     "type": "country",
+     "lat": 23.0,
+     "lon": -102.0
+    },
+    {
+     "index": 14,
+     "id": 70,
+     "label": "Madrid",
+     "type": "region",
+     "lat": 40.416944,
+     "lon": -3.703333
+    },
+    {
+     "index": 15,
+     "id": 56,
+     "label": "Spain",
+     "type": "country",
+     "lat": 40.2,
+     "lon": -3.5
+    },
+    {
+     "index": 16,
+     "id": 32,
+     "label": "Japan",
+     "type": "country",
+     "lat": 35.0,
+     "lon": 136.0
+    },
+    {
+     "index": 17,
+     "id": 269,
+     "label": "Germany",
+     "type": "country",
+     "lat": 51.0,
+     "lon": 10.0
+    },
+    {
+     "index": 19,
+     "id": 24,
+     "label": "Florida",
+     "type": "region",
+     "lat": 28.133333,
+     "lon": -81.631667
+    },
+    {
+     "index": 21,
+     "id": 25,
+     "label": "Turkey",
+     "type": "country",
+     "lat": 39.0,
+     "lon": 36.0
+    },
+    {
+     "index": 22,
+     "id": 224,
+     "label": "Greece",
+     "type": "country",
+     "lat": 38.5,
+     "lon": 23.0
+    },
+    {
+     "index": 25,
+     "id": 29,
+     "label": "Switzerland",
+     "type": "country",
+     "lat": 46.798562,
+     "lon": 8.231973
+    },
+    {
+     "index": 27,
+     "id": 323,
+     "label": "Thailand",
+     "type": "country",
+     "lat": 14.0,
+     "lon": 101.0
+    },
+    {
+     "index": 28,
+     "id": 10,
+     "label": "Russia",
+     "type": "country",
+     "lat": 66.416667,
+     "lon": 94.25
+    },
+    {
+     "index": 29,
+     "id": 148,
+     "label": "Austria",
+     "type": "country",
+     "lat": 48.0,
+     "lon": 14.0
+    },
+    {
+     "index": 30,
+     "id": 190,
+     "label": "Utah",
+     "type": "region",
+     "lat": 39.5,
+     "lon": -111.5
+    },
+    {
+     "index": 31,
+     "id": 58,
+     "label": "Egypt",
+     "type": "country",
+     "lat": 27.0,
+     "lon": 29.0
+    },
+    {
+     "index": 32,
+     "id": 416,
+     "label": "Morocco",
+     "type": "country",
+     "lat": 32.0,
+     "lon": -6.0
+    },
+    {
+     "index": 34,
+     "id": 7,
+     "label": "Venice",
+     "type": "country",
+     "lat": 45.439722,
+     "lon": 12.331944
+    },
+    {
+     "index": 35,
+     "id": 80,
+     "label": "Norway",
+     "type": "country",
+     "lat": 59.933333,
+     "lon": 10.683333
+    },
+    {
+     "index": 37,
+     "id": 30,
+     "label": "South Korea",
+     "type": "country",
+     "lat": 36.0,
+     "lon": 128.0
+    },
+    {
+     "index": 41,
+     "id": 1064,
+     "label": "Czech Republic",
+     "type": "country",
+     "lat": 50.0,
+     "lon": 15.0
+    },
+    {
+     "index": 42,
+     "id": 363,
+     "label": "Hawaii",
+     "type": "region",
+     "lat": 21.5,
+     "lon": -158.0
+    },
+    {
+     "index": 44,
+     "id": 159,
+     "label": "Portugal",
+     "type": "country",
+     "lat": 38.7,
+     "lon": -9.183333
+    },
+    {
+     "index": 46,
+     "id": 211,
+     "label": "Cuba",
+     "type": "country",
+     "lat": 22.0,
+     "lon": -79.5
+    },
+    {
+     "index": 47,
+     "id": 609,
+     "label": "Iceland",
+     "type": "country",
+     "lat": 65.0,
+     "lon": -19.0
+    },
+    {
+     "index": 48,
+     "id": 299,
+     "label": "Chile",
+     "type": "country",
+     "lat": -33.0,
+     "lon": -71.0
+    },
+    {
+     "index": 49,
+     "id": 4726,
+     "label": "Almería",
+     "type": "region",
+     "lat": 36.841667,
+     "lon": -2.463889
+    }
+   ],
+   "unlocated": [],
+   "bounds": {
+    "lat_min": -33.0,
+    "lat_max": 66.416667,
+    "lon_min": -158.0,
+    "lon_max": 136.0
+   }
+  }
+ },
+ "intent": {
+  "task": "list",
+  "focus": [],
+  "requested_view": "map",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_LOCATION": 2,
+    "LOCATION_NAME": "New York City",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7a/View_of_Empire_State_Building_from_Rockefeller_Center_New_York_City_dllu_%28cropped%29.jpg/3840px-View_of_Empire_State_Building_from_Rockefeller_Center_New_York_City_dllu_%28cropped%29.jpg",
+    "OVERVIEW": "most populous city in the United States",
+    "MOVIE_COUNT": 3251,
+    "SERIE_COUNT": 599,
+    "IMDB_RATING": 6.43
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_LOCATION": 21,
+    "LOCATION_NAME": "London",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/6/67/London_Skyline_%28125508655%29.jpeg",
+    "OVERVIEW": "capital and largest city of England and the United Kingdom",
+    "MOVIE_COUNT": 2522,
+    "SERIE_COUNT": 411,
+    "IMDB_RATING": 6.38
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_LOCATION": 4,
+    "LOCATION_NAME": "Los Angeles",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2f/Hollywood_sign_%288485145044%29.jpg/3840px-Hollywood_sign_%288485145044%29.jpg",
+    "OVERVIEW": "seat of Los Angeles County, and largest city in California, United States",
+    "MOVIE_COUNT": 2507,
+    "SERIE_COUNT": 753,
+    "IMDB_RATING": 6.1
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_LOCATION": 38,
+    "LOCATION_NAME": "Paris",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4b/La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg/3840px-La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg",
+    "OVERVIEW": "capital and most populous city in France",
+    "MOVIE_COUNT": 2342,
+    "SERIE_COUNT": 60,
+    "IMDB_RATING": 6.31
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_LOCATION": 5,
+    "LOCATION_NAME": "California",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/01/Flag_of_California.svg/960px-Flag_of_California.svg.png",
+    "OVERVIEW": "state of the United States of America",
+    "MOVIE_COUNT": 1977,
+    "SERIE_COUNT": 248,
+    "IMDB_RATING": 6.07
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_LOCATION": 112,
+    "LOCATION_NAME": "England",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/en/thumb/b/be/Flag_of_England.svg/960px-Flag_of_England.svg.png",
+    "OVERVIEW": "country in north-west Europe, part of the United Kingdom",
+    "MOVIE_COUNT": 1357,
+    "SERIE_COUNT": 82,
+    "IMDB_RATING": 6.24
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_LOCATION": 3,
+    "LOCATION_NAME": "Rome",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/7/7e/Trevi_Fountain%2C_Rome%2C_Italy_2_-_May_2007.jpg",
+    "OVERVIEW": "capital and largest city of Italy",
+    "MOVIE_COUNT": 1069,
+    "SERIE_COUNT": 23,
+    "IMDB_RATING": 6.13
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_LOCATION": 126,
+    "LOCATION_NAME": "France",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/6/67/Mapadefrancia.svg/langfr-3840px-Mapadefrancia.svg.png",
+    "OVERVIEW": "country in Western Europe and other continents (through its overseas territories in America, Africa and Oceania)",
+    "MOVIE_COUNT": 860,
+    "SERIE_COUNT": 26,
+    "IMDB_RATING": 6.36
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_LOCATION": 51,
+    "LOCATION_NAME": "Hong Kong",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5b/Flag_of_Hong_Kong.svg/960px-Flag_of_Hong_Kong.svg.png",
+    "OVERVIEW": "city and special administrative region of China",
+    "MOVIE_COUNT": 797,
+    "SERIE_COUNT": 9,
+    "IMDB_RATING": 6.08
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_LOCATION": 45,
+    "LOCATION_NAME": "Italy",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/en/thumb/0/03/Flag_of_Italy.svg/1920px-Flag_of_Italy.svg.png",
+    "OVERVIEW": "country in southern Europe",
+    "MOVIE_COUNT": 688,
+    "SERIE_COUNT": 35,
+    "IMDB_RATING": 6.3
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_LOCATION": 111,
+    "LOCATION_NAME": "Berlin",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f7/Museumsinsel_Berlin_Juli_2021_1_%28cropped%29_b.jpg/3840px-Museumsinsel_Berlin_Juli_2021_1_%28cropped%29_b.jpg",
+    "OVERVIEW": "federated state, capital and largest city of Germany",
+    "MOVIE_COUNT": 670,
+    "SERIE_COUNT": 41,
+    "IMDB_RATING": 6.47
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_LOCATION": 63,
+    "LOCATION_NAME": "Mexico",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fc/Flag_of_Mexico.svg/1280px-Flag_of_Mexico.svg.png",
+    "OVERVIEW": "country in North America",
+    "MOVIE_COUNT": 665,
+    "SERIE_COUNT": 40,
+    "IMDB_RATING": 6.11
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_LOCATION": 4558,
+    "LOCATION_NAME": "Pinewood Studios",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/3/38/Pinewood_Studios_gateway.jpg",
+    "OVERVIEW": "British film studio and television studio situated in Iver Heath, Buckinghamshire, England",
+    "MOVIE_COUNT": 658,
+    "SERIE_COUNT": 12,
+    "IMDB_RATING": 6.35
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "ID_LOCATION": 158,
+    "LOCATION_NAME": "San Francisco",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/9f/Zeppelin-ride-020100925-195_%285029394846%29.jpg/3840px-Zeppelin-ride-020100925-195_%285029394846%29.jpg",
+    "OVERVIEW": "city and county in California, United States",
+    "MOVIE_COUNT": 579,
+    "SERIE_COUNT": 130,
+    "IMDB_RATING": 6.42
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "ID_LOCATION": 70,
+    "LOCATION_NAME": "Madrid",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/14/Madrid_-_Sky_Bar_360%C2%BA_%28Hotel_Riu_Plaza_Espa%C3%B1a%29%2C_vistas_19.jpg/3840px-Madrid_-_Sky_Bar_360%C2%BA_%28Hotel_Riu_Plaza_Espa%C3%B1a%29%2C_vistas_19.jpg",
+    "OVERVIEW": "capital of Spain",
+    "MOVIE_COUNT": 555,
+    "SERIE_COUNT": 106,
+    "IMDB_RATING": 6.14
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "ID_LOCATION": 56,
+    "LOCATION_NAME": "Spain",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/24/Flag_of_the_Kingdom_of_Spain.svg/960px-Flag_of_the_Kingdom_of_Spain.svg.png",
+    "OVERVIEW": "country in southwestern Europe with territories in Africa",
+    "MOVIE_COUNT": 533,
+    "SERIE_COUNT": 23,
+    "IMDB_RATING": 6.18
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "ID_LOCATION": 32,
+    "LOCATION_NAME": "Japan",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/en/thumb/9/9e/Flag_of_Japan.svg/960px-Flag_of_Japan.svg.png",
+    "OVERVIEW": "island country in East Asia",
+    "MOVIE_COUNT": 511,
+    "SERIE_COUNT": 31,
+    "IMDB_RATING": 6.57
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "ID_LOCATION": 269,
+    "LOCATION_NAME": "Germany",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/en/thumb/b/ba/Flag_of_Germany.svg/1280px-Flag_of_Germany.svg.png",
+    "OVERVIEW": "country in Central Europe",
+    "MOVIE_COUNT": 504,
+    "SERIE_COUNT": 13,
+    "IMDB_RATING": 6.35
+   }
+  },
+  {
+   "index": 18,
+   "data": {
+    "ID_LOCATION": 16,
+    "LOCATION_NAME": "Chicago",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/a/a5/Chicago_River_ferry_b.jpg",
+    "OVERVIEW": "city and county seat of Cook County, and largest city in State of Illinois, United States of America",
+    "MOVIE_COUNT": 464,
+    "SERIE_COUNT": 136,
+    "IMDB_RATING": 6.39
+   }
+  },
+  {
+   "index": 19,
+   "data": {
+    "ID_LOCATION": 24,
+    "LOCATION_NAME": "Florida",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f7/Flag_of_Florida.svg/3840px-Flag_of_Florida.svg.png",
+    "OVERVIEW": "state of the United States of America",
+    "MOVIE_COUNT": 456,
+    "SERIE_COUNT": 9,
+    "IMDB_RATING": 6.05
+   }
+  },
+  {
+   "index": 20,
+   "data": {
+    "ID_LOCATION": 136,
+    "LOCATION_NAME": "Istanbul",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/c/cb/Historical_peninsula_and_modern_skyline_of_Istanbul.jpg",
+    "OVERVIEW": "largest city in Turkey",
+    "MOVIE_COUNT": 383,
+    "SERIE_COUNT": 97,
+    "IMDB_RATING": 6.33
+   }
+  },
+  {
+   "index": 21,
+   "data": {
+    "ID_LOCATION": 25,
+    "LOCATION_NAME": "Turkey",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b4/Flag_of_Turkey.svg/1280px-Flag_of_Turkey.svg.png",
+    "OVERVIEW": "country in West Asia and Southeast Europe",
+    "MOVIE_COUNT": 381,
+    "SERIE_COUNT": 26,
+    "IMDB_RATING": 6.23
+   }
+  },
+  {
+   "index": 22,
+   "data": {
+    "ID_LOCATION": 224,
+    "LOCATION_NAME": "Greece",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5c/Flag_of_Greece.svg/960px-Flag_of_Greece.svg.png",
+    "OVERVIEW": "country in Southeast Europe",
+    "MOVIE_COUNT": 368,
+    "SERIE_COUNT": 8,
+    "IMDB_RATING": 6.44
+   }
+  },
+  {
+   "index": 23,
+   "data": {
+    "ID_LOCATION": 114,
+    "LOCATION_NAME": "New Orleans",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/c/cb/New_Orleans_from_the_Air_September_2019_-_Central_Business_District_Skyline_%28cropped%29.jpg",
+    "OVERVIEW": "largest city of the state of Louisiana, United States",
+    "MOVIE_COUNT": 357,
+    "SERIE_COUNT": 22,
+    "IMDB_RATING": 6.05
+   }
+  },
+  {
+   "index": 24,
+   "data": {
+    "ID_LOCATION": 41,
+    "LOCATION_NAME": "Vienna",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5b/Schoenbrunn_philharmoniker_2012.jpg/3840px-Schoenbrunn_philharmoniker_2012.jpg",
+    "OVERVIEW": "capital of and state in Austria",
+    "MOVIE_COUNT": 293,
+    "SERIE_COUNT": 6,
+    "IMDB_RATING": 6.4
+   }
+  },
+  {
+   "index": 25,
+   "data": {
+    "ID_LOCATION": 29,
+    "LOCATION_NAME": "Switzerland",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/08/Flag_of_Switzerland_%28Pantone%29.svg/960px-Flag_of_Switzerland_%28Pantone%29.svg.png",
+    "OVERVIEW": "country in Central Europe",
+    "MOVIE_COUNT": 277,
+    "SERIE_COUNT": 3,
+    "IMDB_RATING": 6.3
+   }
+  },
+  {
+   "index": 26,
+   "data": {
+    "ID_LOCATION": 95,
+    "LOCATION_NAME": "Rio de Janeiro",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/9/98/Cidade_Maravilhosa.jpg",
+    "OVERVIEW": "city of Rio de Janeiro state, Brazil",
+    "MOVIE_COUNT": 262,
+    "SERIE_COUNT": 38,
+    "IMDB_RATING": 6.26
+   }
+  },
+  {
+   "index": 27,
+   "data": {
+    "ID_LOCATION": 323,
+    "LOCATION_NAME": "Thailand",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a9/Flag_of_Thailand.svg/960px-Flag_of_Thailand.svg.png",
+    "OVERVIEW": "country in Southeast Asia",
+    "MOVIE_COUNT": 249,
+    "SERIE_COUNT": 14,
+    "IMDB_RATING": 5.92
+   }
+  },
+  {
+   "index": 28,
+   "data": {
+    "ID_LOCATION": 10,
+    "LOCATION_NAME": "Russia",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/en/thumb/f/f3/Flag_of_Russia.svg/960px-Flag_of_Russia.svg.png",
+    "OVERVIEW": "country in Eastern Europe and Northern Asia, the largest in the world by area",
+    "MOVIE_COUNT": 239,
+    "SERIE_COUNT": 21,
+    "IMDB_RATING": 6.31
+   }
+  },
+  {
+   "index": 29,
+   "data": {
+    "ID_LOCATION": 148,
+    "LOCATION_NAME": "Austria",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/41/Flag_of_Austria.svg/960px-Flag_of_Austria.svg.png",
+    "OVERVIEW": "country in Central Europe",
+    "MOVIE_COUNT": 236,
+    "SERIE_COUNT": 5,
+    "IMDB_RATING": 6.23
+   }
+  },
+  {
+   "index": 30,
+   "data": {
+    "ID_LOCATION": 190,
+    "LOCATION_NAME": "Utah",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f6/Flag_of_Utah.svg/960px-Flag_of_Utah.svg.png",
+    "OVERVIEW": "state of the United States of America",
+    "MOVIE_COUNT": 234,
+    "SERIE_COUNT": 2,
+    "IMDB_RATING": 6.04
+   }
+  },
+  {
+   "index": 31,
+   "data": {
+    "ID_LOCATION": 58,
+    "LOCATION_NAME": "Egypt",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/fe/Flag_of_Egypt.svg/960px-Flag_of_Egypt.svg.png",
+    "OVERVIEW": "country in Northeast Africa and Southwest Asia",
+    "MOVIE_COUNT": 228,
+    "SERIE_COUNT": 9,
+    "IMDB_RATING": 6.1
+   }
+  },
+  {
+   "index": 32,
+   "data": {
+    "ID_LOCATION": 416,
+    "LOCATION_NAME": "Morocco",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2c/Flag_of_Morocco.svg/960px-Flag_of_Morocco.svg.png",
+    "OVERVIEW": "sovereign state in North Africa",
+    "MOVIE_COUNT": 227,
+    "SERIE_COUNT": 21,
+    "IMDB_RATING": 6.34
+   }
+  },
+  {
+   "index": 33,
+   "data": {
+    "ID_LOCATION": 154,
+    "LOCATION_NAME": "Shanghai",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/4/4c/Huangpu_Park_20124-Shanghai_%2832208802494%29.jpg",
+    "OVERVIEW": "provincial-level municipality in China",
+    "MOVIE_COUNT": 211,
+    "SERIE_COUNT": 8,
+    "IMDB_RATING": 6.27
+   }
+  },
+  {
+   "index": 34,
+   "data": {
+    "ID_LOCATION": 7,
+    "LOCATION_NAME": "Venice",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4f/Venezia_aerial_view.jpg/3840px-Venezia_aerial_view.jpg",
+    "OVERVIEW": "capital city of Veneto, Italy",
+    "MOVIE_COUNT": 209,
+    "SERIE_COUNT": 10,
+    "IMDB_RATING": 6.17
+   }
+  },
+  {
+   "index": 35,
+   "data": {
+    "ID_LOCATION": 80,
+    "LOCATION_NAME": "Norway",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d9/Flag_of_Norway.svg/960px-Flag_of_Norway.svg.png",
+    "OVERVIEW": "country in Northern Europe",
+    "MOVIE_COUNT": 193,
+    "SERIE_COUNT": 17,
+    "IMDB_RATING": 6.36
+   }
+  },
+  {
+   "index": 36,
+   "data": {
+    "ID_LOCATION": 493,
+    "LOCATION_NAME": "Prague",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/a/a7/Prague_%286365119737%29.jpg",
+    "OVERVIEW": "capital city of the Czech Republic",
+    "MOVIE_COUNT": 186,
+    "SERIE_COUNT": 25,
+    "IMDB_RATING": 6.57
+   }
+  },
+  {
+   "index": 37,
+   "data": {
+    "ID_LOCATION": 30,
+    "LOCATION_NAME": "South Korea",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/09/Flag_of_South_Korea.svg/960px-Flag_of_South_Korea.svg.png",
+    "OVERVIEW": "country in East Asia",
+    "MOVIE_COUNT": 174,
+    "SERIE_COUNT": 51,
+    "IMDB_RATING": 6.67
+   }
+  },
+  {
+   "index": 38,
+   "data": {
+    "ID_LOCATION": 290,
+    "LOCATION_NAME": "Miami",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a5/Miami%2C_Florida%2C_Skyline_4.jpg/3840px-Miami%2C_Florida%2C_Skyline_4.jpg",
+    "OVERVIEW": "city in Miami-Dade County, Florida, United States",
+    "MOVIE_COUNT": 163,
+    "SERIE_COUNT": 111,
+    "IMDB_RATING": 6.23
+   }
+  },
+  {
+   "index": 39,
+   "data": {
+    "ID_LOCATION": 222,
+    "LOCATION_NAME": "Las Vegas Valley",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ee/View_of_Las_Vegas%27_strip_from_the_helicopter.jpg/3840px-View_of_Las_Vegas%27_strip_from_the_helicopter.jpg",
+    "OVERVIEW": "metropolitan area in Clark County, Nevada, United States",
+    "MOVIE_COUNT": 155,
+    "SERIE_COUNT": 37,
+    "IMDB_RATING": 5.81
+   }
+  },
+  {
+   "index": 40,
+   "data": {
+    "ID_LOCATION": 230,
+    "LOCATION_NAME": "Saint Petersburg",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/41/Spb_06-2017_img20_StMichael_Castle_%28cropped%29.jpg/3840px-Spb_06-2017_img20_StMichael_Castle_%28cropped%29.jpg",
+    "OVERVIEW": "federal city and former capital of Russia",
+    "MOVIE_COUNT": 150,
+    "SERIE_COUNT": 45,
+    "IMDB_RATING": 6.51
+   }
+  },
+  {
+   "index": 41,
+   "data": {
+    "ID_LOCATION": 1064,
+    "LOCATION_NAME": "Czech Republic",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/cb/Flag_of_the_Czech_Republic.svg/960px-Flag_of_the_Czech_Republic.svg.png",
+    "OVERVIEW": "country in Central Europe",
+    "MOVIE_COUNT": 147,
+    "SERIE_COUNT": 15,
+    "IMDB_RATING": 6.39
+   }
+  },
+  {
+   "index": 42,
+   "data": {
+    "ID_LOCATION": 363,
+    "LOCATION_NAME": "Hawaii",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/e/ef/Flag_of_Hawaii.svg/1280px-Flag_of_Hawaii.svg.png",
+    "OVERVIEW": "state of the United States of America",
+    "MOVIE_COUNT": 132,
+    "SERIE_COUNT": 5,
+    "IMDB_RATING": 6.06
+   }
+  },
+  {
+   "index": 43,
+   "data": {
+    "ID_LOCATION": 254,
+    "LOCATION_NAME": "Lisbon",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/f/f2/Lisboa_-_Portugal_%2852597836992%29.jpg",
+    "OVERVIEW": "municipality and capital city of Portugal",
+    "MOVIE_COUNT": 121,
+    "SERIE_COUNT": 5,
+    "IMDB_RATING": 6.29
+   }
+  },
+  {
+   "index": 44,
+   "data": {
+    "ID_LOCATION": 159,
+    "LOCATION_NAME": "Portugal",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/a8/Flag_of_Portugal_%28official%29.svg/960px-Flag_of_Portugal_%28official%29.svg.png",
+    "OVERVIEW": "country in Southwestern Europe",
+    "MOVIE_COUNT": 118,
+    "SERIE_COUNT": 6,
+    "IMDB_RATING": 6.36
+   }
+  },
+  {
+   "index": 45,
+   "data": {
+    "ID_LOCATION": 250,
+    "LOCATION_NAME": "Amsterdam",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/5/57/Imagen_de_los_canales_conc%C3%A9ntricos_en_%C3%81msterdam.png",
+    "OVERVIEW": "capital and most populous city of the Netherlands",
+    "MOVIE_COUNT": 104,
+    "SERIE_COUNT": 12,
+    "IMDB_RATING": 6.29
+   }
+  },
+  {
+   "index": 46,
+   "data": {
+    "ID_LOCATION": 211,
+    "LOCATION_NAME": "Cuba",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/bd/Flag_of_Cuba.svg/1280px-Flag_of_Cuba.svg.png",
+    "OVERVIEW": "sovereign state situated on an island in the Caribbean Sea",
+    "MOVIE_COUNT": 98,
+    "SERIE_COUNT": 1,
+    "IMDB_RATING": 6.1
+   }
+  },
+  {
+   "index": 47,
+   "data": {
+    "ID_LOCATION": 609,
+    "LOCATION_NAME": "Iceland",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/c/ce/Flag_of_Iceland.svg/1280px-Flag_of_Iceland.svg.png",
+    "OVERVIEW": "Nordic island country in the North Atlantic Ocean",
+    "MOVIE_COUNT": 97,
+    "SERIE_COUNT": 3,
+    "IMDB_RATING": 6.63
+   }
+  },
+  {
+   "index": 48,
+   "data": {
+    "ID_LOCATION": 299,
+    "LOCATION_NAME": "Chile",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/78/Flag_of_Chile.svg/960px-Flag_of_Chile.svg.png",
+    "OVERVIEW": "country in South America",
+    "MOVIE_COUNT": 90,
+    "SERIE_COUNT": 3,
+    "IMDB_RATING": 6.21
+   }
+  },
+  {
+   "index": 49,
+   "data": {
+    "ID_LOCATION": 4726,
+    "LOCATION_NAME": "Almería",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/22/Alcazaba_1%2C_Almeria%2C_Spain.jpg/3840px-Alcazaba_1%2C_Almeria%2C_Spain.jpg",
+    "OVERVIEW": "municipality and capital of the province of Almeria, Spain",
+    "MOVIE_COUNT": 86,
+    "SERIE_COUNT": 1,
+    "IMDB_RATING": 6.1
+   }
+  }
+ ],
+ "result_entity": "location"
+}

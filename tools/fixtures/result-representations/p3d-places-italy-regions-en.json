@@ -1,0 +1,1462 @@
+{
+ "question": "Which cities of Italy appear as filming locations, grouped by region?",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the cities in Italy used as filming locations, grouped by region.",
+ "representation": "hierarchy",
+ "representation_options": [
+  "hierarchy",
+  "card-grid",
+  "map",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_LOCATION",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_NAME",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_TYPE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_SOURCE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "WIKIPEDIA_IMAGE_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "OVERVIEW",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "SERIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  },
+  {
+   "name": "REGION_NAME",
+   "role": "label",
+   "unit": null,
+   "ordered": "asc"
+  }
+ ],
+ "summary_facts": {
+  "count": 50,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": null,
+  "order_direction": null,
+  "top": null,
+  "hierarchy": {
+   "levels": [
+    {
+     "column": "REGION_NAME",
+     "id_column": null,
+     "kind": "region",
+     "count": 19
+    }
+   ],
+   "leaf": {
+    "id_column": "ID_LOCATION",
+    "label_column": "LOCATION_NAME",
+    "image": true,
+    "count": 44
+   },
+   "count": 50,
+   "shared": 5,
+   "ungrouped": 0,
+   "even": false,
+   "largest": 6,
+   "groups": [
+    {
+     "label": "Apulia",
+     "id": null,
+     "count": 2,
+     "rows": [
+      0,
+      1
+     ]
+    },
+    {
+     "label": "Calabria",
+     "id": null,
+     "count": 2,
+     "rows": [
+      2,
+      3
+     ]
+    },
+    {
+     "label": "Campania",
+     "id": null,
+     "count": 3,
+     "rows": [
+      4,
+      5,
+      6
+     ]
+    },
+    {
+     "label": "Diamante",
+     "id": null,
+     "count": 1,
+     "rows": [
+      7
+     ]
+    },
+    {
+     "label": "Emilia-Romagna",
+     "id": null,
+     "count": 2,
+     "rows": [
+      8,
+      9
+     ]
+    },
+    {
+     "label": "Friuli Venezia Giulia",
+     "id": null,
+     "count": 3,
+     "rows": [
+      10,
+      11,
+      12
+     ]
+    },
+    {
+     "label": "Lazio",
+     "id": null,
+     "count": 11,
+     "rows": [
+      13,
+      14,
+      15,
+      16,
+      17,
+      18,
+      19,
+      20,
+      21,
+      22,
+      23
+     ]
+    },
+    {
+     "label": "Liguria",
+     "id": null,
+     "count": 4,
+     "rows": [
+      24,
+      25,
+      26,
+      27
+     ]
+    },
+    {
+     "label": "Lombardy",
+     "id": null,
+     "count": 3,
+     "rows": [
+      28,
+      29,
+      30
+     ]
+    },
+    {
+     "label": "Olginate",
+     "id": null,
+     "count": 1,
+     "rows": [
+      31
+     ]
+    },
+    {
+     "label": "Orbetello",
+     "id": null,
+     "count": 1,
+     "rows": [
+      32
+     ]
+    },
+    {
+     "label": "Piedmont",
+     "id": null,
+     "count": 3,
+     "rows": [
+      33,
+      34,
+      35
+     ]
+    },
+    {
+     "label": "Province of Lecco",
+     "id": null,
+     "count": 1,
+     "rows": [
+      36
+     ]
+    },
+    {
+     "label": "Province of Vercelli",
+     "id": null,
+     "count": 1,
+     "rows": [
+      37
+     ]
+    },
+    {
+     "label": "Sicily",
+     "id": null,
+     "count": 2,
+     "rows": [
+      38,
+      39
+     ]
+    },
+    {
+     "label": "South Tyrol",
+     "id": null,
+     "count": 1,
+     "rows": [
+      40
+     ]
+    },
+    {
+     "label": "Tremezzina",
+     "id": null,
+     "count": 1,
+     "rows": [
+      41
+     ]
+    },
+    {
+     "label": "Trentino-South Tyrol",
+     "id": null,
+     "count": 1,
+     "rows": [
+      42
+     ]
+    },
+    {
+     "label": "Tuscany",
+     "id": null,
+     "count": 7,
+     "rows": [
+      43,
+      44,
+      45,
+      46,
+      47,
+      48,
+      49
+     ]
+    }
+   ]
+  },
+  "places": {
+   "count": 44,
+   "located": 44,
+   "pins": [
+    {
+     "index": 0,
+     "id": 5399,
+     "label": "Brindisi",
+     "type": "city",
+     "lat": 40.638333,
+     "lon": 17.945833
+    },
+    {
+     "index": 1,
+     "id": 677,
+     "label": "Lecce",
+     "type": "city",
+     "lat": 40.352011,
+     "lon": 18.169139
+    },
+    {
+     "index": 2,
+     "id": 11505,
+     "label": "Cirella",
+     "type": "city",
+     "lat": 39.7137,
+     "lon": 15.8101
+    },
+    {
+     "index": 3,
+     "id": 2205,
+     "label": "Crotone",
+     "type": "city",
+     "lat": 39.083333,
+     "lon": 17.116667
+    },
+    {
+     "index": 4,
+     "id": 6704,
+     "label": "Caserta",
+     "type": "city",
+     "lat": 41.066667,
+     "lon": 14.333333
+    },
+    {
+     "index": 5,
+     "id": 65,
+     "label": "Naples",
+     "type": "city",
+     "lat": 40.835833,
+     "lon": 14.248611
+    },
+    {
+     "index": 6,
+     "id": 7724,
+     "label": "Palace of Caserta",
+     "type": "city",
+     "lat": 41.073167,
+     "lon": 14.327111
+    },
+    {
+     "index": 8,
+     "id": 6207,
+     "label": "Cesena",
+     "type": "city",
+     "lat": 44.133333,
+     "lon": 12.233333
+    },
+    {
+     "index": 9,
+     "id": 6623,
+     "label": "Imola",
+     "type": "city",
+     "lat": 44.353056,
+     "lon": 11.714722
+    },
+    {
+     "index": 10,
+     "id": 4613,
+     "label": "Duino",
+     "type": "city",
+     "lat": 45.766667,
+     "lon": 13.6
+    },
+    {
+     "index": 11,
+     "id": 7645,
+     "label": "Sistiana",
+     "type": "city",
+     "lat": 45.77237,
+     "lon": 13.63824
+    },
+    {
+     "index": 12,
+     "id": 346,
+     "label": "Trieste",
+     "type": "city",
+     "lat": 45.650278,
+     "lon": 13.770278
+    },
+    {
+     "index": 13,
+     "id": 10759,
+     "label": "Acilia",
+     "type": "city",
+     "lat": 41.783333,
+     "lon": 12.366667
+    },
+    {
+     "index": 14,
+     "id": 4699,
+     "label": "Europa",
+     "type": "city",
+     "lat": 41.831287,
+     "lon": 12.469675
+    },
+    {
+     "index": 15,
+     "id": 5237,
+     "label": "Garbatella",
+     "type": "city",
+     "lat": 41.860548,
+     "lon": 12.488151
+    },
+    {
+     "index": 16,
+     "id": 2790,
+     "label": "Latina",
+     "type": "city",
+     "lat": 41.467222,
+     "lon": 12.903611
+    },
+    {
+     "index": 17,
+     "id": 6851,
+     "label": "Lido di Ostia",
+     "type": "city",
+     "lat": 41.733244,
+     "lon": 12.278939
+    },
+    {
+     "index": 18,
+     "id": 5463,
+     "label": "Maccarese",
+     "type": "city",
+     "lat": 41.87696,
+     "lon": 12.21975
+    },
+    {
+     "index": 19,
+     "id": 6404,
+     "label": "Monte Sacro",
+     "type": "city",
+     "lat": 41.933333,
+     "lon": 12.533333
+    },
+    {
+     "index": 20,
+     "id": 9343,
+     "label": "Municipio III",
+     "type": "city",
+     "lat": 41.93608,
+     "lon": 12.535116
+    },
+    {
+     "index": 21,
+     "id": 3,
+     "label": "Rome",
+     "type": "city",
+     "lat": 41.893056,
+     "lon": 12.482778
+    },
+    {
+     "index": 22,
+     "id": 10106,
+     "label": "Testaccio",
+     "type": "city",
+     "lat": 41.876111,
+     "lon": 12.475
+    },
+    {
+     "index": 23,
+     "id": 3602,
+     "label": "Torvaianica",
+     "type": "city",
+     "lat": 41.63431,
+     "lon": 12.44768
+    },
+    {
+     "index": 24,
+     "id": 135,
+     "label": "Genoa",
+     "type": "city",
+     "lat": 44.407222,
+     "lon": 8.933889
+    },
+    {
+     "index": 25,
+     "id": 5715,
+     "label": "Imperia",
+     "type": "city",
+     "lat": 43.886467,
+     "lon": 8.029653
+    },
+    {
+     "index": 26,
+     "id": 1505,
+     "label": "Sanremo",
+     "type": "city",
+     "lat": 43.8175,
+     "lon": 7.775
+    },
+    {
+     "index": 27,
+     "id": 6897,
+     "label": "Ventimiglia",
+     "type": "city",
+     "lat": 43.790278,
+     "lon": 7.608333
+    },
+    {
+     "index": 28,
+     "id": 12313,
+     "label": "Certosa di Pavia",
+     "type": "city",
+     "lat": 45.257,
+     "lon": 9.148278
+    },
+    {
+     "index": 29,
+     "id": 9844,
+     "label": "Consonno",
+     "type": "city",
+     "lat": 45.78393,
+     "lon": 9.39281
+    },
+    {
+     "index": 30,
+     "id": 12260,
+     "label": "Corso Vittorio Emanuele II",
+     "type": "city",
+     "lat": 45.46535,
+     "lon": 9.19524
+    },
+    {
+     "index": 32,
+     "id": 12174,
+     "label": "Albinia",
+     "type": "city",
+     "lat": 42.502222,
+     "lon": 11.208056
+    },
+    {
+     "index": 33,
+     "id": 3551,
+     "label": "Metropolitan City of Turin",
+     "type": "city",
+     "lat": 45.0667,
+     "lon": 7.7
+    },
+    {
+     "index": 34,
+     "id": 12233,
+     "label": "Selve",
+     "type": "city",
+     "lat": 45.32438,
+     "lon": 8.30907
+    },
+    {
+     "index": 35,
+     "id": 275,
+     "label": "Turin",
+     "type": "city",
+     "lat": 45.079167,
+     "lon": 7.676111
+    },
+    {
+     "index": 38,
+     "id": 4971,
+     "label": "Agrigento",
+     "type": "city",
+     "lat": 37.3125,
+     "lon": 13.575
+    },
+    {
+     "index": 39,
+     "id": 394,
+     "label": "Palermo",
+     "type": "city",
+     "lat": 38.115658,
+     "lon": 13.361262
+    },
+    {
+     "index": 40,
+     "id": 11879,
+     "label": "Bolzano",
+     "type": "city",
+     "lat": 46.498113,
+     "lon": 11.35478
+    },
+    {
+     "index": 41,
+     "id": 4945,
+     "label": "Rogaro",
+     "type": "city",
+     "lat": 45.98722,
+     "lon": 9.224285
+    },
+    {
+     "index": 44,
+     "id": 11552,
+     "label": "Carrara",
+     "type": "city",
+     "lat": 44.083333,
+     "lon": 10.1
+    },
+    {
+     "index": 45,
+     "id": 6020,
+     "label": "Castiglioncello",
+     "type": "city",
+     "lat": 43.405278,
+     "lon": 10.410278
+    },
+    {
+     "index": 46,
+     "id": 589,
+     "label": "Livorno",
+     "type": "city",
+     "lat": 43.55,
+     "lon": 10.316667
+    },
+    {
+     "index": 47,
+     "id": 3286,
+     "label": "Lucca",
+     "type": "city",
+     "lat": 43.85,
+     "lon": 10.516667
+    },
+    {
+     "index": 48,
+     "id": 406,
+     "label": "Pisa",
+     "type": "city",
+     "lat": 43.716667,
+     "lon": 10.4
+    },
+    {
+     "index": 49,
+     "id": 7055,
+     "label": "Prato",
+     "type": "city",
+     "lat": 43.880814,
+     "lon": 11.096561
+    }
+   ],
+   "areas": [],
+   "unlocated": [],
+   "bounds": {
+    "lat_min": 37.3125,
+    "lat_max": 46.498113,
+    "lon_min": 7.608333,
+    "lon_max": 18.169139
+   }
+  }
+ },
+ "intent": {
+  "task": "list",
+  "focus": [],
+  "requested_view": "hierarchy",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_LOCATION": 5399,
+    "LOCATION_NAME": "Brindisi",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/4/49/Brindisi_-_monumento_al_Marinaio_d%27Italia_-_202109012300_3.jpeg",
+    "OVERVIEW": "Italian comune",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 4.8,
+    "REGION_NAME": "Apulia"
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_LOCATION": 677,
+    "LOCATION_NAME": "Lecce",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/76/Lecce_-_Santa_Croce_-_16.jpg/3840px-Lecce_-_Santa_Croce_-_16.jpg",
+    "OVERVIEW": "Italian comune",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 1,
+    "IMDB_RATING": 5.77,
+    "REGION_NAME": "Apulia"
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_LOCATION": 11505,
+    "LOCATION_NAME": "Cirella",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": null,
+    "OVERVIEW": "human settlement in Diamante, Province of Cosenza, Calabria, Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": null,
+    "REGION_NAME": "Calabria"
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_LOCATION": 2205,
+    "LOCATION_NAME": "Crotone",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/4/46/Crotone_vista_dal_volo_Ryanair_FR5116_%28BLQ-CRV%29.jpg",
+    "OVERVIEW": "Italian comune",
+    "MOVIE_COUNT": 7,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.9,
+    "REGION_NAME": "Calabria"
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_LOCATION": 6704,
+    "LOCATION_NAME": "Caserta",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/40/Maddaloni_-_Panorama_di_Caserta_dal_Santuario_di_San_Michele.jpg/3840px-Maddaloni_-_Panorama_di_Caserta_dal_Santuario_di_San_Michele.jpg",
+    "OVERVIEW": "Italian comune",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.9,
+    "REGION_NAME": "Campania"
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_LOCATION": 65,
+    "LOCATION_NAME": "Naples",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/88/Napoli_-_Maschio_Angioino_-_202209302342_3.jpg/3840px-Napoli_-_Maschio_Angioino_-_202209302342_3.jpg",
+    "OVERVIEW": "capital city of Campania, Italy",
+    "MOVIE_COUNT": 454,
+    "SERIE_COUNT": 2,
+    "IMDB_RATING": 5.9,
+    "REGION_NAME": "Campania"
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_LOCATION": 7724,
+    "LOCATION_NAME": "Palace of Caserta",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/12/Aerial_image_of_the_Palace_of_Caserta_%28view_from_the_south%29.jpg/3840px-Aerial_image_of_the_Palace_of_Caserta_%28view_from_the_south%29.jpg",
+    "OVERVIEW": "former royal residence in Caserta, Italy",
+    "MOVIE_COUNT": 3,
+    "SERIE_COUNT": 1,
+    "IMDB_RATING": 6.85,
+    "REGION_NAME": "Campania"
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_LOCATION": 11505,
+    "LOCATION_NAME": "Cirella",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": null,
+    "OVERVIEW": "human settlement in Diamante, Province of Cosenza, Calabria, Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": null,
+    "REGION_NAME": "Diamante"
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_LOCATION": 6207,
+    "LOCATION_NAME": "Cesena",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/8/8b/Panorama_di_Cesena_e_le_sue_colline.jpg",
+    "OVERVIEW": "Italian comune",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.6,
+    "REGION_NAME": "Emilia-Romagna"
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_LOCATION": 6623,
+    "LOCATION_NAME": "Imola",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/f/fc/Autodromo_aerea_poster.jpg",
+    "OVERVIEW": "town and comune in Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.8,
+    "REGION_NAME": "Emilia-Romagna"
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_LOCATION": 4613,
+    "LOCATION_NAME": "Duino",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/f/ff/Castello_di_Duino_0904.jpg",
+    "OVERVIEW": "village in Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.2,
+    "REGION_NAME": "Friuli Venezia Giulia"
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_LOCATION": 7645,
+    "LOCATION_NAME": "Sistiana",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/16/Sistiana_Bay.jpg/3840px-Sistiana_Bay.jpg",
+    "OVERVIEW": "human settlement in Duino-Aurisina, Province of Trieste, Friuli–Venezia Giulia, Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.2,
+    "REGION_NAME": "Friuli Venezia Giulia"
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_LOCATION": 346,
+    "LOCATION_NAME": "Trieste",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/57/Trieste_%2828766391880%29.jpg/3840px-Trieste_%2828766391880%29.jpg",
+    "OVERVIEW": "city and seaport in northeastern Italy",
+    "MOVIE_COUNT": 20,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 5.78,
+    "REGION_NAME": "Friuli Venezia Giulia"
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "ID_LOCATION": 10759,
+    "LOCATION_NAME": "Acilia",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/1/15/Pino_Acilia.jpg",
+    "OVERVIEW": "settlement in Rome",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 8.1,
+    "REGION_NAME": "Lazio"
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "ID_LOCATION": 4699,
+    "LOCATION_NAME": "Europa",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": null,
+    "OVERVIEW": "32nd quarter of Rome, Italy",
+    "MOVIE_COUNT": 59,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.27,
+    "REGION_NAME": "Lazio"
+   }
+  },
+  {
+   "index": 15,
+   "data": {
+    "ID_LOCATION": 5237,
+    "LOCATION_NAME": "Garbatella",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/9/92/Roma_Garbatella_teatro_Palladium.jpg/3840px-Roma_Garbatella_teatro_Palladium.jpg",
+    "OVERVIEW": "urban zone of Rome, Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 5.3,
+    "REGION_NAME": "Lazio"
+   }
+  },
+  {
+   "index": 16,
+   "data": {
+    "ID_LOCATION": 2790,
+    "LOCATION_NAME": "Latina",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/d/d3/Latina%2C_Italy.jpg",
+    "OVERVIEW": "Italian comune",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 1,
+    "IMDB_RATING": 5.75,
+    "REGION_NAME": "Lazio"
+   }
+  },
+  {
+   "index": 17,
+   "data": {
+    "ID_LOCATION": 6851,
+    "LOCATION_NAME": "Lido di Ostia",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/0/00/Ostia.jpg",
+    "OVERVIEW": "human settlement in Rome, Lazio, Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.8,
+    "REGION_NAME": "Lazio"
+   }
+  },
+  {
+   "index": 18,
+   "data": {
+    "ID_LOCATION": 5463,
+    "LOCATION_NAME": "Maccarese",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/5/5a/IPGRI_-_Bioversity_International_office_building_in_Maccarese_-_panoramio.jpg",
+    "OVERVIEW": "frazione of Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 5.9,
+    "REGION_NAME": "Lazio"
+   }
+  },
+  {
+   "index": 19,
+   "data": {
+    "ID_LOCATION": 6404,
+    "LOCATION_NAME": "Monte Sacro",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/7/74/Monte_Sacro_%28Rome%29_from_Ryanair_aircraft.jpg",
+    "OVERVIEW": "16th quarter of Rome, Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.2,
+    "REGION_NAME": "Lazio"
+   }
+  },
+  {
+   "index": 20,
+   "data": {
+    "ID_LOCATION": 9343,
+    "LOCATION_NAME": "Municipio III",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/6/6e/Rome_ATAC_Solaris_trolleybus_8505_near_Piazza_Sempione_in_2007.jpg",
+    "OVERVIEW": "municipio of Rome, Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.2,
+    "REGION_NAME": "Lazio"
+   }
+  },
+  {
+   "index": 21,
+   "data": {
+    "ID_LOCATION": 3,
+    "LOCATION_NAME": "Rome",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/7/7e/Trevi_Fountain%2C_Rome%2C_Italy_2_-_May_2007.jpg",
+    "OVERVIEW": "capital and largest city of Italy",
+    "MOVIE_COUNT": 1069,
+    "SERIE_COUNT": 23,
+    "IMDB_RATING": 6.13,
+    "REGION_NAME": "Lazio"
+   }
+  },
+  {
+   "index": 22,
+   "data": {
+    "ID_LOCATION": 10106,
+    "LOCATION_NAME": "Testaccio",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/8/8a/Porta_San_Paolo_-_Piramid_Cestius.JPG",
+    "OVERVIEW": "20th rione of Rome, Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.8,
+    "REGION_NAME": "Lazio"
+   }
+  },
+  {
+   "index": 23,
+   "data": {
+    "ID_LOCATION": 3602,
+    "LOCATION_NAME": "Torvaianica",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/a/ae/Rotatoria_di_Piazza_Ungheria.jpg",
+    "OVERVIEW": "human settlement in Pomezia, Metropolitan City of Rome, Lazio, Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.4,
+    "REGION_NAME": "Lazio"
+   }
+  },
+  {
+   "index": 24,
+   "data": {
+    "ID_LOCATION": 135,
+    "LOCATION_NAME": "Genoa",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/0d/Piazza_de_Ferrari%2C_Genoa.jpg/3840px-Piazza_de_Ferrari%2C_Genoa.jpg",
+    "OVERVIEW": "Italian city",
+    "MOVIE_COUNT": 43,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.32,
+    "REGION_NAME": "Liguria"
+   }
+  },
+  {
+   "index": 25,
+   "data": {
+    "ID_LOCATION": 5715,
+    "LOCATION_NAME": "Imperia",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2c/Porto_Maurizio_Imperia%2C_Ligurien.jpg/3840px-Porto_Maurizio_Imperia%2C_Ligurien.jpg",
+    "OVERVIEW": "coastal city and comune in the region of Liguria, Italy",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.8,
+    "REGION_NAME": "Liguria"
+   }
+  },
+  {
+   "index": 26,
+   "data": {
+    "ID_LOCATION": 1505,
+    "LOCATION_NAME": "Sanremo",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/c/cc/Collage_sanremo.png",
+    "OVERVIEW": "Italian city and comune",
+    "MOVIE_COUNT": 4,
+    "SERIE_COUNT": 1,
+    "IMDB_RATING": 6.84,
+    "REGION_NAME": "Liguria"
+   }
+  },
+  {
+   "index": 27,
+   "data": {
+    "ID_LOCATION": 6897,
+    "LOCATION_NAME": "Ventimiglia",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/2/27/Ventimiglia_082005.jpg",
+    "OVERVIEW": "city and comune in Liguria, northern Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.8,
+    "REGION_NAME": "Liguria"
+   }
+  },
+  {
+   "index": 28,
+   "data": {
+    "ID_LOCATION": 12313,
+    "LOCATION_NAME": "Certosa di Pavia",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": null,
+    "OVERVIEW": "monastery in Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.0,
+    "REGION_NAME": "Lombardy"
+   }
+  },
+  {
+   "index": 29,
+   "data": {
+    "ID_LOCATION": 9844,
+    "LOCATION_NAME": "Consonno",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/d/d8/Minareto_Consonno_City_of_Toys_Lombardy_demisted_HDR.jpg",
+    "OVERVIEW": "human settlement in Olginate, Province of Lecco, Lombardy, Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.4,
+    "REGION_NAME": "Lombardy"
+   }
+  },
+  {
+   "index": 30,
+   "data": {
+    "ID_LOCATION": 12260,
+    "LOCATION_NAME": "Corso Vittorio Emanuele II",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": null,
+    "OVERVIEW": "street in Milan",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.9,
+    "REGION_NAME": "Lombardy"
+   }
+  },
+  {
+   "index": 31,
+   "data": {
+    "ID_LOCATION": 9844,
+    "LOCATION_NAME": "Consonno",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/d/d8/Minareto_Consonno_City_of_Toys_Lombardy_demisted_HDR.jpg",
+    "OVERVIEW": "human settlement in Olginate, Province of Lecco, Lombardy, Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.4,
+    "REGION_NAME": "Olginate"
+   }
+  },
+  {
+   "index": 32,
+   "data": {
+    "ID_LOCATION": 12174,
+    "LOCATION_NAME": "Albinia",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": null,
+    "OVERVIEW": "frazione of Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.9,
+    "REGION_NAME": "Orbetello"
+   }
+  },
+  {
+   "index": 33,
+   "data": {
+    "ID_LOCATION": 3551,
+    "LOCATION_NAME": "Metropolitan City of Turin",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/1/14/Fa%C3%A7ade_of_the_Palazzo_Cisterna_%28Turino%29.jpg",
+    "OVERVIEW": "metropolitan city in the Piedmont region, Northern Italy",
+    "MOVIE_COUNT": 0,
+    "SERIE_COUNT": 1,
+    "IMDB_RATING": 6.9,
+    "REGION_NAME": "Piedmont"
+   }
+  },
+  {
+   "index": 34,
+   "data": {
+    "ID_LOCATION": 12233,
+    "LOCATION_NAME": "Selve",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": null,
+    "OVERVIEW": "human settlement in Salasco, Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.6,
+    "REGION_NAME": "Piedmont"
+   }
+  },
+  {
+   "index": 35,
+   "data": {
+    "ID_LOCATION": 275,
+    "LOCATION_NAME": "Turin",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/a/ae/Torino_Piazza_Castello_11.jpg/3840px-Torino_Piazza_Castello_11.jpg",
+    "OVERVIEW": "city and commune in Italy",
+    "MOVIE_COUNT": 95,
+    "SERIE_COUNT": 5,
+    "IMDB_RATING": 6.1,
+    "REGION_NAME": "Piedmont"
+   }
+  },
+  {
+   "index": 36,
+   "data": {
+    "ID_LOCATION": 9844,
+    "LOCATION_NAME": "Consonno",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/d/d8/Minareto_Consonno_City_of_Toys_Lombardy_demisted_HDR.jpg",
+    "OVERVIEW": "human settlement in Olginate, Province of Lecco, Lombardy, Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.4,
+    "REGION_NAME": "Province of Lecco"
+   }
+  },
+  {
+   "index": 37,
+   "data": {
+    "ID_LOCATION": 12233,
+    "LOCATION_NAME": "Selve",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": null,
+    "OVERVIEW": "human settlement in Salasco, Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.6,
+    "REGION_NAME": "Province of Vercelli"
+   }
+  },
+  {
+   "index": 38,
+   "data": {
+    "ID_LOCATION": 4971,
+    "LOCATION_NAME": "Agrigento",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/5/5d/Agrigento_dalla_Valle_dei_Templi.jpg",
+    "OVERVIEW": "Italian comune in Sicily",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 5.3,
+    "REGION_NAME": "Sicily"
+   }
+  },
+  {
+   "index": 39,
+   "data": {
+    "ID_LOCATION": 394,
+    "LOCATION_NAME": "Palermo",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/c/c7/Sicilia_Palermo5_tango7174.jpg",
+    "OVERVIEW": "capital of Sicily, Italy",
+    "MOVIE_COUNT": 57,
+    "SERIE_COUNT": 4,
+    "IMDB_RATING": 6.55,
+    "REGION_NAME": "Sicily"
+   }
+  },
+  {
+   "index": 40,
+   "data": {
+    "ID_LOCATION": 11879,
+    "LOCATION_NAME": "Bolzano",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/1/14/Bozen-Bolzano_from_the_Oswaldpromenade.jpg",
+    "OVERVIEW": "capital of South Tyrol, Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 3.9,
+    "REGION_NAME": "South Tyrol"
+   }
+  },
+  {
+   "index": 41,
+   "data": {
+    "ID_LOCATION": 4945,
+    "LOCATION_NAME": "Rogaro",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": null,
+    "OVERVIEW": "human settlement in the Italian municipality of Tremezzina",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.6,
+    "REGION_NAME": "Tremezzina"
+   }
+  },
+  {
+   "index": 42,
+   "data": {
+    "ID_LOCATION": 11879,
+    "LOCATION_NAME": "Bolzano",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/1/14/Bozen-Bolzano_from_the_Oswaldpromenade.jpg",
+    "OVERVIEW": "capital of South Tyrol, Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 3.9,
+    "REGION_NAME": "Trentino-South Tyrol"
+   }
+  },
+  {
+   "index": 43,
+   "data": {
+    "ID_LOCATION": 12174,
+    "LOCATION_NAME": "Albinia",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": null,
+    "OVERVIEW": "frazione of Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.9,
+    "REGION_NAME": "Tuscany"
+   }
+  },
+  {
+   "index": 44,
+   "data": {
+    "ID_LOCATION": 11552,
+    "LOCATION_NAME": "Carrara",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/b/b6/Carrara%2C_veduta_verso_il_centro_storico%2C_avenza_e_il_mare_da_via_salita_sponda_04.jpg/3840px-Carrara%2C_veduta_verso_il_centro_storico%2C_avenza_e_il_mare_da_via_salita_sponda_04.jpg",
+    "OVERVIEW": "Italian comune",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.2,
+    "REGION_NAME": "Tuscany"
+   }
+  },
+  {
+   "index": 45,
+   "data": {
+    "ID_LOCATION": 6020,
+    "LOCATION_NAME": "Castiglioncello",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/8/83/Castiglioncello%2C_spiaggia_del_quercetano_05.jpg/3840px-Castiglioncello%2C_spiaggia_del_quercetano_05.jpg",
+    "OVERVIEW": "frazione of Rosignano Marittimo, Italy",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.7,
+    "REGION_NAME": "Tuscany"
+   }
+  },
+  {
+   "index": 46,
+   "data": {
+    "ID_LOCATION": 589,
+    "LOCATION_NAME": "Livorno",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d3/Livorno%2C_veduta_aerea_2015.jpg/3840px-Livorno%2C_veduta_aerea_2015.jpg",
+    "OVERVIEW": "city in Tuscany, Central Italy",
+    "MOVIE_COUNT": 9,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 6.0,
+    "REGION_NAME": "Tuscany"
+   }
+  },
+  {
+   "index": 47,
+   "data": {
+    "ID_LOCATION": 3286,
+    "LOCATION_NAME": "Lucca",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/7/7e/Italy_-_Lucca_-_2.jpg/3840px-Italy_-_Lucca_-_2.jpg",
+    "OVERVIEW": "city and comune in Tuscany, Central Italy",
+    "MOVIE_COUNT": 4,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 5.63,
+    "REGION_NAME": "Tuscany"
+   }
+  },
+  {
+   "index": 48,
+   "data": {
+    "ID_LOCATION": 406,
+    "LOCATION_NAME": "Pisa",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/d/d3/Italy_-_Pisa.jpg/3840px-Italy_-_Pisa.jpg",
+    "OVERVIEW": "city in Tuscany, Central Italy",
+    "MOVIE_COUNT": 9,
+    "SERIE_COUNT": 1,
+    "IMDB_RATING": 5.71,
+    "REGION_NAME": "Tuscany"
+   }
+  },
+  {
+   "index": 49,
+   "data": {
+    "ID_LOCATION": 7055,
+    "LOCATION_NAME": "Prato",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/f/f9/Duomo_Prato_01.jpg",
+    "OVERVIEW": "Italian comune",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 4.4,
+    "REGION_NAME": "Tuscany"
+   }
+  }
+ ],
+ "result_entity": "location"
+}

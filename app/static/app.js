@@ -4410,6 +4410,10 @@ function loadText2SqlWorldMap() {
 const T2S_SVG_NS = "http://www.w3.org/2000/svg";
 
 function renderMap(container, rows, columns, upstream) {
+  // Phase 3 lot D: places (summary_facts.places) are pinned, not countries shaded.
+  if (upstream?.summary_facts?.places) {
+    return renderPlaceMap(container, rows, columns, upstream);
+  }
   const root = document.createElement("div");
   root.className = "t2sMap";
   container.append(root);
@@ -4523,6 +4527,185 @@ function renderMap(container, rows, columns, upstream) {
     model.rows.forEach((row) => {
       const tr = document.createElement("tr");
       [row.name, row.valueText || (row.onMap ? (fr ? "oui" : "yes") : (fr ? "hors carte" : "not on the map"))].forEach((text) => {
+        const td = document.createElement("td");
+        td.textContent = text;
+        tr.append(td);
+      });
+      tbody.append(tr);
+    });
+    table.append(thead, tbody);
+    hidden.append(table);
+    root.append(hidden);
+  };
+  if (t2sWorldMap) {
+    draw(t2sWorldMap);
+  } else {
+    const wait = document.createElement("p");
+    wait.className = "t2sMapTip";
+    wait.textContent = fr ? "Chargement de la carte..." : "Loading the map...";
+    root.append(wait);
+    loadText2SqlWorldMap().then(draw, (error) => {
+      log("map outline load error", error?.message || String(error));
+      draw(null);
+    });
+  }
+}
+
+// Phase 3 lot D, `map` with summary_facts.places: the places of the answer on the same world
+// outline as lot B, cropped to a frame around them (text2SqlPlaceMapModel(), pure, pinned by the
+// check; t2s-front draws the same frame and numbers). The land is one neutral SVG path; each place
+// is an HTML mark laid over it by percentage (a constant size at any width): a numbered disc for a
+// point, a dashed ring with a numbered badge for a country or a region, which is not a point. A
+// line under the map names the mark under the finger, the pointer or the focus; then the numbered
+// list, each name opening the place as its card does; the places the map has no position for; a
+// visually hidden table. Without the outline (a failed load) the poster cards.
+let t2sWorldLand = null;
+function text2SqlWorldLand(world) {
+  if (!t2sWorldLand || t2sWorldLand.world !== world) {
+    const shapes = world.shapes || {};
+    const d = Object.keys(shapes).sort().map((key) => shapes[key]).join("") + (world.other || "");
+    t2sWorldLand = { world, d };
+  }
+  return t2sWorldLand.d;
+}
+
+function renderPlaceMap(container, rows, columns, upstream) {
+  const root = document.createElement("div");
+  root.className = "t2sMap t2sPlaceMap";
+  container.append(root);
+  const lang = activeUiLanguage;
+  const fr = t2sLang(lang) === "fr";
+  const recordAt = (index) => {
+    const item = (Array.isArray(upstream?.result) ? upstream.result : rows)[index] ?? rows[index];
+    const record = item?.data || item;
+    return record && typeof record === "object" ? record : null;
+  };
+  const draw = (world) => {
+    root.replaceChildren();
+    const model = world ? text2SqlPlaceMapModel(upstream, lang, world) : null;
+    if (!model) {
+      const section = document.createElement("div");
+      section.className = "search-poster-results";
+      const grid = document.createElement("div");
+      grid.className = "search-poster-card-grid";
+      section.append(grid);
+      root.append(section);
+      rows.forEach((item) => {
+        const record = item?.data || item;
+        if (record && typeof record === "object") {
+          appendText2SqlRowCard(grid, record);
+        }
+      });
+      return;
+    }
+    const frame = document.createElement("div");
+    frame.className = "t2sPlaceMapFrame";
+    frame.style.aspectRatio = `${model.frame.width} / ${model.frame.height}`;
+    const svg = document.createElementNS(T2S_SVG_NS, "svg");
+    svg.setAttribute("viewBox", model.viewBox);
+    svg.setAttribute("class", "t2sPlaceMapSvg");
+    svg.setAttribute("role", "img");
+    svg.setAttribute("aria-label", fr ? "Carte des lieux" : "Map of the places");
+    const land = document.createElementNS(T2S_SVG_NS, "path");
+    land.setAttribute("class", "t2sMapLand");
+    land.setAttribute("d", text2SqlWorldLand(world));
+    svg.append(land);
+    frame.append(svg);
+    const tip = document.createElement("p");
+    tip.className = "t2sMapTip";
+    tip.setAttribute("aria-live", "polite");
+    tip.textContent = fr ? "Touchez ou survolez un numéro pour voir le lieu." : "Tap or hover over a number to see the place.";
+    const list = document.createElement("ol");
+    list.className = "t2sPlaceList";
+    let selected = [];
+    const show = (mark, pair) => {
+      tip.textContent = `${mark.n}. ${mark.label} · ${mark.typeText}`;
+      selected.forEach((el) => el.classList.remove("isSelected"));
+      selected = pair;
+      pair.forEach((el) => el.classList.add("isSelected"));
+    };
+    model.marks.forEach((mark) => {
+      const name = `${mark.n}. ${mark.label}, ${mark.typeText}`;
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = mark.kind === "area" ? "t2sPlaceMark t2sPlaceArea" : "t2sPlaceMark t2sPlacePin";
+      button.style.left = `${mark.left}%`;
+      button.style.top = `${mark.top}%`;
+      button.title = name;
+      button.setAttribute("aria-label", name);
+      const number = document.createElement("span");
+      number.className = "t2sPlaceNum";
+      number.textContent = String(mark.n);
+      button.append(number);
+      frame.append(button);
+      const item = document.createElement("li");
+      item.className = "t2sPlaceItem";
+      const badge = document.createElement("span");
+      badge.className = mark.kind === "area" ? "t2sPlaceBadge t2sPlaceArea" : "t2sPlaceBadge t2sPlacePin";
+      badge.setAttribute("aria-hidden", "true");
+      badge.textContent = String(mark.n);
+      const record = recordAt(mark.index);
+      let label;
+      if (record && detailRequestFromRecord(record)) {
+        label = document.createElement("button");
+        label.type = "button";
+        label.className = "t2sPlaceLink";
+        label.addEventListener("click", () => {
+          showRecordDetail(record).catch((error) => {
+            log("place map link error", error.message);
+          });
+        });
+      } else {
+        label = document.createElement("span");
+        label.className = "t2sPlaceName";
+      }
+      label.textContent = mark.label;
+      const type = document.createElement("span");
+      type.className = "t2sPlaceType";
+      type.textContent = mark.typeText;
+      const text = document.createElement("span");
+      text.className = "t2sPlaceText";
+      text.append(label, " ", type);
+      item.append(badge, text);
+      list.append(item);
+      const pair = [button, item];
+      button.addEventListener("pointerenter", () => show(mark, pair));
+      button.addEventListener("focus", () => show(mark, pair));
+      button.addEventListener("click", () => show(mark, pair));
+      label.addEventListener("focus", () => show(mark, pair));
+      item.addEventListener("pointerenter", () => show(mark, pair));
+    });
+    root.append(frame, tip, list);
+    if (model.offText) {
+      const off = document.createElement("p");
+      off.className = "t2sMapOff";
+      off.textContent = model.offText;
+      root.append(off);
+    }
+    // A table ignores the 1 px box of .srOnly, so it is wrapped in one. Every place, in row order.
+    const facts = upstream.summary_facts.places;
+    const lines = model.marks.map((mark) => ({ index: mark.index, cells: [mark.label, mark.typeText, fr ? "oui" : "yes"] }))
+      .concat((Array.isArray(facts.unlocated) ? facts.unlocated : []).map((u) => ({
+        index: u.index,
+        cells: [text2SqlPlaceLabel(u.label, lang), text2SqlPlaceTypeWord(u.type, lang), text2SqlPlaceReasonText(u.reason, lang)],
+      })))
+      .sort((a, b) => Number(a.index) - Number(b.index));
+    const hidden = document.createElement("div");
+    hidden.className = "srOnly";
+    const table = document.createElement("table");
+    const head = document.createElement("tr");
+    [fr ? "Lieu" : "Place", "Type", fr ? "Sur la carte" : "On the map"].forEach((text) => {
+      const th = document.createElement("th");
+      th.scope = "col";
+      th.textContent = text;
+      head.append(th);
+    });
+    const thead = document.createElement("thead");
+    thead.append(head);
+    const tbody = document.createElement("tbody");
+    lines.forEach((line) => {
+      const tr = document.createElement("tr");
+      line.cells.forEach((text) => {
         const td = document.createElement("td");
         td.textContent = text;
         tr.append(td);
@@ -5350,9 +5533,16 @@ function text2SqlSummaryLine(upstream, { rep = "", lang = "", spoken = false, ha
   if (shown === "scatter") {
     return text2SqlScatterSummary(upstream, { lang, spoken, hasMore });
   }
-  // Phase 3 lot B: the flag-list sentence, placed on the map.
+  // Phase 3 lot B: the flag-list sentence, placed on the map. Phase 3 lot D: the map of places
+  // (summary_facts.places) says its own; with no place located, the generic sentence below.
   if (shown === "map") {
-    return text2SqlFlagSummary(upstream, { lang, spoken, hasMore, onMap: true });
+    if (!facts.places) {
+      return text2SqlFlagSummary(upstream, { lang, spoken, hasMore, onMap: true });
+    }
+    const placesLine = text2SqlPlaceMapSummary(upstream, { lang });
+    if (placesLine) {
+      return placesLine;
+    }
   }
   // Phase 3 lot C.
   if (shown === "hierarchy") {
@@ -6883,6 +7073,186 @@ function text2SqlMapModel(upstream, lang, world) {
       ? (fr ? "Touchez ou survolez un pays pour voir son nombre." : "Tap or hover over a country to see its count.")
       : (fr ? "Touchez ou survolez un pays pour voir son nom." : "Tap or hover over a country to see its name."),
     offText,
+  };
+}
+
+// Phase 3 lot D (contract table `map`, summary_facts.places). Pure functions, no DOM, pinned by
+// tools/check-result-representations.mjs with the p3d-* fixtures and the outline itself; the
+// same model and sentence as t2s-front (f_t2srep_place_map_model, f_t2srep_caption_places), both
+// written from one Python reference. The places, their position and their kind (a pin for a point,
+// an area for a country or a region) are the API's: never re-read from the rows. The outline's
+// own `projection` (Equal Earth, as tools/build-world-map.py) places a latitude and a longitude on
+// it; the frame is cut around the marks.
+const T2S_PLACE_TYPE_WORDS = {
+  city: ["City", "Ville"],
+  region: ["Region", "Région"],
+  country: ["Country", "Pays"],
+  structure: ["Site", "Site"],
+  nature: ["Natural site", "Site naturel"],
+  island: ["Island", "Île"],
+  fiction: ["Fictional place", "Lieu fictif"],
+};
+const T2S_PLACE_REASONS = {
+  fiction: ["a fictional place", "lieu fictif"],
+  "no-coordinates": ["no coordinates", "sans coordonnées"],
+};
+
+function text2SqlPlaceTypeWord(type, lang) {
+  const words = T2S_PLACE_TYPE_WORDS[String(type || "")] || ["Place", "Lieu"];
+  return t2sLang(lang) === "fr" ? words[1] : words[0];
+}
+
+function text2SqlPlaceReasonText(reason, lang) {
+  const words = T2S_PLACE_REASONS[String(reason || "")] || T2S_PLACE_REASONS["no-coordinates"];
+  return t2sLang(lang) === "fr" ? words[1] : words[0];
+}
+
+function text2SqlPlaceLabel(label, lang) {
+  return label ? String(label) : t2sLang(lang) === "fr" ? "Lieu" : "Place";
+}
+
+// Up to twelve in words, else digits with a thousands comma, in both languages.
+function text2SqlPlaceCount(n, lang) {
+  const words = T2S_COUNT_WORDS[t2sLang(lang) === "fr" ? "fr" : "en"];
+  return n >= 0 && n <= 12 ? words[n] : new Intl.NumberFormat("en-US").format(n);
+}
+
+// Pins and areas in row order (by index): the numbering of the map and of the list.
+function text2SqlPlaceMarks(places) {
+  const pins = (Array.isArray(places?.pins) ? places.pins : []).map((p) => ({ ...p, kind: "pin" }));
+  const areas = (Array.isArray(places?.areas) ? places.areas : []).map((p) => ({ ...p, kind: "area" }));
+  return pins.concat(areas).sort((a, b) => Number(a.index) - Number(b.index));
+}
+
+// "Five places on the map: London, Spain, Morocco and two more." / "Tokyo sur la carte." The
+// names: all of them up to four, else the first three and "and N more"; one place off the map is
+// named with its reason, several are counted. "" without a located place.
+function text2SqlPlaceMapSummary(upstream, { lang = "" } = {}) {
+  const places = upstream?.summary_facts?.places;
+  const fr = t2sLang(lang) === "fr";
+  const marks = text2SqlPlaceMarks(places);
+  const n = marks.length;
+  if (!n) {
+    return "";
+  }
+  const names = marks.map((m) => text2SqlPlaceLabel(m.label, lang));
+  const join = (list) => (list.length === 1 ? list[0] : `${list.slice(0, -1).join(", ")}${fr ? " et " : " and "}${list[list.length - 1]}`);
+  let s;
+  if (n === 1) {
+    s = fr ? `${names[0]} sur la carte` : `${names[0]} on the map`;
+  } else {
+    const head = capitalizeFirst(text2SqlPlaceCount(n, lang)) + (fr ? " lieux sur la carte" : " places on the map");
+    let listed;
+    if (n <= 4) {
+      listed = join(names);
+    } else {
+      const more = text2SqlPlaceCount(n - 3, lang);
+      listed = `${names.slice(0, 3).join(", ")}${fr ? ` et ${more} autres` : ` and ${more} more`}`;
+    }
+    s = fr ? `${head} : ${listed}` : `${head}: ${listed}`;
+  }
+  const off = Array.isArray(places?.unlocated) ? places.unlocated : [];
+  if (off.length === 1) {
+    const label = text2SqlPlaceLabel(off[0].label, lang);
+    const reason = text2SqlPlaceReasonText(off[0].reason, lang);
+    s += fr ? ` ; ${label} n'y figure pas (${reason})` : `; ${label} is not on it (${reason})`;
+  } else if (off.length > 1) {
+    const count = text2SqlPlaceCount(off.length, lang);
+    s += fr ? ` ; ${count} autres n'y figurent pas` : `; ${count} more are not on it`;
+  }
+  return `${s}.`;
+}
+
+// Equal Earth, the constants of tools/build-world-map.py, then the outline's own frame:
+// [x, y] in the outline's units.
+function text2SqlEqualEarth(lat, lon, world) {
+  const pr = world.projection;
+  const A1 = 1.340264;
+  const A2 = -0.081106;
+  const A3 = 0.000893;
+  const A4 = 0.003796;
+  const M = Math.sqrt(3) / 2;
+  const lam = (Number(lon) * Math.PI) / 180;
+  const phi = (Number(lat) * Math.PI) / 180;
+  const theta = Math.asin(M * Math.sin(phi));
+  const t2 = theta * theta;
+  const t6 = t2 * t2 * t2;
+  const ex = (lam * Math.cos(theta)) / (M * (A1 + 3 * A2 * t2 + t6 * (7 * A3 + 9 * A4 * t2)));
+  const ey = theta * (A1 + A2 * t2 + t6 * (A3 + A4 * t2));
+  return [(ex + Number(pr.x_max)) * Number(pr.scale), -ey * Number(pr.scale) - Number(pr.y0)];
+}
+
+// The viewBox around the points: their box grown by 30% plus 40 units, at least 160 x 100, the
+// ratio kept between 1.25 and 2.2, inside the outline (the whole outline when larger).
+function text2SqlPlaceMapFrame(points, world) {
+  const xs = points.map((p) => p[0]);
+  const ys = points.map((p) => p[1]);
+  const [xMin, xMax, yMin, yMax] = [Math.min(...xs), Math.max(...xs), Math.min(...ys), Math.max(...ys)];
+  let w = Math.max((xMax - xMin) * 1.3 + 40, 160);
+  let h = Math.max((yMax - yMin) * 1.3 + 40, 100);
+  if (w / h > 2.2) {
+    h = w / 2.2;
+  }
+  if (w / h < 1.25) {
+    w = h * 1.25;
+  }
+  const cx = (xMax + xMin) / 2;
+  const cy = (yMax + yMin) / 2;
+  const W = Number(world.width);
+  const H = Number(world.height);
+  let x0;
+  let y0;
+  if (w >= W) {
+    x0 = 0;
+    w = W;
+  } else {
+    x0 = Math.min(Math.max(cx - w / 2, 0), W - w);
+  }
+  if (h >= H) {
+    y0 = 0;
+    h = H;
+  } else {
+    y0 = Math.min(Math.max(cy - h / 2, 0), H - h);
+  }
+  x0 = Math.floor(x0);
+  y0 = Math.floor(y0);
+  return { x: x0, y: y0, width: Math.min(Math.ceil(w), W - x0), height: Math.min(Math.ceil(h), H - y0) };
+}
+
+// {viewBox, frame, marks, offText, caption}, or null without summary_facts.places, without a
+// located place, or without the outline and its projection (the renderer then draws the cards).
+// A mark: {n, kind, index, id, label, typeText, left, top}, left and top in percent of the frame.
+function text2SqlPlaceMapModel(upstream, lang, world) {
+  const facts = upstream?.summary_facts?.places;
+  if (!facts || !Number(facts.located) || !world || !world.projection) {
+    return null;
+  }
+  const fr = t2sLang(lang) === "fr";
+  const located = text2SqlPlaceMarks(facts).filter((m) => Number.isFinite(Number(m.lat)) && Number.isFinite(Number(m.lon)));
+  if (!located.length) {
+    return null;
+  }
+  const points = located.map((m) => text2SqlEqualEarth(m.lat, m.lon, world));
+  const frame = text2SqlPlaceMapFrame(points, world);
+  const marks = located.map((m, i) => ({
+    n: i + 1,
+    kind: m.kind,
+    index: m.index,
+    id: m.id,
+    label: text2SqlPlaceLabel(m.label, lang),
+    typeText: text2SqlPlaceTypeWord(m.type, lang),
+    left: Math.round(((points[i][0] - frame.x) / frame.width) * 100 * 100) / 100,
+    top: Math.round(((points[i][1] - frame.y) / frame.height) * 100 * 100) / 100,
+  }));
+  const off = (Array.isArray(facts.unlocated) ? facts.unlocated : [])
+    .map((u) => `${text2SqlPlaceLabel(u.label, lang)} (${text2SqlPlaceReasonText(u.reason, lang)})`);
+  const offText = off.length ? `${fr ? "Absents de la carte : " : "Not on the map: "}${off.join(", ")}.` : "";
+  return {
+    viewBox: `${frame.x} ${frame.y} ${frame.width} ${frame.height}`,
+    frame,
+    marks,
+    offText,
+    caption: text2SqlPlaceMapSummary(upstream, { lang }),
   };
 }
 

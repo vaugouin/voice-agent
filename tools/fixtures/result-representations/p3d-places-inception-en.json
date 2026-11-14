@@ -1,0 +1,444 @@
+{
+ "question": "Map of the filming locations of Inception",
+ "api_version": "1.1.20",
+ "ui_language": "en",
+ "answer": "Here are the filming locations of Inception to explore on a map.",
+ "representation": "map",
+ "representation_options": [
+  "map",
+  "card-grid",
+  "table"
+ ],
+ "result_kind": "entity_rows",
+ "result_columns": [
+  {
+   "name": "ID_LOCATION",
+   "role": "entity_id",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_NAME",
+   "role": "label",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_TYPE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "LOCATION_SOURCE",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "POSTER_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "WIKIPEDIA_IMAGE_PATH",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "OVERVIEW",
+   "role": "other",
+   "unit": null
+  },
+  {
+   "name": "MOVIE_COUNT",
+   "role": "metric",
+   "unit": "count",
+   "ordered": "desc"
+  },
+  {
+   "name": "SERIE_COUNT",
+   "role": "metric",
+   "unit": "count"
+  },
+  {
+   "name": "IMDB_RATING",
+   "role": "metric",
+   "unit": null
+  }
+ ],
+ "summary_facts": {
+  "count": 15,
+  "total": null,
+  "value_column": null,
+  "unit": null,
+  "order": "MOVIE_COUNT",
+  "order_direction": "desc",
+  "top": null,
+  "places": {
+   "count": 15,
+   "located": 15,
+   "pins": [
+    {
+     "index": 0,
+     "id": 38,
+     "label": "Paris",
+     "type": "city",
+     "lat": 48.856667,
+     "lon": 2.352222
+    },
+    {
+     "index": 3,
+     "id": 202,
+     "label": "Tokyo",
+     "type": "city",
+     "lat": 35.689444,
+     "lon": 139.691667
+    },
+    {
+     "index": 5,
+     "id": 88,
+     "label": "Malibu",
+     "type": "city",
+     "lat": 34.035,
+     "lon": -118.695
+    },
+    {
+     "index": 7,
+     "id": 810,
+     "label": "Tangier",
+     "type": "city",
+     "lat": 35.769491,
+     "lon": -5.804468
+    },
+    {
+     "index": 9,
+     "id": 7687,
+     "label": "Palais Galliera",
+     "type": "structure",
+     "lat": 48.865556,
+     "lon": 2.296667
+    },
+    {
+     "index": 11,
+     "id": 9516,
+     "label": "Fortress Mountain Resort",
+     "type": "city",
+     "lat": 50.8278,
+     "lon": -115.202
+    },
+    {
+     "index": 14,
+     "id": 11853,
+     "label": "University College London",
+     "type": null,
+     "lat": 51.524722,
+     "lon": -0.133611
+    }
+   ],
+   "areas": [
+    {
+     "index": 1,
+     "id": 5,
+     "label": "California",
+     "type": "region",
+     "lat": 37.0,
+     "lon": -120.0
+    },
+    {
+     "index": 2,
+     "id": 32,
+     "label": "Japan",
+     "type": "country",
+     "lat": 35.0,
+     "lon": 136.0
+    },
+    {
+     "index": 4,
+     "id": 416,
+     "label": "Morocco",
+     "type": "country",
+     "lat": 32.0,
+     "lon": -6.0
+    },
+    {
+     "index": 6,
+     "id": 368,
+     "label": "Alberta",
+     "type": "region",
+     "lat": 54.5,
+     "lon": -115.0
+    },
+    {
+     "index": 8,
+     "id": 6177,
+     "label": "RAF Cardington",
+     "type": "region",
+     "lat": 52.108922,
+     "lon": -0.422499
+    },
+    {
+     "index": 10,
+     "id": 7551,
+     "label": "Farnborough Airport",
+     "type": "region",
+     "lat": 51.275278,
+     "lon": -0.7775
+    },
+    {
+     "index": 12,
+     "id": 9741,
+     "label": "pont de Bir-Hakeim",
+     "type": "region",
+     "lat": 48.855556,
+     "lon": 2.287778
+    },
+    {
+     "index": 13,
+     "id": 11284,
+     "label": "Commodore Schuyler F. Heim Bridge",
+     "type": "region",
+     "lat": 33.766111,
+     "lon": -118.239722
+    }
+   ],
+   "unlocated": [],
+   "bounds": {
+    "lat_min": 32.0,
+    "lat_max": 54.5,
+    "lon_min": -120.0,
+    "lon_max": 139.691667
+   }
+  }
+ },
+ "intent": {
+  "task": "list",
+  "focus": [],
+  "requested_view": "map",
+  "source": "llm"
+ },
+ "result": [
+  {
+   "index": 0,
+   "data": {
+    "ID_LOCATION": 38,
+    "LOCATION_NAME": "Paris",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/4b/La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg/3840px-La_Tour_Eiffel_vue_de_la_Tour_Saint-Jacques%2C_Paris_ao%C3%BBt_2014_%282%29.jpg",
+    "OVERVIEW": "capital and most populous city in France",
+    "MOVIE_COUNT": 2342,
+    "SERIE_COUNT": 60,
+    "IMDB_RATING": 6.31
+   }
+  },
+  {
+   "index": 1,
+   "data": {
+    "ID_LOCATION": 5,
+    "LOCATION_NAME": "California",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/0/01/Flag_of_California.svg/960px-Flag_of_California.svg.png",
+    "OVERVIEW": "state of the United States of America",
+    "MOVIE_COUNT": 1977,
+    "SERIE_COUNT": 248,
+    "IMDB_RATING": 6.07
+   }
+  },
+  {
+   "index": 2,
+   "data": {
+    "ID_LOCATION": 32,
+    "LOCATION_NAME": "Japan",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/en/thumb/9/9e/Flag_of_Japan.svg/960px-Flag_of_Japan.svg.png",
+    "OVERVIEW": "island country in East Asia",
+    "MOVIE_COUNT": 511,
+    "SERIE_COUNT": 31,
+    "IMDB_RATING": 6.57
+   }
+  },
+  {
+   "index": 3,
+   "data": {
+    "ID_LOCATION": 202,
+    "LOCATION_NAME": "Tokyo",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/b/b2/Skyscrapers_of_Shinjuku_2009_January.jpg",
+    "OVERVIEW": "capital and largest city of Japan",
+    "MOVIE_COUNT": 444,
+    "SERIE_COUNT": 32,
+    "IMDB_RATING": 6.59
+   }
+  },
+  {
+   "index": 4,
+   "data": {
+    "ID_LOCATION": 416,
+    "LOCATION_NAME": "Morocco",
+    "LOCATION_TYPE": "country",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/2/2c/Flag_of_Morocco.svg/960px-Flag_of_Morocco.svg.png",
+    "OVERVIEW": "sovereign state in North Africa",
+    "MOVIE_COUNT": 227,
+    "SERIE_COUNT": 21,
+    "IMDB_RATING": 6.34
+   }
+  },
+  {
+   "index": 5,
+   "data": {
+    "ID_LOCATION": 88,
+    "LOCATION_NAME": "Malibu",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/4/4f/MalibuAir.jpg",
+    "OVERVIEW": "city in Los Angeles County, California, United States",
+    "MOVIE_COUNT": 122,
+    "SERIE_COUNT": 7,
+    "IMDB_RATING": 6.57
+   }
+  },
+  {
+   "index": 6,
+   "data": {
+    "ID_LOCATION": 368,
+    "LOCATION_NAME": "Alberta",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/f/f5/Flag_of_Alberta.svg/1280px-Flag_of_Alberta.svg.png",
+    "OVERVIEW": "province of Canada",
+    "MOVIE_COUNT": 78,
+    "SERIE_COUNT": 3,
+    "IMDB_RATING": 6.62
+   }
+  },
+  {
+   "index": 7,
+   "data": {
+    "ID_LOCATION": 810,
+    "LOCATION_NAME": "Tangier",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/a/a4/Tanger_cor.jpg",
+    "OVERVIEW": "city in and capital of Tanger-Tetouan-Al Hoceima, Morocco",
+    "MOVIE_COUNT": 28,
+    "SERIE_COUNT": 3,
+    "IMDB_RATING": 6.28
+   }
+  },
+  {
+   "index": 8,
+   "data": {
+    "ID_LOCATION": 6177,
+    "LOCATION_NAME": "RAF Cardington",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/4/47/Cardington_Airship_Sheds._6-8-2017_%2836430366255%29.jpg/3840px-Cardington_Airship_Sheds._6-8-2017_%2836430366255%29.jpg",
+    "OVERVIEW": "former Royal Air Force station in Bedfordshire, England",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 8.5
+   }
+  },
+  {
+   "index": 9,
+   "data": {
+    "ID_LOCATION": 7687,
+    "LOCATION_NAME": "Palais Galliera",
+    "LOCATION_TYPE": "structure",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/5/5e/Mus%C3%A9e_Galliera%2C_Paris_21_July_2017.jpg/3840px-Mus%C3%A9e_Galliera%2C_Paris_21_July_2017.jpg",
+    "OVERVIEW": "museum of fashion and fashion history located in Paris",
+    "MOVIE_COUNT": 2,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 7.75
+   }
+  },
+  {
+   "index": 10,
+   "data": {
+    "ID_LOCATION": 7551,
+    "LOCATION_NAME": "Farnborough Airport",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/6/63/Farnborough2008-073.jpg",
+    "OVERVIEW": "airport in the United Kingdom",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 8.8
+   }
+  },
+  {
+   "index": 11,
+   "data": {
+    "ID_LOCATION": 9516,
+    "LOCATION_NAME": "Fortress Mountain Resort",
+    "LOCATION_TYPE": "city",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/5/55/New_Fortress_logo.gif",
+    "OVERVIEW": "ski resort in Alberta, Canada",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 8.8
+   }
+  },
+  {
+   "index": 12,
+   "data": {
+    "ID_LOCATION": 9741,
+    "LOCATION_NAME": "pont de Bir-Hakeim",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://thumb.wikimedia.org/wikipedia/commons/thumb/1/1d/Bir-Hakeim_bridge%2C_Paris_24_June_2021.jpg/3840px-Bir-Hakeim_bridge%2C_Paris_24_June_2021.jpg",
+    "OVERVIEW": "bridge over the Seine River in Paris, France",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 8.8
+   }
+  },
+  {
+   "index": 13,
+   "data": {
+    "ID_LOCATION": 11284,
+    "LOCATION_NAME": "Commodore Schuyler F. Heim Bridge",
+    "LOCATION_TYPE": "region",
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/5/53/Heim_17_jan27_2014.jpg",
+    "OVERVIEW": "vertical-lift bridge in the Port of Los Angeles",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 8.8
+   }
+  },
+  {
+   "index": 14,
+   "data": {
+    "ID_LOCATION": 11853,
+    "LOCATION_NAME": "University College London",
+    "LOCATION_TYPE": null,
+    "LOCATION_SOURCE": "wikidata",
+    "POSTER_PATH": null,
+    "WIKIPEDIA_IMAGE_PATH": "https://upload.wikimedia.org/wikipedia/commons/f/f9/Bentham_House%2C_UCL.jpg",
+    "OVERVIEW": "public research university in London, England, United Kingdom",
+    "MOVIE_COUNT": 1,
+    "SERIE_COUNT": 0,
+    "IMDB_RATING": 8.8
+   }
+  }
+ ],
+ "result_entity": "location"
+}
