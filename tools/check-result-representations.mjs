@@ -85,6 +85,7 @@ const code = [
     "formatMetric", "text2SqlResultColumns", "pickBarMetric", "foldedWords", "isSourceWorkRecord",
     "detailRequestFromRecord", "text2SqlLabelForRow"].map(extractFunction),
   extractRegion("// VOICE-AGENT-246 / -247 / -248 (FASTAPI-TEXT2SQL-354)", "// One result row as a poster card"),
+  extractRegion("// Result cards (2026-11-15)", "function buildCardMedia("),
   "globalThis.api = { text2SqlRepresentationOptions, text2SqlChipOptions, resolveText2SqlRepresentation,",
   "  text2SqlValueColumns, formatCardValue, spokenMetricValue, text2SqlSummaryLine, text2SqlSpokenSummary, text2SqlViewSummaryLine,",
   "  pickBarMetric, text2SqlRepresentationLabel, text2SqlYearOf, text2SqlDateColumn, text2SqlYearSpan,",
@@ -104,7 +105,7 @@ const code = [
   "  text2SqlHierarchyModel, text2SqlHierarchySummary, text2SqlHierarchyLeafNoun, text2SqlHierarchyKind,",
   "  text2SqlChainModel, text2SqlChainSummary, text2SqlFrDe, text2SqlFrA,",
   "  text2SqlPictureCount, text2SqlCoverFlowUsable, text2SqlCoverFlowSlot, text2SqlCoverFlowStep, text2SqlCoverFlowSwipeSteps, text2SqlCoverFlowCounter,",
-  "  detailCallKeepsSearchOnScreen, detailRecordKey, detailRequestFromRecord,",
+  "  detailCallKeepsSearchOnScreen, detailRecordKey, detailRequestFromRecord, tmdbCardSrcset,",
   "  text2SqlDrillWord, text2SqlDrillQuestion, text2SqlDrillBinValue, text2SqlDrillPeriodValue,",
   "  text2SqlDrillShareQuestion, text2SqlDrillHistogramQuestion, text2SqlDrillTrendQuestion,",
   "  text2SqlDrillCountWord, text2SqlGenderWord, text2SqlGenderColumn, text2SqlPercentValueText, text2SqlLabelForRow, formatMetric,",
@@ -1071,6 +1072,13 @@ check("links: older API, from the keys", linkSummary([], ["ID_PERSON", "PERSON_N
   check("cf swipes", [api.text2SqlCoverFlowSwipeSteps(30, 150), api.text2SqlCoverFlowSwipeSteps(-41, 150), api.text2SqlCoverFlowSwipeSteps(80, 150), api.text2SqlCoverFlowSwipeSteps(-300, 150)],
     [0, 1, -1, 4]);
   check("cf counter", api.text2SqlCoverFlowCounter(2, 41), "3 / 41");
+  // Card pictures (2026-11-15): larger TMDb rungs offered to the browser, logos untouched.
+  check("srcset poster", api.tmdbCardSrcset("https://image.tmdb.org/t/p/w342/abc.jpg"),
+    "https://image.tmdb.org/t/p/w342/abc.jpg 342w, https://image.tmdb.org/t/p/w500/abc.jpg 500w, https://image.tmdb.org/t/p/w780/abc.jpg 780w");
+  check("srcset face", api.tmdbCardSrcset("https://image.tmdb.org/t/p/w185/face.jpg"),
+    "https://image.tmdb.org/t/p/w185/face.jpg 185w, https://image.tmdb.org/t/p/h632/face.jpg 421w");
+  check("srcset none", [api.tmdbCardSrcset("https://image.tmdb.org/t/p/w342/logo.png"), api.tmdbCardSrcset("https://image.tmdb.org/t/p/w780/still.jpg"),
+    api.tmdbCardSrcset("https://upload.wikimedia.org/x.jpg"), api.tmdbCardSrcset("")], ["", "", "", ""]);
   const view = (text) => api.text2SqlRequestedView(text);
   check("view: as a cover flow", view("show it as a cover flow"), "cover-flow");
   check("view: en carrousel", view("Affiche-les en carrousel"), "cover-flow");

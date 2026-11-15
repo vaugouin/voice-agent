@@ -2794,6 +2794,7 @@ function applySyntheticLogo(media, img, title, synthetic) {
     const probe = new Image();
     probe.onload = () => {
       if (img) {
+        img.removeAttribute("srcset");
         img.src = url;
         return;
       }
@@ -2977,6 +2978,31 @@ function buildReveal(meta, rating, overview) {
   return reveal;
 }
 
+// Result cards (2026-11-15): TMDb serves a poster only at fixed widths, and a card used to load
+// w342 (faces w185) whatever its size on screen, so the desktop cover flow (cards up to 360 CSS
+// px, more device pixels) showed them stretched and soft. A TMDb card picture now carries a
+// srcset of the larger rungs and the browser picks the smallest that covers the card in device
+// pixels: w342 / w500 / w780 for posters, w185 / h632 for faces (h632 is 421 px wide at 2:3).
+// Only .jpg paths: logos (.png, .svg) keep their single file. Mirror of t2s-front's
+// f_t2s_card_srcset().
+const TMDB_CARD_RUNGS = {
+  w342: [["w342", 342], ["w500", 500], ["w780", 780]],
+  w185: [["w185", 185], ["h632", 421]],
+};
+// The card grid's card width: two columns on a phone, about 240 px on a wider screen. The cover
+// flow overrides it with its measured card width (renderCoverFlow).
+const T2S_CARD_IMAGE_SIZES = "(max-width: 600px) 45vw, 240px";
+
+function tmdbCardSrcset(url) {
+  const match = /^https:\/\/(?:image\.tmdb\.org|media\.themoviedb\.org)\/t\/p\/(w342|w185)(\/[^/?#]+\.jpe?g)$/i.exec(String(url || ""));
+  if (!match) {
+    return "";
+  }
+  return TMDB_CARD_RUNGS[match[1].toLowerCase()]
+    .map(([size, width]) => `https://image.tmdb.org/t/p/${size}${match[2]} ${width}w`)
+    .join(", ");
+}
+
 function buildCardMedia(title, imageUrl, synthetic = null) {
   const media = document.createElement("div");
   media.className = "search-poster-card-media";
@@ -2988,6 +3014,11 @@ function buildCardMedia(title, imageUrl, synthetic = null) {
     // every poster on cold start; posters load as they scroll into view.
     img.loading = "lazy";
     img.decoding = "async";
+    const srcset = tmdbCardSrcset(imageUrl);
+    if (srcset) {
+      img.sizes = T2S_CARD_IMAGE_SIZES;
+      img.srcset = srcset;
+    }
     img.src = imageUrl;
     setImageText(img, title);
     media.append(img);
@@ -8221,6 +8252,11 @@ function renderCoverFlow(container, view) {
         img.dataset.cfSrc = src;
         img.removeAttribute("src");
       }
+      const srcset = img.getAttribute("srcset");
+      if (srcset) {
+        img.dataset.cfSrcset = srcset;
+        img.removeAttribute("srcset");
+      }
     });
   });
   stage.append(track);
@@ -8270,6 +8306,14 @@ function renderCoverFlow(container, view) {
       if (slot.load) {
         card.querySelectorAll("img[data-cf-src]").forEach((img) => {
           img.loading = slot.eager ? "eager" : "lazy";
+          if (img.dataset.cfSrcset) {
+            // The cover flow card is larger than a grid card: tell the browser its real width
+            // (the --cf-w of the stylesheet, read from the laid-out card) so it picks w500 or
+            // w780 on a desktop and keeps w342 on a phone.
+            img.sizes = `${card.offsetWidth || 210}px`;
+            img.srcset = img.dataset.cfSrcset;
+            delete img.dataset.cfSrcset;
+          }
           img.src = img.dataset.cfSrc;
           delete img.dataset.cfSrc;
         });
