@@ -4,6 +4,8 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
     <meta name="theme-color" content="#121212" />
+    <!-- VOICE-AGENT-277: "1" on the bring-your-own-key demo, set by the / route. -->
+    <meta name="byok-required" content="__BYOK_REQUIRED__" />
     <title>You talkin' to me?</title>
     <link rel="icon" type="image/png" sizes="1254x1254" href="./static/icons/voice-agent-1254x1254.png" />
     <link rel="apple-touch-icon" href="./static/icons/voice-agent-1254x1254.png" />
@@ -347,6 +349,31 @@
         <p class="aboutVersion">Version __APP_VERSION__</p>
       </section>
     </aside>
+
+    <!-- VOICE-AGENT-277: the visitor's OpenAI key, bring-your-own-key demo only. Texts are
+         written by app.js in the page language (openAIKeyTexts()); this markup is the frame. -->
+    <dialog id="openaiKeyDialog" class="openaiKeyDialog" aria-labelledby="openaiKeyTitle">
+      <form method="dialog" class="openaiKeyForm">
+        <h2 id="openaiKeyTitle" class="openaiKeyTitle">Your OpenAI API key</h2>
+        <p class="openaiKeyIntro"></p>
+        <label class="openaiKeyLabel" for="openaiKeyInput">
+          <span class="openaiKeyLabelText">OpenAI API key</span>
+          <input id="openaiKeyInput" type="password" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="sk-..." />
+        </label>
+        <label class="openaiKeyRemember">
+          <input id="openaiKeyRemember" type="checkbox" />
+          <span class="openaiKeyRememberText">Remember on this device</span>
+        </label>
+        <p class="openaiKeyStatus" role="status" aria-live="polite"></p>
+        <p class="openaiKeyPrivacy"></p>
+        <div class="openaiKeyActions">
+          <button class="openaiKeySave" type="submit">Use this key</button>
+          <button class="openaiKeyCancel" type="button">Cancel</button>
+          <button class="openaiKeyForget" type="button" hidden>Forget my key</button>
+        </div>
+        <a class="openaiKeyGet" href="https://platform.openai.com/api-keys" target="_blank" rel="noopener noreferrer">Get a key</a>
+      </form>
+    </dialog>
 
     <script src="./static/app.js?v=__APP_VERSION__" type="module"></script>
   </body>

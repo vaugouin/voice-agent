@@ -20,3 +20,7 @@ cinema/assets/
 bench/audio/
 bench/audio-tts/
 bench/results/
+
+# Bring-your-own-key demo instance (VOICE-AGENT-277): env file and logs of voice-agent-demo
+.env.demo
+logs-demo/

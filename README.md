@@ -810,6 +810,28 @@ then HTTPS is not the problem. Safari is hiding WebRTC and microphone APIs in th
 - enterprise/MDM/profile restrictions
 - Screen Time or content restrictions
 
+## Bring-Your-Own-Key Demo (VOICE-AGENT-277)
+
+A second container of the same image, `voice-agent-demo`, serves the public demo on `/voice-demo/`. With `BYOK_REQUIRED=1` in its env file and no `OPENAI_API_KEY`:
+
+- The page shows the launch showcase (free: `/tool/samples` calls no model). Talk, a typed or showcase question, Look and dictation open the **key dialog** first; the action runs once a key is accepted.
+- The dialog checks the key through `POST /openai-key/check` (one free `GET https://api.openai.com/v1/models` with that key) and reports a refused key, or the models of this app the account cannot use (`OPENAI_REALTIME_MODEL`, `OPENAI_TEXT_MODEL`). The key is kept in `sessionStorage`, or `localStorage` when "Remember on this device" is ticked; "Forget my key" (dialog, or the menu entry *OpenAI key*) clears both.
+- `app.js` wraps `fetch` in this mode: same-origin requests under the app's path carry the key in `X-OpenAI-Key`, nothing else does. A 401 `openai_key_required` or `openai_key_refused` from the server reopens the dialog.
+- The server reads the key from that header only (`_OpenAIKeyContext`, a pure ASGI middleware putting it in a ContextVar for the request), pays every OpenAI call of the request with it, and forwards it to the text2SQL API in the same header (FASTAPI-TEXT2SQL-409). Without a key, `/session`, `/text-chat`, `/transcribe`, `/brief`, `/deep-answer`, `/tool/text2sql` and `/tool/vision-upload` answer 401 `openai_key_required`. The key is never logged; `logs-demo/` records only `openai_key_check` outcomes and the dialog openings.
+
+The owner instance (`/voice-agent/`, behind the proxy's basic auth) is unchanged: `BYOK_REQUIRED` unset, its key from `.env`, also forwarded to the API in `X-OpenAI-Key`, since the API holds no key of its own.
+
+First start on the VPS (the env file and the logs folder are git-ignored):
+
+```bash
+cd /home/debian/docker/voice-agent
+git pull
+grep -v '^OPENAI_API_KEY=' .env > .env.demo && echo 'BYOK_REQUIRED=1' >> .env.demo
+bash restart-demo.sh        # refuses an env file with a key or without BYOK_REQUIRED=1
+```
+
+`restart-demo.sh` builds the same `voice-agent:latest` image and runs `voice-agent-demo` on the `reverseproxy` network with `logs-demo/` mounted as `/app/logs`. Rerun it after each deploy, like `restart.sh` for the owner instance. The proxy location is in `reverseproxy` (`/voice-demo/`, no basic auth, a per-address request limit).
+
 ## Docker Build and Run
 
 On the VPS:

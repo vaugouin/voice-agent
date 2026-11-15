@@ -171,6 +171,7 @@ function activeLookImageRef(){return photo;}
 function armedLookImageRef(){looked++;return photo;}
 function consumeArmedLookImage(){throw Error("photo consumed");}
 function canSendTypedRealtimeTurn(){return false;}
+function requireOpenAIKey(){return true;}  // VOICE-AGENT-277: owner instance, no key gate
 function handleTypedRepresentationRequest(){return false;}
 function cancelTextChatOutput(){}
 function updateSessionButtons(){}

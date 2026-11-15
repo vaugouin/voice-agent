@@ -1,4 +1,5 @@
 import asyncio
+import contextvars
 import json
 import logging
 import os
@@ -48,6 +49,92 @@ def _read_app_version() -> str:
 
 
 APP_VERSION = _read_app_version()
+
+
+# --- Bring your own OpenAI key (VOICE-AGENT-277, FASTAPI-TEXT2SQL-409) -----------------------
+# Two deployments of one image. The owner instance (BYOK_REQUIRED unset) pays OpenAI with
+# OPENAI_API_KEY from its env file. The public demo (BYOK_REQUIRED=1, /voice-demo/) reads no key
+# from the environment at all: the page sends the visitor's key in the X-OpenAI-Key header of
+# every call to this server, and that key pays every OpenAI call of the request, the Realtime
+# session included, and is forwarded to the text2SQL API, which holds no key either.
+# The key lives in a ContextVar for the duration of one request, never in a global (two
+# visitors at once would pay for each other); it is never logged, written or echoed.
+BYOK_REQUIRED = os.getenv("BYOK_REQUIRED", "").strip().lower() in {"1", "true", "yes", "on"}
+OPENAI_KEY_HEADER = "X-OpenAI-Key"
+_OPENAI_KEY_PATTERN = re.compile(r"^[A-Za-z0-9_\-]{20,512}$")
+_request_openai_key: contextvars.ContextVar[str] = contextvars.ContextVar("request_openai_key", default="")
+
+
+def _well_formed_openai_key(value: str) -> str:
+    strkey = (value or "").strip()
+    return strkey if _OPENAI_KEY_PATTERN.match(strkey) else ""
+
+
+class _OpenAIKeyContext:
+    """Pure ASGI middleware: puts the request's OpenAI key in the context.
+
+    Pure ASGI rather than BaseHTTPMiddleware, so the endpoint runs in this very context and
+    asyncio.to_thread / create_task copy it into their workers. In BYOK mode the key comes from
+    the request header only; otherwise from OPENAI_API_KEY, read per request so a recreated
+    container with a new env file needs nothing else.
+    """
+
+    def __init__(self, app_):
+        self.app = app_
+
+    async def __call__(self, scope, receive, send):
+        if scope.get("type") != "http":
+            await self.app(scope, receive, send)
+            return
+        if BYOK_REQUIRED:
+            strkey = ""
+            for name, value in scope.get("headers") or []:
+                if name.decode("latin-1").lower() == OPENAI_KEY_HEADER.lower():
+                    strkey = _well_formed_openai_key(value.decode("latin-1"))
+                    break
+        else:
+            strkey = (os.getenv("OPENAI_API_KEY") or "").strip()
+        token = _request_openai_key.set(strkey)
+        try:
+            await self.app(scope, receive, send)
+        finally:
+            _request_openai_key.reset(token)
+
+
+
+
+def openai_api_key() -> str:
+    """The OpenAI key of the current request ("" when there is none).
+
+    Outside a request (bench/, tools/ scripts that import this module), the owner instance
+    falls back to OPENAI_API_KEY; the demo never does.
+    """
+    strkey = _request_openai_key.get()
+    if not strkey and not BYOK_REQUIRED:
+        strkey = (os.getenv("OPENAI_API_KEY") or "").strip()
+    return strkey
+
+
+def require_openai_api_key() -> str:
+    """The OpenAI key of the current request, or the error the page knows how to handle.
+
+    BYOK mode: 401 with ``error_code: openai_key_required``, which makes the page open the key
+    dialog. Owner mode: 500, a deployment error (the env file has no key).
+    """
+    strkey = openai_api_key()
+    if strkey:
+        return strkey
+    if BYOK_REQUIRED:
+        raise HTTPException(status_code=401, detail={
+            "error_code": "openai_key_required",
+            "error": "This demo runs on your own OpenAI API key: enter it to ask a question.",
+        })
+    raise HTTPException(status_code=500, detail="OPENAI_API_KEY is not set")
+
+
+if BYOK_REQUIRED:
+    print("[startup] BYOK_REQUIRED=1: every OpenAI call is paid with the visitor's key "
+          "(header X-OpenAI-Key); OPENAI_API_KEY in the environment is ignored.", flush=True)
 
 
 def _read_lexicons() -> tuple[dict, str]:
@@ -639,6 +726,7 @@ class _AccessLogPathFilter(logging.Filter):
 logging.getLogger("uvicorn.access").addFilter(_AccessLogPathFilter(("/client-log", "/health")))
 
 app = FastAPI(title="Minimal Realtime WebRTC Voice Agent")
+app.add_middleware(_OpenAIKeyContext)  # VOICE-AGENT-277
 
 
 @app.get("/static", include_in_schema=False)
@@ -1029,6 +1117,9 @@ def text2sql_headers() -> dict[str, str]:
     headers = {"Content-Type": "application/json"}
     if api_key_value:
         headers[api_key_name] = api_key_value
+    # FASTAPI-TEXT2SQL-409: the API pays its OpenAI calls with the key of the request.
+    if openai_api_key():
+        headers[OPENAI_KEY_HEADER] = openai_api_key()
     return headers
 
 
@@ -1042,7 +1133,10 @@ def text2sql_auth_headers() -> dict[str, str]:
     """
     api_key_name = os.getenv("TEXT2SQL_API_KEY_NAME", "X-API-Key")
     api_key_value = os.getenv("TEXT2SQL_API_KEY_VALUE")
-    return {api_key_name: api_key_value} if api_key_value else {}
+    headers = {api_key_name: api_key_value} if api_key_value else {}
+    if openai_api_key():  # FASTAPI-TEXT2SQL-409
+        headers[OPENAI_KEY_HEADER] = openai_api_key()
+    return headers
 
 
 def text2sql_base_url() -> str:
@@ -1190,7 +1284,7 @@ async def compose_agent_about(message: str, soul: Soul, intent: dict[str, Any]) 
         "input": message, "tools": [], "tool_choice": "none", "store": False,
     }
     async with httpx.AsyncClient(timeout=45) as client:
-        response = await client.post("https://api.openai.com/v1/responses", headers={"Authorization": "Bearer " + os.getenv("OPENAI_API_KEY", "")}, json=body)
+        response = await client.post("https://api.openai.com/v1/responses", headers={"Authorization": "Bearer " + require_openai_api_key()}, json=body)
     if response.status_code >= 400:
         raise HTTPException(status_code=response.status_code, detail="Assistant presentation could not be generated")
     upstream = response.json()
@@ -3029,6 +3123,8 @@ async def index() -> HTMLResponse:
     # VOICE-AGENT-126: hand the browser the SAME shared vocabulary the server uses, so app.js
     # builds its language/family/stopword lists from one source instead of a hand-kept copy.
     html = html.replace("__LEXICONS_JSON__", LEXICONS_JSON)
+    # VOICE-AGENT-277: the page asks for the visitor's OpenAI key only in BYOK mode.
+    html = html.replace("__BYOK_REQUIRED__", "1" if BYOK_REQUIRED else "0")
     return HTMLResponse(
         html.replace("__APP_VERSION__", APP_VERSION),
         headers={"Cache-Control": "no-cache, must-revalidate"},
@@ -3077,11 +3173,47 @@ async def list_souls() -> dict[str, Any]:
     }
 
 
+@app.post("/openai-key/check")
+async def check_openai_key() -> dict[str, Any]:
+    """VOICE-AGENT-277: is the visitor's key accepted by OpenAI, and can it reach our models?
+
+    One free call (`GET /v1/models`) with the key from the X-OpenAI-Key header. Answers
+    ``{"ok": true, "missing_models": [...]}`` or 401 with a reason the page shows as is. The
+    key itself is never logged; the log keeps the outcome only.
+    """
+    strkey = openai_api_key()
+    if not strkey:
+        raise HTTPException(status_code=401, detail={
+            "error_code": "openai_key_required", "error": "No key, or not the shape of an OpenAI key."})
+    try:
+        async with httpx.AsyncClient(timeout=20) as client:
+            response = await client.get("https://api.openai.com/v1/models",
+                                        headers={"Authorization": "Bearer " + strkey})
+    except httpx.HTTPError:
+        raise HTTPException(status_code=502, detail={
+            "error_code": "openai_unreachable", "error": "OpenAI could not be reached; try again."})
+    if response.status_code in (401, 403):
+        write_client_log("openai_key_check", {"ok": False, "status": response.status_code})
+        raise HTTPException(status_code=401, detail={
+            "error_code": "openai_key_refused", "error": "OpenAI refused this key."})
+    if response.status_code >= 400:
+        write_client_log("openai_key_check", {"ok": False, "status": response.status_code})
+        raise HTTPException(status_code=502, detail={
+            "error_code": "openai_key_check_failed",
+            "error": f"OpenAI answered {response.status_code}; try again."})
+    available = {str(item.get("id")) for item in (response.json().get("data") or []) if isinstance(item, dict)}
+    wanted = {
+        os.getenv("OPENAI_REALTIME_MODEL", DEFAULT_REALTIME_MODEL).strip() or DEFAULT_REALTIME_MODEL,
+        os.getenv("OPENAI_TEXT_MODEL", "gpt-6-sol"),
+    }
+    missing = sorted(model for model in wanted if model and model not in available)
+    write_client_log("openai_key_check", {"ok": True, "missing_models": missing})
+    return {"ok": True, "missing_models": missing}
+
+
 @app.post("/session", response_class=PlainTextResponse)
 async def create_realtime_session(request: Request) -> PlainTextResponse:
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="OPENAI_API_KEY is not set")
+    api_key = require_openai_api_key()  # VOICE-AGENT-277
 
     sdp = (await request.body()).decode("utf-8")
     if not sdp.strip():
@@ -3162,9 +3294,7 @@ def transcription_form_fields(model: str) -> dict[str, Any]:
 
 @app.post("/transcribe")
 async def transcribe_audio(request: Request) -> dict[str, Any]:
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="OPENAI_API_KEY is not set")
+    api_key = require_openai_api_key()  # VOICE-AGENT-277
 
     audio_bytes = await request.body()
     if not audio_bytes:
@@ -3630,9 +3760,7 @@ def latest_detail_tool_context(context: list[dict[str, Any]]) -> tuple[str, dict
 
 @app.post("/text-chat")
 async def text_chat(payload: TextChatRequest) -> dict[str, Any]:
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="OPENAI_API_KEY is not set")
+    api_key = require_openai_api_key()  # VOICE-AGENT-277
 
     message = payload.message.strip()
     # VOICE-AGENT-158: a picture is a question. A turn carrying an image_ref and no words is the
@@ -4061,9 +4189,7 @@ BRIEF_INSTRUCTIONS = (
 
 @app.post("/brief")
 async def brief(payload: BriefRequest) -> dict[str, Any]:
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="OPENAI_API_KEY is not set")
+    api_key = require_openai_api_key()  # VOICE-AGENT-277
 
     tool_name = payload.tool_name.strip()
     if not DETAIL_TOOL_BY_NAME.get(tool_name):
@@ -4341,9 +4467,7 @@ async def series_episode_ratings(id_serie: Any, seasons: Any, ui_language: str) 
 
 @app.post("/deep-answer")
 async def deep_answer(payload: DeepAnswerRequest) -> dict[str, Any]:
-    api_key = os.getenv("OPENAI_API_KEY")
-    if not api_key:
-        raise HTTPException(status_code=500, detail="OPENAI_API_KEY is not set")
+    api_key = require_openai_api_key()  # VOICE-AGENT-277
 
     tool_name = payload.tool_name.strip()
     if not DETAIL_TOOL_BY_NAME.get(tool_name):
@@ -4519,6 +4643,10 @@ def _with_date_status(payload: dict[str, Any]) -> dict[str, Any]:
 
 @app.post("/tool/text2sql")
 async def query_text2sql(payload: Text2SqlRequest) -> dict[str, Any]:
+    # VOICE-AGENT-277: in the demo a search is never sent without the visitor's key, whatever
+    # version of the API answers (one that still holds a key of its own would pay with it).
+    if BYOK_REQUIRED:
+        require_openai_api_key()
     return _with_date_guardrail(await query_text2sql_data(payload))
 
 
@@ -4536,6 +4664,8 @@ async def upload_vision_image(request: Request) -> dict[str, Any]:
     `logs/`: what comes back is a filename, and the filename is the only thing the browser, the
     turn's log entry and every later turn of the conversation ever hold.
     """
+    if BYOK_REQUIRED:  # VOICE-AGENT-277: the picture is read with the visitor's key
+        require_openai_api_key()
     image_bytes = await request.body()
     if not image_bytes:
         raise HTTPException(status_code=400, detail="Missing image body")

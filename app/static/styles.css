@@ -6002,3 +6002,103 @@ button.t2sDrill:focus-visible {
     transition: none;
   }
 }
+
+/* VOICE-AGENT-277: the visitor's OpenAI key (bring-your-own-key demo). A native <dialog>, so
+   it sits in the top layer above the menu drawer and the results; no display rule on the id,
+   which would outrank [hidden] on its children. */
+.openaiKeyDialog {
+  width: min(460px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 0;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  color: var(--text-primary);
+  background: var(--bg-secondary);
+}
+
+.openaiKeyDialog::backdrop {
+  background: rgba(0, 0, 0, 0.6);
+}
+
+.openaiKeyForm {
+  display: grid;
+  gap: 12px;
+  padding: 20px;
+}
+
+.openaiKeyTitle {
+  margin: 0;
+  font-size: 1.2rem;
+}
+
+.openaiKeyIntro,
+.openaiKeyPrivacy {
+  margin: 0;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+
+.openaiKeyLabel {
+  display: grid;
+  gap: 6px;
+  font-weight: 600;
+}
+
+.openaiKeyLabel input {
+  width: 100%;
+  min-width: 0;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  color: var(--text-primary);
+  background: var(--bg-tertiary);
+  font: inherit;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+
+.openaiKeyRemember {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.92rem;
+}
+
+.openaiKeyStatus {
+  min-height: 1.2em;
+  margin: 0;
+  font-size: 0.9rem;
+}
+
+.openaiKeyStatus[data-kind="error"] {
+  color: var(--error);
+}
+
+.openaiKeyStatus[data-kind="warning"] {
+  color: #f2c94c;
+}
+
+.openaiKeyStatus[data-kind="ok"],
+.openaiKeyStatus[data-kind="busy"] {
+  color: var(--accent-secondary);
+}
+
+.openaiKeyActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.openaiKeyActions button {
+  min-width: 0;
+}
+
+.openaiKeyActions .openaiKeyForget:not([hidden]) {
+  margin-left: auto;
+}
+
+.openaiKeyGet {
+  color: var(--accent-primary);
+  font-size: 0.9rem;
+}

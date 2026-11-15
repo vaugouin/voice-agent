@@ -438,6 +438,312 @@ function appUrl(path) {
   return new URL(path, new URL(".", window.location.href)).toString();
 }
 
+// --- Bring your own OpenAI key (VOICE-AGENT-277) ---------------------------------------------
+// The public demo (/voice-demo/, server flag BYOK_REQUIRED=1, injected in the page's meta tag)
+// pays OpenAI with the visitor's key. The showcase is free (cached answers); every action that
+// calls a model (Talk, a typed or showcase question, Look, dictation) asks for the key first.
+// The key is kept in sessionStorage (gone with the tab) unless the visitor ticks "Remember on
+// this device" (localStorage). It is sent in the X-OpenAI-Key header to THIS app's server only:
+// the fetch wrapper below adds it to same-origin requests under the app's own path, never to any
+// other host. The owner instance (BYOK off) never shows any of this.
+const BYOK_REQUIRED = document.querySelector('meta[name="byok-required"]')?.content === "1";
+const OPENAI_KEY_HEADER = "X-OpenAI-Key";
+const OPENAI_KEY_STORAGE = "voiceAgent.openaiKey";
+const OPENAI_KEY_PAID_PATHS = new Set([
+  "session", "text-chat", "transcribe", "brief", "deep-answer", "tool/text2sql", "tool/vision-upload",
+]);
+let openAIKeyPendingAction = null;
+let openAIKeyMemory = "";
+
+function readStoredOpenAIKey() {
+  for (const storage of [() => window.sessionStorage, () => window.localStorage]) {
+    try {
+      const value = storage().getItem(OPENAI_KEY_STORAGE);
+      if (value) {
+        return value;
+      }
+    } catch (_error) {
+      // Storage blocked (private mode, site data off): the key lives for this page only.
+    }
+  }
+  return openAIKeyMemory;
+}
+
+function storeOpenAIKey(key, remember) {
+  forgetOpenAIKey();
+  openAIKeyMemory = key;
+  try {
+    (remember ? window.localStorage : window.sessionStorage).setItem(OPENAI_KEY_STORAGE, key);
+  } catch (_error) {
+    // Kept in memory only (openAIKeyMemory).
+  }
+}
+
+function forgetOpenAIKey() {
+  openAIKeyMemory = "";
+  for (const storage of [() => window.sessionStorage, () => window.localStorage]) {
+    try {
+      storage().removeItem(OPENAI_KEY_STORAGE);
+    } catch (_error) {
+      // Nothing to remove.
+    }
+  }
+}
+
+function openAIKeyRemembered() {
+  try {
+    return Boolean(window.localStorage.getItem(OPENAI_KEY_STORAGE));
+  } catch (_error) {
+    return false;
+  }
+}
+
+// The app's own path ("/voice-demo/"): only requests below it, on this origin, carry the key.
+function appRelativePath(url) {
+  const base = new URL(".", window.location.href);
+  if (url.origin !== base.origin || !url.pathname.startsWith(base.pathname)) {
+    return null;
+  }
+  return url.pathname.slice(base.pathname.length).replace(/\/+$/, "");
+}
+
+if (BYOK_REQUIRED && typeof window.fetch === "function") {
+  const nativeFetch = window.fetch.bind(window);
+  window.fetch = async (input, init = {}) => {
+    let url;
+    try {
+      url = new URL(typeof input === "string" || input instanceof URL ? input : input.url, window.location.href);
+    } catch (_error) {
+      return nativeFetch(input, init);
+    }
+    const path = appRelativePath(url);
+    if (path === null) {
+      return nativeFetch(input, init);
+    }
+    const key = readStoredOpenAIKey();
+    if (!key && OPENAI_KEY_PAID_PATHS.has(path)) {
+      openOpenAIKeyDialog();
+      throw new Error("An OpenAI API key is needed for this demo");
+    }
+    let nextInit = init;
+    if (key && !(init.headers && new Headers(init.headers).has(OPENAI_KEY_HEADER))) {
+      const headers = new Headers(init.headers || (input instanceof Request ? input.headers : undefined));
+      headers.set(OPENAI_KEY_HEADER, key);
+      nextInit = { ...init, headers };
+    }
+    const response = await nativeFetch(input, nextInit);
+    if (response.status === 401) {
+      try {
+        const body = await response.clone().json();
+        const code = body?.detail?.error_code || "";
+        if (code === "openai_key_required" || code === "openai_key_refused") {
+          openOpenAIKeyDialog({ reason: code });
+        }
+      } catch (_error) {
+        // Not our JSON 401 (the htpasswd of the owner instance, say): leave it to the caller.
+      }
+    }
+    return response;
+  };
+}
+
+// True when the action can go ahead; otherwise opens the key dialog, which runs `retry` once a
+// key has been accepted.
+function requireOpenAIKey(retry) {
+  if (!BYOK_REQUIRED || readStoredOpenAIKey()) {
+    return true;
+  }
+  openOpenAIKeyDialog({ retry });
+  return false;
+}
+
+function openAIKeyTexts() {
+  const fr = activeUiLanguage === "fr" || /^fr\b/i.test(navigator.language || "");
+  return fr ? {
+    title: "Votre clé API OpenAI",
+    intro: "Cette démo fonctionne avec votre propre compte OpenAI : chaque question est facturée sur votre clé (voix, recherche, images). Les exemples affichés à l'accueil sont gratuits.",
+    privacy: "La clé reste dans ce navigateur. Elle n'est envoyée qu'au serveur de l'application, qui la transmet à OpenAI et à l'API de la base de films pour vos seules requêtes ; elle n'y est ni journalisée ni enregistrée. Les réponses alimentent un cache partagé.",
+    label: "Clé API OpenAI",
+    remember: "Retenir sur cet appareil",
+    save: "Utiliser cette clé",
+    cancel: "Annuler",
+    forget: "Oublier ma clé",
+    getKey: "Obtenir une clé",
+    checking: "Vérification de la clé auprès d'OpenAI…",
+    empty: "Collez une clé qui commence par sk-.",
+    malformed: "Ce n'est pas la forme d'une clé OpenAI.",
+    refused: "OpenAI refuse cette clé.",
+    required: "Votre clé n'est plus acceptée : saisissez-la de nouveau.",
+    missing: (models) => `Clé acceptée, mais ce compte n'a pas accès à : ${models}. La voix ou les réponses peuvent échouer.`,
+    forgotten: "Clé oubliée sur cet appareil.",
+    menuTitle: "Clé OpenAI",
+    menuText: "Saisir, changer ou oublier votre clé.",
+  } : {
+    title: "Your OpenAI API key",
+    intro: "This demo runs on your own OpenAI account: each question is billed to your key (voice, search, pictures). The examples on the home screen are free.",
+    privacy: "The key stays in this browser. It is sent only to this app's server, which passes it to OpenAI and to the movie database API for your own requests; it is never logged or stored there. Answers go into a shared cache.",
+    label: "OpenAI API key",
+    remember: "Remember on this device",
+    save: "Use this key",
+    cancel: "Cancel",
+    forget: "Forget my key",
+    getKey: "Get a key",
+    checking: "Checking the key with OpenAI…",
+    empty: "Paste a key that starts with sk-.",
+    malformed: "That is not the shape of an OpenAI key.",
+    refused: "OpenAI refused this key.",
+    required: "Your key is no longer accepted: enter it again.",
+    missing: (models) => `Key accepted, but this account cannot use: ${models}. Voice or answers may fail.`,
+    forgotten: "Key forgotten on this device.",
+    menuTitle: "OpenAI key",
+    menuText: "Enter, change or forget your key.",
+  };
+}
+
+const openAIKeyDialog = document.querySelector("#openaiKeyDialog");
+
+function setOpenAIKeyStatus(text, kind = "") {
+  const status = openAIKeyDialog?.querySelector(".openaiKeyStatus");
+  if (status) {
+    status.textContent = text || "";
+    status.dataset.kind = kind;
+  }
+}
+
+function openOpenAIKeyDialog({ retry = null, reason = "" } = {}) {
+  if (!openAIKeyDialog) {
+    return;
+  }
+  if (typeof retry === "function") {
+    openAIKeyPendingAction = retry;
+  }
+  const t = openAIKeyTexts();
+  openAIKeyDialog.querySelector(".openaiKeyTitle").textContent = t.title;
+  openAIKeyDialog.querySelector(".openaiKeyIntro").textContent = t.intro;
+  openAIKeyDialog.querySelector(".openaiKeyPrivacy").textContent = t.privacy;
+  openAIKeyDialog.querySelector(".openaiKeyLabelText").textContent = t.label;
+  openAIKeyDialog.querySelector(".openaiKeyRememberText").textContent = t.remember;
+  openAIKeyDialog.querySelector(".openaiKeySave").textContent = t.save;
+  openAIKeyDialog.querySelector(".openaiKeyCancel").textContent = t.cancel;
+  const forgetButton = openAIKeyDialog.querySelector(".openaiKeyForget");
+  forgetButton.textContent = t.forget;
+  forgetButton.hidden = !readStoredOpenAIKey();
+  openAIKeyDialog.querySelector(".openaiKeyGet").textContent = t.getKey;
+  openAIKeyDialog.querySelector("#openaiKeyRemember").checked = openAIKeyRemembered();
+  const input = openAIKeyDialog.querySelector("#openaiKeyInput");
+  input.value = "";
+  if (reason === "openai_key_refused" || reason === "openai_key_required") {
+    forgetOpenAIKey();
+    forgetButton.hidden = true;
+    setOpenAIKeyStatus(t.required, "error");
+  } else {
+    setOpenAIKeyStatus("");
+  }
+  if (!openAIKeyDialog.open) {
+    openAIKeyDialog.showModal();
+  }
+  clientLog("openai_key_dialog", { reason: reason || "needed" });
+  input.focus();
+}
+
+function closeOpenAIKeyDialog() {
+  openAIKeyPendingAction = null;
+  if (openAIKeyDialog?.open) {
+    openAIKeyDialog.close();
+  }
+}
+
+async function submitOpenAIKey() {
+  const t = openAIKeyTexts();
+  const input = openAIKeyDialog.querySelector("#openaiKeyInput");
+  const key = input.value.trim();
+  if (!key) {
+    setOpenAIKeyStatus(t.empty, "error");
+    return;
+  }
+  if (!/^[A-Za-z0-9_-]{20,512}$/.test(key)) {
+    setOpenAIKeyStatus(t.malformed, "error");
+    return;
+  }
+  const saveButton = openAIKeyDialog.querySelector(".openaiKeySave");
+  saveButton.disabled = true;
+  setOpenAIKeyStatus(t.checking, "busy");
+  try {
+    // Explicit header: the candidate key, not the stored one (the wrapper leaves it as is).
+    const response = await window.fetch(appUrl("openai-key/check"), {
+      method: "POST",
+      headers: { [OPENAI_KEY_HEADER]: key },
+    });
+    const body = await response.json().catch(() => ({}));
+    if (!response.ok) {
+      const code = body?.detail?.error_code || "";
+      setOpenAIKeyStatus(code === "openai_key_refused" ? t.refused : (body?.detail?.error || t.refused), "error");
+      clientLog("openai_key_check", { ok: false, code });
+      return;
+    }
+    storeOpenAIKey(key, openAIKeyDialog.querySelector("#openaiKeyRemember").checked);
+    input.value = "";
+    const missing = Array.isArray(body.missing_models) ? body.missing_models : [];
+    clientLog("openai_key_check", { ok: true, missing_models: missing });
+    const action = openAIKeyPendingAction;
+    if (missing.length) {
+      // Accepted, with a warning the visitor reads before going on.
+      setOpenAIKeyStatus(t.missing(missing.join(", ")), "warning");
+      openAIKeyPendingAction = null;
+      openAIKeyDialog.querySelector(".openaiKeyForget").hidden = false;
+      if (action) {
+        window.setTimeout(() => { closeOpenAIKeyDialog(); action(); }, 2500);
+      }
+      return;
+    }
+    closeOpenAIKeyDialog();
+    if (action) {
+      action();
+    }
+  } catch (error) {
+    setOpenAIKeyStatus(String(error?.message || error), "error");
+  } finally {
+    saveButton.disabled = false;
+  }
+}
+
+function setupOpenAIKeyDialog() {
+  if (!BYOK_REQUIRED || !openAIKeyDialog) {
+    return;
+  }
+  openAIKeyDialog.querySelector("form").addEventListener("submit", (event) => {
+    event.preventDefault();
+    submitOpenAIKey();
+  });
+  openAIKeyDialog.querySelector(".openaiKeyCancel").addEventListener("click", () => closeOpenAIKeyDialog());
+  openAIKeyDialog.addEventListener("cancel", () => { openAIKeyPendingAction = null; });
+  openAIKeyDialog.querySelector(".openaiKeyForget").addEventListener("click", () => {
+    forgetOpenAIKey();
+    openAIKeyDialog.querySelector(".openaiKeyForget").hidden = true;
+    setOpenAIKeyStatus(openAIKeyTexts().forgotten, "ok");
+    clientLog("openai_key_forgotten", {});
+  });
+  // A menu entry to enter, change or forget the key, added only in BYOK mode (the owner
+  // instance's menu is unchanged).
+  const menuIndex = document.querySelector("#appMenuIndexScreen");
+  if (menuIndex) {
+    const t = openAIKeyTexts();
+    const item = document.createElement("button");
+    item.id = "appMenuOpenAIKeyButton";
+    item.className = "appMenuNavItem";
+    item.type = "button";
+    const label = document.createElement("span");
+    const strong = document.createElement("strong");
+    strong.textContent = t.menuTitle;
+    const text = document.createElement("span");
+    text.textContent = t.menuText;
+    label.append(strong, text);
+    item.append(label);
+    item.addEventListener("click", () => openOpenAIKeyDialog());
+    menuIndex.append(item);
+  }
+}
+
 function delay(ms) {
   return new Promise((resolve) => window.setTimeout(resolve, ms));
 }
@@ -13317,6 +13623,11 @@ async function sendTextChatMessage(text, { source = "typed", imageRef = "" } = {
   if (!text && !attachedImageRef) {
     return;
   }
+  // VOICE-AGENT-277: a typed or showcase question needs the visitor's key in the demo; it is
+  // sent as soon as a key has been accepted.
+  if (!requireOpenAIKey(() => sendTextChatMessage(text, { source, imageRef }))) {
+    return;
+  }
   // VOICE-AGENT-250: "en tableau", "show it as a chart": answered here by redrawing the result on
   // screen, before /text-chat, whose server pre-fires a search for every typed message.
   if (!imageRef && text && handleTypedRepresentationRequest(text)) {
@@ -13481,6 +13792,11 @@ async function sendTextChatMessage(text, { source = "typed", imageRef = "" } = {
 async function sendTextMessage() {
   const text = questionInput.value.trim();
   if (!text && !activeLookImageRef()) {
+    return;
+  }
+  // VOICE-AGENT-277: in the demo, ask for the key while the question is still in the field; it
+  // is sent as soon as a key has been accepted.
+  if (!requireOpenAIKey(() => sendTextMessage())) {
     return;
   }
 
@@ -14966,6 +15282,9 @@ async function handleLookFileSelected(input) {
 // resize to 1024px at quality 0.8, the same confirmation overlay, the same attachment. A dropped
 // file is not a second kind of photo, it is the same photo arriving through a different door.
 async function handleLookFile(file, source) {
+  if (!requireOpenAIKey(() => handleLookFile(file, source))) {  // VOICE-AGENT-277
+    return;
+  }
   const generation = ++lookCaptureGeneration;
   const startedAt = performance.now();
   setStatus("Preparing the photo", "live");
@@ -17813,6 +18132,10 @@ async function handleServerEvent(event) {
 }
 
 async function start({ reconnecting = false } = {}) {
+  // VOICE-AGENT-277: the demo asks for the visitor's OpenAI key before the first session.
+  if (!reconnecting && !requireOpenAIKey(() => startButton.click())) {
+    return;
+  }
   dismissLaunchShowcase();
   if (dictationActive || dictationTranscribing) {
     cancelIdleDictation("start voice session");
@@ -18152,6 +18475,11 @@ function selectShowcaseSamples(flat, max = 300) {
 function runShowcaseQuestion(question) {
   const text = String(question || "").trim();
   if (!text) {
+    return;
+  }
+  // VOICE-AGENT-277: ask for the key BEFORE the showcase is dismissed, so a visitor who cancels
+  // finds the home screen as it was.
+  if (!requireOpenAIKey(() => runShowcaseQuestion(text))) {
     return;
   }
   dismissLaunchShowcase();
@@ -18781,6 +19109,8 @@ setupPageDiagnostics();
 setupRemoteAudioDiagnostics();
 clearRetainedContext();
 clientLog("realtime_support", realtimeSupportSnapshot("page load"));
+
+setupOpenAIKeyDialog();  // VOICE-AGENT-277, BYOK mode only
 
 startButton.addEventListener("click", () => {
   start().catch((error) => {

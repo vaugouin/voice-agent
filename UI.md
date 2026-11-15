@@ -685,6 +685,16 @@ Replay rules:
 - `startNewConversation()` does not reset `launchSplashHasRun`; it only resets `launchShowcaseDismissed` and repopulates the launch showcase.
 - Result/detail renders and history restores never replay the splash.
 
+## OpenAI Key Dialog (VOICE-AGENT-277, demo only)
+
+Present only when the page's `meta[name="byok-required"]` is `1` (the `/voice-demo/` container); on the owner instance the dialog is never opened and the menu has no key entry.
+
+- **Trigger.** `requireOpenAIKey(retry)` with no stored key: Talk (`start()`, not on a reconnect), a typed question (`sendTextMessage()`, while the question is still in the field), a showcase question (`runShowcaseQuestion()`, before the showcase is dismissed, so Cancel leaves the home screen as it was), Look (`handleLookFile()`), and `sendTextChatMessage()`. The fetch wrapper also opens it when a paid route is called with no key, and on a 401 `openai_key_required` / `openai_key_refused` from the server (the stored key is then forgotten and the status says so).
+- **States.** Empty field; checking (Save disabled, status "Checking the key with OpenAI"); refused or malformed (error status, dialog stays open, nothing stored); accepted (stored, dialog closes, the pending action runs once); accepted with missing models (warning status for 2.5 s, then closes and runs the action).
+- **Storage.** `sessionStorage` by default, `localStorage` with "Remember on this device"; storage blocked: memory for the page only. "Forget my key" appears only when a key is stored.
+- **Menu.** The drawer's index gets an *OpenAI key* entry (built in `setupOpenAIKeyDialog()`), which opens the dialog with no pending action.
+- **Language.** French when the UI language or the browser language is French, else English (`openAIKeyTexts()`).
+
 ## Launch Showcase
 
 Element: `#launchShowcase`, a `<section>` created by `app.js` and inserted into `.panel` immediately after the status row (outside `#resultsPanel`, so it does not trigger compact results mode and the header/status stay visible).
