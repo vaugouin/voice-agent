@@ -849,7 +849,7 @@ docker run -d \
   voice-agent:latest
 ```
 
-`restart.sh` runs these steps, then follows `docker logs -f voice-agent`. No host port is published: the `reverseproxy` container reaches the app by its name on the `reverseproxy` network.
+`restart.sh` runs these steps and returns, printing the last 20 log lines (`docker logs -f voice-agent` to follow them), like `restart-demo.sh`. No host port is published: the `reverseproxy` container reaches the app by its name on the `reverseproxy` network.
 
 To override a `.env` key for one container without editing the file, add `-e KEY=VALUE` before the image name; Docker gives `-e` precedence over `--env-file`. For a recording session with no native subtitles (VOICE-AGENT-176):
 
