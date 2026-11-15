@@ -10436,6 +10436,8 @@ function titleForRecord(record) {
     record.AWARD_NAME,
     record.NOMINATION_NAME,
     record.SOURCE_WORK_NAME,
+    // VOICE-AGENT-267: API 1.1.19 renamed the location label from ITEM_LABEL to LOCATION_NAME.
+    record.LOCATION_NAME,
     record.ITEM_LABEL,
     record.CONTENT_TITLE,
     "Result"
