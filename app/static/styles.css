@@ -1850,6 +1850,15 @@ button.search-poster-card-link {
   line-height: 1;
 }
 
+/* Title and "Brief me" on one row; the button wraps under the title only when the line is full. */
+.singleDetailHead {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px 18px;
+  min-width: 0;
+}
+
 .singleDetailTagline {
   max-width: 78ch;
   color: rgb(255 255 255 / 82%);

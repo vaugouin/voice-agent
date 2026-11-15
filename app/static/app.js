@@ -10514,11 +10514,17 @@ function liveBriefRow(key) {
 }
 
 function showBriefEssentials(row, text) {
-  let block = row.nextElementSibling;
+  // The button lives in the title row, so "The essentials" goes after the tagline (or after
+  // the title row when there is none), where the button's own row used to be.
+  let anchor = row.closest(".singleDetailHead") || row;
+  if (anchor.nextElementSibling?.classList.contains("singleDetailTagline")) {
+    anchor = anchor.nextElementSibling;
+  }
+  let block = anchor.nextElementSibling;
   if (!block || !block.classList.contains("detailBrief")) {
     block = document.createElement("section");
     block.className = "detailBrief";
-    row.after(block);
+    anchor.after(block);
   }
   block.replaceChildren();
   appendText(block, "detailBriefLabel", "The essentials");
@@ -10606,6 +10612,24 @@ async function runBrief(request, key, title) {
   }
 }
 
+// The page title of a film or a series carries its years: "Title (1999)" for a film,
+// "Title (2008-2013)" for a series, "Title (2020-)" while the end year is unknown.
+// Seasons, episodes and source works keep the bare title.
+function detailTitleWithYears(record, sourceWork) {
+  const title = titleForRecord(record);
+  if (sourceWork || record.ID_EPISODE || record.ID_SEASON || record.ID_PERSON) {
+    return title;
+  }
+  const type = String(record.CONTENT_TYPE || record.ENTITY_TYPE || "").toLowerCase();
+  let years = "";
+  if (record.ID_MOVIE || type === "movie") {
+    years = yearFromDate(record.DAT_RELEASE || record.DAT_FIRST_AIR);
+  } else if (record.ID_SERIE || type === "serie") {
+    years = serieAirYears({ ...record, ENTITY_TYPE: "serie" });
+  }
+  return title && years ? `${title} (${years})` : title;
+}
+
 function renderSingleDetail(container, record, { loading = false, error = "" } = {}) {
   container.replaceChildren();
   const sourceWork = isSourceWorkRecord(record); // VOICE-AGENT-218
@@ -10659,14 +10683,19 @@ function renderSingleDetail(container, record, { loading = false, error = "" } =
   const body = document.createElement("div");
   body.className = "singleDetailBody";
   appendText(body, "singleDetailEyebrow", loading ? "Loading details..." : "");
-  appendText(body, "singleDetailTitle", titleForRecord(record));
+  // The title and the "Brief me" button share one row: the button sits after the title and
+  // wraps under it only when the line is full, so it no longer costs a row of its own.
+  const head = document.createElement("div");
+  head.className = "singleDetailHead";
+  appendText(head, "singleDetailTitle", detailTitleWithYears(record, sourceWork));
+  body.append(head);
   if (!record.ID_PERSON) {
     appendText(body, "singleDetailTagline", firstValue(record.TAGLINE, record.OVERVIEW, record.DESCRIPTION));
   }
   // VOICE-AGENT-218: a source work has nothing to brief from until the Wikipedia crawl covers
   // source works (wikipedia_content stays [] until then), so the button waits for it.
   if (!loading && !error && (!sourceWork || hasWikipediaContent(record))) {
-    appendBriefControls(body, record);
+    appendBriefControls(head, record);
   }
 
   const metrics = document.createElement("div");

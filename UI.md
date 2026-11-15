@@ -1058,7 +1058,7 @@ If detail exists:
 
 ### Brief Me Button (VOICE-AGENT-195)
 
-Element: `.detailBriefButton` (🧠 **Brief me**, tooltip "What's the big deal?") inside `.detailBriefRow`, created by `appendBriefControls()` in `.singleDetailBody`, between the tagline and the metric tiles. It is a text button with the emoji at label size, not one of the control-row glyph buttons.
+Element: `.detailBriefButton` (🧠 **Brief me**, tooltip "What's the big deal?") inside `.detailBriefRow`, created by `appendBriefControls()` in `.singleDetailHead`, the title row, right after the title (it wraps under the title only when the line is full, so it costs no row of its own). "The essentials" block is inserted after the tagline. The title of a film or series sheet carries its years, "Title (1999)" or "Title (2008-2013)", "Title (2020-)" when the end year is unknown (`detailTitleWithYears()`). It is a text button with the emoji at label size, not one of the control-row glyph buttons.
 
 Purpose: tells the user what matters about the record on screen (standing, recognition, influence; for a person, the defining points of a career), not its plot, which the tagline already gives.
 
