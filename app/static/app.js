@@ -230,6 +230,8 @@ const PLAY_TRAILER_TOOL = "play_trailer";
 const READ_BASED_ON_TOOL = "read_based_on";
 // VOICE-AGENT-250: browser-side redraw of the result on screen in another form ("as a table").
 const SHOW_RESULTS_AS_TOOL = "show_results_as";
+// VOICE-AGENT-269: browser-side zoom on the map of places on screen.
+const ZOOM_MAP_TOOL = "zoom_map";
 // VOICE-AGENT-085: the spoken-card highlight targets two card families that never
 // coexist in `#resultsContent` — search grid cards (`.search-poster-card`) and entity
 // detail rail cards (`.detailVisualCard`). One selector covers both so the matcher,
@@ -4633,6 +4635,7 @@ function renderMap(container, rows, columns, upstream) {
 // list, each name opening the place as its card does; the places the map has no position for; a
 // visually hidden table. Without the outline (a failed load) the poster cards.
 let t2sWorldLand = null;
+let t2sPlaceMapZoomControl = null; // VOICE-AGENT-269, the last map of places drawn
 function text2SqlWorldLand(world) {
   if (!t2sWorldLand || t2sWorldLand.world !== world) {
     const shapes = world.shapes || {};
@@ -4692,32 +4695,185 @@ function renderPlaceMap(container, rows, columns, upstream) {
     list.className = "t2sPlaceList";
     let selected = [];
     // One button per group (several close places share one); the list keeps one line per mark.
+    // VOICE-AGENT-269: the groups are redrawn at every zoom (paintMarks()), the list is not.
     const items = new Map();
-    const groupButtons = [];
+    let groupButtons = [];
+    const base = model.base;
+    let view = null;
+    let current = model;
+    let dragged = false;
     const show = (group, button) => {
       tip.textContent = group.tip;
       selected.forEach((el) => el.classList.remove("isSelected"));
       selected = [button, ...group.members.map((n) => items.get(n)).filter(Boolean)];
       selected.forEach((el) => el.classList.add("isSelected"));
     };
-    model.groups.forEach((group) => {
+    const zoomBar = document.createElement("div");
+    zoomBar.className = "t2sMapZoom";
+    const zoomButton = (text, label, action) => {
       const button = document.createElement("button");
       button.type = "button";
-      button.className = `t2sPlaceMark ${group.kind === "area" ? "t2sPlaceArea" : "t2sPlacePin"}${group.members.length > 1 ? " isGroup" : ""}`;
-      button.style.left = `${group.left}%`;
-      button.style.top = `${group.top}%`;
-      button.title = group.tip;
-      button.setAttribute("aria-label", group.tip);
-      const number = document.createElement("span");
-      number.className = "t2sPlaceNum";
-      number.textContent = group.text;
-      button.append(number);
-      frame.append(button);
-      groupButtons.push([group, button]);
-      button.addEventListener("pointerenter", () => show(group, button));
-      button.addEventListener("focus", () => show(group, button));
-      button.addEventListener("click", () => show(group, button));
+      button.className = "t2sMapZoomButton";
+      button.textContent = text;
+      button.title = label;
+      button.setAttribute("aria-label", label);
+      button.addEventListener("click", (event) => {
+        event.stopPropagation();
+        action();
+      });
+      zoomBar.append(button);
+      return button;
+    };
+    let zoomTo = () => {};
+    const zoomInButton = zoomButton("+", fr ? "Zoomer" : "Zoom in", () => zoomTo(text2SqlPlaceZoomStep(base, view, 1, current.points)));
+    const zoomOutButton = zoomButton("−", fr ? "Dézoomer" : "Zoom out", () => zoomTo(text2SqlPlaceZoomStep(base, view, -1)));
+    const resetButton = zoomButton("↺", fr ? "Revenir à la vue d'ensemble" : "Back to the whole view", () => zoomTo(null));
+    frame.append(zoomBar);
+    const paintMarks = () => {
+      current = text2SqlPlaceMapModel(upstream, lang, world, view);
+      svg.setAttribute("viewBox", current.viewBox);
+      groupButtons.forEach(([, button]) => button.remove());
+      groupButtons = [];
+      selected.forEach((el) => el.classList.remove("isSelected"));
+      selected = [];
+      current.groups.forEach((group) => {
+        const button = document.createElement("button");
+        button.type = "button";
+        button.className = `t2sPlaceMark ${group.kind === "area" ? "t2sPlaceArea" : "t2sPlacePin"}${group.members.length > 1 ? " isGroup" : ""}`;
+        button.style.left = `${group.left}%`;
+        button.style.top = `${group.top}%`;
+        button.title = group.tip;
+        button.setAttribute("aria-label", group.tip);
+        const number = document.createElement("span");
+        number.className = "t2sPlaceNum";
+        number.textContent = group.text;
+        button.append(number);
+        frame.insertBefore(button, zoomBar);
+        groupButtons.push([group, button]);
+        button.addEventListener("pointerenter", () => show(group, button));
+        button.addEventListener("focus", () => show(group, button));
+        button.addEventListener("click", () => {
+          if (dragged) {
+            return;
+          }
+          show(group, button);
+          // A shared disc ("1+3") frames its places, so they split apart.
+          if (group.members.length > 1) {
+            zoomTo(text2SqlPlaceFitView(group.members.map((n) => current.points[n - 1]), base));
+          }
+        });
+      });
+      const zoomed = Boolean(view);
+      zoomOutButton.disabled = !zoomed;
+      resetButton.disabled = !zoomed;
+      zoomInButton.disabled = zoomed && view.zoom >= text2SqlPlaceMaxZoom(base);
+      frame.classList.toggle("isZoomed", zoomed);
+    };
+    zoomTo = (next) => {
+      if (!next && !view) {
+        return;
+      }
+      view = next;
+      paintMarks();
+    };
+    // Drag to pan once zoomed, pinch with two fingers, Ctrl + wheel (a trackpad pinch). The
+    // pointer is captured only once it moves, so a tap still reaches its mark.
+    const pointers = new Map();
+    let gesture = null;
+    const centre = () => ({
+      cx: current.frame.x + current.frame.width / 2,
+      cy: current.frame.y + current.frame.height / 2,
     });
+    frame.addEventListener("pointerdown", (event) => {
+      if (event.target.closest(".t2sMapZoom")) {
+        return;
+      }
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      dragged = false;
+      const points = [...pointers.values()];
+      gesture = points.length === 2
+        ? { kind: "pinch", distance: Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y) || 1, zoom: view?.zoom || 1, ...centre() }
+        : { kind: "pan", x: event.clientX, y: event.clientY, upp: current.frame.width / Math.max(frame.clientWidth, 1), ...centre() };
+    });
+    frame.addEventListener("pointermove", (event) => {
+      if (!pointers.has(event.pointerId) || !gesture) {
+        return;
+      }
+      pointers.set(event.pointerId, { x: event.clientX, y: event.clientY });
+      if (gesture.kind === "pinch" && pointers.size === 2) {
+        const points = [...pointers.values()];
+        const distance = Math.hypot(points[0].x - points[1].x, points[0].y - points[1].y);
+        const zoom = Math.min(Math.max(gesture.zoom * (distance / gesture.distance), 1), text2SqlPlaceMaxZoom(base));
+        dragged = true;
+        zoomTo(zoom > 1 ? { zoom, cx: gesture.cx, cy: gesture.cy } : null);
+      } else if (gesture.kind === "pan" && view) {
+        const dx = event.clientX - gesture.x;
+        const dy = event.clientY - gesture.y;
+        if (!dragged && Math.hypot(dx, dy) < 4) {
+          return;
+        }
+        if (!dragged) {
+          dragged = true;
+          frame.setPointerCapture?.(event.pointerId);
+        }
+        zoomTo({ zoom: view.zoom, cx: gesture.cx - dx * gesture.upp, cy: gesture.cy - dy * gesture.upp });
+      }
+    });
+    const release = (event) => {
+      pointers.delete(event.pointerId);
+      if (!pointers.size) {
+        gesture = null;
+        // The click that ends a drag comes after pointerup: let it see `dragged`, then clear it.
+        setTimeout(() => {
+          dragged = false;
+        }, 0);
+      }
+    };
+    frame.addEventListener("pointerup", release);
+    frame.addEventListener("pointercancel", release);
+    frame.addEventListener("wheel", (event) => {
+      if (!event.ctrlKey) {
+        return;
+      }
+      event.preventDefault();
+      const zoom = Math.min(Math.max((view?.zoom || 1) * Math.exp(-event.deltaY / 200), 1), text2SqlPlaceMaxZoom(base));
+      zoomTo(zoom > 1 ? { zoom, ...centre() } : null);
+    }, { passive: false });
+    // The voice tool zoom_map reaches the map last drawn through this (handleZoomMapCall()).
+    t2sPlaceMapZoomControl = {
+      root,
+      zoom(action, place) {
+        if (place) {
+          const found = text2SqlPlaceFindMarks(current.marks, place);
+          if (!found.length) {
+            return { ok: false, error: "place_not_found", places: current.marks.map((m) => m.label) };
+          }
+          // The place with the marks that share its disc at the whole view, so "Paris" frames
+          // Paris and its neighbours rather than one point.
+          const whole = text2SqlPlaceMapModel(upstream, lang, world, null);
+          const wanted = new Set(found.map((m) => m.n));
+          const members = new Set();
+          whole.groups.filter((g) => g.members.some((n) => wanted.has(n))).forEach((g) => g.members.forEach((n) => members.add(n)));
+          const first = current.points[found[0].n - 1];
+          zoomTo(text2SqlPlaceFitView([...members].map((n) => current.points[n - 1]), base)
+            || { zoom: Math.min(base.width / T2S_PLACE_FIT_MIN_WIDTH, text2SqlPlaceMaxZoom(base)), cx: first[0], cy: first[1] });
+        } else if (action === "in") {
+          zoomTo(text2SqlPlaceZoomStep(base, view, 1, current.points));
+        } else if (action === "out") {
+          zoomTo(text2SqlPlaceZoomStep(base, view, -1));
+        } else if (action === "fit") {
+          zoomTo(text2SqlPlaceFitView(current.points, base));
+        } else {
+          zoomTo(null);
+        }
+        return {
+          ok: true,
+          zoom: Math.round((view?.zoom || 1) * 10) / 10,
+          marks_on_screen: current.groups.map((g) => g.tip),
+        };
+      },
+    };
+    paintMarks();
     const groupOf = (n) => groupButtons.find(([group]) => group.members.includes(n));
     model.marks.forEach((mark) => {
       const item = document.createElement("li");
@@ -7345,10 +7501,123 @@ function text2SqlPlaceMapGroups(marks, frame) {
   });
 }
 
-// {viewBox, frame, marks, groups, offText, caption}, or null without summary_facts.places, without a
-// located place, or without the outline and its projection (the renderer then draws the cards).
-// A mark: {n, kind, index, id, label, typeText, left, top}, left and top in percent of the frame.
-function text2SqlPlaceMapModel(upstream, lang, world) {
+// VOICE-AGENT-269. Zoom on the map of places: the + and - buttons (one step doubles or halves),
+// pinch, Ctrl + wheel (a trackpad pinch), drag once zoomed, a tap on a shared disc ("1+3") that
+// frames its places, and the voice tool zoom_map. The 110m outline has no detail inside a
+// country, so zooming spreads the marks apart rather than revealing streets: the groups are
+// recomputed for every view, and "1+3" splits once its places are far enough apart on screen.
+// A view is {zoom, cx, cy}: the default frame divided by zoom, centred on (cx, cy) in outline
+// units, kept inside the outline. No view is the default frame, unchanged (the frame both fronts
+// pin). Same constants and rules as t2s-front (f_t2srep_place_map_js()).
+const T2S_PLACE_ZOOM_STEP = 2;
+const T2S_PLACE_ZOOM_MIN_WIDTH = 0.5; // outline units, about a tenth of a degree of longitude
+const T2S_PLACE_FIT_MIN_WIDTH = 2; // the tightest frame a fit asks for, about 30 km wide
+
+function text2SqlPlaceMaxZoom(base) {
+  return Math.max(1, base.width / T2S_PLACE_ZOOM_MIN_WIDTH);
+}
+
+function text2SqlPlaceZoomFrame(base, world, view) {
+  if (!view) {
+    return base;
+  }
+  const zoom = Math.min(Math.max(Number(view.zoom) || 1, 1), text2SqlPlaceMaxZoom(base));
+  if (zoom === 1) {
+    return base;
+  }
+  const W = Number(world.width);
+  const H = Number(world.height);
+  const w = base.width / zoom;
+  const h = base.height / zoom;
+  const cx = Number.isFinite(Number(view.cx)) ? Number(view.cx) : base.x + base.width / 2;
+  const cy = Number.isFinite(Number(view.cy)) ? Number(view.cy) : base.y + base.height / 2;
+  const r = (v) => Math.round(v * 10000) / 10000;
+  return {
+    x: r(Math.min(Math.max(cx - w / 2, 0), W - w)),
+    y: r(Math.min(Math.max(cy - h / 2, 0), H - h)),
+    width: r(w),
+    height: r(h),
+  };
+}
+
+// The view one step in (direction 1) or out (-1) from `view`, around its centre; zoom 1 is no view.
+// Given the points, a step in that would leave no place in the frame centres instead on the place
+// with the most others within the new frame's reach, the nearest on a tie (three steps in on
+// Amélie's map left an empty frame between Paris and Cologne; this goes to Paris's four places).
+function text2SqlPlaceZoomStep(base, view, direction, points = null) {
+  const zoom = Math.min(Math.max((Number(view?.zoom) || 1) * (direction > 0 ? T2S_PLACE_ZOOM_STEP : 1 / T2S_PLACE_ZOOM_STEP), 1),
+    text2SqlPlaceMaxZoom(base));
+  if (zoom <= 1) {
+    return null;
+  }
+  const next = {
+    zoom,
+    cx: Number.isFinite(Number(view?.cx)) ? Number(view.cx) : base.x + base.width / 2,
+    cy: Number.isFinite(Number(view?.cy)) ? Number(view.cy) : base.y + base.height / 2,
+  };
+  if (direction > 0 && Array.isArray(points) && points.length) {
+    const w = base.width / zoom;
+    const h = base.height / zoom;
+    const inside = points.some((p) => Math.abs(p[0] - next.cx) <= w / 2 && Math.abs(p[1] - next.cy) <= h / 2);
+    if (!inside) {
+      const score = (p) => points.filter((q) => Math.abs(q[0] - p[0]) <= w / 2 && Math.abs(q[1] - p[1]) <= h / 2).length;
+      const dist = (p) => Math.hypot(p[0] - next.cx, p[1] - next.cy);
+      const near = points.reduce((a, p) => (score(p) > score(a) || (score(p) === score(a) && dist(p) < dist(a)) ? p : a));
+      next.cx = near[0];
+      next.cy = near[1];
+    }
+  }
+  return next;
+}
+
+// The view that frames these points (outline units) as tightly as the floor allows, the default
+// frame's ratio kept: their box grown by half, at least T2S_PLACE_FIT_MIN_WIDTH wide. Null when
+// that is no closer than the default frame.
+function text2SqlPlaceFitView(points, base) {
+  if (!Array.isArray(points) || !points.length) {
+    return null;
+  }
+  const xs = points.map((p) => p[0]);
+  const ys = points.map((p) => p[1]);
+  const ratio = base.width / base.height;
+  let w = Math.max((Math.max(...xs) - Math.min(...xs)) * 1.5, T2S_PLACE_FIT_MIN_WIDTH);
+  const h = Math.max((Math.max(...ys) - Math.min(...ys)) * 1.5, T2S_PLACE_FIT_MIN_WIDTH / ratio);
+  w = Math.max(w, h * ratio);
+  const zoom = Math.min(base.width / w, text2SqlPlaceMaxZoom(base));
+  if (zoom <= 1) {
+    return null;
+  }
+  return { zoom, cx: (Math.max(...xs) + Math.min(...xs)) / 2, cy: (Math.max(...ys) + Math.min(...ys)) / 2 };
+}
+
+// The marks a spoken or typed place name designates: its number ("2"), else the marks whose
+// folded label equals it, else those whose label contains it or is contained in it ("Paris" finds
+// "Paris"; "Montmartre district" finds "Montmartre").
+function text2SqlPlaceFindMarks(marks, place) {
+  const fold = (s) => String(s || "").toLowerCase().normalize("NFKD").replace(/[̀-ͯ]/g, "").replace(/[^a-z0-9]+/g, " ").trim();
+  const wanted = fold(place);
+  if (!wanted) {
+    return [];
+  }
+  if (/^\d+$/.test(wanted)) {
+    return marks.filter((m) => m.n === Number(wanted));
+  }
+  const exact = marks.filter((m) => fold(m.label) === wanted);
+  if (exact.length) {
+    return exact;
+  }
+  return marks.filter((m) => {
+    const label = fold(m.label);
+    return label && (label.includes(wanted) || wanted.includes(label));
+  });
+}
+
+// {viewBox, frame, base, points, marks, groups, offText, caption}, or null without
+// summary_facts.places, without a located place, or without the outline and its projection (the
+// renderer then draws the cards). A mark: {n, kind, index, id, label, typeText, left, top}, left
+// and top in percent of the frame. `view` (VOICE-AGENT-269) zooms the frame; marks outside it stay
+// in `marks` (the list) and leave `groups` (the map).
+function text2SqlPlaceMapModel(upstream, lang, world, view = null) {
   const facts = upstream?.summary_facts?.places;
   if (!facts || !Number(facts.located) || !world || !world.projection) {
     return null;
@@ -7359,7 +7628,8 @@ function text2SqlPlaceMapModel(upstream, lang, world) {
     return null;
   }
   const points = located.map((m) => text2SqlEqualEarth(m.lat, m.lon, world));
-  const frame = text2SqlPlaceMapFrame(points, world);
+  const base = text2SqlPlaceMapFrame(points, world);
+  const frame = text2SqlPlaceZoomFrame(base, world, view);
   const marks = located.map((m, i) => ({
     n: i + 1,
     kind: m.kind,
@@ -7373,11 +7643,15 @@ function text2SqlPlaceMapModel(upstream, lang, world) {
   const off = (Array.isArray(facts.unlocated) ? facts.unlocated : [])
     .map((u) => `${text2SqlPlaceLabel(u.label, lang)} (${text2SqlPlaceReasonText(u.reason, lang)})`);
   const offText = off.length ? `${fr ? "Absents de la carte : " : "Not on the map: "}${off.join(", ")}.` : "";
+  const inFrame = frame === base ? marks
+    : marks.filter((m) => m.left >= 0 && m.left <= 100 && m.top >= 0 && m.top <= 100);
   return {
     viewBox: `${frame.x} ${frame.y} ${frame.width} ${frame.height}`,
     frame,
+    base,
+    points,
     marks,
-    groups: text2SqlPlaceMapGroups(marks, frame),
+    groups: text2SqlPlaceMapGroups(inFrame, frame),
     offText,
     caption: text2SqlPlaceMapSummary(upstream, { lang }),
   };
@@ -16677,6 +16951,43 @@ function handleShowResultsAsCall(item, args) {
   }
 }
 
+// VOICE-AGENT-269. The voice half of the map zoom (feedback #13: "zoom in on Paris so we can see
+// the exact three locations" was refused, the agent had no way to act on the map). The map of
+// places last drawn (renderPlaceMap(), t2sPlaceMapZoomControl) zooms in or out one step, frames
+// all its places, frames one named place with its close neighbours, or goes back to the whole
+// view; the output names the marks now on screen so the model can confirm in a few words.
+function handleZoomMapCall(item, args) {
+  const action = String(args?.action || "").trim().toLowerCase();
+  const place = String(args?.place || "").trim();
+  clientLog("tool_call_start", { name: item.name, call_id: item.call_id, action, place });
+  const control = t2sPlaceMapZoomControl;
+  const onScreen = control && control.root.isConnected && !resultsPanel.hidden;
+  const result = onScreen
+    ? control.zoom(action, place)
+    : { ok: false, error: "no_map" };
+  const output = {
+    ...result,
+    action,
+    place,
+    note: result.ok
+      ? "The map on screen is zoomed. Confirm in a few words, in the user's language; the marks_on_screen are what the user now sees. Do not search again."
+      : result.error === "place_not_found"
+        ? "No place of that name is on this map; nothing changed. Say so in one short sentence and name the places listed."
+        : "No map of places is on screen, so nothing was zoomed. If the user wants places on a map, search for them; otherwise say there is no map to zoom.",
+  };
+  clientLog("tool_call_success", { name: item.name, call_id: item.call_id, ok: output.ok, error: output.error || "", zoom: output.zoom ?? null });
+  awaitingToolResponse = true;
+  try {
+    sendFunctionCallOutput(item.call_id, output);
+  } catch (error) {
+    clientLog("tool_output_send_error", { tool: item.name, call_id: item.call_id, error: error.message }, "error");
+  } finally {
+    requestRealtimeResponseAfterToolOutput();
+    scheduleToolResponseWatchdog(); // VOICE-AGENT-094
+    syncMicrophone("tool output sent");
+  }
+}
+
 // VOICE-AGENT-217. A voice search that still holds the user's "he" or "his". The search is
 // stateless, so the pronoun stands for nobody there: on 2026-10-10 "Which movies did he direct
 // with Leonardo DiCaprio?" painted 50 unfiltered DiCaprio films and "only his 10 best-rated ones"
@@ -16830,6 +17141,7 @@ async function handleFunctionCall(item) {
       item.name !== PLAY_TRAILER_TOOL &&
       item.name !== READ_BASED_ON_TOOL &&
       item.name !== SHOW_RESULTS_AS_TOOL &&
+      item.name !== ZOOM_MAP_TOOL &&
       item.name !== DESCRIBE_AGENT_TOOL &&
       !DETAIL_TOOL_ENTITIES[item.name]
     )
@@ -16866,6 +17178,10 @@ async function handleFunctionCall(item) {
   }
   if (item.name === SHOW_RESULTS_AS_TOOL) {
     handleShowResultsAsCall(item, args);
+    return;
+  }
+  if (item.name === ZOOM_MAP_TOOL) {
+    handleZoomMapCall(item, args);
     return;
   }
   args.ui_language = item.name === "query_text2sql"

@@ -102,6 +102,7 @@ const code = [
   "  text2SqlScatterValueText, text2SqlScatterAxisTitle, text2SqlScatterWords,",
   "  text2SqlMapModel, text2SqlMapTone, text2SqlMapStepText,",
   "  text2SqlPlaceMapGroups, text2SqlPlaceMapModel, text2SqlPlaceMapSummary, text2SqlPlaceMapFrame, text2SqlEqualEarth, text2SqlPlaceTypeWord, text2SqlPlaceCount,",
+  "  text2SqlPlaceZoomFrame, text2SqlPlaceZoomStep, text2SqlPlaceFitView, text2SqlPlaceFindMarks, text2SqlPlaceMaxZoom,",
   "  text2SqlHierarchyModel, text2SqlHierarchySummary, text2SqlHierarchyLeafNoun, text2SqlHierarchyKind,",
   "  text2SqlChainModel, text2SqlChainSummary, text2SqlFrDe, text2SqlFrA,",
   "  text2SqlPictureCount, text2SqlCoverFlowUsable, text2SqlCoverFlowSlot, text2SqlCoverFlowStep, text2SqlCoverFlowSwipeSteps, text2SqlCoverFlowCounter,",
@@ -897,6 +898,32 @@ check("links: older API, from the keys", linkSummary([], ["ID_PERSON", "PERSON_N
   check("p3d akira fr off the map", api.text2SqlPlaceMapModel(fx(P + "akira-hand-fr"), "fr", world).offText,
     "Absents de la carte : Neo-Tokyo (lieu fictif), Studio lot (sans coordonnées).");
   check("p3d tokyo: the smallest frame", api.text2SqlPlaceMapModel(fx(P + "tokyo-single-hand-fr"), "fr", world).viewBox, "1625 175 160 100");
+  // VOICE-AGENT-269, zoom (feedback #13: Amélie's Paris places on one disc at the scale of Europe).
+  // No view is the pinned default frame; a step doubles the zoom around the centre; a fit on the
+  // shared disc frames its four places and splits it; a place name finds its marks.
+  {
+    const f = fx(P + "live-amelie-en");
+    const whole = api.text2SqlPlaceMapModel(f, "en", world);
+    check("zoom: no view is the default frame", api.text2SqlPlaceMapModel(f, "en", world, null).viewBox, whole.viewBox);
+    const step = api.text2SqlPlaceZoomStep(whole.base, null, 1);
+    const stepped = api.text2SqlPlaceMapModel(f, "en", world, step);
+    check("zoom: one step halves the frame", [step.zoom, stepped.frame.width, stepped.frame.height], [2, whole.base.width / 2, whole.base.height / 2]);
+    check("zoom: one step out of zoom 2 is the whole view", api.text2SqlPlaceZoomStep(whole.base, step, -1), null);
+    const thrice = [1, 2, 3].reduce((v) => api.text2SqlPlaceZoomStep(whole.base, v, 1, whole.points), null);
+    check("zoom: three steps in go to Paris's places, not to an empty frame", api.text2SqlPlaceMapModel(f, "en", world, thrice).groups.map((g) => g.text), ["1+3"]);
+    check("zoom: the step stops at the floor", api.text2SqlPlaceZoomStep(whole.base, { zoom: 10000, cx: 0, cy: 0 }, 1).zoom, api.text2SqlPlaceMaxZoom(whole.base));
+    const disc = whole.groups.find((g) => g.members.length > 1);
+    const fit = api.text2SqlPlaceFitView(disc.members.map((n) => whole.points[n - 1]), whole.base);
+    const fitted = api.text2SqlPlaceMapModel(f, "en", world, fit);
+    check("zoom: the fitted disc splits into its places", fitted.groups.map((g) => g.text).sort(), ["1", "3", "4", "5"]);
+    check("zoom: Cologne leaves the map, not the list", [fitted.marks.length, fitted.groups.some((g) => g.members.includes(2))], [5, false]);
+    check("zoom: the frame keeps its ratio", Math.round((fitted.frame.width / fitted.frame.height) * 1000), Math.round((whole.base.width / whole.base.height) * 1000));
+    check("zoom: one point alone fits nothing closer than the floor", api.text2SqlPlaceFitView([whole.points[0]], whole.base).zoom, whole.base.width / 2);
+    check("zoom: find by name, number, folded and partial",
+      [api.text2SqlPlaceFindMarks(whole.marks, "paris").map((m) => m.n), api.text2SqlPlaceFindMarks(whole.marks, "2").map((m) => m.n),
+        api.text2SqlPlaceFindMarks(whole.marks, "cinema").map((m) => m.label), api.text2SqlPlaceFindMarks(whole.marks, "Atlantis").length],
+      [[1], [2], ["Porte des Lilas - Cinéma"], 0]);
+  }
   check("p3d type words", [api.text2SqlPlaceTypeWord("nature", "fr"), api.text2SqlPlaceTypeWord("island", "en"), api.text2SqlPlaceTypeWord(null, "fr"), api.text2SqlPlaceTypeWord("planet", "en")],
     ["Site naturel", "Island", "Lieu", "Place"]);
   check("p3d count words", [api.text2SqlPlaceCount(12, "fr"), api.text2SqlPlaceCount(13, "fr"), api.text2SqlPlaceCount(1234, "fr")], ["douze", "13", "1,234"]);

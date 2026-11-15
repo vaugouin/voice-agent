@@ -1542,6 +1542,42 @@ def show_results_as_tool_definition() -> dict[str, Any]:
     }
 
 
+# VOICE-AGENT-269. Voice only, handled in the browser like show_results_as: it zooms the map of
+# places on screen (feedback #13, 2026-11-15: asked to zoom in on Paris, the agent answered it had
+# no zoom tool). The screen also has + and - buttons, pinch and drag.
+ZOOM_MAP_TOOL = "zoom_map"
+
+
+def zoom_map_tool_definition() -> dict[str, Any]:
+    return {
+        "type": "function",
+        "name": ZOOM_MAP_TOOL,
+        "description": (
+            "Zoom the map of places already on screen, with no new search: in or out one step, "
+            "fit (frame all the places as closely as possible), whole (back to the whole view), "
+            "or give place to frame one place of the map with its close neighbours ('zoom in on "
+            "Paris'). Returns the marks now on screen, or ok false when no map of places is shown "
+            "or the place is not on it."
+        ),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "action": {
+                    "type": "string",
+                    "enum": ["in", "out", "fit", "whole"],
+                    "description": "The zoom asked for; ignored when place is given.",
+                },
+                "place": {
+                    "type": "string",
+                    "description": "A place name or number shown on the map, to frame it. Empty otherwise.",
+                },
+            },
+            "required": ["action"],
+            "additionalProperties": False,
+        },
+    }
+
+
 def ask_about_record_tool_definition() -> dict[str, Any]:
     return {
         "type": "function",
@@ -2207,8 +2243,11 @@ REPRESENTATION_REQUEST_INSTRUCTIONS = (
     "the same rows. Then confirm in a few words. If it returns ok false, say in one short "
     "sentence that this result cannot be shown that way and name the available_views; do not "
     "search again. A request that names a new subject or filter ('Nolan's films as a table') "
-    "is a new search: call query_text2sql with it."
-)
+    "is a new search: call query_text2sql with it. When a map of places is on screen and the "
+    "user asks to zoom in or out, to see the places more closely, or to zoom on one place "
+    "('zoom in on Paris', 'zoome sur Paris'), call zoom_map (with place for a named place), "
+    "never query_text2sql; the user can also use the + and - buttons or pinch the map."
+)  # zoom_map: VOICE-AGENT-269
 
 # VOICE-AGENT-218, both modes: the detail field that answers "what is it based on?".
 SOURCE_WORK_INSTRUCTIONS = (
@@ -2836,6 +2875,7 @@ def realtime_session_config(
         play_trailer_tool_definition(),
         read_based_on_tool_definition(),  # VOICE-AGENT-218
         show_results_as_tool_definition(),  # VOICE-AGENT-250
+        zoom_map_tool_definition(),  # VOICE-AGENT-269, browser-handled
         describe_agent_tool_definition(),  # VOICE-AGENT-259, browser-handled
     ]
     if structured_card_focus:
