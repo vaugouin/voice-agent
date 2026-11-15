@@ -5856,12 +5856,14 @@ button.t2sDrill:focus-visible {
   padding: 0.75rem 0 1rem;
 }
 .t2sCoverFlowStage {
-  --cf-w: clamp(150px, 12vw + 60px, 210px);
+  /* The card grows with the screen (2026-11-15: 210 px looked lost on a desktop window), bounded
+     by the window height so the stage, title and buttons stay on one screen. */
+  --cf-w: clamp(150px, min(22vw, 32vh), 360px);
   background: radial-gradient(ellipse 60% 22% at 50% 92%, rgb(255 255 255 / 7%), transparent 70%);
   height: calc(var(--cf-w) * 1.8);
   outline: none;
   overflow: hidden;
-  perspective: 1000px;
+  perspective: calc(var(--cf-w) * 5);
   position: relative;
   touch-action: pan-y;
   user-select: none;
