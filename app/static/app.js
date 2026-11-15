@@ -549,6 +549,89 @@ if (BYOK_REQUIRED && typeof window.fetch === "function") {
 
 // True when the action can go ahead; otherwise opens the key dialog, which runs `retry` once a
 // key has been accepted.
+// --- Speed per task (2026-11-15) -----------------------------------------------------------
+// One radio group per API task: normal, fast or ultrafast (OpenAI service tiers). The choice
+// lives in the t2s_task_speed cookie, scoped to the app's path, so every call to this server
+// carries it and the server adds the API's llm_fast_* / llm_ultrafast_* fields. Normal is
+// stored as nothing at all.
+const TASK_SPEED_COOKIE = "t2s_task_speed";
+const TASK_SPEED_TASKS = [
+  ["entity_extraction", "Entity extraction"],
+  ["text2sql", "Text-to-SQL"],
+  ["complex", "Complex questions"],
+  ["result_entity", "Answer-entity classifier"],
+  ["vision", "Picture recognition"],
+];
+const TASK_SPEED_LEVELS = [
+  ["normal", "Normal"],
+  ["fast", "⚡ Fast"],
+  ["ultrafast", "🚀 Ultrafast"],
+];
+
+function readTaskSpeeds() {
+  const speeds = {};
+  const raw = document.cookie.split(";").map((part) => part.trim()).find((part) => part.startsWith(TASK_SPEED_COOKIE + "="));
+  if (!raw) {
+    return speeds;
+  }
+  decodeURIComponent(raw.slice(TASK_SPEED_COOKIE.length + 1)).split(",").forEach((item) => {
+    const [task, speed] = item.split(":");
+    if (TASK_SPEED_TASKS.some(([key]) => key === task) && (speed === "fast" || speed === "ultrafast")) {
+      speeds[task] = speed;
+    }
+  });
+  return speeds;
+}
+
+function writeTaskSpeeds(speeds) {
+  const value = Object.entries(speeds).filter(([, speed]) => speed === "fast" || speed === "ultrafast").map(([task, speed]) => `${task}:${speed}`).join(",");
+  const path = new URL(".", window.location.href).pathname;
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = value
+    ? `${TASK_SPEED_COOKIE}=${encodeURIComponent(value)}; Path=${path}; Max-Age=31536000; SameSite=Lax${secure}`
+    : `${TASK_SPEED_COOKIE}=; Path=${path}; Max-Age=0; SameSite=Lax${secure}`;
+}
+
+function setupTaskSpeedSettings() {
+  const picker = document.querySelector("#taskSpeedPicker");
+  if (!picker) {
+    return;
+  }
+  const speeds = readTaskSpeeds();
+  picker.replaceChildren();
+  TASK_SPEED_TASKS.forEach(([task, label]) => {
+    const group = document.createElement("fieldset");
+    group.className = "taskSpeedGroup";
+    const legend = document.createElement("legend");
+    legend.textContent = label;
+    group.append(legend);
+    TASK_SPEED_LEVELS.forEach(([speed, speedLabel]) => {
+      const option = document.createElement("label");
+      option.className = "taskSpeedOption";
+      const input = document.createElement("input");
+      input.type = "radio";
+      input.name = `taskSpeed_${task}`;
+      input.value = speed;
+      input.checked = (speeds[task] || "normal") === speed;
+      input.addEventListener("change", () => {
+        const next = readTaskSpeeds();
+        if (speed === "normal") {
+          delete next[task];
+        } else {
+          next[task] = speed;
+        }
+        writeTaskSpeeds(next);
+        clientLog("task_speed_changed", { task, speed });
+      });
+      const text = document.createElement("span");
+      text.textContent = speedLabel;
+      option.append(input, text);
+      group.append(option);
+    });
+    picker.append(group);
+  });
+}
+
 function requireOpenAIKey(retry) {
   if (!BYOK_REQUIRED || readStoredOpenAIKey()) {
     return true;
@@ -19111,6 +19194,7 @@ clearRetainedContext();
 clientLog("realtime_support", realtimeSupportSnapshot("page load"));
 
 setupOpenAIKeyDialog();  // VOICE-AGENT-277, BYOK mode only
+setupTaskSpeedSettings();
 
 startButton.addEventListener("click", () => {
   start().catch((error) => {

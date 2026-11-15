@@ -6102,3 +6102,54 @@ button.t2sDrill:focus-visible {
   color: var(--accent-primary);
   font-size: 0.9rem;
 }
+
+/* Speed per task (2026-11-15): one radio group per API task in the Settings screen. */
+.menuSpeed {
+  display: grid;
+  gap: 10px;
+  margin-top: 18px;
+}
+
+.menuSpeed > span strong {
+  display: block;
+  color: var(--text-primary);
+  font-size: 0.98rem;
+  line-height: 1.25;
+}
+
+.menuSpeed > span span {
+  display: block;
+  margin-top: 3px;
+  color: var(--text-secondary);
+  font-size: 0.86rem;
+  line-height: 1.35;
+}
+
+.taskSpeedPicker {
+  display: grid;
+  gap: 8px;
+}
+
+.taskSpeedGroup {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 14px;
+  margin: 0;
+  padding: 6px 10px 8px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+
+.taskSpeedGroup legend {
+  padding: 0 4px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.taskSpeedOption {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+}

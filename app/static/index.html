@@ -220,7 +220,7 @@
         <button id="appMenuSettingsButton" class="appMenuNavItem" type="button" aria-controls="appMenuSettingsScreen">
           <span>
             <strong>Settings</strong>
-            <span>Persona.</span>
+            <span>Persona and speed.</span>
           </span>
           <svg aria-hidden="true" viewBox="0 0 24 24">
             <path d="M9 5l7 7-7 7" />
@@ -247,6 +247,15 @@
             <span id="personaPickerHint">Who answers you. Saved on this device.</span>
           </span>
           <div id="personaPicker" class="personaPicker" role="radiogroup" aria-label="Persona"></div>
+        </div>
+        <!-- Speed per task (2026-11-15): one radio group per API task, built by
+             setupTaskSpeedSettings() in app.js and kept in the t2s_task_speed cookie. -->
+        <div class="menuSpeed" id="taskSpeedSetting">
+          <span>
+            <strong>Speed per task</strong>
+            <span>OpenAI service tier of each search step. Fast costs about twice, Ultrafast about six times (GPT-6 Astra and GPT-6.1 Sol only, Fast elsewhere). Saved on this device.</span>
+          </span>
+          <div id="taskSpeedPicker" class="taskSpeedPicker"></div>
         </div>
         <!-- 2026-11-15 (Philippe): the persona is the only setting left. The subtitle toggles, the
              UI language and the voice slots were not working properly and left the menu; the

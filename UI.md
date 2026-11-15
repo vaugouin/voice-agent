@@ -126,7 +126,8 @@ Elements:
 - `#appMenuAboutButton`
 - `#appMenuSettingsScreen`
 - `#appMenuAboutScreen`
-- `#personaSetting` (the only setting since 2026-11-15; the subtitle toggles, UI language and voice slots were removed)
+- `#personaSetting` (the subtitle toggles, UI language and voice slots were removed on 2026-11-15)
+- `#taskSpeedSetting` / `#taskSpeedPicker`: one `fieldset.taskSpeedGroup` per API task, radios `taskSpeed_<task>` = normal | fast | ultrafast, built by `setupTaskSpeedSettings()`; a change rewrites the `t2s_task_speed` cookie at once (normal removes the task) and logs `task_speed_changed`
 
 Purpose: opens a compact right-side drawer with a two-level menu. The index screen shows Settings and About entries; each entry opens its own screen with a Back control.
 

@@ -9,7 +9,7 @@ import uuid
 from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Literal, NamedTuple
-from urllib.parse import quote, urlencode
+from urllib.parse import quote, unquote, urlencode
 from zoneinfo import ZoneInfo
 
 import httpx
@@ -70,6 +70,47 @@ def _well_formed_openai_key(value: str) -> str:
     return strkey if _OPENAI_KEY_PATTERN.match(strkey) else ""
 
 
+# --- Speed per task (2026-11-15) --------------------------------------------------------------
+# The Settings screen sets, for each of the four API tasks, normal, fast or ultrafast (OpenAI
+# service tiers, FASTAPI-TEXT2SQL-347 and -410). The page keeps the choice in the cookie below,
+# "entity_extraction:fast,complex:ultrafast" URL-encoded, which every same-origin call carries;
+# the middleware reads it into the context and build_text2sql_request_json() turns it into the
+# API's llm_fast_* / llm_ultrafast_* fields. Normal sends nothing, so the default request is
+# unchanged. In the demo the visitor pays for it, like the rest.
+TASK_SPEED_COOKIE = "t2s_task_speed"
+TASK_SPEED_FIELDS = {
+    "entity_extraction": ("llm_fast_entity_extraction", "llm_ultrafast_entity_extraction"),
+    "text2sql": ("llm_fast_text2sql", "llm_ultrafast_text2sql"),
+    "complex": ("llm_fast_complex", "llm_ultrafast_complex"),
+    "result_entity": ("llm_fast_result_entity", "llm_ultrafast_result_entity"),
+    "vision": ("llm_fast_vision", "llm_ultrafast_vision"),
+}
+_request_task_speeds: contextvars.ContextVar[dict] = contextvars.ContextVar("request_task_speeds", default={})
+
+
+def parse_task_speeds(cookie_header: str) -> dict[str, str]:
+    """Read the speed cookie out of a Cookie header: {task: "fast" | "ultrafast"}, normal omitted."""
+    speeds: dict[str, str] = {}
+    for part in (cookie_header or "").split(";"):
+        name, _, value = part.strip().partition("=")
+        if name != TASK_SPEED_COOKIE:
+            continue
+        for item in unquote(value).split(","):
+            task, _, speed = item.strip().partition(":")
+            if task in TASK_SPEED_FIELDS and speed in ("fast", "ultrafast"):
+                speeds[task] = speed
+    return speeds
+
+
+def task_speed_fields() -> dict[str, bool]:
+    """The llm_fast_* / llm_ultrafast_* fields of the current request, only the true ones."""
+    fields: dict[str, bool] = {}
+    for task, speed in _request_task_speeds.get().items():
+        fast_field, ultrafast_field = TASK_SPEED_FIELDS[task]
+        fields[ultrafast_field if speed == "ultrafast" else fast_field] = True
+    return fields
+
+
 class _OpenAIKeyContext:
     """Pure ASGI middleware: puts the request's OpenAI key in the context.
 
@@ -95,9 +136,16 @@ class _OpenAIKeyContext:
         else:
             strkey = (os.getenv("OPENAI_API_KEY") or "").strip()
         token = _request_openai_key.set(strkey)
+        cookie_header = ""
+        for name, value in scope.get("headers") or []:
+            if name.decode("latin-1").lower() == "cookie":
+                cookie_header = value.decode("latin-1")
+                break
+        speed_token = _request_task_speeds.set(parse_task_speeds(cookie_header))
         try:
             await self.app(scope, receive, send)
         finally:
+            _request_task_speeds.reset(speed_token)
             _request_openai_key.reset(token)
 
 
@@ -3466,6 +3514,8 @@ def build_text2sql_request_json(
         # jamais et la reprise n'aurait servi qu'aux questions sans entite. Les seuils de -206 lui
         # rendent son office.
         "complex_question_processing": complex_question_processing_enabled(),
+        # Speed per task from the Settings screen (cookie t2s_task_speed); absent when normal.
+        **task_speed_fields(),
     }
     return {key: value for key, value in request_json.items() if value is not None}
 
