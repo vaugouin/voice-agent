@@ -4690,7 +4690,7 @@ function renderPlaceMap(container, rows, columns, upstream) {
     const tip = document.createElement("p");
     tip.className = "t2sMapTip";
     tip.setAttribute("aria-live", "polite");
-    tip.textContent = fr ? "Touchez ou survolez un numéro pour voir le lieu." : "Tap or hover over a number to see the place.";
+    tip.textContent = fr ? "Touchez un numéro pour ouvrir le lieu, survolez-le pour voir son nom." : "Tap a number to open the place, hover over it to see its name.";
     const list = document.createElement("ol");
     list.className = "t2sPlaceList";
     let selected = [];
@@ -4760,6 +4760,15 @@ function renderPlaceMap(container, rows, columns, upstream) {
           // A shared disc ("1+3") frames its places, so they split apart.
           if (group.members.length > 1) {
             zoomTo(text2SqlPlaceFitView(group.members.map((n) => current.points[n - 1]), base));
+            return;
+          }
+          // A single place opens its page, as its name in the list does.
+          const mark = model.marks.find((m) => m.n === group.members[0]);
+          const record = mark ? recordAt(mark.index) : null;
+          if (record && detailRequestFromRecord(record)) {
+            showRecordDetail(record).catch((error) => {
+              log("place map mark error", error.message);
+            });
           }
         });
       });
