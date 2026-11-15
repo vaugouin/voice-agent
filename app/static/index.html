@@ -220,7 +220,7 @@
         <button id="appMenuSettingsButton" class="appMenuNavItem" type="button" aria-controls="appMenuSettingsScreen">
           <span>
             <strong>Settings</strong>
-            <span>Persona, subtitles, language, and voice.</span>
+            <span>Persona.</span>
           </span>
           <svg aria-hidden="true" viewBox="0 0 24 24">
             <path d="M9 5l7 7-7 7" />
@@ -248,39 +248,11 @@
           </span>
           <div id="personaPicker" class="personaPicker" role="radiogroup" aria-label="Persona"></div>
         </div>
-        <label class="menuToggle">
-          <span>
-            <strong>Assistant subtitles</strong>
-            <span>Show voice answers as bottom captions on the next Realtime session.</span>
-          </span>
-          <input id="spokenSubtitlesMenuToggle" type="checkbox" autocomplete="off" />
-        </label>
-        <label class="menuToggle">
-          <span>
-            <strong>User transcript lane</strong>
-            <span>Show completed voice questions above the results on the next Realtime session.</span>
-          </span>
-          <input id="userTranscriptSubtitlesMenuToggle" type="checkbox" autocomplete="off" />
-        </label>
-        <label class="menuSetting">
-          <span>
-            <strong>UI language</strong>
-            <span>French / English</span>
-          </span>
-          <select id="uiLanguageMenuSlot" aria-label="UI language" disabled>
-            <option>English</option>
-            <option>French</option>
-          </select>
-        </label>
-        <label class="menuSetting">
-          <span>
-            <strong>Realtime voice</strong>
-            <span>Ash, new sessions only</span>
-          </span>
-          <select id="realtimeVoiceMenuSlot" aria-label="Realtime voice" disabled>
-            <option>Ash</option>
-          </select>
-        </label>
+        <!-- 2026-11-15 (Philippe): the persona is the only setting left. The subtitle toggles, the
+             UI language and the voice slots were not working properly and left the menu; the
+             subtitle defaults still come from .env (ENABLE_SPOKEN_SUBTITLES,
+             ENABLE_USER_TRANSCRIPT_SUBTITLES) and the URL overrides (?spokenSubtitles=,
+             ?userTranscriptSubtitles=) still work. app.js tolerates the missing toggles. -->
       </section>
 
       <section id="appMenuAboutScreen" class="appMenuScreen appMenuSection" aria-labelledby="aboutTitle" data-app-menu-screen="about" hidden>

@@ -126,10 +126,7 @@ Elements:
 - `#appMenuAboutButton`
 - `#appMenuSettingsScreen`
 - `#appMenuAboutScreen`
-- `#spokenSubtitlesMenuToggle`
-- `#userTranscriptSubtitlesMenuToggle`
-- `#uiLanguageMenuSlot`
-- `#realtimeVoiceMenuSlot`
+- `#personaSetting` (the only setting since 2026-11-15; the subtitle toggles, UI language and voice slots were removed)
 
 Purpose: opens a compact right-side drawer with a two-level menu. The index screen shows Settings and About entries; each entry opens its own screen with a Back control.
 
@@ -145,7 +142,7 @@ Default state:
 Open behavior:
 
 1. Click `#appMenuButton`.
-2. Sync the Settings toggles from the current URL preferences.
+2. Sync the Settings toggles from the current URL preferences (a no-op since the toggles left the menu on 2026-11-15).
 3. Reset the drawer to the index screen and title `Menu`.
 4. Unhide `#appMenuBackdrop` and `#appMenuDrawer`.
 5. Add `body.appMenuOpen` to prevent background scrolling.
