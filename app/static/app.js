@@ -4891,6 +4891,8 @@ function renderMap(container, rows, columns, upstream) {
     }
     const frame = document.createElement("div");
     frame.className = "t2sMapFrame";
+    // Desktop: the frame fills the width, bounded by the window height (styles.css).
+    frame.style.setProperty("--t2s-map-ratio", String(model.width / model.height));
     const svg = document.createElementNS(T2S_SVG_NS, "svg");
     svg.setAttribute("viewBox", `0 0 ${model.width} ${model.height}`);
     svg.setAttribute("class", "t2sMapSvg");
@@ -5066,6 +5068,7 @@ function renderPlaceMap(container, rows, columns, upstream) {
     const frame = document.createElement("div");
     frame.className = "t2sPlaceMapFrame";
     frame.style.aspectRatio = `${model.frame.width} / ${model.frame.height}`;
+    frame.style.setProperty("--t2s-map-ratio", String(model.frame.width / model.frame.height));
     const svg = document.createElementNS(T2S_SVG_NS, "svg");
     svg.setAttribute("viewBox", model.viewBox);
     svg.setAttribute("class", "t2sPlaceMapSvg");

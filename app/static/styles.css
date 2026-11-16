@@ -5482,6 +5482,18 @@ button.t2sDrill:focus-visible {
   touch-action: none;
   cursor: grab;
 }
+/* Desktop (mouse-driven, >= 1024px wide, 2026-11-16): both maps drop their width cap and take the
+   whole width of the panel, bounded by the window height so the map, its tip line and its legend
+   stay on one screen; a frame held back by the height is centred. --t2s-map-ratio (width / height
+   of the frame) is set by renderMap() and renderPlaceMap(). Phones and tablets keep the caps. */
+@media (min-width: 1024px) and (pointer: fine) {
+  .t2sMapFrame,
+  .t2sPlaceMapFrame {
+    max-width: min(100%, calc((100vh - 150px) * var(--t2s-map-ratio, 2)));
+    max-width: min(100%, calc((100dvh - 150px) * var(--t2s-map-ratio, 2)));
+    margin-inline: auto;
+  }
+}
 .t2sMapZoom {
   position: absolute;
   top: 6px;
