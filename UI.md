@@ -128,6 +128,7 @@ Elements:
 - `#appMenuAboutScreen`
 - `#personaSetting` (the subtitle toggles, UI language and voice slots were removed on 2026-11-15)
 - `#taskSpeedSetting` / `#taskSpeedPicker`: one `fieldset.taskSpeedGroup` per API task, radios `taskSpeed_<task>` = normal | fast | ultrafast, built by `setupTaskSpeedSettings()`; a change rewrites the `t2s_task_speed` cookie at once (normal removes the task) and logs `task_speed_changed`
+- `#taskModelSetting` / `#taskModelPicker`: one `label.taskModelRow` per API task, `select` `taskModel_<task>` = API default (empty) or a model of `TASK_MODEL_CHOICES`, built by `setupTaskModelSettings()`; a change rewrites the `t2s_task_model` cookie at once (API default removes the task) and logs `task_model_changed`. The server (`TASK_MODEL_FIELDS` in `app/main.py`) sends it as `llm_model_<task>` and drops names outside its own list
 
 Purpose: opens a compact right-side drawer with a two-level menu. The index screen shows Settings and About entries; each entry opens its own screen with a Back control.
 

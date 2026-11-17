@@ -253,9 +253,18 @@
         <div class="menuSpeed" id="taskSpeedSetting">
           <span>
             <strong>Speed per task</strong>
-            <span>OpenAI service tier of each search step. Fast costs about twice, Ultrafast about six times (GPT-6 Astra and GPT-6.1 Sol only, Fast elsewhere). Saved on this device.</span>
+            <span>OpenAI service tier of each search step. Fast costs about twice, Ultrafast about six times (GPT-6 Astra, GPT-6.1 Sol, GPT-6.2 Astra and GPT-6.2 Sol only, Fast elsewhere). Saved on this device.</span>
           </span>
           <div id="taskSpeedPicker" class="taskSpeedPicker"></div>
+        </div>
+        <!-- Model per task (2026-11-17): one drop-down per API task, built by
+             setupTaskModelSettings() in app.js and kept in the t2s_task_model cookie. -->
+        <div class="menuSpeed" id="taskModelSetting">
+          <span>
+            <strong>Model per task</strong>
+            <span>OpenAI model of each search step. API default leaves the choice to the server. Saved on this device.</span>
+          </span>
+          <div id="taskModelPicker" class="taskSpeedPicker"></div>
         </div>
         <!-- 2026-11-15 (Philippe): the persona is the only setting left. The subtitle toggles, the
              UI language and the voice slots were not working properly and left the menu; the

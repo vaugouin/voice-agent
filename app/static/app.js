@@ -632,6 +632,80 @@ function setupTaskSpeedSettings() {
   });
 }
 
+// --- Model per task (2026-11-17) -----------------------------------------------------------
+// One drop-down per API task. The choice lives in the t2s_task_model cookie, scoped like the
+// speed cookie, and the server sends it as the API's llm_model_* field. "API default" is stored
+// as nothing at all. Keep in step with TASK_MODEL_FIELDS in app/main.py, which drops any other name.
+const TASK_MODEL_COOKIE = "t2s_task_model";
+const GPT6_TEXT_MODELS = ["gpt-6-sol", "gpt-6.1-sol", "gpt-6.2-sol", "gpt-6.1-terra", "gpt-6-astra", "gpt-6.2-astra", "gpt-6-luna"];
+const TASK_MODEL_CHOICES = {
+  entity_extraction: GPT6_TEXT_MODELS,
+  text2sql: GPT6_TEXT_MODELS,
+  complex: GPT6_TEXT_MODELS,
+  result_entity: [...GPT6_TEXT_MODELS, "gpt-6-luna-decisions"],
+  vision: ["gpt-6-astra", "gpt-6.2-astra", "gpt-6.1-sol", "gpt-6.2-sol"],
+};
+
+function readTaskModels() {
+  const models = {};
+  const raw = document.cookie.split(";").map((part) => part.trim()).find((part) => part.startsWith(TASK_MODEL_COOKIE + "="));
+  if (!raw) {
+    return models;
+  }
+  decodeURIComponent(raw.slice(TASK_MODEL_COOKIE.length + 1)).split(",").forEach((item) => {
+    const [task, model] = item.split(":");
+    if ((TASK_MODEL_CHOICES[task] || []).includes(model)) {
+      models[task] = model;
+    }
+  });
+  return models;
+}
+
+function writeTaskModels(models) {
+  const value = Object.entries(models).filter(([task, model]) => (TASK_MODEL_CHOICES[task] || []).includes(model)).map(([task, model]) => `${task}:${model}`).join(",");
+  const path = new URL(".", window.location.href).pathname;
+  const secure = window.location.protocol === "https:" ? "; Secure" : "";
+  document.cookie = value
+    ? `${TASK_MODEL_COOKIE}=${encodeURIComponent(value)}; Path=${path}; Max-Age=31536000; SameSite=Lax${secure}`
+    : `${TASK_MODEL_COOKIE}=; Path=${path}; Max-Age=0; SameSite=Lax${secure}`;
+}
+
+function setupTaskModelSettings() {
+  const picker = document.querySelector("#taskModelPicker");
+  if (!picker) {
+    return;
+  }
+  const models = readTaskModels();
+  picker.replaceChildren();
+  TASK_SPEED_TASKS.forEach(([task, label]) => {
+    const row = document.createElement("label");
+    row.className = "taskModelRow";
+    const text = document.createElement("span");
+    text.textContent = label;
+    const select = document.createElement("select");
+    select.name = `taskModel_${task}`;
+    [["", "API default"], ...TASK_MODEL_CHOICES[task].map((model) => [model, model])].forEach(([value, optionLabel]) => {
+      const option = document.createElement("option");
+      option.value = value;
+      option.textContent = optionLabel;
+      option.selected = (models[task] || "") === value;
+      select.append(option);
+    });
+    select.addEventListener("change", () => {
+      const next = readTaskModels();
+      if (select.value) {
+        next[task] = select.value;
+      } else {
+        delete next[task];
+      }
+      writeTaskModels(next);
+      clientLog("task_model_changed", { task, model: select.value || "default" });
+    });
+    row.append(text, select);
+    picker.append(row);
+  });
+}
+
 function requireOpenAIKey(retry) {
   if (!BYOK_REQUIRED || readStoredOpenAIKey()) {
     return true;
@@ -19198,6 +19272,7 @@ clientLog("realtime_support", realtimeSupportSnapshot("page load"));
 
 setupOpenAIKeyDialog();  // VOICE-AGENT-277, BYOK mode only
 setupTaskSpeedSettings();
+setupTaskModelSettings();
 
 startButton.addEventListener("click", () => {
   start().catch((error) => {

@@ -6165,3 +6165,19 @@ button.t2sDrill:focus-visible {
   color: var(--text-secondary);
   font-size: 0.9rem;
 }
+
+.taskModelRow {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 4px 12px;
+  color: var(--text-primary);
+  font-size: 0.9rem;
+}
+
+.taskModelRow select {
+  min-width: 0;
+  max-width: 100%;
+  font: inherit;
+}

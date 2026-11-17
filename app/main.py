@@ -111,6 +111,44 @@ def task_speed_fields() -> dict[str, bool]:
     return fields
 
 
+# --- Model per task (2026-11-17) --------------------------------------------------------------
+# Same pattern as the speed: the Settings screen picks a model for each API task, the page keeps
+# it in the cookie below ("text2sql:gpt-6.2-sol,vision:gpt-6.2-astra" URL-encoded), and
+# build_text2sql_request_json() sends it as the API's llm_model_* field. "API default" stores
+# nothing, so the default request is unchanged. The lists mirror t2s-front's settings
+# (global-light.inc.php), OpenAI models only: in the demo the visitor's key pays. A name outside
+# the list is dropped here, whatever the cookie says. Keep in step with TASK_MODEL_CHOICES in app.js.
+TASK_MODEL_COOKIE = "t2s_task_model"
+_GPT6_TEXT_MODELS = ("gpt-6-sol", "gpt-6.1-sol", "gpt-6.2-sol", "gpt-6.1-terra", "gpt-6-astra", "gpt-6.2-astra", "gpt-6-luna")
+TASK_MODEL_FIELDS = {
+    "entity_extraction": ("llm_model_entity_extraction", _GPT6_TEXT_MODELS),
+    "text2sql": ("llm_model_text2sql", _GPT6_TEXT_MODELS),
+    "complex": ("llm_model_complex", _GPT6_TEXT_MODELS),
+    "result_entity": ("llm_model_result_entity", _GPT6_TEXT_MODELS + ("gpt-6-luna-decisions",)),
+    "vision": ("llm_model_vision", ("gpt-6-astra", "gpt-6.2-astra", "gpt-6.1-sol", "gpt-6.2-sol")),
+}
+_request_task_models: contextvars.ContextVar[dict] = contextvars.ContextVar("request_task_models", default={})
+
+
+def parse_task_models(cookie_header: str) -> dict[str, str]:
+    """Read the model cookie out of a Cookie header: {task: model}, API default and unknown names omitted."""
+    models: dict[str, str] = {}
+    for part in (cookie_header or "").split(";"):
+        name, _, value = part.strip().partition("=")
+        if name != TASK_MODEL_COOKIE:
+            continue
+        for item in unquote(value).split(","):
+            task, _, model = item.strip().partition(":")
+            if task in TASK_MODEL_FIELDS and model in TASK_MODEL_FIELDS[task][1]:
+                models[task] = model
+    return models
+
+
+def task_model_fields() -> dict[str, str]:
+    """The llm_model_* fields of the current request, only the tasks given a model."""
+    return {TASK_MODEL_FIELDS[task][0]: model for task, model in _request_task_models.get().items()}
+
+
 class _OpenAIKeyContext:
     """Pure ASGI middleware: puts the request's OpenAI key in the context.
 
@@ -142,9 +180,11 @@ class _OpenAIKeyContext:
                 cookie_header = value.decode("latin-1")
                 break
         speed_token = _request_task_speeds.set(parse_task_speeds(cookie_header))
+        model_token = _request_task_models.set(parse_task_models(cookie_header))
         try:
             await self.app(scope, receive, send)
         finally:
+            _request_task_models.reset(model_token)
             _request_task_speeds.reset(speed_token)
             _request_openai_key.reset(token)
 
@@ -3516,6 +3556,8 @@ def build_text2sql_request_json(
         "complex_question_processing": complex_question_processing_enabled(),
         # Speed per task from the Settings screen (cookie t2s_task_speed); absent when normal.
         **task_speed_fields(),
+        # Model per task from the Settings screen (cookie t2s_task_model); absent on API default.
+        **task_model_fields(),
     }
     return {key: value for key, value in request_json.items() if value is not None}
 
