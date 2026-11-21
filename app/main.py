@@ -1227,8 +1227,76 @@ def text2sql_auth_headers() -> dict[str, str]:
     return headers
 
 
+# VOICE-AGENT-280: the API instance is switched by editing one file, with no restart.
+# `--env-file` is read by Docker at `docker run`, so TEXT2SQL_BASE_URL alone stays frozen in the
+# container until it is recreated. When TEXT2SQL_BASE_URL_FILE names a file (restart.sh mounts
+# runtime/ read-only on /app/runtime), its first line that is neither blank nor a `#` comment is
+# the base URL, checked again on every call: one stat(), and a read only when the modification
+# time or the size moved. A missing or empty file, or a line that is not an http(s) URL, hands
+# over to TEXT2SQL_BASE_URL, then to the code default: a bad edit falls back to the previous
+# configuration instead of breaking every search. Mount the directory, never the file itself:
+# editors and `sed -i` write a new file (new inode), which a single-file bind mount never sees.
+TEXT2SQL_DEFAULT_BASE_URL = "http://www.vaugouin.com:8186"
+_TEXT2SQL_URL_PATTERN = re.compile(r"^https?://\S+$")
+_text2sql_url_state: dict[str, Any] = {"stamp": None, "url": "", "reported": None}
+
+
+def _text2sql_url_from_file(path: str) -> str:
+    state = _text2sql_url_state
+    try:
+        stat = os.stat(path)
+    except OSError:
+        state["stamp"] = None
+        return ""
+    stamp = (path, stat.st_mtime_ns, stat.st_size)
+    if stamp == state["stamp"]:
+        return state["url"]
+    url = ""
+    try:
+        for line in Path(path).read_text(encoding="utf-8").splitlines():
+            line = line.strip()
+            if line and not line.startswith("#"):
+                url = line if _TEXT2SQL_URL_PATTERN.match(line) else ""
+                break
+    except (OSError, UnicodeDecodeError):
+        url = ""
+    state["stamp"] = stamp
+    state["url"] = url
+    return url
+
+
+def text2sql_base_url_with_source() -> tuple[str, str]:
+    """The text2sql base URL and where it came from: ``file``, ``env`` or ``default``.
+
+    Each change of URL or source is printed (``docker logs``) and written to the client log
+    as ``text2sql_url_changed``, the first call after a start included, so the log says which
+    API instance answered each turn.
+    """
+    file_path = os.getenv("TEXT2SQL_BASE_URL_FILE", "").strip()
+    url = _text2sql_url_from_file(file_path) if file_path else ""
+    source = "file"
+    if not url:
+        url = os.getenv("TEXT2SQL_BASE_URL", "").strip()
+        source = "env"
+    if not url:
+        url = TEXT2SQL_DEFAULT_BASE_URL
+        source = "default"
+    url = url.rstrip("/")
+    if (url, source) != _text2sql_url_state["reported"]:
+        _text2sql_url_state["reported"] = (url, source)
+        file_unusable = bool(file_path) and source != "file"
+        note = f" ({file_path} missing, empty or not an http(s) URL)" if file_unusable else ""
+        print(f"[text2sql] base URL {url} from {source}{note}", flush=True)
+        write_client_log(
+            "text2sql_url_changed",
+            {"url": url, "source": source, "file": file_path or None, "file_unusable": file_unusable},
+            "warning" if file_unusable else "info",
+        )
+    return url, source
+
+
 def text2sql_base_url() -> str:
-    return os.getenv("TEXT2SQL_BASE_URL", "http://www.vaugouin.com:8186").rstrip("/")
+    return text2sql_base_url_with_source()[0]
 
 
 def normalize_ui_language(value: Any) -> str:
@@ -4954,9 +5022,13 @@ async def get_health() -> dict[str, Any]:
     Returns:
         dict: this app's version, plus the upstream's version, readiness and reachability.
     """
+    base_url, url_source = text2sql_base_url_with_source()
     result: dict[str, Any] = {
         "app_version": APP_VERSION,
-        "api_configured": bool(os.getenv("TEXT2SQL_BASE_URL")),
+        "api_configured": url_source != "default",
+        # VOICE-AGENT-280: file (switchable without restart), env (frozen at docker run) or
+        # default. "env" while TEXT2SQL_BASE_URL_FILE is set means the file is unusable.
+        "api_url_source": url_source,
         # Verifiable de l'exterieur, comme api_version : le drapeau se lit dans l'environnement,
         # que Docker fige au `docker run`, donc un simple redemarrage ne suffit pas a le changer
         # et cette sonde est le seul moyen de savoir ce que le conteneur applique vraiment.
@@ -4967,7 +5039,7 @@ async def get_health() -> dict[str, Any]:
     }
     try:
         async with httpx.AsyncClient(timeout=10) as client:
-            response = await client.get(f"{text2sql_base_url()}/", headers=text2sql_headers())
+            response = await client.get(f"{base_url}/", headers=text2sql_headers())
     except httpx.HTTPError as exc:
         # Never 502 here: a health probe that fails to answer tells the caller nothing.
         # An unreachable upstream is a result, not an error.
@@ -4999,6 +5071,8 @@ async def get_health() -> dict[str, Any]:
 # audio elements, reconnect, …) is dropped so the log stays harvestable. The browser
 # still posts those events to /client-log; they are filtered here at write time.
 HARNESS_LOG_EVENTS = frozenset({
+    # VOICE-AGENT-280: which API instance the following turns reach.
+    "text2sql_url_changed",
     "tool_call_start",
     "tool_call_success",
     "tool_call_error",

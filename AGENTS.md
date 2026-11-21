@@ -95,6 +95,7 @@ Pipeline stages:
 - The text input remains enabled in all states; if that changes, update the code and `UI.md`.
 - **One clock for the T2S stack** (DEPLOYMENT-015, VOICE-AGENT-226): human-read dates are written in Europe/Paris with their offset, always through `ZoneInfo`, never a fixed `+02:00`, and never by setting `TZ` in the container. Log readers must parse each line's offset (README § Diagnostics).
 - **Config precedence** (VOICE-AGENT-176): never switch to `load_dotenv(override=True)`; it would silently disable the launcher overrides and `docker run -e`.
+- **API base URL** (VOICE-AGENT-280): always go through `text2sql_base_url()` (or `text2sql_base_url_with_source()`), never `os.getenv("TEXT2SQL_BASE_URL")` and never a URL kept in a module-level constant or a long-lived client: the file named by `TEXT2SQL_BASE_URL_FILE` is re-checked on every call, and that is what lets the API instance be switched with no restart (README, "Switching the API instance without a restart").
 
 ## Verification Discipline
 

@@ -24,3 +24,6 @@ bench/results/
 # Bring-your-own-key demo instance (VOICE-AGENT-277): env file and logs of voice-agent-demo
 .env.demo
 logs-demo/
+
+# VOICE-AGENT-280: API base URL of each instance, edited on the VPS to switch the API instance
+runtime/

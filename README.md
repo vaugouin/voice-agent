@@ -226,8 +226,8 @@ Server-side harness:
 - **A voice search never carries "he" or "his"** (VOICE-AGENT-217). The VOICE-AGENT-185 rule stops a follow-up that names nobody, not one that names something and refers to a person with a pronoun: on 2026-10-10 "Which movies did he direct with Leonardo DiCaprio?" painted 50 unfiltered DiCaprio films and "only his 10 best-rated ones" the 10 best films of all time. `FOLLOW_UP_ROUTING_INSTRUCTIONS` now tells the model to replace the pronoun with the full name before searching, and the browser checks: a `query_text2sql` call whose query holds a third-person pronoun (`follow_up_pronouns_en` / `_fr` in `app/lexicons.json`; French impersonal *il y a*, *il faut*, *s'il* excluded) is returned to the model unsearched, with the person on screen and the previous search as hints, and logged as `pronoun_query_returned`. Once per user turn only, so a title that is a pronoun (*Her*) goes through on the second call.
 - **A voice search never carries "they" for a group either** (VOICE-AGENT-225). On 2026-10-11 "And which movie did they make together?" after "Who are the members of the Beatles?" reached the API as is and came back with "Which people do you mean?". When a group is in focus, a `query_text2sql` call holding a plural pronoun (`follow_up_group_pronouns_en` / `_fr` in `app/lexicons.json`) is returned the same way, with `group_in_focus` as the hint. A group is in focus when its page is on screen, when the last search on screen returned a group row (`GROUP_NAME`), or when the previous search holds a group word (`group_subject_words`: members, band, troupe, groupe...). Without a group in focus "they" is left alone, since it is too common. A query that already names the group goes through. `GROUP_WORKS_INSTRUCTIONS` (both modes) tells the model to answer "which movies did they make together?" from the group detail's `movies` and `series`, with no search, "all of them" meaning `MEMBER_SHARE = 1`.
 - **A one-record search hands the model the page it opened** (VOICE-AGENT-210). When `query_text2sql` resolves to a single title or person, the screen opens its full page; the voice output now carries it as `record_detail` (for a person, `credits` with title, year and roles, 30 per list, plus `credit_totals`), fitted to the room left in the channel budget. `single_record_detail` logs whether it was attached and its size.
-- `GET /tool/health` reports which voice-agent this is and which text2sql it reaches: `app_version`, `api_configured`, `api_reachable`, `api_version`, `api_ready`. It asks the upstream's own `GET /` probe, so it spends no LLM token and touches no cache (VOICE-AGENT-166 / FASTAPI-TEXT2SQL-203).
-  - **Why it exists.** The Blue/Green choice lives in `TEXT2SQL_BASE_URL` in the host env file, which is not in git, so nothing in the repository says which colour a running container reaches. The version was already discoverable in the `upstream` block of a `/tool/text2sql` answer, but reading it that way runs the whole pipeline and, on a cache miss, spends tokens. Worse, `--env-file` is read by Docker at `docker run`: a `docker restart` relaunches with the old value baked into the container config, so a flip must **recreate** the container (`restart.sh` does), and this endpoint is how you check that it took.
+- `GET /tool/health` reports which voice-agent this is and which text2sql it reaches: `app_version`, `api_configured`, `api_url_source` (`file`, `env` or `default`, VOICE-AGENT-280), `api_reachable`, `api_version`, `api_ready`. It asks the upstream's own `GET /` probe, so it spends no LLM token and touches no cache (VOICE-AGENT-166 / FASTAPI-TEXT2SQL-203).
+  - **Why it exists.** The Blue/Green choice lives in `TEXT2SQL_BASE_URL` in the host env file, which is not in git, so nothing in the repository says which colour a running container reaches. The version was already discoverable in the `upstream` block of a `/tool/text2sql` answer, but reading it that way runs the whole pipeline and, on a cache miss, spends tokens. Worse, `--env-file` is read by Docker at `docker run`: a `docker restart` relaunches with the old value baked into the container config, so a flip used to need a **recreate** of the container. Since VOICE-AGENT-280 a flip is an edit of `runtime/text2sql-url` (section "Switching the API instance without a restart"), and this endpoint is how you check that it took.
   - `api_version` comes back `null` against an upstream older than FASTAPI-TEXT2SQL-203, which does not expose it on `GET /`. Null means "this upstream cannot tell me", never "no version".
   - The upstream URL and port are deliberately absent: the colour follows the parity of the patch number, so `api_version` already answers the question, and a port only describes an internal topology.
 
@@ -846,6 +846,8 @@ docker run -d \
   --network reverseproxy \
   --env-file /home/debian/docker/voice-agent/.env \
   -v /home/debian/docker/voice-agent/logs:/app/logs \
+  -v /home/debian/docker/voice-agent/runtime:/app/runtime:ro \
+  -e TEXT2SQL_BASE_URL_FILE=/app/runtime/text2sql-url \
   voice-agent:latest
 ```
 
@@ -864,6 +866,20 @@ docker run -d \
   -v /home/debian/docker/voice-agent/logs:/app/logs \
   voice-agent:latest
 ```
+
+### Switching the API instance without a restart (VOICE-AGENT-280)
+
+`--env-file` is read by Docker at `docker run`, so `TEXT2SQL_BASE_URL` alone is frozen until the container is recreated. `restart.sh` and `restart-demo.sh` therefore mount `runtime/` read-only on `/app/runtime` and point `TEXT2SQL_BASE_URL_FILE` at one file per instance: `runtime/text2sql-url` (owner) and `runtime/text2sql-url-demo` (demo). Each is seeded once, on the first run, from the `TEXT2SQL_BASE_URL` of its env file; from then on **the file wins** and the env value is only the fallback. `runtime/` is in `.gitignore` and `.dockerignore`.
+
+The server reads the file's first line that is neither blank nor a `#` comment, checking it on every call to the API (one `stat()`, a read only when the file changed). To move the owner instance to violet, once violet answers `bktrees_ready: true`:
+
+```bash
+cd /home/debian/docker/voice-agent
+echo 'http://www.vaugouin.com:8188' > runtime/text2sql-url
+docker exec voice-agent python -c "import urllib.request,json;print(json.load(urllib.request.urlopen('http://127.0.0.1:3000/tool/health')))"
+```
+
+`/tool/health` must then report `api_url_source: "file"` and the version of the new instance. The next tool call goes to it; a conversation in progress is not cut (each tool call is a fresh HTTP request). A missing or empty file, or a line that is not an `http(s)://` URL, falls back to `TEXT2SQL_BASE_URL`, then to the code default: `/tool/health` then reports `api_url_source: "env"` (or `"default"`). Every change of URL or source prints `[text2sql] base URL ... from ...` in `docker logs` and writes `text2sql_url_changed` to the client log. Mount the directory, never the file itself: editors and `sed -i` write a new file, which a single-file bind mount never sees.
 
 Check the third line of `docker logs voice-agent`: `[voice-agent] subtitles default: assistant off (from env), ...` (inside the container the `-e` value is plain environment, so the source reads `env`). Recreate the container without the `-e` flags to return to the `.env` defaults.
 

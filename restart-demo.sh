@@ -33,6 +33,13 @@ fi
 
 mkdir -p "$LOG_DIR"
 
+# VOICE-AGENT-280: runtime/text2sql-url-demo holds the API base URL of the demo, re-read on every
+# call, so its API instance is switched by editing that file, with no restart. Seeded once.
+mkdir -p "$DIR/runtime"
+if [[ ! -s "$DIR/runtime/text2sql-url-demo" ]]; then
+  grep -E '^TEXT2SQL_BASE_URL=' "$ENV_FILE" | tail -n 1 | cut -d= -f2- > "$DIR/runtime/text2sql-url-demo" || true
+fi
+
 docker build -t voice-agent:latest .
 
 docker rm -f voice-agent-demo 2>/dev/null || true
@@ -43,6 +50,8 @@ docker run -d \
   --network reverseproxy \
   --env-file "$ENV_FILE" \
   -v "$LOG_DIR":/app/logs \
+  -v "$DIR/runtime":/app/runtime:ro \
+  -e TEXT2SQL_BASE_URL_FILE=/app/runtime/text2sql-url-demo \
   voice-agent:latest
 
 docker logs --tail 20 voice-agent-demo
