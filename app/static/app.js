@@ -637,13 +637,14 @@ function setupTaskSpeedSettings() {
 // speed cookie, and the server sends it as the API's llm_model_* field. "API default" is stored
 // as nothing at all. Keep in step with TASK_MODEL_FIELDS in app/main.py, which drops any other name.
 const TASK_MODEL_COOKIE = "t2s_task_model";
-const GPT6_TEXT_MODELS = ["gpt-6-sol", "gpt-6.1-sol", "gpt-6.2-sol", "gpt-6.1-terra", "gpt-6-astra", "gpt-6.2-astra", "gpt-6-luna"];
+// 2026-11-28: gpt-6.1-sol and gpt-6-astra removed, like t2s-front (replaced by their 6.2 successors).
+const GPT6_TEXT_MODELS = ["gpt-6-sol", "gpt-6.2-sol", "gpt-6.1-terra", "gpt-6.2-astra", "gpt-6-luna"];
 const TASK_MODEL_CHOICES = {
   entity_extraction: GPT6_TEXT_MODELS,
   text2sql: GPT6_TEXT_MODELS,
   complex: GPT6_TEXT_MODELS,
   result_entity: [...GPT6_TEXT_MODELS, "gpt-6-luna-decisions"],
-  vision: ["gpt-6-astra", "gpt-6.2-astra", "gpt-6.1-sol", "gpt-6.2-sol"],
+  vision: ["gpt-6.2-astra", "gpt-6.2-sol"],
 };
 
 function readTaskModels() {

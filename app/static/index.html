@@ -288,8 +288,8 @@
         <p>Questions turned into database searches via <a class="aboutLink" href="https://platform.openai.com/docs/models" target="_blank" rel="noopener noreferrer">OpenAI models</a></p>
         <!-- The one credit here that names a MODEL rather than an API, and it is therefore the one
              that can go stale without anything breaking. The photo is read upstream, by
-             fastapi-text2sql, whose `llm_model_vision` defaults to `gpt-6-astra` but also accepts
-             gpt-4o and the GPT-5.x line. If that default moves, this line becomes false and
+             fastapi-text2sql, whose `llm_model_vision` defaults to `gpt-6.2-sol` since 2026-11-23
+             (`gpt-6-astra` before) and also accepts the other GPT-6 and GPT-5.x models. If that default moves, this line becomes false and
              nothing will fail: check it against `strvisionmodeldefault` in the API's
              `text2sql.py` when the vision model changes. -->
         <p>Picture recognition via <a class="aboutLink" href="https://platform.openai.com/docs/guides/images-vision" target="_blank" rel="noopener noreferrer">OpenAI GPT-6.2 Sol</a></p>

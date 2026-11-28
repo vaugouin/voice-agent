@@ -118,14 +118,16 @@ def task_speed_fields() -> dict[str, bool]:
 # nothing, so the default request is unchanged. The lists mirror t2s-front's settings
 # (global-light.inc.php), OpenAI models only: in the demo the visitor's key pays. A name outside
 # the list is dropped here, whatever the cookie says. Keep in step with TASK_MODEL_CHOICES in app.js.
+# 2026-11-28: gpt-6.1-sol and gpt-6-astra leave every list, as in t2s-front on 2026-11-26, each
+# replaced by its 6.2 successor; a saved cookie naming one of them falls back to the API default.
 TASK_MODEL_COOKIE = "t2s_task_model"
-_GPT6_TEXT_MODELS = ("gpt-6-sol", "gpt-6.1-sol", "gpt-6.2-sol", "gpt-6.1-terra", "gpt-6-astra", "gpt-6.2-astra", "gpt-6-luna")
+_GPT6_TEXT_MODELS = ("gpt-6-sol", "gpt-6.2-sol", "gpt-6.1-terra", "gpt-6.2-astra", "gpt-6-luna")
 TASK_MODEL_FIELDS = {
     "entity_extraction": ("llm_model_entity_extraction", _GPT6_TEXT_MODELS),
     "text2sql": ("llm_model_text2sql", _GPT6_TEXT_MODELS),
     "complex": ("llm_model_complex", _GPT6_TEXT_MODELS),
     "result_entity": ("llm_model_result_entity", _GPT6_TEXT_MODELS + ("gpt-6-luna-decisions",)),
-    "vision": ("llm_model_vision", ("gpt-6-astra", "gpt-6.2-astra", "gpt-6.1-sol", "gpt-6.2-sol")),
+    "vision": ("llm_model_vision", ("gpt-6.2-astra", "gpt-6.2-sol")),
 }
 _request_task_models: contextvars.ContextVar[dict] = contextvars.ContextVar("request_task_models", default={})
 
