@@ -59,7 +59,7 @@ VERSION                   App version and browser cache key
 logs/
   client-YYYYMMDD.log     Browser/client diagnostics, one file per day
 Dockerfile
-restart.sh                Rebuild and recreate the container on the VPS
+restart.sh                Rebuild and swap in the new container on the VPS, no gap (swap-container.sh)
 run.ps1                   Local launcher (Windows)
 .dockerignore
 .gitignore
@@ -851,7 +851,7 @@ docker run -d \
   voice-agent:latest
 ```
 
-`restart.sh` runs these steps and returns, printing the last 20 log lines (`docker logs -f voice-agent` to follow them), like `restart-demo.sh`. No host port is published: the `reverseproxy` container reaches the app by its name on the `reverseproxy` network.
+These are the manual steps; they cut the app off between `docker rm` and the new container's start. Since 1.18.5, `restart.sh` and `restart-demo.sh` avoid that gap through `swap-container.sh`: the image is built while the current container serves, the new one starts as `<name>-next`, takes the name once it answers `GET /`, and the old one drains 35 s (past NGINX's 30 s address cache) before a graceful stop. If the new container does not answer within 90 s, the old one keeps serving. A voice conversation in progress is not cut: the audio runs between the browser and OpenAI over WebRTC, and the server keeps no per-conversation state. Both scripts return with the last 20 log lines (`docker logs -f voice-agent` to follow them). No host port is published: the `reverseproxy` container reaches the app by its name on the `reverseproxy` network.
 
 To override a `.env` key for one container without editing the file, add `-e KEY=VALUE` before the image name; Docker gives `-e` precedence over `--env-file`. For a recording session with no native subtitles (VOICE-AGENT-176):
 

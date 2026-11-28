@@ -42,10 +42,9 @@ fi
 
 docker build -t voice-agent:latest .
 
-docker rm -f voice-agent-demo 2>/dev/null || true
-
-docker run -d \
-  --name voice-agent-demo \
+# No gap for the visitors: the current container serves until the new one answers (swap-container.sh).
+source "$DIR/swap-container.sh"
+swap_container voice-agent-demo \
   --restart unless-stopped \
   --network reverseproxy \
   --env-file "$ENV_FILE" \
@@ -53,5 +52,3 @@ docker run -d \
   -v "$DIR/runtime":/app/runtime:ro \
   -e TEXT2SQL_BASE_URL_FILE=/app/runtime/text2sql-url-demo \
   voice-agent:latest
-
-docker logs --tail 20 voice-agent-demo
